@@ -1,0 +1,97 @@
+{
+    "workflow": {
+        "workflow": {
+            "type": "serial",
+            "specification": {
+                "steps": [
+                    {
+                        "environment": "python:3.7",
+                        "commands": [
+                            "python code/helloworld.py --inputfile \"${inputfile}\" --outputfile \"${outputfile}\" --sleeptime ${sleeptime} --greeting ${greeting}",
+                            "python code/analyze.py --inputfile \"${outputfile}\" --outputfile results/analytics.json"
+                        ]
+                    }
+                ]
+            }
+        },
+        "inputs": {
+            "files": [
+                "code/analyze.py",
+                "code/helloworld.py",
+                "$[[names]]"
+            ],
+            "parameters": {
+                "sleeptime": "$[[sleeptime]]",
+                "greeting": "$[[greeting]]",
+                "outputfile": "results/greetings.txt",
+                "inputfile": "$[[names]]"
+            }
+        },
+        "outputs": {
+            "files": [
+                "results/greetings.txt",
+                "results/analytics.json"
+            ]
+        },
+        "version": "0.3.0"
+    },
+    "id": "ABCDEFGH",
+    "parameters": [
+        {
+            "as": "data/names.txt",
+            "description": "Input file",
+            "datatype": "file",
+            "index": 0,
+            "name": "Input file",
+            "required": true,
+            "id": "names"
+        },
+        {
+            "description": "sleeptime",
+            "defaultValue": 10,
+            "datatype": "int",
+            "index": 0,
+            "name": "sleeptime",
+            "required": true,
+            "id": "sleeptime"
+        },
+        {
+            "description": "greeting",
+            "defaultValue": "Hello",
+            "datatype": "string",
+            "index": 0,
+            "name": "greeting",
+            "required": true,
+            "id": "greeting"
+        }
+    ],
+    "results": {
+        "file": "results/analytics.json",
+        "schema": [
+            {
+                "id": "col1",
+                "name": "Column 1",
+                "type": "int",
+                "required": true,
+                "isDefault": false,
+                "sortOrder": "DESC"
+            },
+            {
+                "id": "col2",
+                "name": "Column 2",
+                "type": "decimal",
+                "required": false,
+                "isDefault": false,
+                "sortOrder": "DESC"
+            },
+            {
+                "id": "col3",
+                "name": "Column 3",
+                "type": "string",
+                "required": true,
+                "isDefault": false,
+                "sortOrder": "DESC"
+            }
+        ]
+    }
+}

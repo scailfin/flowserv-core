@@ -1,0 +1,7 @@
+future
+gitpython
+jsonschema
+passlib
+psycopg2-binary
+python-dateutil
+pyyaml>=5.1
