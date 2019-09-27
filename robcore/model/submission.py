@@ -18,15 +18,15 @@ directories for the respective submissions.
 
 import json
 import os
+import shutil
 
-from robapi.model.run.result import ResultRanking
-from robapi.model.run.base import RunHandle
 from robcore.model.user.base import UserHandle
 from robcore.io.files import FileHandle
 from robcore.model.template.schema import ResultSchema
 
 import robcore.error as err
 import robcore.model.constraint as constraint
+import robcore.model.ranking as ranking
 import robcore.util as util
 
 
@@ -59,7 +59,7 @@ class SubmissionHandle(object):
             Unique identifier for the user that created the submission
         members: list(robcore.model.user.base.UserHandle)
             List of handles for team members
-        manager: robapi.model.submission.SubmissionManager, optional
+        manager: robcore.model.submission.SubmissionManager, optional
             Optional reference to the submission manager
         """
         self.identifier = identifier
@@ -96,24 +96,21 @@ class SubmissionHandle(object):
 
         Returns
         -------
-        robapi.model.run.result.ResultRanking
-
-        Raises
-        ------
-        robcore.error.UnknownSubmissionError
+        robcore.model.ranking.ResultRanking
         """
         return self.manager.get_results(self.identifier, order_by=order_by)
 
     def get_runs(self):
-        """Get list of handles for all runs in the submission.
+        """Get a list of all runs for the submission.
+
+        Parameters
+        ----------
+        submission_id: string
+            Unique submission identifier
 
         Returns
         -------
-        list(robapi.model.run.base.RunHandle)
-
-        Raises
-        ------
-        robcore.error.UnknownSubmissionError
+        list(robcore.model.workflow.run.RunHandle)
         """
         return self.manager.get_runs(self.identifier)
 
@@ -141,6 +138,27 @@ class SubmissionHandle(object):
         """
         self.members = None
 
+    def start_run(self, arguments):
+        """Run benchmark for the submission with the given set of arguments.
+
+        Parameters
+        ----------
+        arguments: dict(benchtmpl.workflow.parameter.value.TemplateArgument)
+            Dictionary of argument values for parameters in the template
+
+        Returns
+        -------
+        robcore.model.workflow.run.RunHandle
+
+        Raises
+        ------
+        robcore.error.MissingArgumentError
+        """
+        self.manager.start_run(
+            submission_id=self.identifier,
+            arguments=arguments
+        )
+
 
 class SubmissionManager(object):
     """Manager for submissions from groups of users that participate in a
@@ -153,7 +171,7 @@ class SubmissionManager(object):
     are stored using their unique identifier as the file name. The original
     file name is maintained in the underlying database.
     """
-    def __init__(self, con, directory):
+    def __init__(self, con, directory, engine):
         """Initialize the connection to the database that is used for storage.
 
         Parameters
@@ -161,38 +179,14 @@ class SubmissionManager(object):
         con: DB-API 2.0 database connection
             Connection to underlying database
         directory : string
-            Path to the base directory for storing uploaded files
+            Path to the base directory for storing uploaded filee
+        engine: robcore.model.workflow.engine.BenchmarkEngine
+            Benchmark workflow execution engine
         """
         self.con = con
         # Create directory if it does not exist
         self.directory = util.create_dir(os.path.abspath(directory))
-
-    def add_member(self, submission_id, user_id):
-        """Add a user as member to an existing submission. If the user already
-        is a member of the submission an error is raised.
-
-        Parameters
-        ----------
-        submission_id: string
-            Unique submission identifier
-        user_id: string
-            Unique user identifier
-
-        Raises
-        ------
-        robcore.error.ConstraintViolationError
-        """
-        sql = 'INSERT INTO submission_member(submission_id, user_id) VALUES(?, ?)'
-        try:
-            self.con.execute(sql, (submission_id, user_id))
-            self.con.commit()
-        except Exception:
-            # Depending on the database system that is being used the type of
-            # the exception may differ. Here we assume that any exception is
-            # due to a primary key violation (i.e., the user is already a
-            # member of the submission)
-            msg = '{} already member of {}'.format(submission_id, user_id)
-            raise err.ConstraintViolationError(msg)
+        self.engine = engine
 
     def create_submission(self, benchmark_id, name, user_id, members=None):
         """Create a new submission for a given benchmark. Within each benchmark,
@@ -216,7 +210,7 @@ class SubmissionManager(object):
 
         Returns
         -------
-        robapi.model.submission.SubmissionHandle
+        robcore.model.submission.SubmissionHandle
 
         Raises
         ------
@@ -274,53 +268,45 @@ class SubmissionManager(object):
         self.con.execute(sql, (file_id,))
         self.con.commit()
 
-    def delete_submission(self, submission_id):
+    def delete_submission(self, submission_id, commit_changes=True):
         """Delete the entry for the given submission from the underlying
-        database. Note that this will also remove any runs and run results that
-        are associated with the submission as well as any associated file
-        resources.
+        database. The method will delete the directory that contains the
+        uploaded files for the submission which potentially deletes all
+        associated run result files as well.
+
+        The changes to the underlying database are only commited if the
+        commit_changes flag is True. The deletion of files and directories
+        cannot be rolled back.
 
         Parameters
         ----------
         submission_id: string
             Unique submission identifier
+        commit_changes: bool, optional
+            Commit all changes to the database if True
 
         Raises
         ------
-        robcore.error.UnknownSubmissionError
+        robcore.error.InvalidRunStateError
         """
-        # Get the handles for all associated submission runs and collect the
-        # file resources that are associated with each of them. This will raise
-        # an error if the submission is unknown.
-        filenames = list()
-        for run in self.get_runs(submission_id):
-            if run.is_success():
-                for fh in run.get_files():
-                    filenames.append(fh.filename)
-        # Start by deleting all rows in the database that belong to the
-        # submission. Delete files after the database changes are committed
-        # since there is no rollback option for file deletes.
-        psql = 'DELETE FROM {} WHERE run_id IN ('
-        psql += 'SELECT run_id FROM benchmark_run WHERE submission_id = ?)'
-        stmts = list()
-        stmts.append(psql.format('run_result_file'))
-        stmts.append(psql.format('run_error_log'))
+        # Get a list of submission runs to delete them individually
+        sql = 'SELECT run_id FROM benchmark_run WHERE submission_id = ?'
+        for row in self.con.execute(sql, (submission_id,)).fetchall():
+            self.engine.delete_run(row['run_id'])
+        # Create DELETE statements for all tables that may contain information
+        # about the submission.
         psql = 'DELETE FROM {} WHERE submission_id = ?'
-        stmts.append(psql.format('benchmark_run'))
+        stmts = list()
         stmts.append(psql.format('submission_member'))
         stmts.append(psql.format('submission_file'))
         stmts.append(psql.format('benchmark_submission'))
         for sql in stmts:
             self.con.execute(sql, (submission_id,))
-        self.con.commit()
-        # Delete all file resources
-        for f in filenames:
-            # Don't raise an error if the file does not exist or cannot be
-            # removed
-            try:
-                os.remove(f)
-            except OSError:
-                pass
+        # Commit changes only of the respective flag is True
+        if commit_changes:
+            self.con.commit()
+        # Delete the base directory for the submission.
+        shutil.rmtree(os.path.join(self.directory, submission_id))
 
     def get_file(self, submission_id, file_id):
         """Get handle for file with given identifier. Returns None if no file
@@ -369,7 +355,7 @@ class SubmissionManager(object):
 
         Returns
         -------
-        robapi.model.run.result.ResultRanking
+        robcore.model.ranking.ResultRanking
 
         Raises
         ------
@@ -388,7 +374,7 @@ class SubmissionManager(object):
             schema = ResultSchema.from_dict(json.loads(row['result_schema']))
         else:
             schema = ResultSchema()
-        return ResultRanking.query(
+        return ranking.query(
             con=self.con,
             benchmark_id=row['benchmark_id'],
             schema=schema,
@@ -399,9 +385,12 @@ class SubmissionManager(object):
         )
 
     def get_runs(self, submission_id):
-        """Get list of handles for all runs in the given submission. All run
-        information is read from the underlying database. This method does
-        not query the backend to get workflow states.
+        """Get a list of all runs for the given submission.
+
+        This method does not check if the submission exists. Thie method is
+        primarily intended to be called by the submission handle to load runs
+        on-demand. Existence of the submission is expected to have been verified
+        when the submission handle was created.
 
         Parameters
         ----------
@@ -410,26 +399,9 @@ class SubmissionManager(object):
 
         Returns
         -------
-        list(robapi.model.run.base.RunHandle)
-
-        Raises
-        ------
-        robcore.error.UnknownSubmissionError
+        list(robcore.model.workflow.run.RunHandle)
         """
-        # Get submission handle to ensure that the submission exists. this will
-        # raise an error if the submission does not exist.
-        self.get_submission(submission_id, load_members=False)
-        # Fetch run information from the database and return list of run
-        # handles.
-        sql = 'SELECT r.run_id, s.benchmark_id, s.submission_id, r.state, '
-        sql += 'r.arguments, r.created_at, r.started_at, r.ended_at '
-        sql += 'FROM benchmark b, benchmark_submission s, benchmark_run r '
-        sql += 'WHERE s.submission_id = r.submission_id AND r.submission_id = ? '
-        sql += 'ORDER BY r.created_at'
-        result = list()
-        for row in self.con.execute(sql, (submission_id,)).fetchall():
-            result.append(RunHandle.from_db(doc=row, con=self.con))
-        return result
+        return self.engine.list_runs(submission_id)
 
     def get_submission(self, submission_id, load_members=True):
         """Get handle for submission with the given identifier. Submission
@@ -437,14 +409,14 @@ class SubmissionManager(object):
 
         Parameters
         ----------
-        identifier: string
+        submission_id: string
             Unique submission identifier
         load_members: bool, optional
             Load handles for submission members if True
 
         Returns
         -------
-        robapi.model.submission.SubmissionHandle
+        robcore.model.submission.SubmissionHandle
 
         Raises
         ------
@@ -479,6 +451,11 @@ class SubmissionManager(object):
         """Get list of file handles for all files that have been uploaded to a
         given submission.
 
+        This method does not check if the submission exists. Thie method is
+        primarily intended to be called by the submission handle to load
+        submission members on-demand. Existence of the submission is expected
+        to have been verified when the submission handle was created.
+
         Parameters
         ----------
         submission_id: string
@@ -487,14 +464,7 @@ class SubmissionManager(object):
         Returns
         -------
         list(robcore.io.files.FileHandle)
-
-        Raises
-        ------
-        robcore.error.UnknownSubmissionError
         """
-        # Get submission handle to ensure that the submission exists. this will
-        # raise an error if the submission does not exist.
-        self.get_submission(submission_id, load_members=False)
         # Create the result set from a SQL query of the submission file table
         sql = 'SELECT file_id, name FROM submission_file '
         sql += 'WHERE submission_id = ?'
@@ -509,10 +479,8 @@ class SubmissionManager(object):
             rs.append(fh)
         return rs
 
-    def list_members(self, submission_id, raise_error=True):
+    def list_members(self, submission_id):
         """Get a list of all users that are member of the given submission.
-        Raises an unknown submission error if the list of members is empty and
-        the raise error flag is true.
 
         Parameters
         ----------
@@ -524,10 +492,6 @@ class SubmissionManager(object):
         Returns
         -------
         list(robcore.model.user.base.UserHandle)
-
-        Raises
-        ------
-        robcore.error.UnknownSubmissionError
         """
         members = list()
         sql = 'SELECT s.user_id, u.name '
@@ -536,8 +500,6 @@ class SubmissionManager(object):
         for row in self.con.execute(sql, (submission_id,)).fetchall():
             user = UserHandle(identifier=row['user_id'], name=row['name'])
             members.append(user)
-        if len(members) == 0 and raise_error:
-            raise err.UnknownSubmissionError(submission_id)
         return members
 
     def list_submissions(self, user=None):
@@ -551,7 +513,7 @@ class SubmissionManager(object):
 
         Returns
         -------
-        list(robapi.model.submission.SubmissionHandle)
+        list(robcore.model.submission.SubmissionHandle)
         """
         # Generate SQL query depending on whether the user is given or not
         sql = 'SELECT s.submission_id, s.name, s.benchmark_id, s.owner_id '
@@ -577,32 +539,33 @@ class SubmissionManager(object):
             submissions.append(s)
         return submissions
 
-    def remove_member(self, submission_id, user_id):
-        """Remove a user as a menber from the given submission. The return value
-        indicates if the submission exists and the user was a memmer of that
-        submission.
+    def start_run(self, submission_id, arguments):
+        """Run benchmark for a given submission with the given set of arguments.
 
-        There are currently not constraints enforced, i.e., any user can be
-        removed as submission member, even the submission owner.
+        This method does not check if the submission exists. Thie method is
+        primarily intended to be called by the submission handle to start runs.
+        Existence of the submission is expected to have been verified when the
+        submission handle was created.
 
         Parameters
         ----------
         submission_id: string
             Unique submission identifier
-        user_id: string
-            Unique user identifier
+        arguments: dict(benchtmpl.workflow.parameter.value.TemplateArgument)
+            Dictionary of argument values for parameters in the template
 
         Returns
         -------
-        bool
+        robcore.model.workflow.run.RunHandle
+
+        Raises
+        ------
+        robcore.error.MissingArgumentError
         """
-        cur = self.con.cursor()
-        sql = 'DELETE FROM submission_member '
-        sql += 'WHERE submission_id = ? AND user_id = ?'
-        # Use row count to determine if the submission existed or not
-        rowcount = cur.execute(sql, (submission_id, user_id)).rowcount
-        self.con.commit()
-        return rowcount > 0
+        return self.engine.start_run(
+            submission_id=submission_id,
+            arguments=arguments
+        )
 
     def update_submission(self, submission_id, name=None, members=None):
         """Update the name and/or list of members for a submission.
@@ -618,7 +581,7 @@ class SubmissionManager(object):
 
         Returns
         -------
-        robapi.model.submission.SubmissionHandle
+        robcore.model.submission.SubmissionHandle
 
         Raises
         ------
@@ -680,13 +643,9 @@ class SubmissionManager(object):
         Raises
         ------
         robcore.error.ConstraintViolationError
-        robcore.error.UnknownSubmissionError
         """
         # Ensure that the given file name is valid
         constraint.validate_name(file_name)
-        # Get submission handle to ensure that the submission exists. this will
-        # raise an error if the submission does not exist.
-        self.get_submission(submission_id, load_members=False)
         # Ensure that the directory for submission uploads exists
         file_dir = util.create_dir(os.path.join(self.directory, submission_id))
         # Create a new unique identifier for the file.

@@ -72,7 +72,7 @@ class FileCopy(object):
 
 def upload_files(template, base_dir, files, arguments, loader):
     """Upload all references to local files in a given list of file names of
-    parameter references. THe list of files, for example corresponds to the
+    parameter references. The list of files, for example, corresponds to the
     entries in the 'inputs.files' section of a REANA workflow specification.
 
     Uses a loader function to allow use of this method in cases where the

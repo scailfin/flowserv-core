@@ -13,8 +13,7 @@ import pytest
 from robcore.model.workflow.resource import FileResource
 
 import robcore.util as util
-import robcore.model.workflow.state.base as state
-import robcore.model.workflow.state.serializer as serialize
+import robcore.model.workflow.state as state
 
 
 """Default timestamps."""
@@ -33,7 +32,7 @@ class TestWorkflowStateSerializer(object):
             stopped_at=util.to_datetime(FINISHED_AT),
             messages=['there', 'were', 'errors']
         )
-        s = serialize.deserialize_state(serialize.serialize_state(s))
+        s = state.deserialize_state(state.serialize_state(s))
         assert s.is_canceled()
         assert s.messages == ['there', 'were', 'errors']
         self.validate_date(s.created_at, util.to_datetime(CREATED_AT))
@@ -48,7 +47,7 @@ class TestWorkflowStateSerializer(object):
             stopped_at=util.to_datetime(FINISHED_AT),
             messages=['there', 'were', 'errors']
         )
-        s = serialize.deserialize_state(serialize.serialize_state(s))
+        s = state.deserialize_state(state.serialize_state(s))
         assert s.is_error()
         assert s.messages == ['there', 'were', 'errors']
         self.validate_date(s.created_at, util.to_datetime(CREATED_AT))
@@ -60,19 +59,19 @@ class TestWorkflowStateSerializer(object):
         type is given.
         """
         with pytest.raises(KeyError):
-            serialize.deserialize_state({
-                serialize.LABEL_STATE_TYPE: 'unknown'
+            state.deserialize_state({
+                state.LABEL_STATE_TYPE: 'unknown'
             })
         with pytest.raises(ValueError):
-            serialize.deserialize_state({
-                serialize.LABEL_STATE_TYPE: 'unknown',
-                serialize.LABEL_CREATED_AT: CREATED_AT
+            state.deserialize_state({
+                state.LABEL_STATE_TYPE: 'unknown',
+                state.LABEL_CREATED_AT: CREATED_AT
             })
 
     def test_pending_state(self):
         """Test serialization/deserialization of pending states."""
         s = state.StatePending(created_at=util.to_datetime(CREATED_AT))
-        s = serialize.deserialize_state(serialize.serialize_state(s))
+        s = state.deserialize_state(state.serialize_state(s))
         assert s.is_pending()
         self.validate_date(s.created_at, util.to_datetime(CREATED_AT))
 
@@ -82,7 +81,7 @@ class TestWorkflowStateSerializer(object):
             created_at=util.to_datetime(CREATED_AT),
             started_at=util.to_datetime(STARTED_AT)
         )
-        s = serialize.deserialize_state(serialize.serialize_state(s))
+        s = state.deserialize_state(state.serialize_state(s))
         assert s.is_running()
         self.validate_date(s.created_at, util.to_datetime(CREATED_AT))
         self.validate_date(s.started_at, util.to_datetime(STARTED_AT))
@@ -98,7 +97,7 @@ class TestWorkflowStateSerializer(object):
                 FileResource('myfile2', 'dev/null/myfile2')
             ]
         )
-        s = serialize.deserialize_state(serialize.serialize_state(s))
+        s = state.deserialize_state(state.serialize_state(s))
         assert s.is_success()
         assert s.get_file('myfile1').filename == 'dev/null/myfile1'
         assert s.get_file('myfile2').filename == 'dev/null/myfile2'

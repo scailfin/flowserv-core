@@ -27,7 +27,7 @@ class SubmissionService(object):
 
         Parameters
         ----------
-        manager: robapi.model.submission.SubmissionManager
+        manager: robcore.model.submission.SubmissionManager
             Manager for benchmark submissions
         auth: robcore.model.user.auth.Auth
             Implementation of the authorization policy for the API

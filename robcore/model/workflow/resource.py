@@ -9,6 +9,7 @@
 """Handles for file resources that are created by successful workflow runs."""
 
 import os
+import shutil
 
 
 class FileResource(object):
@@ -35,4 +36,7 @@ class FileResource(object):
 
     def delete(self):
         """Delete the associated file from disk."""
-        os.remove(self.filename)
+        if os.path.isfile(self.filename):
+            os.remove(self.filename)
+        elif os.path.isdir(self.filename):
+            shutil.rmtree(self.filename)

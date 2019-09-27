@@ -16,8 +16,7 @@ import pytest
 from robcore.io.files import FileHandle
 from robcore.model.template.base import WorkflowTemplate
 from robcore.model.template.parameter.value import TemplateArgument
-from robcore.model.workflow.engine.base import WorkflowEngine
-from robcore.model.workflow.engine.sync import SyncWorkflowEngine
+from robcore.model.workflow.sync import SyncWorkflowEngine
 
 import robcore.error as err
 import robcore.util as util
@@ -32,21 +31,6 @@ TEMPLATE_WITH_MISSING_FILE = os.path.join(TEMPLATE_DIR, './template-missing-file
 # Input files
 NAMES_FILE = os.path.join(TEMPLATE_DIR, './inputs/short-names.txt')
 UNKNOWN_FILE = os.path.join(TEMPLATE_DIR, './tmp/no/file/here')
-
-
-class TestWorkflowEngine(object):
-    """Test abstract workflow engine interface (added for test completeness)."""
-    def test_interface(self):
-        """Ensure that interface methods raise NotImplementedError."""
-        engine = WorkflowEngine()
-        with pytest.raises(NotImplementedError):
-            engine.cancel_run(run_id='ABC')
-        with pytest.raises(NotImplementedError):
-            engine.execute(run_id='ABC', template=None, source_dir=None, arguments=None)
-        with pytest.raises(NotImplementedError):
-            engine.get_state(run_id='ABC')
-        with pytest.raises(NotImplementedError):
-            engine.remove_run(run_id='ABC')
 
 
 class TestSynchronousWorkflowEngine(object):
@@ -70,7 +54,7 @@ class TestSynchronousWorkflowEngine(object):
         # Run the workflow
         engine = SyncWorkflowEngine(str(tmpdir))
         run_id = util.get_short_identifier()
-        state = engine.execute(
+        state = engine.exec_workflow(
             run_id=run_id,
             template=template,
             source_dir=TEMPLATE_DIR,
@@ -95,7 +79,7 @@ class TestSynchronousWorkflowEngine(object):
         assert greetings[0] == 'Hello Alice!'
         assert greetings[1] == 'Hello Bob!'
         # Read workglow state should give the same result
-        state = engine.get_state(run_id)
+        state = engine.get_run_state(run_id)
         assert state.is_success()
         assert len(state.files) == 1
         assert 'results/greetings.txt' in state.files
@@ -108,7 +92,7 @@ class TestSynchronousWorkflowEngine(object):
         assert greetings[1] == 'Hello Bob!'
         # Re-run workflow will raise an error
         with pytest.raises(err.DuplicateRunError):
-            engine.execute(
+            engine.exec_workflow(
                 run_id=run_id,
                 template=template,
                 source_dir=TEMPLATE_DIR,
@@ -117,7 +101,7 @@ class TestSynchronousWorkflowEngine(object):
         os.remove(engine.get_run_file(run_id))
         assert not os.path.isfile(engine.get_run_file(run_id))
         with pytest.raises(err.DuplicateRunError):
-            engine.execute(
+            engine.exec_workflow(
                 run_id=run_id,
                 template=template,
                 source_dir=TEMPLATE_DIR,
@@ -127,7 +111,7 @@ class TestSynchronousWorkflowEngine(object):
         engine.remove_run(run_id)
         assert not os.path.isfile(engine.get_run_file(run_id))
         assert not os.path.isdir(engine.get_run_dir(run_id))
-        state = engine.execute(
+        state = engine.exec_workflow(
             run_id=run_id,
             template=template,
             source_dir=TEMPLATE_DIR,
@@ -143,7 +127,7 @@ class TestSynchronousWorkflowEngine(object):
         assert not os.path.isdir(engine.get_run_dir(run_id))
         # Error when trying to get state of unknown run
         with pytest.raises(err.UnknownRunError):
-            engine.get_state(run_id)
+            engine.get_run_state(run_id)
 
     def test_run_with_invalid_cmd(self, tmpdir):
         """Execute the helloworld example with an invalid shell command."""
@@ -164,7 +148,7 @@ class TestSynchronousWorkflowEngine(object):
         # Run workflow syncronously
         engine = SyncWorkflowEngine(str(tmpdir))
         run_id = util.get_short_identifier()
-        state = engine.execute(
+        state = engine.exec_workflow(
             run_id=run_id,
             template=template,
             source_dir=TEMPLATE_DIR,
@@ -173,7 +157,7 @@ class TestSynchronousWorkflowEngine(object):
         assert state.is_error()
         assert len(state.messages) > 0
         print(state.messages)
-        state = engine.get_state(run_id)
+        state = engine.get_run_state(run_id)
         assert state.is_error()
         assert len(state.messages) > 0
 
@@ -196,7 +180,7 @@ class TestSynchronousWorkflowEngine(object):
         # Run workflow syncronously
         engine = SyncWorkflowEngine(str(tmpdir))
         run_id = util.get_short_identifier()
-        state = engine.execute(
+        state = engine.exec_workflow(
             run_id=run_id,
             template=template,
             source_dir=TEMPLATE_DIR,
@@ -204,13 +188,13 @@ class TestSynchronousWorkflowEngine(object):
         )
         assert state.is_error()
         assert len(state.messages) > 0
-        state = engine.get_state(run_id)
+        state = engine.get_run_state(run_id)
         assert state.is_error()
         assert len(state.messages) > 0
         print(state.messages)
         # An error is raised if the input file does not exist
         with pytest.raises(IOError):
-            engine.execute(
+            engine.exec_workflow(
                 run_id=util.get_unique_identifier(),
                 template=template,
                 source_dir=TEMPLATE_DIR,

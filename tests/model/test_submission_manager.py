@@ -13,13 +13,13 @@ import pytest
 
 from passlib.hash import pbkdf2_sha256
 
-from robapi.model.benchmark.engine import BenchmarkEngine
+from robcore.model.submission import SubmissionManager
 from robcore.model.template.benchmark.repo import BenchmarkRepository
-from robapi.model.submission import SubmissionManager
-from robcore.model.user.base import UserHandle
-from robcore.tests.benchmark import StateEngine
 from robcore.model.template.repo.fs import TemplateFSRepository
-from robcore.model.workflow.state.base import StatePending
+from robcore.model.user.base import UserHandle
+from robcore.model.workflow.engine import BenchmarkEngine
+from robcore.model.workflow.state import StatePending
+from robcore.tests.benchmark import StateEngine
 
 import robcore.error as err
 import robcore.tests.benchmark as wf
@@ -44,8 +44,7 @@ class TestSubmissionManager(object):
     def init(self, base_dir):
         """Create a fresh database with three users and a template repository
         with a single entry. Returns an tuple containing an instance of the
-        submission manager the handle for the created benchmark, and an
-        instance of the benchmark engine.
+        submission manager and the handle for the created benchmark.
         """
         con = db.init_db(base_dir).connect()
         sql = 'INSERT INTO api_user(user_id, name, secret, active) VALUES(?, ?, ?, ?)'
@@ -57,8 +56,12 @@ class TestSubmissionManager(object):
             con=con,
             template_repo=TemplateFSRepository(base_dir=str(base_dir))
         ).add_benchmark(name='A', src_dir=TEMPLATE_DIR)
-        submissions = SubmissionManager(con=con, directory=base_dir)
-        return submissions, bm, BenchmarkEngine(con=con, backend=StateEngine())
+        submissions = SubmissionManager(
+            con=con,
+            directory=base_dir,
+            engine=BenchmarkEngine(con=con, backend=StateEngine()
+        )
+        return submissions, bm
 
     def test_create_submission(self, tmpdir):
         """Test creating a submission."""
@@ -112,7 +115,7 @@ class TestSubmissionManager(object):
     def test_delete_submission(self, tmpdir):
         """Test creating and deleting submissions."""
         # Initialize the repository and the benchmark
-        manager, bm, engine = self.init(str(tmpdir))
+        manager, bm = self.init(str(tmpdir))
         # Create a new submission with two run results
         submission = manager.create_submission(
             benchmark_id=bm.identifier,

@@ -13,22 +13,22 @@ synchronously. Primarily intended for debugging and test purposes.
 import os
 import shutil
 
-from robcore.model.workflow.engine.base import WorkflowEngine
+from robcore.model.workflow.controller import WorkflowController
 from robcore.model.workflow.serial import SerialWorkflow
 
 import robcore.error as err
 import robcore.util as util
-import robcore.model.workflow.state.serializer as serialize
+import robcore.model.workflow.state as serialize
 
 
-class SyncWorkflowEngine(WorkflowEngine):
-    """Workflow engine that executes each workflow run synchronously. Maintains
-    workflow files in directories under a given base directory. Information
-    about workflow results are stored in files that are named using the run
-    identifier.
+class SyncWorkflowEngine(WorkflowController):
+    """Workflow controller that implements a workflow engine that executes each
+    workflow run synchronously. The engine maintains workflow files in
+    directories under a given base directory. Information about workflow results
+    are stored in files that are named using the run identifier.
 
-    The workflow engine expects workflow specifications that follow the syntax
-    of REANA serial workflows.
+    This implementation of the workflow engine expects a workflow specification
+    that follow the syntax of REANA serial workflows.
     """
     def __init__(self, base_dir):
         """Initialize the base directory. Workflow runs are maintained a
@@ -54,7 +54,7 @@ class SyncWorkflowEngine(WorkflowEngine):
         """
         pass
 
-    def execute(self, run_id, template, source_dir, arguments):
+    def exec_workflow(self, run_id, template, arguments, source_dir=None):
         """Initiate the execution of a given workflow template for a set of
         argument values. Returns the state of the workflow.
 
@@ -68,14 +68,15 @@ class SyncWorkflowEngine(WorkflowEngine):
         template: robcore.model.template.base.WorkflowTemplate
             Workflow template containing the parameterized specification and the
             parameter declarations
-        source_dir: string
-            Source directory that contains the static template files
         arguments: dict(robcore.model.template.parameter.value.TemplateArgument)
             Dictionary of argument values for parameters in the template
+        source_dir: string, optional
+            Source directory that contains the static template files. If given,
+            this value overrides the source directory in the given template.
 
         Returns
         -------
-        robcore.model.workflow.state.base.WorkflowState
+        robcore.model.workflow.state.WorkflowState
 
         Raises
         ------
@@ -93,7 +94,7 @@ class SyncWorkflowEngine(WorkflowEngine):
         # Execute the workflow synchronously and write the resulting state to
         # disk before returning
         wf = SerialWorkflow(template, arguments)
-        state = wf.run(source_dir, run_dir, verbose=True)
+        state = wf.run(run_dir, source_dir=source_dir, verbose=True)
         util.write_object(
             filename=run_file,
             obj=serialize.serialize_state(state)
@@ -128,7 +129,7 @@ class SyncWorkflowEngine(WorkflowEngine):
         """
         return os.path.join(self.base_dir, run_id + '.json')
 
-    def get_state(self, run_id):
+    def get_run_state(self, run_id):
         """Get the status of the workflow with the given identifier.
 
         Parameters
@@ -138,7 +139,7 @@ class SyncWorkflowEngine(WorkflowEngine):
 
         Returns
         -------
-        robcore.model.workflow.state.base.WorkflowState
+        robcore.model.workflow.state.WorkflowState
 
         Raises
         ------
@@ -162,11 +163,13 @@ class SyncWorkflowEngine(WorkflowEngine):
 
         Raises
         ------
-        RuntimeError
+        robcore.error.UnknownRunError
         """
         run_dir = self.get_run_dir(run_id)
         if os.path.isdir(run_dir):
             shutil.rmtree(run_dir)
+        else:
+            raise err.UnknownRunError(run_id)
         run_file = self.get_run_file(run_id)
         if os.path.isfile(run_file):
             os.remove(run_file)

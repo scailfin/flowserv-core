@@ -80,7 +80,7 @@ class SubmissionSerializer(object):
 
         Parameters
         ----------
-        submission: robapi.model.submission.SubmissionHandle
+        submission: robcore.model.submission.SubmissionHandle
             Submission handle
 
         Returns
@@ -102,7 +102,7 @@ class SubmissionSerializer(object):
 
         Parameters
         ----------
-        submission: robapi.model.submission.SubmissionHandle
+        submission: robcore.model.submission.SubmissionHandle
             Submission handle
 
         Returns
@@ -121,7 +121,7 @@ class SubmissionSerializer(object):
 
         Parameters
         ----------
-        submissions: list(robapi.model.submission.SubmissionHandle)
+        submissions: list(robcore.model.submission.SubmissionHandle)
             List of submission handles
 
         Returns

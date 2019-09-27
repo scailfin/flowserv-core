@@ -170,9 +170,9 @@ class InvalidRunStateError(ROBError):
 
         Parameters
         ----------
-        state: robcore.model.workflow.state.base.WorkflowState
+        state: robcore.model.workflow.state.WorkflowState
             Current run state
-        resulting_state: robcore.model.workflow.state.base.WorkflowState, optional
+        resulting_state: robcore.model.workflow.state.WorkflowState, optional
             Resulting workflow state (for invalid state sequence)
         """
         if resulting_state is None:

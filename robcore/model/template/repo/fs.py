@@ -16,7 +16,7 @@ import os
 import shutil
 
 from robcore.model.template.base import WorkflowTemplate
-from robcore.model.template.repo.base import TemplateHandle, TemplateRepository
+from robcore.model.template.repo.base import TemplateRepository
 from robcore.io.store.json import JsonFileStore
 
 import robcore.error as err
@@ -108,7 +108,7 @@ class TemplateFSRepository(TemplateRepository):
 
         Returns
         -------
-        robcore.model.template.repo.base.TemplateHandle
+        robcore.model.template.base.WorkflowTemplate
 
         Raises
         ------
@@ -150,17 +150,11 @@ class TemplateFSRepository(TemplateRepository):
             if os.path.isfile(filename):
                 # Read template from file. If no error occurs the folder
                 # contains a valid template.
-                workflow = WorkflowTemplate.from_dict(
+                template = WorkflowTemplate.from_dict(
                     doc=util.read_object(filename),
                     identifier=identifier,
+                    source_dir=static_dir,
                     validate=True
-                )
-                template = TemplateHandle(
-                    workflow_spec=workflow.workflow_spec,
-                    identifier=workflow.identifier,
-                    parameters=workflow.parameters,
-                    result_schema=workflow.result_schema,
-                    source_dir=static_dir
                 )
                 # Store serialized template handle on disk
                 self.store.write(
@@ -228,7 +222,7 @@ class TemplateFSRepository(TemplateRepository):
 
         Returns
         -------
-        robcore.model.template.repo.base.TemplateHandle
+        robcore.model.template.base.WorkflowTemplate
 
         Raises
         ------
@@ -237,13 +231,9 @@ class TemplateFSRepository(TemplateRepository):
         # The underlying object store will raise an UnknownObjectError if the
         # template is unknown.
         try:
-            workflow = WorkflowTemplate.from_dict(self.store.read(identifier))
+            return WorkflowTemplate.from_dict(
+                doc=self.store.read(identifier),
+                source_dir=self.get_static_dir(identifier)
+            )
         except err.UnknownObjectError:
             raise err.UnknownTemplateError(identifier)
-        return TemplateHandle(
-            workflow_spec=workflow.workflow_spec,
-            identifier=workflow.identifier,
-            parameters=workflow.parameters,
-            result_schema=workflow.result_schema,
-            source_dir=self.get_static_dir(identifier)
-        )

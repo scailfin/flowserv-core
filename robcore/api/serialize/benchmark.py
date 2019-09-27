@@ -81,7 +81,7 @@ class BenchmarkSerializer(object):
         ----------
         benchmark_id: string
             Unique benchmark identifier
-        leaderboard: robapi.model.run.result.ResultRanking
+        leaderboard: robcore.model.ranking.ResultRanking
             List of entries in the benchmark leaderboard
 
         Returns

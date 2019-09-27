@@ -42,7 +42,7 @@ class BenchmarkHandle(object):
             Optional short description for display in benchmark listings
         instructions: string, optional
             Text containing detailed instructions for benchmark participants
-        template: robcore.model.template.base.repo.TemplateHandle, optional
+        template: robcore.model.template.base.WorkflowTemplate, optional
             Template for the associated workflow
         repo: robcore.model.template.benchmark.repo.BenchmarkRepository, optional
             Template repository to load the template on demand.
@@ -100,7 +100,7 @@ class BenchmarkHandle(object):
 
         Returns
         -------
-        robapi.model.run.result.ResultRanking
+        robcore.model.ranking.ResultRanking
 
         Raises
         ------
@@ -118,7 +118,7 @@ class BenchmarkHandle(object):
 
         Returns
         -------
-        robcore.model.template.base.repo.TemplateHandle
+        robcore.model.template.base.WorkflowTemplate
         """
         # Load template if None
         if self.template is None:

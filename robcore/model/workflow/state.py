@@ -12,11 +12,15 @@ different possible states of a workflow run. There are four different states:
 (RUNNING) the workflow is actively executing at the moment,
 (ERROR) workflow execution was interrupted by an error or canceled by the user,
 (SUCCESS) the workflow run completed successfully.
+
+Contains default methods to (de-)serialize workflow state.
 """
 
 from datetime import datetime
 
 from robcore.model.workflow.resource import FileResource
+
+import robcore.util as util
 
 
 """Definition of state type identifier."""
@@ -44,6 +48,21 @@ class WorkflowState(object):
         self.type_id = type_id
         self.created_at = created_at if not created_at is None else datetime.now()
 
+    def has_changed(self, state):
+        """True if the type of this state object differs from the type of the
+        given state object.
+
+        Parameters
+        ----------
+        state: robcore.model.workflow.state.WorkflowState
+            Workflow state object
+
+        Returns
+        -------
+        bool
+        """
+        return self.type_id != state.type_id
+        
     def is_active(self):
         """A workflow is in active state if it is either pending or running.
 
@@ -191,7 +210,7 @@ class StatePending(WorkflowState):
 
         Returns
         -------
-        robcore.model.workflow.state.base.StateCanceled
+        robcore.model.workflow.state.StateCanceled
         """
         ts = datetime.now()
         return StateCanceled(
@@ -216,7 +235,7 @@ class StatePending(WorkflowState):
 
         Returns
         -------
-        robcore.model.workflow.state.base.StateError
+        robcore.model.workflow.state.StateError
         """
         ts = datetime.now()
         return StateError(
@@ -232,7 +251,7 @@ class StatePending(WorkflowState):
 
         Returns
         -------
-        robcore.model.workflow.state.base.StateRunning
+        robcore.model.workflow.state.StateRunning
         """
         return StateRunning(created_at=self.created_at)
 
@@ -268,7 +287,7 @@ class StateRunning(WorkflowState):
 
         Returns
         -------
-        robcore.model.workflow.state.base.StateCanceled
+        robcore.model.workflow.state.StateCanceled
         """
         return StateCanceled(
             created_at=self.created_at,
@@ -288,7 +307,7 @@ class StateRunning(WorkflowState):
 
         Returns
         -------
-        robcore.model.workflow.state.base.StateError
+        robcore.model.workflow.state.StateError
         """
         return StateError(
             created_at=self.created_at,
@@ -306,7 +325,7 @@ class StateRunning(WorkflowState):
 
         Returns
         -------
-        robcore.model.workflow.state.base.StateSuccess
+        robcore.model.workflow.state.StateSuccess
         """
         return StateSuccess(
             created_at=self.created_at,
@@ -333,7 +352,7 @@ class StateSuccess(WorkflowState):
             Timestamp when the workflow started running
         finished_at: datetime.datetime, optional
             Timestamp when workflow execution completed
-        files: dict(robcore.model.workflow.resource.FileResource), optional
+        files: list or dict(robcore.model.workflow.resource.FileResource), optional
             Optional dictionary of created files
 
         Raises
@@ -372,3 +391,108 @@ class StateSuccess(WorkflowState):
         robcore.model.workflow.resource.FileResource
         """
         return self.files.get(identifier)
+
+
+# -- Serialization/Deserialization helper methods ------------------------------
+
+"""Labels for serialization."""
+LABEL_CREATED_AT = 'createdAt'
+LABEL_FILENAME = 'filename'
+LABEL_FINISHED_AT = 'finishedAt'
+LABEL_ID = 'id'
+LABEL_MESSAGES = 'messages'
+LABEL_RESOURCES = 'resources'
+LABEL_STARTED_AT = 'startedAt'
+LABEL_STATE_TYPE = 'type'
+LABEL_STOPPED_AT = 'stoppedAt'
+
+
+def deserialize_state(doc):
+    """Create instance of workflow state from a given dictionary serialization.
+
+    Parameters
+    ----------
+    doc: dict
+        Serialization if the workflow state
+
+    Returns
+    -------
+    robcore.model.workflow.state.WorkflowState
+
+    Raises
+    ------
+    KeyError
+    ValueError
+    """
+    type_id = doc[LABEL_STATE_TYPE]
+    # All state serializations have to have a 'created at' timestamp
+    created_at = util.to_datetime(doc[LABEL_CREATED_AT])
+    if type_id == STATE_PENDING:
+        return StatePending(created_at=created_at)
+    elif type_id == STATE_RUNNING:
+        return StateRunning(
+            created_at=created_at,
+            started_at=util.to_datetime(doc[LABEL_STARTED_AT])
+        )
+    elif type_id == STATE_CANCELED:
+        return StateCanceled(
+            created_at=created_at,
+            started_at=util.to_datetime(doc[LABEL_STARTED_AT]),
+            stopped_at=util.to_datetime(doc[LABEL_FINISHED_AT]),
+            messages=doc[LABEL_MESSAGES]
+        )
+    elif type_id == STATE_ERROR:
+        return StateError(
+            created_at=created_at,
+            started_at=util.to_datetime(doc[LABEL_STARTED_AT]),
+            stopped_at=util.to_datetime(doc[LABEL_FINISHED_AT]),
+            messages=doc[LABEL_MESSAGES]
+        )
+    elif type_id == STATE_SUCCESS:
+        files = dict()
+        for obj in doc[LABEL_RESOURCES]:
+            res_id = obj[LABEL_ID]
+            res = FileResource(identifier=res_id, filename=obj[LABEL_FILENAME])
+            files[res_id] = res
+        return StateSuccess(
+            created_at=created_at,
+            started_at=util.to_datetime(doc[LABEL_STARTED_AT]),
+            finished_at=util.to_datetime(doc[LABEL_FINISHED_AT]),
+            files=files
+        )
+    else:
+        raise ValueError('invalid state type \'{}\''.format(type_id))
+
+
+def serialize_state(state):
+    """Create dictionary serialization if a given workflow state.
+
+    Parameters
+    ----------
+    state: robcore.model.workflow.state.WorkflowState
+        Workflow state
+
+    Returns
+    -------
+    dict
+    """
+    doc = {
+        LABEL_STATE_TYPE: state.type_id,
+        LABEL_CREATED_AT: state.created_at.isoformat()
+    }
+    if state.is_running():
+        doc[LABEL_STARTED_AT] = state.started_at.isoformat()
+    elif state.is_canceled() or state.is_error():
+        doc[LABEL_STARTED_AT] = state.started_at.isoformat()
+        doc[LABEL_FINISHED_AT] = state.stopped_at.isoformat()
+        doc[LABEL_MESSAGES] = state.messages
+    elif state.is_success():
+        doc[LABEL_STARTED_AT] = state.started_at.isoformat()
+        doc[LABEL_FINISHED_AT] = state.finished_at.isoformat()
+        doc[LABEL_RESOURCES] = [
+            {
+                LABEL_ID: f.identifier,
+                LABEL_FILENAME: f.filename
+            } for f in state.files.values()
+        ]
+    return doc

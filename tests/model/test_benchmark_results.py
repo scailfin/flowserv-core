@@ -15,7 +15,7 @@ from passlib.hash import pbkdf2_sha256
 
 from robapi.model.benchmark.engine import BenchmarkEngine
 from robcore.model.template.benchmark.repo import BenchmarkRepository
-from robapi.model.submission import SubmissionManager
+from robcore.model.submission import SubmissionManager
 from robcore.tests.benchmark import StateEngine
 from robcore.model.template.schema import SortColumn
 from robcore.model.template.repo.fs import TemplateFSRepository

@@ -30,7 +30,7 @@ class RunService(object):
         ----------
         engine: robapi.model.benchmark.engine.BenchmarkEngine
             Benchmark engine
-        submissions: robapi.model.submission.SubmissionManager
+        submissions: robcore.model.submission.SubmissionManager
             Manager for benchmark submissions
         repo: robcore.model.template.benchmark.repo.BenchmarkRepository
             Repository to access registered benchmarks

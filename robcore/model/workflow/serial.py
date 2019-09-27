@@ -20,7 +20,7 @@ from datetime import datetime
 from string import Template
 
 from robcore.model.workflow.resource import FileResource
-from robcore.model.workflow.state.base import StateError, StateSuccess
+from robcore.model.workflow.state import StateError, StateSuccess
 
 import robcore.model.template.util as tmpl
 import robcore.model.workflow.io as fileio
@@ -48,20 +48,22 @@ class SerialWorkflow(object):
         self.parameters = template.parameters
         self.workflow_spec = template.workflow_spec
 
-    def copy_files(self, source_dir, target_dir):
+    def copy_files(self, target_dir, source_dir=None):
         """Copy all code and input files to the target directory.
 
         Parameters
         ----------
-        source_dir: string
-            Source directory that contains the static template files
         target_dir: string
             Target directory for copied files (e.g., base directory for a
             workflow run)
+        source_dir: string, optional
+            Source directory that contains the static template files. If given,
+            this value overrides the source directory in the given template.
         """
+        base_dir = source_dir if not source_dir is None else self.template.source_dir
         fileio.upload_files(
             template=self.template,
-            base_dir=source_dir,
+            base_dir=base_dir,
             files=self.workflow_spec.get('inputs', {}).get('files', []),
             arguments=self.arguments,
             loader=fileio.FileCopy(target_dir)
@@ -98,24 +100,25 @@ class SerialWorkflow(object):
                 result.append(Template(cmd).substitute(workflow_parameters))
         return result
 
-    def run(self, source_dir, run_dir, verbose=False):
+    def run(self, run_dir, source_dir=None, verbose=False):
         """Run workflow for a given template and set of argument values.
 
         Parameters
         ----------
-        source_dir: string
-            Source directory that contains the static template files
         run_dir: string
             Base directory for all workflow run files
+        source_dir: string, optional
+            Source directory that contains the static template files. If given,
+            this value overrides the source directory in the given template.
         verbose: bool, optional
             Output executed commands if flag is True
 
         Returns
         -------
-        robcore.model.workflow.state.base.WorkflowState
+        robcore.model.workflow.state.WorkflowState
         """
         # Copy all required code and input files
-        self.copy_files(source_dir, run_dir)
+        self.copy_files(run_dir, source_dir=source_dir)
         # Run workflow step-by-step
         ts_start = datetime.now()
         for cmd in self.get_commands():

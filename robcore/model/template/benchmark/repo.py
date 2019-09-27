@@ -17,7 +17,7 @@ from robcore.model.template.benchmark.base import BenchmarkHandle
 
 import robcore.error as err
 import robcore.model.constraint as constraint
-import robcore.model.ranking.store as ranking
+import robcore.model.ranking as ranking
 import robcore.model.template.parameter.declaration as pd
 
 
@@ -97,7 +97,8 @@ class BenchmarkRepository(object):
             ranking.create_result_table(
                 con=self.con,
                 benchmark_id=t_id,
-                schema=schema
+                schema=schema,
+                commit_changes=False
             )
             result_schema = json.dumps(schema.to_dict())
         else:

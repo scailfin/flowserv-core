@@ -13,7 +13,7 @@ import os
 from passlib.hash import pbkdf2_sha256
 
 from robapi.model.benchmark.engine import BenchmarkEngine
-from robapi.model.submission import SubmissionManager
+from robcore.model.submission import SubmissionManager
 from robcore.model.template.benchmark.repo import BenchmarkRepository
 from robapi.service.benchmark import BenchmarkService
 from robcore.tests.benchmark import StateEngine

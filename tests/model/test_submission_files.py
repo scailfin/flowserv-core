@@ -14,7 +14,7 @@ import pytest
 from passlib.hash import pbkdf2_sha256
 
 from robcore.model.template.benchmark.repo import BenchmarkRepository
-from robapi.model.submission import SubmissionManager
+from robcore.model.submission import SubmissionManager
 from robcore.tests.io import FakeStream
 from robcore.model.template.repo.fs import TemplateFSRepository
 

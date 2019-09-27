@@ -12,7 +12,7 @@ import datetime as dt
 import os
 import pytest
 
-from robcore.model.workflow.state.base import (
+from robcore.model.workflow.state import (
     StateCanceled, StateError, StatePending, StateRunning, StateSuccess,
     WorkflowState
 )

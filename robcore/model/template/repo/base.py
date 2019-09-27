@@ -22,44 +22,6 @@ import robcore.util as util
 DEFAULT_MAX_ATTEMPTS = 100
 
 
-class TemplateHandle(WorkflowTemplate):
-    """The template handle extends the workflow template with the path to the
-    base directory that contains all the static workflow files.
-    """
-    def __init__(
-        self, workflow_spec, source_dir, identifier=None, parameters=None,
-        result_schema=None
-    ):
-        """Initialize the components of the template handle.
-
-        Parameters
-        ----------
-        workflow_spec: dict
-            Workflow specification object
-        source_dir: string
-            Path to the base directory that contains the static workflow files
-        identifier: string, optional
-            Unique template identifier. If no value is given a UUID will be
-            assigned.
-        parameters: dict(string:robcore.model.template.parameter.base.TemplateParameter), optional
-            Dictionary of workflow template parameter declarations keyed by
-            their unique identifier.
-        result_schema: robcore.model.template.schema.ResultSchema
-            Schema of the result for extended templates that define benchmarks.
-
-        Raises
-        ------
-        robcore.error.InvalidTemplateError
-        """
-        super(TemplateHandle, self).__init__(
-            workflow_spec=workflow_spec,
-            identifier=identifier,
-            parameters=parameters,
-            result_schema=result_schema
-        )
-        self.source_dir = source_dir
-
-
 class TemplateRepository(object):
     """The template repository maintains a set of workflow templates. For each
     workflow template a copy of the static files that are used as input in the
@@ -117,7 +79,7 @@ class TemplateRepository(object):
 
         Returns
         -------
-        robcore.model.template.repo.base.TemplateHandle
+        robcore.model.template.base.WorkflowTemplate
 
         Raises
         ------
@@ -164,7 +126,7 @@ class TemplateRepository(object):
 
         Returns
         -------
-        robcore.model.template.repo.base.TemplateHandle
+        robcore.model.template.base.WorkflowTemplate
 
         Raises
         ------

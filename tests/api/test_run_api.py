@@ -14,7 +14,7 @@ import pytest
 from passlib.hash import pbkdf2_sha256
 
 from robcore.model.user.auth import DefaultAuthPolicy
-from robapi.model.submission import SubmissionManager
+from robcore.model.submission import SubmissionManager
 from robapi.model.benchmark.engine import BenchmarkEngine
 from robcore.model.template.benchmark.repo import BenchmarkRepository
 from robcore.model.user.base import UserManager
@@ -24,7 +24,7 @@ from robapi.service.submission import SubmissionService
 from robcore.tests.benchmark import StateEngine
 from robcore.tests.io import FakeStream
 from robcore.model.template.repo.fs import TemplateFSRepository
-from robcore.model.workflow.state.base import StatePending
+from robcore.model.workflow.state import StatePending
 from robcore.model.workflow.resource import FileResource
 
 import robcore.error as err
@@ -33,7 +33,7 @@ import robapi.serialize.labels as labels
 import robcore.tests.db as db
 import robcore.tests.serialize as serialize
 import robcore.util as util
-import robcore.model.workflow.state.base as wf
+import robcore.model.workflow.state as wf
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))

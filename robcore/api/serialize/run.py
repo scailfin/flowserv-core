@@ -31,7 +31,7 @@ class RunSerializer(object):
 
         Parameters
         ----------
-        run: robapi.model.run.base.RunHandle
+        run: robcore.model.workflow.run.RunHandle
             Submission handle
 
         Returns
@@ -67,7 +67,7 @@ class RunSerializer(object):
 
         Parameters
         ----------
-        run: robapi.model.run.base.RunHandle
+        run: robcore.model.workflow.run.RunHandle
             Submission handle
 
         Returns
@@ -88,7 +88,7 @@ class RunSerializer(object):
 
         Parameters
         ----------
-        runs: list(robapi.model.run.base.RunHandle)
+        runs: list(robcore.model.workflow.run.RunHandle)
             List of run handles
         submission_id: string
             Unique submission identifier
