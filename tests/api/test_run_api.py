@@ -16,7 +16,7 @@ from passlib.hash import pbkdf2_sha256
 from robcore.model.user.auth import DefaultAuthPolicy
 from robcore.model.submission import SubmissionManager
 from robapi.model.benchmark.engine import BenchmarkEngine
-from robcore.model.template.benchmark.repo import BenchmarkRepository
+from robcore.model.template.repo.benchmark import BenchmarkRepository
 from robcore.model.user.base import UserManager
 from robapi.service.benchmark import BenchmarkService
 from robapi.service.run import RunService

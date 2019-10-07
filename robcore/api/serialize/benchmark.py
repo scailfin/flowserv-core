@@ -33,7 +33,7 @@ class BenchmarkSerializer(object):
 
         Parameters
         ----------
-        benchmark: robcore.model.template.benchmark.base.BenchmarkHandle
+        benchmark: robcore.model.template.benchmark.BenchmarkHandle
             Competition handle
 
         Returns
@@ -125,7 +125,7 @@ class BenchmarkSerializer(object):
 
         Parameters
         ----------
-        benchmarks: list(robcore.model.template.benchmark.base.BenchmarkHandle)
+        benchmarks: list(robcore.model.template.benchmark.BenchmarkHandle)
             List of benchmark descriptors
 
         Returns

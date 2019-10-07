@@ -24,7 +24,7 @@ class BenchmarkService(object):
 
         Parameters
         ----------
-        repo: robcore.model.template.benchmark.repo.BenchmarkRepository
+        repo: robcore.model.template.repo.benchmark.BenchmarkRepository
             Repository to access registered benchmarks
         urls: robapi.service.route.UrlFactory
             Factory for API resource Urls

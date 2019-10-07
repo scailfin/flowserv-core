@@ -6,200 +6,178 @@
 # ROB is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
-"""Test functionality that retrieves benchmark result rankings."""
+"""Test functionality for the module that maintains and retrieves benchmark
+result rankings.
+"""
 
+import json
 import os
 import pytest
 
 from passlib.hash import pbkdf2_sha256
 
-from robapi.model.benchmark.engine import BenchmarkEngine
-from robcore.model.template.benchmark.repo import BenchmarkRepository
-from robcore.model.submission import SubmissionManager
-from robcore.tests.benchmark import StateEngine
 from robcore.model.template.schema import SortColumn
-from robcore.model.template.repo.fs import TemplateFSRepository
+from robcore.model.workflow.resource import FileResource
 
-import robcore.error as err
-import robcore.tests.benchmark as wf
+import robcore.model.ranking as ranking
+import robcore.model.workflow.run as runstore
+import robcore.model.workflow.state as wfstate
+import robcore.tests.benchmark as bm
 import robcore.tests.db as db
 import robcore.util as util
 
-
-DIR = os.path.dirname(os.path.realpath(__file__))
-TEMPLATE_DIR = os.path.join(DIR, '../.files/benchmark/helloworld')
-TEMPLATE_WITHOUT_SCHEMA = os.path.join(DIR, '../.files/templates/template.json')
-
-
-USER_1 = util.get_unique_identifier()
+BENCHMARK_1 = util.get_unique_identifier()
+BENCHMARK_2 = util.get_unique_identifier()
+SUBMISSION_1 = util.get_unique_identifier()
+SUBMISSION_2 = util.get_unique_identifier()
+SUBMISSION_3 = util.get_unique_identifier()
+USER_ID = util.get_unique_identifier()
 
 
 class TestBenchmarkResultRanking(object):
-    """Unit tests for getting and setting run states. Uses a fake backend to
-    simulate workflow execution.
+    """Unit tests for inserting benchmark results and for retrieving result
+    rankings.
     """
     def init(self, base_dir):
-        """Create a fresh database with three users and return an open
-        connection to the database. Returns instances of the benchmark
-        repository, benchmark engine and the submission manager.
+        """Create a fresh database with one user, two benchmark, and three
+        submissions. The first benchmark has a schema and two submissions while
+        the second benchmark has no schema and one submission.
         """
         con = db.init_db(base_dir).connect()
         sql = 'INSERT INTO api_user(user_id, name, secret, active) VALUES(?, ?, ?, ?)'
-        con.execute(sql, (USER_1, USER_1, pbkdf2_sha256.hash(USER_1), 1))
-        con.commit()
-        repo = BenchmarkRepository(
+        con.execute(sql, (USER_ID, USER_ID, pbkdf2_sha256.hash(USER_ID), 1))
+        sql = 'INSERT INTO benchmark(benchmark_id, name, result_schema) '
+        sql += 'VALUES(?, ?, ?)'
+        schema = json.dumps(bm.BENCHMARK_SCHEMA.to_dict())
+        con.execute(sql, (BENCHMARK_1, BENCHMARK_1, schema))
+        sql = 'INSERT INTO benchmark(benchmark_id, name) VALUES(?, ?)'
+        con.execute(sql, (BENCHMARK_2, BENCHMARK_2))
+        sql = 'INSERT INTO benchmark_submission('
+        sql += 'submission_id, name, benchmark_id, owner_id'
+        sql += ') VALUES(?, ?, ?, ?)'
+        con.execute(sql, (SUBMISSION_1, SUBMISSION_1, BENCHMARK_1, USER_ID))
+        con.execute(sql, (SUBMISSION_2, SUBMISSION_2, BENCHMARK_1, USER_ID))
+        con.execute(sql, (SUBMISSION_3, SUBMISSION_3, BENCHMARK_2, USER_ID))
+        ranking.create_result_table(
             con=con,
-            template_repo=TemplateFSRepository(base_dir=base_dir)
+            benchmark_id=BENCHMARK_1,
+            schema=bm.BENCHMARK_SCHEMA,
+            commit_changes=False
         )
-        engine = BenchmarkEngine(con=con, backend=StateEngine())
-        submissions = SubmissionManager(con=con, directory=base_dir)
-        return repo, engine, submissions
+        con.commit()
+        self.con = con
 
-    def test_get_results(self, tmpdir):
-        """Test get result ranking for different submissions."""
-        # Initialize the repository, benchmark engine and submission manager
-        repo, engine, submissions = self.init(str(tmpdir))
-        # Add two benchmarks and create two submissions for the first benchmark
-        # and one submission for the second
-        bm1 = repo.add_benchmark(name='A', src_dir=TEMPLATE_DIR)
-        bm2 = repo.add_benchmark(name='B', src_dir=TEMPLATE_DIR)
-        s1 = submissions.create_submission(
-            benchmark_id=bm1.identifier,
-            name='A',
-            user_id=USER_1
+    def create_run(self, submission_id, values, base_dir):
+        """Create a successful run for the given submission with the given
+        result values.
+        """
+        run = runstore.create_run(
+            con=self.con,
+            submission_id=submission_id,
+            arguments=dict(),
+            commit_changes=True
         )
-        s2 = submissions.create_submission(
-            benchmark_id=bm1.identifier,
-            name='B',
-            user_id=USER_1
+        if not values is None:
+            filename = os.path.join(base_dir, 'results.json')
+            util.write_object(obj=values, filename=filename)
+            files = [FileResource(identifier=bm.RESULT_FILE_ID, filename=filename)]
+        else:
+            files = dict()
+        runstore.update_run(
+            con=self.con,
+            run_id=run.identifier,
+            state=wfstate.StatePending().start().success(files=files),
+            commit_changes=True
         )
-        s3 = submissions.create_submission(
-            benchmark_id=bm2.identifier,
-            name='A',
-            user_id=USER_1
-        )
-        # Insert three run results for the first submission and one for the
-        # second submission
-        wf.run_workflow(
-            engine=engine,
-            template=bm1.get_template(),
-            submission_id=s1.identifier,
-            base_dir=str(tmpdir),
-            values={'max_len': 10, 'avg_count': 11.1, 'max_line': 'L3'}
-        )
-        wf.run_workflow(
-            engine=engine,
-            template=bm1.get_template(),
-            submission_id=s1.identifier,
-            base_dir=str(tmpdir),
-            values={'max_len': 5, 'avg_count': 21.1, 'max_line': 'L1'}
-        )
-        wf.run_workflow(
-            engine=engine,
-            template=bm1.get_template(),
-            submission_id=s1.identifier,
-            base_dir=str(tmpdir),
-            values={'max_len': 8, 'avg_count': 28.3, 'max_line': 'L1'}
-        )
-        wf.run_workflow(
-            engine=engine,
-            template=bm1.get_template(),
-            submission_id=s2.identifier,
-            base_dir=str(tmpdir),
-            values={'max_len': 25, 'avg_count': 25.1, 'max_line': 'L4'}
-        )
-        wf.run_workflow(
-            engine=engine,
-            template=bm2.get_template(),
-            submission_id=s3.identifier,
-            base_dir=str(tmpdir),
-            values={'max_len': 35, 'avg_count': 30.0, 'max_line': 'L1'}
-        )
-        assert s1.get_results().size() == 3
-        assert s2.get_results().size() == 1
-        assert s3.get_results().size() == 1
-        s1 = submissions.get_submission(submission_id=s1.identifier)
-        results = s1.get_results(order_by=[SortColumn('max_len')])
-        assert results.size() == 3
-        assert results.get(0).get('max_len') == 10
-        assert results.get(1).get('max_len') == 8
-        assert results.get(2).get('max_len') == 5
-        results = s1.get_results(
-            order_by=[SortColumn('max_len', sort_desc=False)]
-        )
-        assert results.size() == 3
-        assert results.get(0).get('max_len') == 5
-        assert results.get(1).get('max_len') == 8
-        assert results.get(2).get('max_len') == 10
-        results = s1.get_results(
-            order_by=[
-                SortColumn('max_line', sort_desc=False),
-                SortColumn('avg_count')
-            ]
-        )
-        assert results.size() == 3
-        assert results.get(0).get('max_len') == 8
-        assert results.get(1).get('max_len') == 5
-        assert results.get(2).get('max_len') == 10
-        # Leader board
-        assert repo.get_leaderboard(bm1.identifier).size() == 2
-        assert repo.get_leaderboard(bm1.identifier, include_all=True).size() == 4
-        assert repo.get_leaderboard(bm2.identifier).size() == 1
-        leaderboard = bm1.get_leaderboard()
-        assert leaderboard.size() == 2
-        assert leaderboard.get(0).get('max_len') == 8
-        assert leaderboard.get(1).get('max_len') == 25
 
-    def test_results_for_empty_schema(self, tmpdir):
-        """Test get result ranking for template without result schema."""
-        # Initialize the repository, benchmark engine and submission manager
-        repo, engine, submissions = self.init(str(tmpdir))
-        # Add benchmark and create two submissions
-        benchmark = repo.add_benchmark(
-            name='A',
-            src_dir=TEMPLATE_DIR,
-            spec_file=TEMPLATE_WITHOUT_SCHEMA
+    def test_get_leaderboard(self, tmpdir):
+        """Test inserting results for submission runs and retrieving benchmark
+        leaderboards.
+        """
+        self.init(str(tmpdir))
+        self.create_run(SUBMISSION_1, {'col1': 1, 'col2': 10.7}, str(tmpdir))
+        self.create_run(SUBMISSION_1, {'col1': 5, 'col2': 1.3}, str(tmpdir))
+        self.create_run(SUBMISSION_1, {'col1': 10, 'col2': 1.3}, str(tmpdir))
+        self.create_run(SUBMISSION_2, {'col1': 7, 'col2': 12.7}, str(tmpdir))
+        self.create_run(SUBMISSION_2, {'col1': 3, 'col2': 8.3}, str(tmpdir))
+        sql = 'SELECT COUNT(*) FROM ' + ranking.RESULT_TABLE(BENCHMARK_1)
+        r = self.con.execute(sql).fetchone()
+        assert r[0] == 5
+        # Sort by the default column col1 in descending order. Expects two
+        # entries:
+        # 1. SUBMISSION_1['col1'] = 10
+        # 2. SUBMISSION_2['col1'] =  7
+        results = ranking.get_leaderboard(
+            con=self.con,
+            benchmark_id=BENCHMARK_1,
+            order_by=None,
+            include_all=False
         )
-        s1 = submissions.create_submission(
-            benchmark_id=benchmark.identifier,
-            name='A',
-            user_id=USER_1
+        assert results.size() == 2
+        run_1 = results.get(0)
+        assert run_1.submission_id == SUBMISSION_1
+        assert run_1.get('col1') == 10
+        run_2 = results.get(1)
+        assert run_2.submission_id == SUBMISSION_2
+        assert run_2.get('col1') == 7
+        # Ensure that the result schema contains the three columns col1, col2,
+        # and col3.
+        names = results.names()
+        assert len(names) == 3
+        for col in ['col1', 'col2', 'col3']:
+            assert col in names
+        # Include all results. Expects 5 entries
+        results = ranking.get_leaderboard(
+            con=self.con,
+            benchmark_id=BENCHMARK_1,
+            order_by=None,
+            include_all=True
         )
-        s2 = submissions.create_submission(
-            benchmark_id=benchmark.identifier,
-            name='B',
-            user_id=USER_1
+        assert results.size() == 5
+        # Sort by the col2 and col1 in ascending order. Expects two
+        # entries:
+        # 1. SUBMISSION_1['col1'] = 5
+        # 2. SUBMISSION_2['col1'] = 3
+        results = ranking.get_leaderboard(
+            con=self.con,
+            benchmark_id=BENCHMARK_1,
+            order_by=[SortColumn('col2', False), SortColumn('col1', False)],
+            include_all=False
         )
-        # Insert three run results for the first submission and one for the
-        # second submission
-        wf.run_workflow(
-            engine=engine,
-            template=benchmark.get_template(),
-            submission_id=s1.identifier,
-            base_dir=str(tmpdir)
+        assert results.size() == 2
+        run_1 = results.get(0)
+        assert run_1.submission_id == SUBMISSION_1
+        assert run_1.get('col1') == 5
+        run_2 = results.get(1)
+        assert run_2.submission_id == SUBMISSION_2
+        assert run_2.get('col1') == 3
+        # Sort by the col2 and col1 in ascending order. Include all results.
+        # Expects five entries with the first two belonging to SUBMISSION 1:
+        # 1. SUBMISSION_1['col1'] = 5
+        # 2. SUBMISSION_1['col1'] = 10
+        results = ranking.get_leaderboard(
+            con=self.con,
+            benchmark_id=BENCHMARK_1,
+            order_by=[SortColumn('col2', False), SortColumn('col1', False)],
+            include_all=True
         )
-        wf.run_workflow(
-            engine=engine,
-            template=benchmark.get_template(),
-            submission_id=s1.identifier,
-            base_dir=str(tmpdir)
-        )
-        wf.run_workflow(
-            engine=engine,
-            template=benchmark.get_template(),
-            submission_id=s1.identifier,
-            base_dir=str(tmpdir)
-        )
-        wf.run_workflow(
-            engine=engine,
-            template=benchmark.get_template(),
-            submission_id=s2.identifier,
-            base_dir=str(tmpdir)
-        )
-        assert s1.get_results().size() == 3
-        assert s2.get_results().size() == 1
-        s1 = submissions.get_submission(submission_id=s1.identifier)
-        results = s1.get_results(order_by=[SortColumn('max_len')])
-        assert results.size() == 3
-        for e in results.entries:
-            assert len(e.values) == 0
+        assert results.size() == 5
+        run_1 = results.get(0)
+        assert run_1.submission_id == SUBMISSION_1
+        assert run_1.get('col1') == 5
+        run_2 = results.get(1)
+        assert run_2.submission_id == SUBMISSION_1
+        assert run_2.get('col1') == 10
+
+    def test_insert_results(self, tmpdir):
+        """Test inserting results for submission runs."""
+        self.init(str(tmpdir))
+        self.create_run(SUBMISSION_1, {'col1': 1, 'col2': 10.7}, str(tmpdir))
+        self.create_run(SUBMISSION_1, {'col1': 5, 'col2': 5.5}, str(tmpdir))
+        self.create_run(SUBMISSION_1, None, str(tmpdir))
+        self.create_run(SUBMISSION_2, {'col1': 7, 'col2': 12.7}, str(tmpdir))
+        self.create_run(SUBMISSION_2, {'col1': 3, 'col2': 8.3}, str(tmpdir))
+        self.create_run(SUBMISSION_3, {'col1': 6, 'col2': 6.3}, str(tmpdir))
+        sql = 'SELECT COUNT(*) FROM ' + ranking.RESULT_TABLE(BENCHMARK_1)
+        r = self.con.execute(sql).fetchone()
+        assert r[0] == 4

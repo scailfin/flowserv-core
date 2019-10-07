@@ -13,14 +13,14 @@ import os
 import pytest
 import sqlite3
 
-from robcore.model.template.benchmark.base import BenchmarkHandle
-from robcore.model.template.benchmark.repo import BenchmarkRepository
+from robcore.model.template.benchmark import BenchmarkHandle
+from robcore.model.template.repo.benchmark import BenchmarkRepository
 from robcore.tests.repo import DictRepo
 from robcore.model.template.schema import ResultSchema
 from robcore.model.template.repo.fs import TemplateFSRepository
 
 import robcore.error as err
-import robcore.model.ranking.store as ranking
+import robcore.model.ranking as ranking
 import robcore.tests.db as db
 
 

@@ -65,7 +65,10 @@ class StateEngine(WorkflowController):
         self.messages = messages
         self.values = values if not values is None else {'col1': 1, 'col2': 1.1, 'col3': 'R0'}
         self.result_file_id = result_file_id if not result_file_id is None else RESULT_FILE_ID
-        self.base_dir = base_dir
+        if not base_dir is None:
+            self.base_dir = util.create_dir(base_dir)
+        else:
+            self.base_dir = None
         # Index of workflow runs
         self.runs = dict()
 
@@ -95,10 +98,15 @@ class StateEngine(WorkflowController):
         ----------
         messages: list(string), optional
             Default error messages
+
+        Returns
+        -------
+        robcore.tests.benchmark.StateEngine
         """
         self.state = st.STATE_ERROR
         if not messages is None:
             self.messages = messages
+        return self
 
     def exec_workflow(self, run_id, template, arguments, source_dir=None):
         """Fake execute method that returns the workflow state that the was
@@ -131,7 +139,8 @@ class StateEngine(WorkflowController):
             run = st.StatePending().cancel(messages=self.messages)
         else:
             if not self.values is None:
-                result_file = os.path.join(self.base_dir, RESULT_FILE_ID)
+                filename = util.get_unique_identifier() + '.json'
+                result_file = os.path.join(self.base_dir, filename)
                 util.write_object(filename=result_file, obj=self.values)
                 file_id = self.result_file_id
                 f = FileResource(identifier=file_id, filename=result_file)
@@ -186,7 +195,12 @@ class StateEngine(WorkflowController):
         ----------
         values: dict, optional
             Default values for the result file
+
+        Returns
+        -------
+        robcore.tests.benchmark.StateEngine
         """
         self.state = st.STATE_SUCCESS
         if not values is None:
             self.values = values
+        return self

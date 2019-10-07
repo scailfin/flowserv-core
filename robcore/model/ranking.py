@@ -74,7 +74,7 @@ class ResultRanking(object):
 
 class RunResult(object):
     """Handle for the analytics results of a successful workflow run. Maintains
-    the run identifier, run timestampls, submission names, and a dictionary
+    the run identifier, run timestamps, submission information, and a dictionary
     containing the generated values. The elements in the dictionary are defined
     by the result schema in the respective benchmark template.
     """
@@ -197,9 +197,10 @@ def create_result_table(con, benchmark_id, schema, commit_changes=True):
         cols.append(stmt)
     sql = 'CREATE TABLE {}({}, PRIMARY KEY(run_id))'
     con.execute(sql.format(result_table, ','.join(cols)))
+    if commit_changes:
+        con.commit()
 
-
-def get_leaderboard(self, benchmark_id, order_by=None, include_all=False):
+def get_leaderboard(con, benchmark_id, order_by=None, include_all=False):
     """Get current leaderboard for a given benchmark. The result is a
     ranking of run results. Each entry contains the run and submission
     information, as well as a dictionary with the results of the respective
@@ -210,6 +211,8 @@ def get_leaderboard(self, benchmark_id, order_by=None, include_all=False):
 
     Parameters
     ----------
+    con: DB-API 2.0 database connection
+        Connection to underlying database
     benchmark_id: string
         Unique benchmark identifier
     order_by: list(robcore.model.template.schema.SortColumn), optional
@@ -229,7 +232,7 @@ def get_leaderboard(self, benchmark_id, order_by=None, include_all=False):
     # Get the result schema for the benchmark. Will raise an error if the
     # benchmark does not exist.
     sql = 'SELECT result_schema FROM benchmark WHERE benchmark_id = ?'
-    row = self.con.execute(sql, (benchmark_id,)).fetchone()
+    row = con.execute(sql, (benchmark_id,)).fetchone()
     if row is None:
         raise err.UnknownBenchmarkError(benchmark_id)
     # Get the result schema as defined in the workflow template
@@ -237,8 +240,8 @@ def get_leaderboard(self, benchmark_id, order_by=None, include_all=False):
         schema = ResultSchema.from_dict(json.loads(row['result_schema']))
     else:
         schema = ResultSchema()
-    return ResultRanking.query(
-        con=self.con,
+    return query(
+        con=con,
         benchmark_id=benchmark_id,
         schema=schema,
         filter_stmt='s.benchmark_id = ?',
@@ -314,6 +317,7 @@ def insert_run_results(con, run_id, files, commit_changes=True):
             ','.join(['?'] * len(columns))
         )
         con.execute(sql, values)
+
 
 def query(
     con, benchmark_id, schema, filter_stmt=None, args=None, order_by=None,

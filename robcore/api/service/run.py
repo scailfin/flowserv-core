@@ -32,7 +32,7 @@ class RunService(object):
             Benchmark engine
         submissions: robcore.model.submission.SubmissionManager
             Manager for benchmark submissions
-        repo: robcore.model.template.benchmark.repo.BenchmarkRepository
+        repo: robcore.model.template.repo.benchmark.BenchmarkRepository
             Repository to access registered benchmarks
         auth: robcore.model.user.auth.Auth
             Implementation of the authorization policy for the API

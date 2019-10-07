@@ -15,7 +15,7 @@ from passlib.hash import pbkdf2_sha256
 
 from robcore.model.user.auth import DefaultAuthPolicy
 from robcore.model.submission import SubmissionManager
-from robcore.model.template.benchmark.repo import BenchmarkRepository
+from robcore.model.template.repo.benchmark import BenchmarkRepository
 from robcore.model.user.base import UserManager
 from robapi.service.submission import SubmissionService
 from robcore.tests.io import FakeStream

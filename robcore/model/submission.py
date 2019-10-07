@@ -78,10 +78,7 @@ class SubmissionHandle(object):
         list(robcore.model.user.base.UserHandle)
         """
         if self.members is None:
-            self.members = self.manager.list_members(
-                submission_id=self.identifier,
-                raise_error=False
-            )
+            self.members = self.manager.list_members(self.identifier)
         return self.members
 
     def get_results(self, order_by=None):
@@ -225,8 +222,10 @@ class SubmissionManager(object):
         sql = 'SELECT name FROM benchmark_submission '
         sql += 'WHERE benchmark_id = \'{}\' AND name = ?'.format(benchmark_id)
         constraint.validate_name(name, con=self.con, sql=sql)
-        # Create a new instance of the sumbission class.
+        # Create a unique identifier for the new submission and the submission
+        # upload directory
         identifier = util.get_unique_identifier()
+        util.create_dir(os.path.join(self.directory, identifier))
         # Add owner to list of initial members
         if members is None:
             members = list([user_id])
@@ -288,7 +287,10 @@ class SubmissionManager(object):
         Raises
         ------
         robcore.error.InvalidRunStateError
+        robcore.error.UnknownSubmissionError
         """
+        # Get submission handle to ensure that the submission exists
+        self.get_submission(submission_id, load_members=False)
         # Get a list of submission runs to delete them individually
         sql = 'SELECT run_id FROM benchmark_run WHERE submission_id = ?'
         for row in self.con.execute(sql, (submission_id,)).fetchall():
@@ -434,7 +436,7 @@ class SubmissionManager(object):
         owner_id = row['owner_id']
         # Get list of team members (only of load flag is True)
         if load_members:
-            members = self.list_members(submission_id, raise_error=False)
+            members = self.list_members(submission_id)
         else:
             members = None
         # Return the submission handle
@@ -643,11 +645,14 @@ class SubmissionManager(object):
         Raises
         ------
         robcore.error.ConstraintViolationError
+        robcore.error.UnknownSubmissionError
         """
         # Ensure that the given file name is valid
         constraint.validate_name(file_name)
+        # Get submission handle to ensure that the submission exists
+        self.get_submission(submission_id, load_members=False)
         # Ensure that the directory for submission uploads exists
-        file_dir = util.create_dir(os.path.join(self.directory, submission_id))
+        file_dir = os.path.join(self.directory, submission_id)
         # Create a new unique identifier for the file.
         identifier = util.get_unique_identifier()
         # Save the file object to the new file path

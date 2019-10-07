@@ -13,7 +13,7 @@ the workflow template and the result files of individual workflow runs.
 
 import json
 
-from robcore.model.template.benchmark.base import BenchmarkHandle
+from robcore.model.template.benchmark import BenchmarkHandle
 
 import robcore.error as err
 import robcore.model.constraint as constraint
@@ -71,7 +71,7 @@ class BenchmarkRepository(object):
 
         Returns
         -------
-        robcore.model.template.benchmark.base.BenchmarkHandle
+        robcore.model.template.benchmark.BenchmarkHandle
 
         Raises
         ------
@@ -157,7 +157,7 @@ class BenchmarkRepository(object):
 
         Returns
         -------
-        robcore.model.template.benchmark.base.BenchmarkHandle
+        robcore.model.template.benchmark.BenchmarkHandle
 
         Raises
         ------
@@ -187,7 +187,7 @@ class BenchmarkRepository(object):
 
         Returns
         -------
-        list(robcore.model.template.benchmark.base.BenchmarkHandle)
+        list(robcore.model.template.benchmark.BenchmarkHandle)
         """
         sql = 'SELECT benchmark_id, name, description, instructions '
         sql += 'FROM benchmark '

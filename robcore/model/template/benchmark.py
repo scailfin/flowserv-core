@@ -44,7 +44,7 @@ class BenchmarkHandle(object):
             Text containing detailed instructions for benchmark participants
         template: robcore.model.template.base.WorkflowTemplate, optional
             Template for the associated workflow
-        repo: robcore.model.template.benchmark.repo.BenchmarkRepository, optional
+        repo: robcore.model.template.repo.benchmark.BenchmarkRepository, optional
             Template repository to load the template on demand.
 
         Raises
@@ -80,37 +80,6 @@ class BenchmarkHandle(object):
         string
         """
         return self.instructions if not self.instructions is None else ''
-
-    def get_leaderboard(self, order_by=None, include_all=False):
-        """Get current leaderboard for the benchmark. The result is a
-        ranking of run results. Each entry contains the run and submission
-        information, as well as a dictionary with the results of the respective
-        workflow run.
-
-        If the include_all flag is False at most one result per submission is
-        included in the result.
-
-        Parameters
-        ----------
-        order_by: list(robcore.model.template.schema.SortColumn), optional
-            Use the given attribute to sort run results. If not given the schema
-            default attribute is used
-        include_all: bool, optional
-            Include at most one entry per submission in the result if False
-
-        Returns
-        -------
-        robcore.model.ranking.ResultRanking
-
-        Raises
-        ------
-        robcore.error.UnknownBenchmarkError
-        """
-        return self.repo.get_leaderboard(
-            benchmark_id=self.identifier,
-            order_by=order_by,
-            include_all=include_all
-        )
 
     def get_template(self):
         """Get associated workflow template. The template is loaded on-demand
