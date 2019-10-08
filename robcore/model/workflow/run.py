@@ -314,7 +314,7 @@ def update_run(con, run_id, state, commit_changes=True):
         Connection to underlying database
     run_id: string
         Unique identifier for the run
-    state: benchtmpl.workflow.state.WorkflowState
+    state: robcore.model.workflow.state.WorkflowState
         New workflow state
     commit_changes: bool, optional
         Commit all changes to the database if true

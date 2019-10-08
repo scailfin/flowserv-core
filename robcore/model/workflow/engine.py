@@ -184,7 +184,7 @@ class BenchmarkEngine(object):
         ----------
         submission_id: string
             Unique submission identifier
-        arguments: dict(benchtmpl.workflow.parameter.value.TemplateArgument)
+        arguments: dict(robcore.model.template.parameter.value.TemplateArgument)
             Dictionary of argument values for parameters in the template
         template: robcore.model.template.base.WorkflowTemplate
             Workflow template containing the parameterized specification and the

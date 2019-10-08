@@ -33,7 +33,7 @@ class BenchmarkRepository(object):
         ----------
         con: DB-API 2.0 database connection
             Connection to underlying database
-        template_store: benchtmpl.workflow.template.repo.TemplateRepository, optional
+        template_store: robcore.model.template.repo.base.TemplateRepository, optional
             Repository for workflow templates
         """
         self.con = con
