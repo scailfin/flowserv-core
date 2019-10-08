@@ -980,12 +980,14 @@ definitions:
     type: object
     description: "Argument for a new benchmark run"
     required:
-    - key
+    - id
     - value
     properties:
-      key:
+      id:
         type: string
       value:
+        type: string
+      as:
         type: string
   RunDescriptor:
     type: object

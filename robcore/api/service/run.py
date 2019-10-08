@@ -10,12 +10,16 @@
 runs.
 """
 
-from robapi.serialize.run import RunSerializer
-from robapi.service.route import UrlFactory
+from robcore.api.serialize.run import RunSerializer
+from robcore.api.route import UrlFactory
+from robcore.io.files import InputFile
 from robcore.model.template.parameter.value import TemplateArgument
 
+import robcore.api.serialize.labels as labels
 import robcore.error as err
 import robcore.model.user.auth as res
+import robcore.util as util
+
 
 class RunService(object):
     """API component that provides methods to start, access, and manipulate
@@ -28,7 +32,7 @@ class RunService(object):
 
         Parameters
         ----------
-        engine: robapi.model.benchmark.engine.BenchmarkEngine
+        engine: robcore.model.benchmark.engine.BenchmarkEngine
             Benchmark engine
         submissions: robcore.model.submission.SubmissionManager
             Manager for benchmark submissions
@@ -36,9 +40,9 @@ class RunService(object):
             Repository to access registered benchmarks
         auth: robcore.model.user.auth.Auth
             Implementation of the authorization policy for the API
-        urls: robapi.service.route.UrlFactory
+        urls: robcore.api.route.UrlFactory
             Factory for API resource Urls
-        serializer: robapi.serialize.submission.SubmissionSerializer, optional
+        serializer: robcore.api.serialize.submission.SubmissionSerializer, optional
             Override the default serializer
         """
         self.engine = engine
@@ -193,7 +197,10 @@ class RunService(object):
 
         Raises
         ------
+        robcore.error.InvalidArgumentError
+        robcore.error.MissingArgumentError
         robcore.error.UnauthorizedAccessError
+        robcore.error.UnknownFileError
         robcore.error.UnknownParameterError
         robcore.error.UnknownSubmissionError
         """
@@ -213,21 +220,47 @@ class RunService(object):
         # later version.
         run_args = dict()
         for arg in arguments:
-            para = template.get_parameter(arg.identifier)
+            # Validate the given argument
+            try:
+                util.validate_doc(
+                    doc=arg,
+                    mandatory_labels=[labels.ID, labels.VALUE],
+                    optional_labels=[labels.AS]
+                )
+            except ValueError as ex:
+                raise err.InvalidArgumentError(str(ex))
+            arg_id = arg[labels.ID]
+            arg_val = arg[labels.VALUE]
+            # Raise an error if multiple values are given for the same argument
+            if arg_id in run_args:
+                raise err.DuplicateArgumentError(arg_id)
+            para = template.get_parameter(arg_id)
             if para is None:
-                raise UnknownParameterError(arg.identifier)
+                raise err.UnknownParameterError(arg_id)
             if para.is_file():
-                val = TemplateArgument(parameter=para, value=arg, validate=True)
+                # The argument value is expected to be the identifier of an
+                # previously uploaded file. This will raise an exception if the
+                # file identifier is unknown
+                fh = submission.get_file(arg_val)
+                if labels.AS in arg:
+                    # Convert the file handle to an input file handle if a
+                    # target path is given
+                    fh = InputFile(fh, target_path=arg[labels.AS])
+                val = TemplateArgument(parameter=para, value=fh, validate=True)
             elif para.is_list() or para.is_record():
-                raise RuntimeError('nested parameters not supported yet')
+                raise err.InvalidArgumentError('nested parameters not supported yet')
             else:
-                val = TemplateArgument(parameter=para, value=arg, validate=True)
-            run_arg[arg.identifier] = val
+                val = TemplateArgument(
+                    parameter=para,
+                    value=arg_val,
+                    validate=True
+                )
+            run_args[arg_id] = val
+        template.validate_arguments(run_args)
         # Start the run and return the serialized run handle.
         run = self.engine.start_run(
             submission_id=submission_id,
             template=template,
-            source_dir=template.source_dir,
             arguments=run_args
         )
         return self.serialize.run_handle(run)

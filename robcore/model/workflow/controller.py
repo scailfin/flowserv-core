@@ -53,7 +53,7 @@ class WorkflowController(object):
         raise NotImplementedError()
 
     @abstractmethod
-    def exec_workflow(self, run_id, template, arguments, source_dir=None):
+    def exec_workflow(self, run_id, template, arguments):
         """Initiate the execution of a given workflow template for a set of
         argument values. Returns the state of the workflow.
 
@@ -69,9 +69,6 @@ class WorkflowController(object):
             parameter declarations
         arguments: dict(robcore.model.template.parameter.value.TemplateArgument)
             Dictionary of argument values for parameters in the template
-        source_dir: string, optional
-            Source directory that contains the static template files. If given,
-            this value overrides the source directory in the given template.
 
         Returns
         -------

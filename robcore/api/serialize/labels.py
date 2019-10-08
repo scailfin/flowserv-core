@@ -36,6 +36,7 @@ VALUE = 'value'
 
 # Benchmark runs
 ARGUMENTS = 'arguments'
+AS = 'as'
 MESSAGES = 'messages'
 
 # Files

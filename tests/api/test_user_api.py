@@ -11,13 +11,11 @@
 import pytest
 
 from robcore.model.user.auth import OpenAccessAuth
-from robcore.model.user.base import UserManager
-from robapi.service.user import UserService
 
+import robcore.api.serialize.hateoas as hateoas
+import robcore.api.serialize.labels as labels
 import robcore.error as err
-import robapi.serialize.hateoas as hateoas
-import robapi.serialize.labels as labels
-import robcore.tests.db as db
+import robcore.tests.api as api
 import robcore.tests.serialize as serialize
 import robcore.util as util
 
@@ -31,16 +29,10 @@ USER_LOGOUT = [labels.ID, labels.USERNAME, labels.LINKS]
 
 class TestUserApi(object):
     """Test API methods that access and manipulate users."""
-    def init(self, base_dir):
-        """Initialize the dabase and the user manager. Returns the user manager
-        instance.
-        """
-        con = db.init_db(base_dir).connect()
-        return UserService(manager=UserManager(con), auth=OpenAccessAuth(con))
 
     def test_authenticate_user(self, tmpdir):
         """Test login and logout via API."""
-        users = self.init(str(tmpdir))
+        _, _, users, _ = api.init_api(str(tmpdir), open_access=True)
         # Register a new user that is automatically activated
         users.register_user(username='myuser', password='mypwd', verify=False)
         # Login
@@ -79,7 +71,7 @@ class TestUserApi(object):
 
     def test_list_users(self, tmpdir):
         """Test user listings and queries."""
-        users = self.init(str(tmpdir))
+        _, _, users, _ = api.init_api(str(tmpdir), open_access=True)
         # Register three active users
         users.register_user(username='a@user', password='mypwd', verify=False)
         users.register_user(username='me@user', password='mypwd', verify=False)
@@ -102,7 +94,7 @@ class TestUserApi(object):
 
     def test_register_user(self, tmpdir):
         """Test new user registration via API."""
-        users = self.init(str(tmpdir))
+        _, _, users, _ = api.init_api(str(tmpdir), open_access=True)
         # Register a new user without activating the user
         r = users.register_user(username='myuser', password='mypwd', verify=True)
         util.validate_doc(doc=r, mandatory_labels=USER_LOGOUT)
@@ -140,7 +132,7 @@ class TestUserApi(object):
 
     def test_reset_password(self, tmpdir):
         """Test requesting a reset and resetting the password for a user."""
-        users = self.init(str(tmpdir))
+        _, _, users, _ = api.init_api(str(tmpdir), open_access=True)
         # Register a new user
         users.register_user(username='myuser', password='mypwd', verify=False)
         # Request password reset

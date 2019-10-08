@@ -25,6 +25,7 @@ class TestReadTemplateArguments(object):
         """
         template = WorkflowTemplate(
             workflow_spec=dict(),
+            source_dir='dev/null',
             parameters=[
                 TemplateParameter(
                     pd.parameter_declaration(

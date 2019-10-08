@@ -8,8 +8,8 @@
 
 """Serializer for benchmark runs."""
 
-import robapi.serialize.hateoas as hateoas
-import robapi.serialize.labels as labels
+import robcore.api.serialize.hateoas as hateoas
+import robcore.api.serialize.labels as labels
 
 
 class RunSerializer(object):
@@ -19,7 +19,7 @@ class RunSerializer(object):
 
         Parameters
         ----------
-        urls: robapi.service.route.UrlFactory
+        urls: robcore.api.route.UrlFactory
             Factory for resource urls
         """
         self.urls = urls
@@ -77,7 +77,7 @@ class RunSerializer(object):
         doc = self.run_descriptor(run)
         doc[labels.ARGUMENTS] = [
             {
-                labels.KEY: key,
+                labels.ID: key,
                 labels.VALUE: run.arguments[key]
             } for key in run.arguments
         ]

@@ -1,7 +1,8 @@
 [run]
 branch = true
 parallel = true
-source = robcore
+source = robcore/api,robcore/config,robcore/db,robcore/io,robcore/model
+omit = robcore/tests
 
 [report]
 show_missing = true

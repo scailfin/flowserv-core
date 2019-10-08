@@ -10,8 +10,8 @@
 and benchmark leader boards.
 """
 
-from robapi.serialize.benchmark import BenchmarkSerializer
-from robapi.service.route import UrlFactory
+from robcore.api.serialize.benchmark import BenchmarkSerializer
+from robcore.api.route import UrlFactory
 
 
 class BenchmarkService(object):
@@ -24,11 +24,13 @@ class BenchmarkService(object):
 
         Parameters
         ----------
+        con: DB-API 2.0 database connection
+            Connection to underlying database
         repo: robcore.model.template.repo.benchmark.BenchmarkRepository
             Repository to access registered benchmarks
-        urls: robapi.service.route.UrlFactory
+        urls: robcore.api.route.UrlFactory
             Factory for API resource Urls
-        serializer: robapi.serialize.benchmark.BenchmarkSerializer, optional
+        serializer: robcore.api.serialize.benchmark.BenchmarkSerializer, optional
             Override the default serializer
         """
         self.repo = repo
@@ -56,13 +58,16 @@ class BenchmarkService(object):
         benchmark = self.repo.get_benchmark(benchmark_id)
         return self.serialize.benchmark_handle(benchmark)
 
-    def get_leaderboard(self, benchmark_id, include_all=False):
-        """Get serialization of the handle for the given benchmark.
+    def get_leaderboard(self, benchmark_id, order_by=None, include_all=False):
+        """Get serialization of the leader board for the given benchmark.
 
         Parameters
         ----------
         benchmark_id: string
             Unique benchmark identifier
+        order_by: list(robcore.model.template.schema.SortColumn), optional
+            Use the given attribute to sort run results. If not given the schema
+            default attribute is used
         include_all: bool, optional
             Include at most one entry per submission in the result if False
 
@@ -74,14 +79,16 @@ class BenchmarkService(object):
         ------
         robcore.error.UnknownBenchmarkError
         """
-        # Return serialized benchmark handle
-        ranking = self.repo.get_leaderboard(
+        # Get list with run results. This will raise an unknown benchmark error
+        # if the given identifier does not reference an existing benchmark.
+        results = self.repo.get_leaderboard(
             benchmark_id=benchmark_id,
+            order_by=order_by,
             include_all=include_all
         )
         return self.serialize.benchmark_leaderboard(
             benchmark_id=benchmark_id,
-            ranking=ranking
+            ranking=results
         )
 
     def list_benchmarks(self):

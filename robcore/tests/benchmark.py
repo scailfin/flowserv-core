@@ -108,7 +108,7 @@ class StateEngine(WorkflowController):
             self.messages = messages
         return self
 
-    def exec_workflow(self, run_id, template, arguments, source_dir=None):
+    def exec_workflow(self, run_id, template, arguments):
         """Fake execute method that returns the workflow state that the was
         provided when the object was instantiated. Ignores all given arguments.
 
@@ -121,9 +121,6 @@ class StateEngine(WorkflowController):
             parameter declarations
         arguments: dict(robcore.model.template.parameter.value.TemplateArgument)
             Dictionary of argument values for parameters in the template
-        source_dir: string, optional
-            Source directory that contains the static template files. If given,
-            this value overrides the source directory in the given template.
 
         Returns
         -------
@@ -187,6 +184,16 @@ class StateEngine(WorkflowController):
             del self.runs[run_id]
         else:
             raise err.UnknownRunError(run_id)
+
+    def start(self):
+        """Set the default state to RUNNING.
+
+        Returns
+        -------
+        robcore.tests.benchmark.StateEngine
+        """
+        self.state = st.STATE_RUNNING
+        return self
 
     def success(self, values=None):
         """Set the default state to SUCCESS.

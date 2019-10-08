@@ -14,6 +14,7 @@ the workflow template and the result files of individual workflow runs.
 import json
 
 from robcore.model.template.benchmark import BenchmarkHandle
+from robcore.model.template.schema import ResultSchema
 
 import robcore.error as err
 import robcore.model.constraint as constraint
@@ -180,6 +181,54 @@ class BenchmarkRepository(object):
             instructions=rs['instructions'],
             template=self.template_repo.get_template(benchmark_id),
             repo=self
+        )
+
+    def get_leaderboard(self, benchmark_id, order_by=None, include_all=False):
+        """Get current leaderboard for a given benchmark. The result is a
+        ranking of run results. Each entry contains the run and submission
+        information, as well as a dictionary with the results of the respective
+        workflow run.
+
+        If the include_all flag is False at most one result per submission is
+        included in the result.
+
+        Parameters
+        ----------
+        benchmark_id: string
+            Unique benchmark identifier
+        order_by: list(robcore.model.template.schema.SortColumn), optional
+            Use the given attribute to sort run results. If not given the schema
+            default attribute is used
+        include_all: bool, optional
+            Include at most one entry per submission in the result if False
+
+        Returns
+        -------
+        robcore.model.ranking.ResultRanking
+
+        Raises
+        ------
+        robcore.error.UnknownBenchmarkError
+        """
+        # Get the result schema for the benchmark. Will raise an error if the
+        # benchmark does not exist.
+        sql = 'SELECT result_schema FROM benchmark WHERE benchmark_id = ?'
+        row = self.con.execute(sql, (benchmark_id,)).fetchone()
+        if row is None:
+            raise err.UnknownBenchmarkError(benchmark_id)
+        # Get the result schema as defined in the workflow template
+        if not row['result_schema'] is None:
+            schema = ResultSchema.from_dict(json.loads(row['result_schema']))
+        else:
+            schema = ResultSchema()
+        return ranking.query(
+            con=self.con,
+            benchmark_id=benchmark_id,
+            schema=schema,
+            filter_stmt='s.benchmark_id = ?',
+            args=(benchmark_id,),
+            order_by=order_by,
+            include_all=include_all
         )
 
     def list_benchmarks(self):

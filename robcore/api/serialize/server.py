@@ -10,8 +10,8 @@
 used by several different serializers.
 """
 
-import robapi.serialize.hateoas as hateoas
-import robapi.serialize.labels as labels
+import robcore.api.serialize.hateoas as hateoas
+import robcore.api.serialize.labels as labels
 
 
 class ServiceSerializer(object):
@@ -23,7 +23,7 @@ class ServiceSerializer(object):
 
         Parameters
         ----------
-        urls: robapi.service.route.UrlFactory
+        urls: robcore.api.route.UrlFactory
             Factory for resource Urls
         """
         self.urls = urls

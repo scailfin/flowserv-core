@@ -33,26 +33,60 @@ class TestConfigAPI(object):
         os.environ[config.ROB_API_BASEDIR] = 'ABC'
         assert config.API_BASEDIR(default_value='XYZ') == 'ABC'
 
+    def test_config_host(self):
+        """Test method to get the API server host name."""
+        # Clear environment variable if set
+        if config.ROB_API_HOST in os.environ:
+            del os.environ[config.ROB_API_HOST]
+        assert config.API_HOST() == config.DEFAULT_HOST
+        os.environ[config.ROB_API_HOST] = 'my.host.com'
+        assert config.API_HOST() == 'my.host.com'
+
     def test_config_name(self):
         """Test method to get the API name."""
         # Clear environment variable if set
         if config.ROB_API_NAME in os.environ:
             del os.environ[config.ROB_API_NAME]
         assert config.API_NAME() == config.DEFAULT_NAME
-        assert config.API_NAME(default_value='XYZ') == 'XYZ'
-        with pytest.raises(err.MissingConfigurationError):
-            assert config.API_NAME(raise_error=True)
         os.environ[config.ROB_API_NAME] = 'ABC'
-        assert config.API_NAME(default_value='XYZ') == 'ABC'
+        assert config.API_NAME() == 'ABC'
+
+    def test_config_path(self):
+        """Test method to get the API application path."""
+        # Clear environment variable if set
+        if config.ROB_API_PATH in os.environ:
+            del os.environ[config.ROB_API_PATH]
+        assert config.API_PATH() == config.DEFAULT_PATH
+        os.environ[config.ROB_API_PATH] = 'api-path'
+        assert config.API_PATH() == 'api-path'
+
+    def test_config_port(self):
+        """Test method to get the API port number."""
+        # Clear environment variable if set
+        if config.ROB_API_PORT in os.environ:
+            del os.environ[config.ROB_API_PORT]
+        assert config.API_PORT() == config.DEFAULT_PORT
+        os.environ[config.ROB_API_PORT] = 'ABC'
+        with pytest.raises(ValueError):
+            config.API_PORT()
+        os.environ[config.ROB_API_PORT] = '5005'
+        assert config.API_PORT() == 5005
 
     def test_config_url(self):
         """Test method to get the API base URL."""
         # Clear environment variable if set
-        if config.ROB_API_URL in os.environ:
-            del os.environ[config.ROB_API_URL]
-        assert config.API_URL() == config.DEFAULT_URL
-        assert config.API_URL(default_value='XYZ') == 'XYZ'
-        with pytest.raises(err.MissingConfigurationError):
-            assert config.API_URL(raise_error=True)
-        os.environ[config.ROB_API_URL] = 'ABC'
-        assert config.API_URL(default_value='XYZ') == 'ABC'
+        if config.ROB_API_HOST in os.environ:
+            del os.environ[config.ROB_API_HOST]
+        if config.ROB_API_PATH in os.environ:
+            del os.environ[config.ROB_API_PATH]
+        if config.ROB_API_PORT in os.environ:
+            del os.environ[config.ROB_API_PORT]
+        default_url = '{}:{}{}'.format(
+            config.DEFAULT_HOST,
+            config.DEFAULT_PORT,
+            config.DEFAULT_PATH
+        )
+        assert config.API_URL() == default_url
+        os.environ[config.ROB_API_PORT] = '80'
+        os.environ[config.ROB_API_PATH] = 'app-path/v1'
+        assert config.API_URL() == config.DEFAULT_HOST + '/app-path/v1'

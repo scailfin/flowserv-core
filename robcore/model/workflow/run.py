@@ -397,4 +397,4 @@ class ArgumentEncoder(json.JSONEncoder):
                 'targetPath': obj.target_path
             }
         # Let the base class default method raise the TypeError
-            return json.JSONEncoder.default(self, obj)
+        return json.JSONEncoder.default(self, obj)

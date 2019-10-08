@@ -39,7 +39,7 @@ class TestSynchronousWorkflowEngine(object):
         """Execute the helloworld example."""
         # Read the workflow template
         doc = util.read_object(filename=TEMPLATE_HELLOWORLD)
-        template = WorkflowTemplate.from_dict(doc)
+        template = WorkflowTemplate.from_dict(doc, source_dir=TEMPLATE_DIR)
         # Set the template argument values
         arguments = {
             'names': TemplateArgument(
@@ -57,7 +57,6 @@ class TestSynchronousWorkflowEngine(object):
         state = engine.exec_workflow(
             run_id=run_id,
             template=template,
-            source_dir=TEMPLATE_DIR,
             arguments=arguments
         )
         # For completeness. Cancel run should have no effect
@@ -95,7 +94,6 @@ class TestSynchronousWorkflowEngine(object):
             engine.exec_workflow(
                 run_id=run_id,
                 template=template,
-                source_dir=TEMPLATE_DIR,
                 arguments=arguments
             )
         os.remove(engine.get_run_file(run_id))
@@ -104,7 +102,6 @@ class TestSynchronousWorkflowEngine(object):
             engine.exec_workflow(
                 run_id=run_id,
                 template=template,
-                source_dir=TEMPLATE_DIR,
                 arguments=arguments
             )
         # After removing the run we can execute it again with the same identifier
@@ -114,7 +111,6 @@ class TestSynchronousWorkflowEngine(object):
         state = engine.exec_workflow(
             run_id=run_id,
             template=template,
-            source_dir=TEMPLATE_DIR,
             arguments=arguments
         )
         # Check for success and existince of file and folder
@@ -125,6 +121,9 @@ class TestSynchronousWorkflowEngine(object):
         engine.remove_run(run_id)
         assert not os.path.isfile(engine.get_run_file(run_id))
         assert not os.path.isdir(engine.get_run_dir(run_id))
+        # Error when trying to remove an unknown run
+        with pytest.raises(err.UnknownRunError):
+            engine.remove_run(run_id)
         # Error when trying to get state of unknown run
         with pytest.raises(err.UnknownRunError):
             engine.get_run_state(run_id)
@@ -133,7 +132,7 @@ class TestSynchronousWorkflowEngine(object):
         """Execute the helloworld example with an invalid shell command."""
         # Read the workflow template
         doc = util.read_object(filename=TEMPLATE_WITH_INVALID_CMD)
-        template = WorkflowTemplate.from_dict(doc)
+        template = WorkflowTemplate.from_dict(doc, source_dir=TEMPLATE_DIR)
         # Set the template argument values
         arguments = {
             'names': TemplateArgument(
@@ -151,7 +150,6 @@ class TestSynchronousWorkflowEngine(object):
         state = engine.exec_workflow(
             run_id=run_id,
             template=template,
-            source_dir=TEMPLATE_DIR,
             arguments=arguments
         )
         assert state.is_error()
@@ -165,7 +163,7 @@ class TestSynchronousWorkflowEngine(object):
         """Execute the helloworld example with a reference to a missing file."""
         # Read the workflow template
         doc = util.read_object(filename=TEMPLATE_WITH_MISSING_FILE)
-        template = WorkflowTemplate.from_dict(doc)
+        template = WorkflowTemplate.from_dict(doc, source_dir=TEMPLATE_DIR)
         # Set the template argument values
         arguments = {
             'names': TemplateArgument(
@@ -183,7 +181,6 @@ class TestSynchronousWorkflowEngine(object):
         state = engine.exec_workflow(
             run_id=run_id,
             template=template,
-            source_dir=TEMPLATE_DIR,
             arguments=arguments
         )
         assert state.is_error()
@@ -197,7 +194,6 @@ class TestSynchronousWorkflowEngine(object):
             engine.exec_workflow(
                 run_id=util.get_unique_identifier(),
                 template=template,
-                source_dir=TEMPLATE_DIR,
                 arguments={
                     'names': TemplateArgument(
                         parameter=template.get_parameter('names'),

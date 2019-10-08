@@ -114,6 +114,23 @@ class ConstraintViolationError(ROBError):
         super(ConstraintViolationError, self).__init__(message=message)
 
 
+class DuplicateArgumentError(ROBError):
+    """Exception indicating that a given argument for a workflow run is not
+    unique.
+    """
+    def __init__(self, identifier):
+        """Initialize error message for duplicate run arguments.
+
+        Parameters
+        ----------
+        identifier: string
+            Unique argument identifier
+        """
+        super(DuplicateArgumentError, self).__init__(
+            message='non-unique run argument \'{}\''.format(identifier)
+        )
+
+
 class DuplicateRunError(ROBError):
     """Exception indicating that a given run identifier is not unique.
     """
@@ -143,6 +160,22 @@ class DuplicateUserError(ROBError):
         super(DuplicateUserError, self).__init__(
             message='duplicate user \'{}\''.format(user_id)
         )
+
+
+class InvalidArgumentError(ROBError):
+    """Exception indicating that a given template parameter argument value is
+    not valid.
+    """
+    def __init__(self, message):
+        """Initialize error message. The message for invalid parameter argument
+        errors is depending on the context
+
+        Parameters
+        ----------
+        message : string
+            Error message
+        """
+        super(InvalidArgumentError, self).__init__(message=message)
 
 
 class InvalidParameterError(ROBError):

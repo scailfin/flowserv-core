@@ -11,31 +11,18 @@
 import os
 import pytest
 
-from passlib.hash import pbkdf2_sha256
-
-from robcore.model.user.auth import DefaultAuthPolicy
-from robcore.model.submission import SubmissionManager
-from robcore.model.template.repo.benchmark import BenchmarkRepository
-from robcore.model.user.base import UserManager
-from robapi.service.submission import SubmissionService
 from robcore.tests.io import FakeStream
-from robcore.model.template.repo.fs import TemplateFSRepository
 
 import robcore.error as err
-import robapi.serialize.hateoas as hateoas
-import robapi.serialize.labels as labels
-import robcore.tests.db as db
+import robcore.api.serialize.hateoas as hateoas
+import robcore.api.serialize.labels as labels
+import robcore.tests.api as api
 import robcore.tests.serialize as serialize
 import robcore.util as util
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))
 TEMPLATE_DIR = os.path.join(DIR, '../.files/benchmark/helloworld')
-
-# Default benchmark users
-USER_1 = util.get_unique_identifier()
-USER_2 = util.get_unique_identifier()
-USER_3 = util.get_unique_identifier()
 
 # Mandatory submission descriptor (D), handle (H), and listing (L) labels
 DLABELS = [labels.ID, labels.NAME, labels.LINKS]
@@ -52,34 +39,27 @@ RELSFH = [hateoas.action(hateoas.DOWNLOAD), hateoas.action(hateoas.DELETE)]
 
 class TestSubmissionsApi(object):
     """Test API methods that access and list submissions and their results."""
-    def init(self, base_dir):
+    @staticmethod
+    def init(base_dir):
         """Initialize the database, benchmark repository, and submission
         manager. Loads one benchmark.
 
-        Returns the submission service, user service, the benchmark handle and
-        an open database connection.
+        Returns the submission service, handles for created users, and the
+        benchmark handle.
         """
-        con = db.init_db(base_dir).connect()
-        sql = 'INSERT INTO api_user(user_id, name, secret, active) VALUES(?, ?, ?, ?)'
-        for user_id in [USER_1, USER_2, USER_3]:
-            con.execute(sql, (user_id, user_id, pbkdf2_sha256.hash(user_id), 1))
-        repo = BenchmarkRepository(
-            con=con,
-            template_repo=TemplateFSRepository(base_dir=base_dir)
-        )
-        bm = repo.add_benchmark(name='A', src_dir=TEMPLATE_DIR)
-        submissions = SubmissionService(
-            manager=SubmissionManager(con=con, directory=base_dir),
-            auth=DefaultAuthPolicy(con=con)
-        )
-        users = UserManager(con=con)
-        return submissions, users, bm, con
+        repository, submissions, user_service, _ = api.init_api(base_dir)
+        users = list()
+        for i in range(3):
+            user_id = util.get_unique_identifier()
+            users.append(user_service.manager.register_user(user_id, user_id))
+        bm = repository.repo.add_benchmark(name='A', src_dir=TEMPLATE_DIR)
+        return submissions, users, bm
 
     def test_create_submission(self, tmpdir):
         """Test create new submission."""
-        service, users, benchmark, _ = self.init(str(tmpdir))
+        service, users, benchmark = TestSubmissionsApi.init(str(tmpdir))
         # Get handle for USER_1
-        user = users.login_user(USER_1, USER_1)
+        user = users[0]
         # Create new submission with a single member
         r = service.create_submission(
             benchmark_id=benchmark.identifier,
@@ -94,7 +74,7 @@ class TestSubmissionsApi(object):
             benchmark_id=benchmark.identifier,
             name='B',
             user=user,
-            members=[USER_2, USER_3]
+            members=[users[1].identifier, users[2].identifier]
         )
         util.validate_doc(doc=r, mandatory_labels=HLABELS)
         assert len(r[labels.MEMBERS]) == 3
@@ -107,23 +87,23 @@ class TestSubmissionsApi(object):
 
     def test_delete_submission(self, tmpdir):
         """Test deleting submission."""
-        service, users, benchmark, _ = self.init(str(tmpdir))
+        service, users, benchmark = TestSubmissionsApi.init(str(tmpdir))
         # Get handle forall three users
-        user_1 = users.login_user(USER_1, USER_1)
-        user_2 = users.login_user(USER_2, USER_2)
-        user_3 = users.login_user(USER_3, USER_3)
+        user_1 = users[0]
+        user_2 = users[1]
+        user_3 = users[2]
         # Create two submission
         s1 = service.create_submission(
             benchmark_id=benchmark.identifier,
             name='A',
             user=user_1,
-            members=[USER_1, USER_2]
+            members=[user_1.identifier, user_2.identifier]
         )
         s2 = service.create_submission(
             benchmark_id=benchmark.identifier,
             name='C',
             user=user_3,
-            members=[USER_1]
+            members=[user_1.identifier]
         )
         # USER_1 is member of three submissions
         r = service.list_submissions(user_1)
@@ -142,14 +122,14 @@ class TestSubmissionsApi(object):
         with a benchmark submission.
         """
         # Initialize the database and create a single submissions
-        service, users, benchmark, _ = self.init(str(tmpdir))
-        user_1 = users.login_user(USER_1, USER_1)
-        user_3 = users.login_user(USER_3, USER_3)
+        service, users, benchmark = TestSubmissionsApi.init(str(tmpdir))
+        user_1 = users[0]
+        user_3 = users[2]
         r = service.create_submission(
             benchmark_id=benchmark.identifier,
             name='A',
             user=user_1,
-            members=[USER_1, USER_2]
+            members=[user_1.identifier, users[1].identifier]
         )
         submission_id = r[labels.ID]
         # Upload file (from fake streams)
@@ -225,17 +205,17 @@ class TestSubmissionsApi(object):
 
     def test_get_submission(self, tmpdir):
         """Test retrieving a submission handle."""
-        service, users, benchmark, _ = self.init(str(tmpdir))
+        service, users, benchmark = TestSubmissionsApi.init(str(tmpdir))
         # Get handle forall three users
-        user_1 = users.login_user(USER_1, USER_1)
-        user_2 = users.login_user(USER_2, USER_2)
-        user_3 = users.login_user(USER_3, USER_3)
+        user_1 = users[0]
+        user_2 = users[1]
+        user_3 = users[2]
         # Create new submission with two members
         r = service.create_submission(
             benchmark_id=benchmark.identifier,
             name='A',
             user=user_1,
-            members=[USER_1, USER_2]
+            members=[user_1.identifier, user_2.identifier]
         )
         submission_id = r[labels.ID]
         r = service.get_submission(submission_id, user_1)
@@ -255,29 +235,29 @@ class TestSubmissionsApi(object):
 
     def test_list_submissions(self, tmpdir):
         """Test retrieving a submission handle."""
-        service, users, benchmark, _ = self.init(str(tmpdir))
+        service, users, benchmark = TestSubmissionsApi.init(str(tmpdir))
         # Get handle forall three users
-        user_1 = users.login_user(USER_1, USER_1)
-        user_2 = users.login_user(USER_2, USER_2)
-        user_3 = users.login_user(USER_3, USER_3)
+        user_1 = users[0]
+        user_2 = users[1]
+        user_3 = users[2]
         # Create three submission
         service.create_submission(
             benchmark_id=benchmark.identifier,
             name='A',
             user=user_1,
-            members=[USER_1, USER_2]
+            members=[user_1.identifier, user_2.identifier]
         )
         service.create_submission(
             benchmark_id=benchmark.identifier,
             name='B',
             user=user_1,
-            members=[USER_1, USER_3]
+            members=[user_1.identifier, user_3.identifier]
         )
         service.create_submission(
             benchmark_id=benchmark.identifier,
             name='C',
             user=user_3,
-            members=[USER_1]
+            members=[user_1.identifier]
         )
         # USER_1 is member of three submissions
         r = service.list_submissions(user_1)
@@ -299,17 +279,17 @@ class TestSubmissionsApi(object):
 
     def test_update_submission(self, tmpdir):
         """Test updating submission name and member list."""
-        service, users, benchmark, _ = self.init(str(tmpdir))
+        service, users, benchmark = TestSubmissionsApi.init(str(tmpdir))
         # Get handle forall three users
-        user_1 = users.login_user(USER_1, USER_1)
-        user_2 = users.login_user(USER_2, USER_2)
-        user_3 = users.login_user(USER_3, USER_3)
+        user_1 = users[0]
+        user_2 = users[1]
+        user_3 = users[2]
         # Create three submission
         r = service.create_submission(
             benchmark_id=benchmark.identifier,
             name='A',
             user=user_1,
-            members=[USER_1, USER_2]
+            members=[user_1.identifier, user_2.identifier]
         )
         assert r[labels.NAME] == 'A'
         assert len(r[labels.MEMBERS]) == 2
@@ -317,7 +297,7 @@ class TestSubmissionsApi(object):
             submission_id=r[labels.ID],
             user=user_1,
             name='B',
-            members=[USER_3]
+            members=[user_3.identifier]
         )
         assert r[labels.NAME] == 'B'
         assert len(r[labels.MEMBERS]) == 1
@@ -327,5 +307,5 @@ class TestSubmissionsApi(object):
                 submission_id=r[labels.ID],
                 user=user_1,
                 name='C',
-                members=[USER_1]
+                members=[user_1.identifier]
             )

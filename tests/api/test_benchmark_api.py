@@ -10,21 +10,11 @@
 
 import os
 
-from passlib.hash import pbkdf2_sha256
-
-from robapi.model.benchmark.engine import BenchmarkEngine
-from robcore.model.submission import SubmissionManager
-from robcore.model.template.repo.benchmark import BenchmarkRepository
-from robapi.service.benchmark import BenchmarkService
-from robcore.tests.benchmark import StateEngine
-from robcore.model.template.repo.fs import TemplateFSRepository
-
-import robapi.serialize.hateoas as hateoas
-import robapi.serialize.labels as labels
-import robcore.tests.benchmark as wf
-import robcore.tests.db as db
-import robcore.tests.serialize as serialize
+import robcore.api.serialize.hateoas as hateoas
+import robcore.api.serialize.labels as labels
 import robcore.model.template.parameter.declaration as pd
+import robcore.tests.api as api
+import robcore.tests.serialize as serialize
 import robcore.util as util
 
 
@@ -40,40 +30,44 @@ RELS = [hateoas.SELF, hateoas.LEADERBOARD]
 
 class TestBenchmarkApi(object):
     """Test API methods that access and list benchmarks and leader boards."""
-    def init(self, base_dir):
+    @staticmethod
+    def init(base_dir):
         """Initialize the database and the benchmark repository. Loads three
-        copies of the same benchmark and returns a list of the benchmark
-        handles.
+        copies of the same benchmark. Returns a tripple that contains the
+        benchmark reposiroty, the list of the benchmark handles, and the open
+        database connection.
         """
-        con = db.init_db(base_dir).connect()
-        sql = 'INSERT INTO api_user(user_id, name, secret, active) VALUES(?, ?, ?, ?)'
-        con.execute(sql, (USER_1, USER_1, pbkdf2_sha256.hash(USER_1), 1))
-        repo = BenchmarkRepository(
-            con=con,
-            template_repo=TemplateFSRepository(base_dir=base_dir)
-        )
+        repo, submissions, users, _ = api.init_api(base_dir)
+        # Create one new user
+        users.register_user(USER_1, USER_1)
+        # Create three benchmarks
         benchmarks = list()
-        benchmarks.append(repo.add_benchmark(name='A', src_dir=TEMPLATE_DIR))
         benchmarks.append(
-            repo.add_benchmark(
+            repo.repo.add_benchmark(
+                name='A',
+                src_dir=TEMPLATE_DIR
+            )
+        )
+        benchmarks.append(
+            repo.repo.add_benchmark(
                 name='B',
                 description='desc',
                 src_dir=TEMPLATE_DIR
             )
         )
         benchmarks.append(
-            repo.add_benchmark(
+            repo.repo.add_benchmark(
                 name='C',
                 description='desc',
                 instructions='inst',
                 src_dir=TEMPLATE_DIR
             )
         )
-        return BenchmarkService(repo=repo), benchmarks, con
+        return repo, submissions, benchmarks
 
     def test_get_benchmark(self, tmpdir):
         """Test get benchmark handle."""
-        repo, benchmarks, _ = self.init(str(tmpdir))
+        repo, _, benchmarks = TestBenchmarkApi.init(str(tmpdir))
         r = repo.get_benchmark(benchmarks[0].identifier)
         util.validate_doc(
             doc=r,
@@ -130,45 +124,38 @@ class TestBenchmarkApi(object):
 
     def test_get_leaderboard(self, tmpdir):
         """Test get benchmark leaderboard."""
-        repo, benchmarks, con = self.init(str(tmpdir))
+        repo, submissions, benchmarks = TestBenchmarkApi.init(str(tmpdir))
         # Create one submission and add three results for the first benchmark
-        engine = BenchmarkEngine(con=con, backend=StateEngine())
-        submissions = SubmissionManager(con=con, directory=str(tmpdir))
-        # Add two benchmarks and create two submissions for the first benchmark
-        # and one submission for the second
+        controller = submissions.manager.engine.backend
+        # Create two submissions for the first benchmark.
         bm = benchmarks[0]
-        s1 = submissions.create_submission(
+        template = bm.get_template()
+        s1 = submissions.manager.create_submission(
             benchmark_id=bm.identifier,
             name='A',
             user_id=USER_1
         )
-        wf.run_workflow(
-            engine=engine,
-            template=bm.get_template(),
-            submission_id=s1.identifier,
-            base_dir=str(tmpdir),
-            values={'max_len': 10, 'avg_count': 11.1, 'max_line': 'L1'}
+        s2 = submissions.manager.create_submission(
+            benchmark_id=bm.identifier,
+            name='B',
+            user_id=USER_1
         )
-        wf.run_workflow(
-            engine=engine,
-            template=bm.get_template(),
-            submission_id=s1.identifier,
-            base_dir=str(tmpdir),
-            values={'max_len': 11, 'avg_count': 12.1, 'max_line': 'L2'}
-        )
-        wf.run_workflow(
-            engine=engine,
-            template=bm.get_template(),
-            submission_id=s1.identifier,
-            base_dir=str(tmpdir),
-            values={'max_len': 12, 'avg_count': 13.1, 'max_line': 'L3'}
-        )
+        # Create two successful runs for the first submission and one run for
+        # the second submission.
+        controller.success({'avg_count': 12, 'max_len': 12.4})
+        submissions.manager.start_run(s1.identifier, dict(), template)
+        controller.success({'avg_count': 10, 'max_len': 12.4})
+        submissions.manager.start_run(s1.identifier, dict(), template)
+        controller.success({'avg_count': 11, 'max_len': 12.4})
+        submissions.manager.start_run(s2.identifier, dict(), template)
+        # Get the benchmark leaderboard
         r = repo.get_leaderboard(bm.identifier, include_all=False)
         util.validate_doc(
             doc=r,
             mandatory_labels=[labels.RANKING, labels.SCHEMA, labels.LINKS]
         )
         serialize.validate_links(r, [hateoas.SELF, hateoas.BENCHMARK])
+        assert len(r[labels.RANKING]) == 2
         r = repo.get_leaderboard(bm.identifier, include_all=True)
         util.validate_doc(
             doc=r,
@@ -203,7 +190,7 @@ class TestBenchmarkApi(object):
 
     def test_list_benchmarks(self, tmpdir):
         """Test list benchmark descriptors."""
-        repo, benchmarks, _ = self.init(str(tmpdir))
+        repo, _, benchmarks = TestBenchmarkApi.init(str(tmpdir))
         r = repo.list_benchmarks()
         util.validate_doc(
             doc=r,

@@ -17,25 +17,31 @@ import robcore.config.base as config
 """Names of environment variables that are used to configure the authentication
 module.
 """
-# Base URL for all API resources
-ROB_API_URL = 'ROB_APIURL'
 # Base directory to store uploaded files and submission results
 ROB_API_BASEDIR = 'ROB_APIDIR'
+# Host name for API server
+ROB_API_HOST = 'ROB_APIHOST'
 # Name of the API instance
 ROB_API_NAME = 'ROB_APINAME'
+# API application path
+ROB_API_PATH = 'ROB_APIPATH'
+# API server port on host
+ROB_API_PORT = 'ROB_APIPORT'
 
 
 """Default values for environment variables."""
 DEFAULT_DIR = '.rob'
+DEFAULT_HOST = 'localhost'
 DEFAULT_NAME = 'Reproducible Open Benchmarks for Data Analysis (API)'
-DEFAULT_URL = 'http://localhost:5000/rob/api/v1'
+DEFAULT_PATH = '/rob/api/v1'
+DEFAULT_PORT = 5000
 
 # -- Public helper methods to access configuration values ----------------------
 
 def API_BASEDIR(default_value=None, raise_error=False):
     """Get the base directory that is used by the API to store benchmark
     templates and benchmark runs from the respective environment variable
-    'ROB_APIDIR'. Raises a MissingConfigurationError if thr raise_error flag
+    'ROB_APIDIR'. Raises a MissingConfigurationError if the raise_error flag
     is True and 'ROB_APIDIR' is not set. If the raise_error flag is False and
     'ROB_APIDIR' is not set the default name is returned.
 
@@ -68,55 +74,59 @@ def API_BASEDIR(default_value=None, raise_error=False):
     return val
 
 
-def API_NAME(default_value=None, raise_error=False):
+def API_HOST():
+    """Get the API server host name from the respective environment variable
+    'ROB_APIHOST'. If the variable is not set the default host name is returned.
+
+    Returns
+    -------
+    string
+    """
+    return config.get_variable(
+        name=ROB_API_HOST,
+        default_value=DEFAULT_HOST,
+        raise_error=False
+    )
+
+
+def API_NAME():
     """Get the service name for the API from the respective environment variable
-    'ROB_APINAME'. Raises a MissingConfigurationError if thr raise_error flag
-    is True and 'ROB_APINAME' is not set. If the raise_error flag is False and
-    'ROB_APINAME' is not set the default name is returned.
-
-    Parameters
-    ----------
-    default_value: string, optional
-        Default value if 'ROB_APINAME' is not set and raise_error flag is
-        False
-    raise_error: bool, optional
-        Flag indicating whether an error is raised if the environment variable
-        is not set (i.e., None or and empty string '')
+    'ROB_APINAME'. If the variable is not set the default name is returned.
 
     Returns
     -------
     string
-
-    Raises
-    ------
-    robcore.error.MissingConfigurationError
     """
-    val = config.get_variable(
+    return config.get_variable(
         name=ROB_API_NAME,
-        default_value=default_value,
-        raise_error=raise_error
+        default_value=DEFAULT_NAME,
+        raise_error=False
     )
-    # If the environment variable is not set and no default value was given
-    # return the defined default value
-    if val is None:
-        val = DEFAULT_NAME
-    return val
 
 
-def API_URL(default_value=None, raise_error=False):
-    """Get the base URL for the API from the respective environment variable
-    'ROB_API_URL'. Raises a MissingConfigurationError if thr raise_error flag
-    is True and 'ROB_API_URL' is not set. If the raise_error flag is False and
-    'ROB_API_URL' is not set the default value is returned.
+def API_PATH():
+    """Get the application path name for the API from the respective environment
+    variable 'ROB_APIPATH'. If the variable is not set the default application
+    path is returned.
 
-    Parameters
-    ----------
-    default_value: string, optional
-        Default value if 'ROB_API_URL' is not set and raise_error flag is
-        False
-    raise_error: bool, optional
-        Flag indicating whether an error is raised if the environment variable
-        is not set (i.e., None or and empty string '')
+    Returns
+    -------
+    string
+    """
+    return config.get_variable(
+        name=ROB_API_PATH,
+        default_value=DEFAULT_PATH,
+        raise_error=False
+    )
+
+
+def API_PORT():
+    """Get the API application port number from the respective environment
+    variable 'ROB_APIPORT'. If the variable is not set the default port number
+    is returned.
+
+    Expects a value that can be cast to integer. Raises ValueError if the value
+    for the environment variable 'ROB_APIPORT' cannot be cast to integer.
 
     Returns
     -------
@@ -124,15 +134,33 @@ def API_URL(default_value=None, raise_error=False):
 
     Raises
     ------
-    robcore.error.MissingConfigurationError
+    ValueError
     """
     val = config.get_variable(
-        name=ROB_API_URL,
-        default_value=default_value,
-        raise_error=raise_error
+        name=ROB_API_PORT,
+        default_value=DEFAULT_PORT,
+        raise_error=False
     )
-    # If the environment variable is not set and no default value was given
-    # return the defined default value
-    if val is None:
-        val = DEFAULT_URL
-    return val
+    return int(val)
+
+
+def API_URL():
+    """Get the base URL for the API from the respective environment variables
+    'ROB_APIHOST', 'ROB_APIPATH', and 'ROB_APIPORT'.
+
+    Returns
+    -------
+    string
+
+    Raises
+    ------
+    ValueError
+    """
+    host = API_HOST()
+    port = API_PORT()
+    if port != 80:
+        host = '{}:{}'.format(host, port)
+    path = API_PATH()
+    if not path.startswith('/'):
+        path = '/' + path
+    return '{}{}'.format(host, path)

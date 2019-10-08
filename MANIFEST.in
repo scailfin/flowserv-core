@@ -8,7 +8,7 @@
 
 include LICENSE
 include *.rst
-recursive-include robtmpl *.py *.sql
+recursive-include robcore *.py *.sql
 prune docs/_build
 recursive-include docs *.py
 recursive-include docs *.rst

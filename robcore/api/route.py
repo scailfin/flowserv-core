@@ -18,8 +18,8 @@ class UrlFactory(object):
     """
     def __init__(self, base_url=None):
         """Initialize the base Url for the service API. If the argument is not
-        given the value is expcted in the environment variable
-        'robapi_API_BASEURL'.
+        given the value the Url is generated from the values of the repsective
+        environment variables for the server host, port, and application path.
 
         Parameters
         ----------

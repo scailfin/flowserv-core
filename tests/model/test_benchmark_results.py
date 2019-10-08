@@ -16,6 +16,8 @@ import pytest
 
 from passlib.hash import pbkdf2_sha256
 
+from robcore.model.template.repo.benchmark import BenchmarkRepository
+from robcore.model.template.repo.fs import TemplateFSRepository
 from robcore.model.template.schema import SortColumn
 from robcore.model.workflow.resource import FileResource
 
@@ -25,6 +27,7 @@ import robcore.model.workflow.state as wfstate
 import robcore.tests.benchmark as bm
 import robcore.tests.db as db
 import robcore.util as util
+
 
 BENCHMARK_1 = util.get_unique_identifier()
 BENCHMARK_2 = util.get_unique_identifier()
@@ -38,7 +41,8 @@ class TestBenchmarkResultRanking(object):
     """Unit tests for inserting benchmark results and for retrieving result
     rankings.
     """
-    def init(self, base_dir):
+    @staticmethod
+    def init(base_dir):
         """Create a fresh database with one user, two benchmark, and three
         submissions. The first benchmark has a schema and two submissions while
         the second benchmark has no schema and one submission.
@@ -65,14 +69,18 @@ class TestBenchmarkResultRanking(object):
             commit_changes=False
         )
         con.commit()
-        self.con = con
+        repo = BenchmarkRepository(
+            con=con,
+            template_repo=TemplateFSRepository(base_dir=base_dir)
+        )
+        return con, repo
 
-    def create_run(self, submission_id, values, base_dir):
+    def create_run(self, con, submission_id, values, base_dir):
         """Create a successful run for the given submission with the given
         result values.
         """
         run = runstore.create_run(
-            con=self.con,
+            con=con,
             submission_id=submission_id,
             arguments=dict(),
             commit_changes=True
@@ -84,7 +92,7 @@ class TestBenchmarkResultRanking(object):
         else:
             files = dict()
         runstore.update_run(
-            con=self.con,
+            con=con,
             run_id=run.identifier,
             state=wfstate.StatePending().start().success(files=files),
             commit_changes=True
@@ -94,21 +102,20 @@ class TestBenchmarkResultRanking(object):
         """Test inserting results for submission runs and retrieving benchmark
         leaderboards.
         """
-        self.init(str(tmpdir))
-        self.create_run(SUBMISSION_1, {'col1': 1, 'col2': 10.7}, str(tmpdir))
-        self.create_run(SUBMISSION_1, {'col1': 5, 'col2': 1.3}, str(tmpdir))
-        self.create_run(SUBMISSION_1, {'col1': 10, 'col2': 1.3}, str(tmpdir))
-        self.create_run(SUBMISSION_2, {'col1': 7, 'col2': 12.7}, str(tmpdir))
-        self.create_run(SUBMISSION_2, {'col1': 3, 'col2': 8.3}, str(tmpdir))
+        con, repo = TestBenchmarkResultRanking.init(str(tmpdir))
+        self.create_run(con, SUBMISSION_1, {'col1': 1, 'col2': 10.7}, str(tmpdir))
+        self.create_run(con, SUBMISSION_1, {'col1': 5, 'col2': 1.3}, str(tmpdir))
+        self.create_run(con, SUBMISSION_1, {'col1': 10, 'col2': 1.3}, str(tmpdir))
+        self.create_run(con, SUBMISSION_2, {'col1': 7, 'col2': 12.7}, str(tmpdir))
+        self.create_run(con, SUBMISSION_2, {'col1': 3, 'col2': 8.3}, str(tmpdir))
         sql = 'SELECT COUNT(*) FROM ' + ranking.RESULT_TABLE(BENCHMARK_1)
-        r = self.con.execute(sql).fetchone()
+        r = con.execute(sql).fetchone()
         assert r[0] == 5
         # Sort by the default column col1 in descending order. Expects two
         # entries:
         # 1. SUBMISSION_1['col1'] = 10
         # 2. SUBMISSION_2['col1'] =  7
-        results = ranking.get_leaderboard(
-            con=self.con,
+        results = repo.get_leaderboard(
             benchmark_id=BENCHMARK_1,
             order_by=None,
             include_all=False
@@ -127,8 +134,7 @@ class TestBenchmarkResultRanking(object):
         for col in ['col1', 'col2', 'col3']:
             assert col in names
         # Include all results. Expects 5 entries
-        results = ranking.get_leaderboard(
-            con=self.con,
+        results = repo.get_leaderboard(
             benchmark_id=BENCHMARK_1,
             order_by=None,
             include_all=True
@@ -138,8 +144,7 @@ class TestBenchmarkResultRanking(object):
         # entries:
         # 1. SUBMISSION_1['col1'] = 5
         # 2. SUBMISSION_2['col1'] = 3
-        results = ranking.get_leaderboard(
-            con=self.con,
+        results = repo.get_leaderboard(
             benchmark_id=BENCHMARK_1,
             order_by=[SortColumn('col2', False), SortColumn('col1', False)],
             include_all=False
@@ -155,8 +160,7 @@ class TestBenchmarkResultRanking(object):
         # Expects five entries with the first two belonging to SUBMISSION 1:
         # 1. SUBMISSION_1['col1'] = 5
         # 2. SUBMISSION_1['col1'] = 10
-        results = ranking.get_leaderboard(
-            con=self.con,
+        results = repo.get_leaderboard(
             benchmark_id=BENCHMARK_1,
             order_by=[SortColumn('col2', False), SortColumn('col1', False)],
             include_all=True
@@ -171,13 +175,13 @@ class TestBenchmarkResultRanking(object):
 
     def test_insert_results(self, tmpdir):
         """Test inserting results for submission runs."""
-        self.init(str(tmpdir))
-        self.create_run(SUBMISSION_1, {'col1': 1, 'col2': 10.7}, str(tmpdir))
-        self.create_run(SUBMISSION_1, {'col1': 5, 'col2': 5.5}, str(tmpdir))
-        self.create_run(SUBMISSION_1, None, str(tmpdir))
-        self.create_run(SUBMISSION_2, {'col1': 7, 'col2': 12.7}, str(tmpdir))
-        self.create_run(SUBMISSION_2, {'col1': 3, 'col2': 8.3}, str(tmpdir))
-        self.create_run(SUBMISSION_3, {'col1': 6, 'col2': 6.3}, str(tmpdir))
+        con, _ = TestBenchmarkResultRanking.init(str(tmpdir))
+        self.create_run(con, SUBMISSION_1, {'col1': 1, 'col2': 10.7}, str(tmpdir))
+        self.create_run(con, SUBMISSION_1, {'col1': 5, 'col2': 5.5}, str(tmpdir))
+        self.create_run(con, SUBMISSION_1, None, str(tmpdir))
+        self.create_run(con, SUBMISSION_2, {'col1': 7, 'col2': 12.7}, str(tmpdir))
+        self.create_run(con, SUBMISSION_2, {'col1': 3, 'col2': 8.3}, str(tmpdir))
+        self.create_run(con, SUBMISSION_3, {'col1': 6, 'col2': 6.3}, str(tmpdir))
         sql = 'SELECT COUNT(*) FROM ' + ranking.RESULT_TABLE(BENCHMARK_1)
-        r = self.con.execute(sql).fetchone()
+        r = con.execute(sql).fetchone()
         assert r[0] == 4

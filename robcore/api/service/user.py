@@ -10,8 +10,8 @@
 well as access tokens.
 """
 
-from robapi.serialize.user import UserSerializer
-from robapi.service.route import UrlFactory
+from robcore.api.serialize.user import UserSerializer
+from robcore.api.route import UrlFactory
 
 import robcore.model.user.base as auth
 
@@ -29,9 +29,9 @@ class UserService(object):
             Manager for registered users
         auth: robcore.model.user.auth.Auth
             Implementation of the authorization policy for the API
-        urls: robapi.service.route.UrlFactory
+        urls: robcore.api.route.UrlFactory
             Factory for API resource Urls
-        serializer: robapi.api.serialize.user.UserSerializer, optional
+        serializer: robcore.api.serialize.user.UserSerializer, optional
             Override the default serializer
         """
         self.manager = manager

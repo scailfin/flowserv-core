@@ -59,7 +59,6 @@ class TestSubmissionManagerFilestore(object):
             directory=base_dir,
             engine=BenchmarkEngine(
                 con=con,
-                repo=dict(),
                 backend=StateEngine()
             )
         )

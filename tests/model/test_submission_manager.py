@@ -34,15 +34,12 @@ USER_1 = util.get_unique_identifier()
 USER_2 = util.get_unique_identifier()
 USER_3 = util.get_unique_identifier()
 
-REPO = DictRepo(
-    templates=dict({
-        BENCHMARK_1: WorkflowTemplate(
-            workflow_spec=dict(),
-            result_schema=bm.BENCHMARK_SCHEMA
-        ),
-        BENCHMARK_2: WorkflowTemplate(workflow_spec=dict())
-    })
+TEMPLATE = WorkflowTemplate(
+    workflow_spec=dict(),
+    source_dir='/dev/null',
+    result_schema=bm.BENCHMARK_SCHEMA
 )
+
 
 class TestSubmissionManager(object):
     """Unit tests for managing submissions and team members through the
@@ -85,7 +82,6 @@ class TestSubmissionManager(object):
             directory=base_dir,
             engine=BenchmarkEngine(
                 con=con,
-                repo=REPO,
                 backend=engine
             )
         )
@@ -171,10 +167,18 @@ class TestSubmissionManager(object):
         # Create two successful runs for the submission
         values = {'col1': 1, 'col2': 1.1, 'col3': 'R0'}
         engine.success(values=values)
-        manager.start_run(submission.identifier, dict())
+        manager.start_run(
+            submission_id=submission.identifier,
+            arguments=dict(),
+            template=TEMPLATE
+        )
         values = {'col1': 2, 'col2': 2.1}
         engine.success(values=values)
-        manager.start_run(submission.identifier, dict())
+        manager.start_run(
+            submission_id=submission.identifier,
+            arguments=dict(),
+            template=TEMPLATE
+        )
         # Retrieve the submission to check that the result files were created
         submission = manager.get_submission(submission.identifier)
         assert len(submission.get_runs()) == 2
@@ -219,24 +223,48 @@ class TestSubmissionManager(object):
         # Submission 1
         values = {'col1': 10, 'col2': 11.1, 'col3': 'L3'}
         engine.success(values=values)
-        manager.start_run(s1.identifier, dict())
+        manager.start_run(
+            submission_id=s1.identifier,
+            arguments=dict(),
+            template=TEMPLATE
+        )
         values = {'col1': 5, 'col2': 21.1, 'col3': 'L1'}
         engine.success(values=values)
-        manager.start_run(s1.identifier, dict())
+        manager.start_run(
+            submission_id=s1.identifier,
+            arguments=dict(),
+            template=TEMPLATE
+        )
         values = {'col1': 8, 'col2': 28.3, 'col3': 'L1'}
         engine.success(values=values)
-        manager.start_run(s1.identifier, dict())
+        manager.start_run(
+            submission_id=s1.identifier,
+            arguments=dict(),
+            template=TEMPLATE
+        )
         # Submission 2
         values = {'col1': 25, 'col2': 25.1, 'col3': 'L4'}
         engine.success(values=values)
-        manager.start_run(s2.identifier, dict())
+        manager.start_run(
+            submission_id=s2.identifier,
+            arguments=dict(),
+            template=TEMPLATE
+        )
         values = {'col1': 7, 'col2': 27.1, 'col3': 'L5'}
         engine.success(values=values)
-        manager.start_run(s2.identifier, dict())
+        manager.start_run(
+            submission_id=s2.identifier,
+            arguments=dict(),
+            template=TEMPLATE
+        )
         # Submission 3
         values = {'col1': 7, 'col2': 27.1, 'col3': 'L5'}
         engine.success(values=values)
-        manager.start_run(s3.identifier, dict())
+        manager.start_run(
+            submission_id=s3.identifier,
+            arguments=dict(),
+            template=TEMPLATE
+        )
         assert s1.get_results().size() == 3
         assert s2.get_results().size() == 2
         assert s3.get_results().size() == 1

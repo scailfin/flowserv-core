@@ -15,9 +15,9 @@ import sqlite3
 
 from robcore.model.template.benchmark import BenchmarkHandle
 from robcore.model.template.repo.benchmark import BenchmarkRepository
-from robcore.tests.repo import DictRepo
-from robcore.model.template.schema import ResultSchema
 from robcore.model.template.repo.fs import TemplateFSRepository
+from robcore.model.template.schema import ResultSchema
+from robcore.tests.repo import DictRepo
 
 import robcore.error as err
 import robcore.model.ranking as ranking

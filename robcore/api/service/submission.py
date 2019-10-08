@@ -10,8 +10,8 @@
 submissions and their results.
 """
 
-from robapi.serialize.submission import SubmissionSerializer
-from robapi.service.route import UrlFactory
+from robcore.api.serialize.submission import SubmissionSerializer
+from robcore.api.route import UrlFactory
 
 import robcore.error as err
 import robcore.model.user.auth as res
@@ -31,9 +31,9 @@ class SubmissionService(object):
             Manager for benchmark submissions
         auth: robcore.model.user.auth.Auth
             Implementation of the authorization policy for the API
-        urls: robapi.service.route.UrlFactory
+        urls: robcore.api.route.UrlFactory
             Factory for API resource Urls
-        serializer: robapi.serialize.submission.SubmissionSerializer, optional
+        serializer: robcore.api.serialize.submission.SubmissionSerializer, optional
             Override the default serializer
         """
         self.manager = manager

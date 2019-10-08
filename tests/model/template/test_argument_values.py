@@ -34,6 +34,7 @@ class TestArgumentValues(object):
         """
         template = WorkflowTemplate(
             workflow_spec=dict(),
+            source_dir='dev/null',
             parameters=[
                 TemplateParameter(pd.parameter_declaration('A', data_type=pd.DT_INTEGER)),
                 TemplateParameter(pd.parameter_declaration('B', data_type=pd.DT_BOOL)),
@@ -113,6 +114,7 @@ class TestArgumentValues(object):
                     pd.parameter_declaration('G', data_type=pd.DT_DECIMAL,  parent='E', required=False)
                 ]
             },
+            source_dir='dev/null',
             validate=True
         )
         params = template.parameters

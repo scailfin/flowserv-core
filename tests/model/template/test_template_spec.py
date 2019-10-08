@@ -42,51 +42,60 @@ class TestWorkflowTemplate(object):
     def test_benchmark(self):
         """Test reading benchmark template with order by clause."""
         doc = util.read_object(filename=BENCHMARK_YAML_FILE)
-        template = WorkflowTemplate.from_dict(doc)
+        template = WorkflowTemplate.from_dict(doc, 'dev/null')
         assert len(template.parameters) == 1
         assert len(template.get_schema().order_by) == 2
 
     def test_from_dict(self):
         """Test creating workflow template instances from dictionaries."""
         # Minimal
-        template = WorkflowTemplate.from_dict({
-            tmpl.LABEL_WORKFLOW: {'A': 1, 'B': 2}
-        })
+        template = WorkflowTemplate.from_dict(
+            doc={
+                tmpl.LABEL_WORKFLOW: {'A': 1, 'B': 2}
+            },
+            source_dir='dev/null'
+        )
         assert not template.identifier is None
         assert len(template.list_parameters()) == 0
         assert not template.has_schema()
         assert template.workflow_spec == {'A': 1, 'B': 2}
         # Error for missing workflow element
         with pytest.raises(err.InvalidTemplateError):
-            WorkflowTemplate.from_dict(dict())
+            WorkflowTemplate.from_dict(dict(), 'dev/null')
         with pytest.raises(err.InvalidTemplateError):
-            WorkflowTemplate.from_dict({
-                tmpl.LABEL_WORKFLOW: {'A': 1, 'B': 2},
-                tmpl.LABEL_RESULTS: {
-                    schema.SCHEMA_COLUMNS: [{'A': 1}]
-                }
-            })
+            WorkflowTemplate.from_dict(
+                doc={
+                    tmpl.LABEL_WORKFLOW: {'A': 1, 'B': 2},
+                    tmpl.LABEL_RESULTS: {
+                        schema.SCHEMA_COLUMNS: [{'A': 1}]
+                    }
+                },
+                source_dir='dev/null'
+            )
         # Error for non-unique parameter names
         with pytest.raises(err.InvalidTemplateError):
-            WorkflowTemplate.from_dict({
-                tmpl.LABEL_WORKFLOW: {'A': 1, 'B': 2},
-                tmpl.LABEL_PARAMETERS: [
-                    TemplateParameter(pd.parameter_declaration('A')).to_dict(),
-                    TemplateParameter(pd.parameter_declaration('B')).to_dict(),
-                    TemplateParameter(pd.parameter_declaration('A')).to_dict()
-                ]
-            })
+            WorkflowTemplate.from_dict(
+                doc={
+                    tmpl.LABEL_WORKFLOW: {'A': 1, 'B': 2},
+                    tmpl.LABEL_PARAMETERS: [
+                        TemplateParameter(pd.parameter_declaration('A')).to_dict(),
+                        TemplateParameter(pd.parameter_declaration('B')).to_dict(),
+                        TemplateParameter(pd.parameter_declaration('A')).to_dict()
+                    ]
+                },
+                source_dir='dev/null'
+            )
         # Read erroneous templates from disk
         loader = JsonFileStore(base_dir=BENCHMARK_DIR)
         with pytest.raises(err.UnknownParameterError):
-            WorkflowTemplate.from_dict(loader.read(BENCHMARK_ERR_1))
-        WorkflowTemplate.from_dict(loader.read(BENCHMARK_ERR_1), validate=False)
+            WorkflowTemplate.from_dict(loader.read(BENCHMARK_ERR_1), 'dev/null')
+        WorkflowTemplate.from_dict(loader.read(BENCHMARK_ERR_1), 'dev/null', validate=False)
         with pytest.raises(err.InvalidTemplateError):
-            WorkflowTemplate.from_dict(loader.read(BENCHMARK_ERR_2))
+            WorkflowTemplate.from_dict(loader.read(BENCHMARK_ERR_2), 'dev/null')
         with pytest.raises(err.InvalidTemplateError):
-            WorkflowTemplate.from_dict(loader.read(BENCHMARK_ERR_3))
+            WorkflowTemplate.from_dict(loader.read(BENCHMARK_ERR_3), 'dev/null')
         with pytest.raises(err.InvalidTemplateError):
-            WorkflowTemplate.from_dict(loader.read(BENCHMARK_ERR_4))
+            WorkflowTemplate.from_dict(loader.read(BENCHMARK_ERR_4), 'dev/null')
 
     def test_get_parameter_references(self):
         """Test function to get all parameter references in a workflow
@@ -124,7 +133,10 @@ class TestWorkflowTemplate(object):
         template instances.
         """
         # Minimal
-        template = WorkflowTemplate(workflow_spec={'A': 1, 'B': 2})
+        template = WorkflowTemplate(
+            workflow_spec={'A': 1, 'B': 2},
+            source_dir='dev/null'
+        )
         assert not template.identifier is None
         assert len(template.list_parameters()) == 0
         assert not template.has_schema()
@@ -132,6 +144,7 @@ class TestWorkflowTemplate(object):
         # Dictionary
         template = WorkflowTemplate(
             workflow_spec=dict(),
+            source_dir='dev/null',
             parameters={
                 'A': TemplateParameter(pd.parameter_declaration('A')),
                 'B': TemplateParameter(pd.parameter_declaration('B'))
@@ -144,6 +157,7 @@ class TestWorkflowTemplate(object):
         # List
         template = WorkflowTemplate(
             workflow_spec=dict(),
+            source_dir='dev/null',
             parameters=[
                 TemplateParameter(pd.parameter_declaration('A')),
                 TemplateParameter(pd.parameter_declaration('B'))
@@ -157,6 +171,7 @@ class TestWorkflowTemplate(object):
         template = WorkflowTemplate(
             identifier='ABC',
             workflow_spec=dict(),
+            source_dir='dev/null',
             parameters={
                 'A': TemplateParameter(pd.parameter_declaration('A')),
                 'B': TemplateParameter(pd.parameter_declaration('B'))
@@ -167,6 +182,7 @@ class TestWorkflowTemplate(object):
         with pytest.raises(err.InvalidTemplateError):
             WorkflowTemplate(
                 workflow_spec=dict(),
+                source_dir='dev/null',
                 parameters={
                     'A': TemplateParameter(pd.parameter_declaration('A')),
                     'B': TemplateParameter(pd.parameter_declaration('B')),
@@ -176,6 +192,7 @@ class TestWorkflowTemplate(object):
         with pytest.raises(err.InvalidTemplateError):
             WorkflowTemplate(
                 workflow_spec=dict(),
+                source_dir='dev/null',
                 parameters=[
                     TemplateParameter(pd.parameter_declaration('A')),
                     TemplateParameter(pd.parameter_declaration('B')),
@@ -198,6 +215,7 @@ class TestWorkflowTemplate(object):
                     pd.parameter_declaration('F', parent='E'),
                 ]
             },
+            source_dir='dev/null',
             validate=True
         )
         # Parameters 'A', 'C', 'D', and 'F' have no children
@@ -220,6 +238,7 @@ class TestWorkflowTemplate(object):
         template = WorkflowTemplate(
             identifier='ABC',
             workflow_spec=dict(),
+            source_dir='dev/null',
             parameters={
                 'A': TemplateParameter(pd.parameter_declaration('A')),
                 'B': TemplateParameter(pd.parameter_declaration('B', data_type=pd.DT_LIST)),
@@ -227,23 +246,30 @@ class TestWorkflowTemplate(object):
             }
         )
         doc = template.to_dict()
-        parameters = WorkflowTemplate.from_dict(doc).parameters
+        parameters = WorkflowTemplate.from_dict(doc, 'dev/null').parameters
         assert len(parameters) == 3
         assert 'A' in parameters
         assert 'B' in parameters
         assert len(parameters['B'].children) == 1
-        template = WorkflowTemplate.from_dict(doc)
+        template = WorkflowTemplate.from_dict(doc, 'dev/null')
         assert template.identifier == 'ABC'
         # Missing parameter list
-        template = WorkflowTemplate(identifier='ABC', workflow_spec=dict())
-        parameters = WorkflowTemplate.from_dict(template.to_dict()).parameters
+        template = WorkflowTemplate(
+            identifier='ABC',
+            workflow_spec=dict(),
+            source_dir='dev/null'
+        )
+        parameters = WorkflowTemplate.from_dict(template.to_dict(), 'dev/null').parameters
         assert len(parameters) == 0
 
     def test_simple_replace(self):
         """Replace parameter references in simple template with argument values.
         """
         for filename in [TEMPLATE_YAML_FILE, TEMPLATE_JSON_FILE]:
-            template = WorkflowTemplate.from_dict(util.read_object(filename))
+            template = WorkflowTemplate.from_dict(
+                util.read_object(filename),
+                'dev/null'
+            )
             arguments = {
                 'code': TemplateArgument(
                     parameter=template.get_parameter('code'),
@@ -293,6 +319,7 @@ class TestWorkflowTemplate(object):
                     pd.parameter_declaration('E', index=1)
                 ]
             },
+            source_dir='dev/null',
             validate=True
         )
         # Get list of sorted parameter identifier from listing

@@ -24,9 +24,10 @@ import robcore.util as util
 class BenchmarkEngine(object):
     """The benchmark engine executes benchmark workflows for a given set of
     argument values. The state of workflow runs in maintained in the underlying
-    relational database.
+    relational database. WOrkflow execution is handled by a given workflow
+    controller.
     """
-    def __init__(self, con, repo, backend):
+    def __init__(self, con, backend):
         """Initialize the connection to the databases that contains the
         benchmark result tables and the workflow controller that is responsible
         for executing and managing workflow runs.
@@ -35,13 +36,10 @@ class BenchmarkEngine(object):
         ----------
         con: DB-API 2.0 database connection
             Connection to the underlying database
-        repo: robcore.model.template.repo.TemplateRepository
-            Repository for benchmark workflow templates
         backend: robcore.model.workflow.controller.WorkflowController
             Workflow controller that is responsible for workflow execution
         """
         self.con = con
-        self.repo = repo
         self.backend = backend
 
     def cancel_run(self, run_id):
@@ -179,7 +177,7 @@ class BenchmarkEngine(object):
             result.append(self.get_run(row['run_id']))
         return result
 
-    def start_run(self, submission_id, arguments, source_dir=None):
+    def start_run(self, submission_id, arguments, template):
         """Run benchmark for a given submission with the given set of arguments.
 
         Parameters
@@ -188,9 +186,9 @@ class BenchmarkEngine(object):
             Unique submission identifier
         arguments: dict(benchtmpl.workflow.parameter.value.TemplateArgument)
             Dictionary of argument values for parameters in the template
-        source_dir: string, optional
-            Source directory that contains the static template files. If given,
-            this value overrides the source directory in the given template.
+        template: robcore.model.template.base.WorkflowTemplate
+            Workflow template containing the parameterized specification and the
+            parameter declarations
 
         Returns
         -------
@@ -207,7 +205,6 @@ class BenchmarkEngine(object):
         row = self.con.execute(sql, (submission_id,)).fetchone()
         if row is None:
             raise err.UnknownSubmissionError(submission_id)
-        template = self.repo.get_template(row['benchmark_id'])
         # Create a unique run identifier
         run = store.create_run(
             con=self.con,
@@ -220,8 +217,7 @@ class BenchmarkEngine(object):
         state = self.backend.exec_workflow(
             run_id=run_id,
             template=template,
-            arguments=arguments,
-            source_dir=source_dir,
+            arguments=arguments
         )
         # Update the run state if it is no longer pending for execution.
         if not state.is_pending():

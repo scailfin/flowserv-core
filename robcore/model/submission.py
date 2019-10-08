@@ -69,6 +69,28 @@ class SubmissionHandle(object):
         self.members = members
         self.manager = manager
 
+    def get_file(self, file_id):
+        """Get handle for file with given identifier. Raises an error if no file
+        with given identifier exists.
+
+        Parameters
+        ----------
+        file_id: string
+            Unique file identifier
+
+        Returns
+        -------
+        robcore.io.files.FileHandle
+
+        Raises
+        ------
+        robcore.error.UnknownFileError
+        """
+        return self.manager.get_file(
+            submission_id=self.identifier,
+            file_id=file_id
+        )
+
     def get_members(self):
         """Get list of submission members. Loads the member list on-demand if
         it currently is None.
@@ -135,13 +157,16 @@ class SubmissionHandle(object):
         """
         self.members = None
 
-    def start_run(self, arguments):
+    def start_run(self, arguments, template):
         """Run benchmark for the submission with the given set of arguments.
 
         Parameters
         ----------
         arguments: dict(benchtmpl.workflow.parameter.value.TemplateArgument)
             Dictionary of argument values for parameters in the template
+        template: robcore.model.template.base.WorkflowTemplate
+            Workflow template containing the parameterized specification and the
+            parameter declarations
 
         Returns
         -------
@@ -153,7 +178,8 @@ class SubmissionHandle(object):
         """
         self.manager.start_run(
             submission_id=self.identifier,
-            arguments=arguments
+            arguments=arguments,
+            template=template
         )
 
 
@@ -228,9 +254,11 @@ class SubmissionManager(object):
         util.create_dir(os.path.join(self.directory, identifier))
         # Add owner to list of initial members
         if members is None:
-            members = list([user_id])
-        elif not user_id in members:
-            members.append(user_id)
+            members = set([user_id])
+        else:
+            members = set(members)
+            if not user_id in members:
+                members.add(user_id)
         # Enter submission information into database and commit all changes
         sql = 'INSERT INTO benchmark_submission('
         sql += 'submission_id, benchmark_id, name, owner_id'
@@ -238,7 +266,7 @@ class SubmissionManager(object):
         values = (identifier, benchmark_id, name, user_id)
         self.con.execute(sql, values)
         sql = 'INSERT INTO submission_member(submission_id, user_id) VALUES(?, ?)'
-        for member_id in set(members):
+        for member_id in members:
             self.con.execute(sql, (identifier, member_id))
         self.con.commit()
         # Return the created submission object
@@ -311,7 +339,7 @@ class SubmissionManager(object):
         shutil.rmtree(os.path.join(self.directory, submission_id))
 
     def get_file(self, submission_id, file_id):
-        """Get handle for file with given identifier. Returns None if no file
+        """Get handle for file with given identifier. Raises an error if no file
         with given identifier exists.
 
         Parameters
@@ -541,7 +569,7 @@ class SubmissionManager(object):
             submissions.append(s)
         return submissions
 
-    def start_run(self, submission_id, arguments):
+    def start_run(self, submission_id, arguments, template):
         """Run benchmark for a given submission with the given set of arguments.
 
         This method does not check if the submission exists. Thie method is
@@ -555,6 +583,9 @@ class SubmissionManager(object):
             Unique submission identifier
         arguments: dict(benchtmpl.workflow.parameter.value.TemplateArgument)
             Dictionary of argument values for parameters in the template
+        template: robcore.model.template.base.WorkflowTemplate
+            Workflow template containing the parameterized specification and the
+            parameter declarations
 
         Returns
         -------
@@ -566,7 +597,8 @@ class SubmissionManager(object):
         """
         return self.engine.start_run(
             submission_id=submission_id,
-            arguments=arguments
+            arguments=arguments,
+            template=template
         )
 
     def update_submission(self, submission_id, name=None, members=None):

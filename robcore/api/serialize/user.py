@@ -8,8 +8,8 @@
 
 """Serializer for user resources."""
 
-import robapi.serialize.hateoas as hateoas
-import robapi.serialize.labels as labels
+import robcore.api.serialize.hateoas as hateoas
+import robcore.api.serialize.labels as labels
 
 
 class UserSerializer(object):
@@ -19,7 +19,7 @@ class UserSerializer(object):
 
         Parameters
         ----------
-        urls: robapi.service.route.UrlFactory
+        urls: robcore.api.route.UrlFactory
             Factory for resource urls
         """
         self.urls = urls

@@ -31,9 +31,11 @@ class TestBenchmarkEngine(object):
     """Unit tests for getting and setting run states. Uses a fake backend to
     simulate workflow execution.
     """
-    def init(self, base_dir):
+    @staticmethod
+    def init(base_dir):
         """Create a fresh database with a single user, single benchmark, and
-        two submissions. Returns an instance of the benchmark engine.
+        two submissions. Returns an instance of the benchmark engine and the
+        created template handle.
         """
         con = db.init_db(base_dir).connect()
         sql = 'INSERT INTO api_user(user_id, name, secret, active) '
@@ -56,25 +58,33 @@ class TestBenchmarkEngine(object):
             commit_changes=False
         )
         con.commit()
-        template = WorkflowTemplate(dict(), result_schema=bm.BENCHMARK_SCHEMA)
-        return BenchmarkEngine(
+        template = WorkflowTemplate(
+            workflow_spec=dict(),
+            source_dir='dev/null',
+            result_schema=bm.BENCHMARK_SCHEMA
+        )
+        engine = BenchmarkEngine(
             con=con,
-            repo=DictRepo(templates={BENCHMARK_ID: template}),
             backend=bm.StateEngine(base_dir=base_dir)
         )
+        return engine, template
 
     def test_cancel_and_delete_run(self, tmpdir):
         """Test deleting runs."""
         # Initialize the database and benchmark engine
-        engine = self.init(str(tmpdir))
+        engine, template = TestBenchmarkEngine.init(str(tmpdir))
         # Start a new run for each of the two submissions
         run1 = engine.start_run(
             submission_id=SUBMISSION_1,
-            arguments=dict()
+            arguments=dict(),
+            template=template
         )
+        assert len(run1.list_files()) == 0
+        assert run1.get_file(bm.RESULT_FILE_ID) is None
         run2 = engine.start_run(
             submission_id=SUBMISSION_2,
-            arguments=dict()
+            arguments=dict(),
+            template=template
         )
         assert len(engine.list_runs(SUBMISSION_1)) == 1
         assert len(engine.list_runs(SUBMISSION_2)) == 1
@@ -101,8 +111,11 @@ class TestBenchmarkEngine(object):
         engine.backend.success()
         run = engine.start_run(
             submission_id=SUBMISSION_1,
-            arguments=dict()
+            arguments=dict(),
+            template=template
         )
+        assert len(run.list_files()) == 1
+        assert not run.get_file(bm.RESULT_FILE_ID) is None
         assert len(engine.list_runs(SUBMISSION_1)) == 1
         assert len(engine.list_runs(SUBMISSION_2)) == 1
         assert run.is_success()
@@ -118,13 +131,14 @@ class TestBenchmarkEngine(object):
         error state.
         """
         # Initialize the database and benchmark engine
-        engine = self.init(str(tmpdir))
+        engine, template = TestBenchmarkEngine.init(str(tmpdir))
         # Create a run that is in error state
         messages = ['there', 'was', 'an', 'error']
         engine.backend.error(messages=messages)
         run = engine.start_run(
             submission_id=SUBMISSION_1,
-            arguments=dict()
+            arguments=dict(),
+            template=template
         )
         assert run.state.is_error()
         assert run.state.messages == messages
@@ -143,7 +157,7 @@ class TestBenchmarkEngine(object):
     def test_run_results(self, tmpdir):
         """Test successful runs with different results."""
         # Initialize the database and benchmark engine
-        engine = self.init(str(tmpdir))
+        engine, template = TestBenchmarkEngine.init(str(tmpdir))
         # Run workflow for different result sets. All value sets are valid
         # and should not raise an exception.
         values = [
@@ -154,7 +168,8 @@ class TestBenchmarkEngine(object):
             engine.backend.success(values=vals)
             engine.start_run(
                 submission_id=SUBMISSION_1,
-                arguments=dict()
+                arguments=dict(),
+                template=template
             )
         # Run workflow for different result sets. All value sets are invalid
         # and should raise an exception.
@@ -167,5 +182,6 @@ class TestBenchmarkEngine(object):
             with pytest.raises(err.ConstraintViolationError):
                 engine.start_run(
                     submission_id=SUBMISSION_1,
-                    arguments=dict()
+                    arguments=dict(),
+                    template=template
                 )

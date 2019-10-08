@@ -200,57 +200,6 @@ def create_result_table(con, benchmark_id, schema, commit_changes=True):
     if commit_changes:
         con.commit()
 
-def get_leaderboard(con, benchmark_id, order_by=None, include_all=False):
-    """Get current leaderboard for a given benchmark. The result is a
-    ranking of run results. Each entry contains the run and submission
-    information, as well as a dictionary with the results of the respective
-    workflow run.
-
-    If the include_all flag is False at most one result per submission is
-    included in the result.
-
-    Parameters
-    ----------
-    con: DB-API 2.0 database connection
-        Connection to underlying database
-    benchmark_id: string
-        Unique benchmark identifier
-    order_by: list(robcore.model.template.schema.SortColumn), optional
-        Use the given attribute to sort run results. If not given the schema
-        default attribute is used
-    include_all: bool, optional
-        Include at most one entry per submission in the result if False
-
-    Returns
-    -------
-    robcore.model.ranking.ResultRanking
-
-    Raises
-    ------
-    robcore.error.UnknownBenchmarkError
-    """
-    # Get the result schema for the benchmark. Will raise an error if the
-    # benchmark does not exist.
-    sql = 'SELECT result_schema FROM benchmark WHERE benchmark_id = ?'
-    row = con.execute(sql, (benchmark_id,)).fetchone()
-    if row is None:
-        raise err.UnknownBenchmarkError(benchmark_id)
-    # Get the result schema as defined in the workflow template
-    if not row['result_schema'] is None:
-        schema = ResultSchema.from_dict(json.loads(row['result_schema']))
-    else:
-        schema = ResultSchema()
-    return query(
-        con=con,
-        benchmark_id=benchmark_id,
-        schema=schema,
-        filter_stmt='s.benchmark_id = ?',
-        args=(benchmark_id,),
-        order_by=order_by,
-        include_all=include_all
-    )
-
-
 def insert_run_results(con, run_id, files, commit_changes=True):
     """Insert the results of a successful benchmark run into the respective
     result table of the underlying database. A benchmark may not have a result
