@@ -1,7 +1,18 @@
+# This file is part of the Reproducible Open Benchmarks for Data Analysis
+# Platform (ROB).
+#
+# Copyright (C) 2019 NYU.
+#
+# ROB is free software; you can redistribute it and/or modify it under the
+# terms of the MIT License; see LICENSE file for more details.
+
+import os
+import re
+
 from setuptools import setup, find_packages
 
-readme = open('README.rst').read()
 
+"""Required packages for install, test, docs, and tests."""
 
 install_requires=[
     'future',
@@ -31,9 +42,26 @@ extras_require = {
 }
 
 
+# Get the version string from the version.py file in the robcore package. Based
+# on:
+# https://stackoverflow.com/questions/458550/standard-way-to-embed-version-into-python-package
+with open(os.path.join('robcore', 'version.py'), 'rt') as f:
+    filecontent = f.read()
+match = re.search(r"^__version__\s*=\s*['\"]([^'\"]*)['\"]", filecontent, re.M)
+if not match is None:
+    version = match.group(0)
+else:
+    raise RuntimeError("unable to find version string in %s." % (filecontent,))
+
+
+# Get long project description text from the README.rst file
+with open('README.rst', 'rt') as f:
+    readme = f.read()
+
+
 setup(
-    name='benchmark-templates',
-    version='0.2.0',
+    name='rob-core',
+    version=version,
     description='Workflow Templates for Reproducible Open Benchmarks',
     long_description=readme,
     long_description_content_type='text/x-rst',
