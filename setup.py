@@ -49,7 +49,7 @@ with open(os.path.join('robcore', 'version.py'), 'rt') as f:
     filecontent = f.read()
 match = re.search(r"^__version__\s*=\s*['\"]([^'\"]*)['\"]", filecontent, re.M)
 if not match is None:
-    version = match.group(0)
+    version = match.group(1)
 else:
     raise RuntimeError("unable to find version string in %s." % (filecontent,))
 
@@ -66,7 +66,7 @@ setup(
     long_description=readme,
     long_description_content_type='text/x-rst',
     keywords='reproducibility benchmarks data analysis',
-    url='https://github.com/scailfin/benchmark-templates',
+    url='https://github.com/scailfin/rob-core',
     author='Heiko Mueller',
     author_email='heiko.muller@gmail.com',
     license='MIT',

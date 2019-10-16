@@ -37,5 +37,6 @@ def validate_name(name, con=None, sql=None):
     # Validate uniqueness if a database connection and SQL statement are given
     if con is None or sql is None:
         return
-    if not con.execute(sql, (name,)).fetchone() is None:
-        raise err.ConstraintViolationError('name \'{}\' exists'.format(name))
+    with con.cursor() as cur:
+        if not con.execute(sql, (name,)).fetchone() is None:
+            raise err.ConstraintViolationError('name \'{}\' exists'.format(name))

@@ -18,41 +18,10 @@ import robcore.config.base as config
 
 
 """Environment variables to configure the database driver."""
-ROB_DB_CONNECT = 'ROB_DBCONNECT'
 ROB_DB_ID = 'ROB_DBMS'
 
 
 # -- Public helper method to access configuration values ----------------------
-
-def DB_CONNECT(default_value=None, raise_error=False):
-    """Get the connect string for the database from the respective environment
-    variable 'ROB_DB_CONNECT'. Raises a MissingConfigurationError if the
-    raise_error flag is True and 'ROB_DB_CONNECT' is not set. If the raise_error
-    flag is False and 'ROB_DB_CONNECT' is not set the default value is returned.
-
-    Parameters
-    ----------
-    default_value: string, optional
-        Default value if 'ROB_DB_CONNECT' is not set and raise_error flag is
-        False
-    raise_error: bool, optional
-        Flag indicating whether an error is raised if the environment variable
-        is not set (i.e., None or and empty string '')
-
-    Returns
-    -------
-    string
-
-    Raises
-    ------
-    robcore.error.MissingConfigurationError
-    """
-    return config.get_variable(
-        name=ROB_DB_CONNECT,
-        default_value=default_value,
-        raise_error=raise_error
-    )
-
 
 def DB_IDENTIFIER(default_value=None, raise_error=False):
     """Get the identifier for the database management system from the respective

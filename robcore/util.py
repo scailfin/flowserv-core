@@ -129,7 +129,7 @@ def to_datetime(timestamp):
 def validate_doc(doc, mandatory_labels, optional_labels=[]):
     """Raises error if a dictionary contains labels that are not in the given
     label lists or if there are labels in the mandatory list that are not in the
-    dictionary.
+    dictionary. Returns the given dictionary (if valid).
 
     Paramaters
     ----------
@@ -139,6 +139,10 @@ def validate_doc(doc, mandatory_labels, optional_labels=[]):
         List of mandatory labels for the dictionary serialization
     optional_labels: list(string), optional
         List of optional labels for the dictionary serialization
+
+    Returns
+    -------
+    dict
 
     Raises
     ------
@@ -153,7 +157,8 @@ def validate_doc(doc, mandatory_labels, optional_labels=[]):
     for key in doc:
         if not key in labels:
             raise ValueError('unknown element \'{}\''.format(key))
-
+    return doc
+    
 
 def write_object(filename, obj, format=None):
     """Write given dictionary to file as Json object.

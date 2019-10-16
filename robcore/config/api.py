@@ -18,15 +18,15 @@ import robcore.config.base as config
 module.
 """
 # Base directory to store uploaded files and submission results
-ROB_API_BASEDIR = 'ROB_APIDIR'
+ROB_API_BASEDIR = 'ROB_API_DIR'
 # Host name for API server
-ROB_API_HOST = 'ROB_APIHOST'
+ROB_API_HOST = 'ROB_API_HOST'
 # Name of the API instance
-ROB_API_NAME = 'ROB_APINAME'
+ROB_API_NAME = 'ROB_API_NAME'
 # API application path
-ROB_API_PATH = 'ROB_APIPATH'
+ROB_API_PATH = 'ROB_API_PATH'
 # API server port on host
-ROB_API_PORT = 'ROB_APIPORT'
+ROB_API_PORT = 'ROB_API_PORT'
 
 
 """Default values for environment variables."""
@@ -41,14 +41,14 @@ DEFAULT_PORT = 5000
 def API_BASEDIR(default_value=None, raise_error=False):
     """Get the base directory that is used by the API to store benchmark
     templates and benchmark runs from the respective environment variable
-    'ROB_APIDIR'. Raises a MissingConfigurationError if the raise_error flag
-    is True and 'ROB_APIDIR' is not set. If the raise_error flag is False and
-    'ROB_APIDIR' is not set the default name is returned.
+    'ROB_API_DIR'. Raises a MissingConfigurationError if the raise_error flag
+    is True and 'ROB_API_DIR' is not set. If the raise_error flag is False and
+    'ROB_API_DIR' is not set the default name is returned.
 
     Parameters
     ----------
     default_value: string, optional
-        Default value if 'ROB_APIDIR' is not set and raise_error flag is
+        Default value if 'ROB_API_DIR' is not set and raise_error flag is
         False
     raise_error: bool, optional
         Flag indicating whether an error is raised if the environment variable
@@ -76,7 +76,8 @@ def API_BASEDIR(default_value=None, raise_error=False):
 
 def API_HOST():
     """Get the API server host name from the respective environment variable
-    'ROB_APIHOST'. If the variable is not set the default host name is returned.
+    'ROB_API_HOST'. If the variable is not set the default host name is
+    returned.
 
     Returns
     -------
@@ -91,7 +92,7 @@ def API_HOST():
 
 def API_NAME():
     """Get the service name for the API from the respective environment variable
-    'ROB_APINAME'. If the variable is not set the default name is returned.
+    'ROB_API_NAME'. If the variable is not set the default name is returned.
 
     Returns
     -------
@@ -106,7 +107,7 @@ def API_NAME():
 
 def API_PATH():
     """Get the application path name for the API from the respective environment
-    variable 'ROB_APIPATH'. If the variable is not set the default application
+    variable 'ROB_API_PATH'. If the variable is not set the default application
     path is returned.
 
     Returns
@@ -122,11 +123,11 @@ def API_PATH():
 
 def API_PORT():
     """Get the API application port number from the respective environment
-    variable 'ROB_APIPORT'. If the variable is not set the default port number
+    variable 'ROB_API_PORT'. If the variable is not set the default port number
     is returned.
 
     Expects a value that can be cast to integer. Raises ValueError if the value
-    for the environment variable 'ROB_APIPORT' cannot be cast to integer.
+    for the environment variable 'ROB_API_PORT' cannot be cast to integer.
 
     Returns
     -------
@@ -146,7 +147,7 @@ def API_PORT():
 
 def API_URL():
     """Get the base URL for the API from the respective environment variables
-    'ROB_APIHOST', 'ROB_APIPATH', and 'ROB_APIPORT'.
+    'ROB_API_HOST', 'ROB_API_PATH', and 'ROB_API_PORT'.
 
     Returns
     -------

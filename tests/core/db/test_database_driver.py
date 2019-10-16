@@ -15,6 +15,7 @@ from robcore.db.connector import DatabaseConnector
 from robcore.db.driver import DatabaseDriver as DB
 
 import robcore.config.db as config
+import robcore.db.sqlite as sqlite
 
 
 class TestDatabaseDriver(object):
@@ -36,7 +37,7 @@ class TestDatabaseDriver(object):
         # SQLite
         f_name = '/tmp/test.db'
         os.environ[config.ROB_DB_ID] = 'SQLITE'
-        os.environ[config.ROB_DB_CONNECT] = f_name
+        os.environ[sqlite.SQLITE_ROB_CONNECT] = f_name
         db = DB.get_connector()
         assert db.info(indent='..') == '..sqlite3 {}'.format(f_name)
         f_name ='/tmp/test.sqlite3.db'
@@ -45,8 +46,7 @@ class TestDatabaseDriver(object):
         # PostgreSQL
         connect = 'localhost:5678/mydb:myuser/the/pwd'
         os.environ[config.ROB_DB_ID] = 'POSTGRES'
-        os.environ[config.ROB_DB_CONNECT] = connect
-        db = DB.get_connector()
+        db = DB.get_connector(connect_string=connect)
         assert db.info() == 'postgres {} on {}'.format('mydb', 'localhost:5678')
         assert db.user == 'myuser'
         assert db.password == 'the/pwd'

@@ -6,30 +6,48 @@ Configuration
 All components of the *Reproducible Open Benchmarks for Data Analysis Platform (ROB)* are configured using environment variables in an attempt to follow `The Twelve-Factor App methodology <https://12factor.net/>`_ for application development.
 
 
+---
+API
+---
+
+The following environment variables control the configuration of the **ROB** API. Note that the RESTful web services that provide access to the API via HTTP requests can use additional configuration parameters.
+
+The base directory where all API-related files are stored is specified using  the environment variable **ROB_API_DIR**. The default value is ``.rob``.
+
+The API name, contained in the API service descriptor, is specified using the environment variable **ROB_API_NAME**. The default value is ``Reproducible Open Benchmarks for Data Analysis (API)``.
+
+The base URL for all API resources is composed from the values in the environment variables **ROB_API_HOST**, **ROB_API_PORT**, and **ROB_API_PATH**. The default values are ``localhost``, ``5000``, and ``/rob/api/v1``, respectively.
+
+
+--------------
+Authentication
+--------------
+
+The environment variable **ROB_AUTH_TTL** is used to specify the time period (in milliseconds) for which an issued API key is valid after a user login.
+
+
 --------
 Database
 --------
 
-Database connections are established using the environment variables **ROB_DBMS** and **ROB_DBCONNECT**.
+Database connections are established using the environment variable **ROB_DBMS**  that determines the type of the database system that is used. **ROB** currently supports the following two database systems: `SQLite <https://sqlite.org/index.html>`_ (identified by either ``SQLITE`` or ``SQLITE3``) and `PostgreSQL <https://www.postgresql.org/>`_ (identified by ``POSTGRES``, ``POSTGRESQL``, ``PSQL``, or ``PG``).
 
-- **ROB_DBMS**: Determines the type of the database system that is used. **ROB** currently supports the following two database systems: `SQLite <https://sqlite.org/index.html>`_ (identified by either ``SQLITE`` or ``SQLITE3``) and `PostgreSQL <https://www.postgresql.org/>`_ (identified by ``POSTGRES``, ``POSTGRESQL``, ``PSQL``, or ``PG``).
-
-- **ROB_DBCONNECT**: Database connection information. The value is used to establish a connection with the database server. The format and content of the string is dependent on the database system that is being used.
+Depending on the specified database system additional environment variables are used to specify database connection parameter.
 
 
 Connect to SQLite
 -----------------
 
-The connection string (**ROB_DBCONNECT**) for a SQLLite database is simple the path to the database file.
+When using SQLite as the underlying database system for **ROB**, the environment variable **SQLITE_ROB_CONNECT** is expected to contain the path to the database file.
 
 
 Connect to PostgreSQL
 ---------------------
 
-When connecting to a PostgreSQL database server the connection string in **ROB_DBCONNECT** should follow the following format:
+When connecting to a PostgreSQL database server the database connection information is set using the following environment variables:
 
-.. line-block::
-
-    {host}/{database}:{user}/{password}
-
-Note that the database name and the user name cannot contain the character ``/``!
+- **PG_ROB_HOST**: Address of the database host server (default: ``localhost``)
+- **PG_ROB_DATABASE**: Name of the database (default: ``rob``)
+- **PG_ROB_USER**: Database user name for authentication (default: ``rob``)
+- **PG_ROB_PASSWORD**: User password for authentication (default: ``rob``)
+- **PG_ROB_PORT**: Connection port of database on host (default ``5432``)

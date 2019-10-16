@@ -15,8 +15,8 @@ database systems from the application. Instead, the database system and the
 underlying database are specified using a unique database system identifier and
 a system-specific connection string.
 
-The database driver can be configured using the environment variables
-ROB_DBMS and ROB_DBCONNECT
+The database driver is configured using the environment variable ROB_DBMS as
+well as additional database system specific variables.
 """
 
 import robcore.config.db as config
@@ -70,13 +70,11 @@ class DatabaseDriver(object):
         ------
         ValueError
         """
-        # If missing, set the database system identifier and connection string
-        # using the values in the respective environment variables. Raises an
-        # VallueError if either parameter is None
+        # If missing, set the database system identifier using the value in the
+        #respective environment variable. Raises a ValueError if the result is
+        # None
         if dbms_id is None:
             dbms_id = config.DB_IDENTIFIER(raise_error=True)
-        if connect_string is None:
-            connect_string = config.DB_CONNECT(raise_error=True)
         # Return the connector for the identified database management system.
         # Raises ValueError if the given identifier is unknown.
         if dbms_id.upper() in SQLITE:

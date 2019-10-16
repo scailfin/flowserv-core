@@ -20,8 +20,8 @@ import robcore.config.base as config
 """Names of environment variables that are used to configure the authentication
 module.
 """
-# Timeperiod for which an API key is valid
-ROB_AUTH_LOGINTTL = 'ROB_AUTHTTL'
+# Time period for which an API key is valid
+ROB_AUTH_LOGINTTL = 'ROB_AUTH_TTL'
 
 """Default values for environment variables."""
 DEFAULT_LOGINTTL = 4 * 60 * 60
