@@ -20,22 +20,19 @@ class UserService(object):
     """Implement methods that handle user login and logout as well as
     registration and activation of new users.
     """
-    def __init__(self, manager, auth, urls=None, serializer=None):
+    def __init__(self, manager, urls=None, serializer=None):
         """Initialize the user manager that maintains all registered users.
 
         Parameters
         ----------
         manager: robcore.model.user.base.UserManager
             Manager for registered users
-        auth: robcore.model.user.auth.Auth
-            Implementation of the authorization policy for the API
         urls: robcore.api.route.UrlFactory
             Factory for API resource Urls
         serializer: robcore.api.serialize.user.UserSerializer, optional
             Override the default serializer
         """
         self.manager = manager
-        self.auth = auth
         self.urls = urls if not urls is None else UrlFactory()
         self.serialize = serializer
         if self.serialize is None:
@@ -195,18 +192,16 @@ class UserService(object):
         )
         return self.serialize.user(user)
 
-    def whoami_user(self, access_token):
-        """Get serialization of the user that is associated with the given
-        access token.
+    def whoami_user(self, user):
+        """Get serialization of the given user.
 
         Parameters
         ----------
-        access_token: string
+        user: robcore.model.user.base.UserHandle
             User access token
 
         Returns
         -------
         dict
         """
-        user = self.auth.authenticate(access_token)
         return self.serialize.user(user)

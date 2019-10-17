@@ -27,8 +27,8 @@ import robcore.tests.db as db
 
 def init_api(base_dir, open_access=False):
     """Initialize the database, benchmark repository, submission, and user
-    manager. Returns sercive objects for benchmarks, submissions, users and
-    runs.
+    manager. Returns sercive objects for benchmarks, submissions, users, runs,
+    and authentication.
     """
     con = db.init_db(base_dir).connect()
     if open_access:
@@ -59,11 +59,11 @@ def init_api(base_dir, open_access=False):
         manager=submission_manager,
         auth=auth
     )
-    users = UserService(manager=user_manager, auth=auth)
+    users = UserService(manager=user_manager)
     runs = RunService(
         engine=engine,
         repo=benchmark_repo,
         submissions=submission_manager,
         auth=auth
     )
-    return repository, submissions, users, runs
+    return repository, submissions, users, runs, auth

@@ -47,7 +47,7 @@ class TestSubmissionsApi(object):
         Returns the submission service, handles for created users, and the
         benchmark handle.
         """
-        repository, submissions, user_service, _ = api.init_api(base_dir)
+        repository, submissions, user_service, _, _ = api.init_api(base_dir)
         users = list()
         for i in range(3):
             user_id = util.get_unique_identifier()

@@ -14,6 +14,8 @@ that supports methods commit() and execute().
 
 import os
 
+from psycopg2.extras import RealDictCursor
+
 from robcore.db.connector import DatabaseConnector
 
 
@@ -28,38 +30,114 @@ PG_ROB_PORT = 'PG_ROB_PORT'
 
 
 class PostgresConnection(object):
-    """Wrapper around an open postgres connection object."""
+    """Wrapper around a Psycopg2 connection object. This wrapper is implemented
+    to achieve flexibility of ROB with respect to the database system that is
+    being used. The application is tested (and was originally designed) using
+    SQLLite3. Unfortunately, there seem to be some differences in how query
+    processing in ROB was implements using SQLite3 and how the Psycopg2 module
+    operates: in SQLite3 the execute() method is called directly on the database
+    connection object and it returns a cursor. Also, by default the result rows
+    in SQLLite3 are dictionaries. There is also a difference in how the two
+    databases handle SQL query parameters.
+
+    This wrapper object tires to emulate the SQLite3 behavior in order to be
+    able to use the same code to interact with the underlying database
+    independently of the database system.
+
+    We make a very strong assumption here. We assume that all SQL queries
+    that are used by ROB do not contain any '?' character other than the ones
+    that are used to define query parameters. This assumption allows us to
+    simply replace the '?' with '%s' to achieve compatibility between the
+    different database systems that are currently supported.
+
+    The wrapper implements the __enter__ and __exit__ methods for a context
+    manager to enable usage of this class within with statements.
+    """
     def __init__(self, con):
-        """
+        """Initialize the database connection object.
+
+        Parameters
+        ----------
+        con: DB-API 2.0 database connection
+            Connection to underlying database
         """
         self.con = con
         self.cur = None
 
     def __enter__(self):
+        """The enter method of the context manager simply returns the object
+        itself.
+
+        Returns
+        -------
+        robcore.db.pg.PostgresConnection
+        """
         return self
 
     def __exit__(self, type, value, traceback):
+        """Ensure to close any open cursor and the database connection when
+        the context manager exits. Returns False to ensure that any exception
+        is re-raised.
+
+        Returns
+        -------
+        bool
+        """
+        # Make sure to close any open cursors
         if not self.cur is None:
             self.cur.close()
             self.cur = None
+        # Close the database connections
         if not self.con is None:
             self.con.close()
             self.con = None
         return False
 
     def close(self):
+        """Call the exit method when the database connection is closed."""
         self.__exit__(None, None, None)
 
     def commit(self):
+        """Commit all changes to the database."""
         self.con.commit()
 
     def cursor(self):
+        """Create a new cursor object. This method ensures that there is only
+        one cursor open at the time.
+
+        All cursors use the real dictionary cursor factory to for compatibility
+        with result sets returned by the SQLLite3 database connection object.
+
+        Returns
+        -------
+        psycopg2.cursor
+        """
         if not self.cur is None:
             self.cur.close()
-        self.cur = self.con.cursor()
+        self.cur = self.con.cursor(cursor_factory=RealDictCursor)
         return self.cur
 
     def execute(self, sql, args=None):
+        """Execute a given SQL statement. If the list of argument values is
+        given all parameters ('?') in the query are replaced with '%s'
+        which is used by the Psycopg2 driver as query parameter. Here we make
+        a strong assumption that every '?' character in the SQL query represents
+        a query parameter.
+
+        Returns the cursor after the query is being executed to allow fetchone
+        and fetchall operations on the result.
+
+        Parameters
+        ----------
+        sql: string
+            SQL query
+        args: tuple, optional
+            Optional list of query parameters
+
+        Returns
+        -------
+        psycopg2.cursor
+        """
         self.cur = self.cursor()
         if not args is None:
             # Replace all query parameters. Note that code assumes that every
@@ -125,7 +203,7 @@ class PostgresConnector(DatabaseConnector):
 
         Returns
         -------
-        DB-API 2.0 database connection
+        robcore.db.pg.PostgresConnection
         """
         import psycopg2
         return PostgresConnection(

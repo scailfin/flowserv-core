@@ -71,7 +71,7 @@ class UserSerializer(object):
         dict
         """
         doc = {labels.ID: user.identifier, labels.USERNAME: user.name}
-        links = {hateoas.WHOAMI: self.urls.whoami()}
+        links = dict()
         if user.is_logged_in():
             doc[labels.ACCESS_TOKEN] = user.api_key
             links[hateoas.WHOAMI] = self.urls.whoami()

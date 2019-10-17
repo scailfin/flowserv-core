@@ -29,10 +29,9 @@ USER_LOGOUT = [labels.ID, labels.USERNAME, labels.LINKS]
 
 class TestUserApi(object):
     """Test API methods that access and manipulate users."""
-
     def test_authenticate_user(self, tmpdir):
         """Test login and logout via API."""
-        _, _, users, _ = api.init_api(str(tmpdir), open_access=True)
+        _, _, users, _, auth = api.init_api(str(tmpdir), open_access=True)
         # Register a new user that is automatically activated
         users.register_user(username='myuser', password='mypwd', verify=False)
         # Login
@@ -47,7 +46,7 @@ class TestUserApi(object):
             ]
         )
         access_token = r[labels.ACCESS_TOKEN]
-        r = users.whoami_user(access_token)
+        r = users.whoami_user(auth.authenticate(access_token))
         util.validate_doc(doc=r, mandatory_labels=USER_LOGIN)
         links = hateoas.deserialize(r[labels.LINKS])
         util.validate_doc(
@@ -58,20 +57,19 @@ class TestUserApi(object):
             ]
         )
         # Logout
-        r = users.logout_user(users.auth.authenticate(access_token))
+        r = users.logout_user(auth.authenticate(access_token))
         util.validate_doc(doc=r, mandatory_labels=USER_LOGOUT)
         links = hateoas.deserialize(r[labels.LINKS])
         util.validate_doc(
             doc=links,
             mandatory_labels=[
-                hateoas.WHOAMI,
                 hateoas.action(hateoas.LOGIN)
             ]
         )
 
     def test_list_users(self, tmpdir):
         """Test user listings and queries."""
-        _, _, users, _ = api.init_api(str(tmpdir), open_access=True)
+        _, _, users, _, _ = api.init_api(str(tmpdir), open_access=True)
         # Register three active users
         users.register_user(username='a@user', password='mypwd', verify=False)
         users.register_user(username='me@user', password='mypwd', verify=False)
@@ -94,7 +92,7 @@ class TestUserApi(object):
 
     def test_register_user(self, tmpdir):
         """Test new user registration via API."""
-        _, _, users, _ = api.init_api(str(tmpdir), open_access=True)
+        _, _, users, _, _ = api.init_api(str(tmpdir), open_access=True)
         # Register a new user without activating the user
         r = users.register_user(username='myuser', password='mypwd', verify=True)
         util.validate_doc(doc=r, mandatory_labels=USER_LOGOUT)
@@ -102,7 +100,6 @@ class TestUserApi(object):
         util.validate_doc(
             doc=links,
             mandatory_labels=[
-                hateoas.WHOAMI,
                 hateoas.action(hateoas.LOGIN),
                 hateoas.action(hateoas.ACTIVATE)
             ]
@@ -114,7 +111,6 @@ class TestUserApi(object):
         util.validate_doc(
             doc=links,
             mandatory_labels=[
-                hateoas.WHOAMI,
                 hateoas.action(hateoas.LOGIN)
             ]
         )
@@ -125,14 +121,13 @@ class TestUserApi(object):
         util.validate_doc(
             doc=links,
             mandatory_labels=[
-                hateoas.WHOAMI,
                 hateoas.action(hateoas.LOGIN)
             ]
         )
 
     def test_reset_password(self, tmpdir):
         """Test requesting a reset and resetting the password for a user."""
-        _, _, users, _ = api.init_api(str(tmpdir), open_access=True)
+        _, _, users, _, _ = api.init_api(str(tmpdir), open_access=True)
         # Register a new user
         users.register_user(username='myuser', password='mypwd', verify=False)
         # Request password reset

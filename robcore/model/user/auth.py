@@ -37,8 +37,8 @@ class Auth(object):
 
     def authenticate(self, api_key):
         """Get the unique user identifier that is associated with the given
-        API key. Raises an error if the API key is not associated with
-        a valid login.
+        API key. Raises an error if the API key is None or if it is not
+        associated with a valid login.
 
         Parameters
         ----------
@@ -53,6 +53,9 @@ class Auth(object):
         ------
         robcore.error.UnauthenticatedAccessError
         """
+        # The API key may be None. In this case an error is raised.
+        if api_key is None:
+            raise err.UnauthenticatedAccessError()
         # Get information for user that that is associated with the API key
         # together with the expiry date of the key. If the API key is unknown
         # or expired raise an error.

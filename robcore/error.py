@@ -36,23 +36,6 @@ class ROBError(Exception):
         return self.message
 
 
-class UnknownObjectError(ROBError):
-    """Generic error for references to unknown objects."""
-    def __init__(self, obj_id, type_name='object'):
-        """Initialize error message.
-
-        Parameters
-        ----------
-        obj_id: string
-            Unique object identifier
-        type_name: string, optional
-            Name of type of the referenced object
-        """
-        super(UnknownObjectError, self).__init__(
-            message='unknown {} \'{}\''.format(type_name, obj_id)
-        )
-
-
 # -- Authentication and Authorization errors -----------------------------------
 
 class UnauthenticatedAccessError(ROBError):
@@ -114,7 +97,7 @@ class ConstraintViolationError(ROBError):
         super(ConstraintViolationError, self).__init__(message=message)
 
 
-class DuplicateArgumentError(ROBError):
+class DuplicateArgumentError(ConstraintViolationError):
     """Exception indicating that a given argument for a workflow run is not
     unique.
     """
@@ -131,7 +114,7 @@ class DuplicateArgumentError(ROBError):
         )
 
 
-class DuplicateRunError(ROBError):
+class DuplicateRunError(ConstraintViolationError):
     """Exception indicating that a given run identifier is not unique.
     """
     def __init__(self, identifier):
@@ -147,7 +130,7 @@ class DuplicateRunError(ROBError):
         )
 
 
-class DuplicateUserError(ROBError):
+class DuplicateUserError(ConstraintViolationError):
     """Exception indicating that a given user already exists."""
     def __init__(self, user_id):
         """Initialize error message.
@@ -162,7 +145,7 @@ class DuplicateUserError(ROBError):
         )
 
 
-class InvalidArgumentError(ROBError):
+class InvalidArgumentError(ConstraintViolationError):
     """Exception indicating that a given template parameter argument value is
     not valid.
     """
@@ -178,7 +161,7 @@ class InvalidArgumentError(ROBError):
         super(InvalidArgumentError, self).__init__(message=message)
 
 
-class InvalidParameterError(ROBError):
+class InvalidParameterError(ConstraintViolationError):
     """Exception indicating that a given template parameter is invalid.
     """
     def __init__(self, message):
@@ -193,7 +176,7 @@ class InvalidParameterError(ROBError):
         super(InvalidParameterError, self).__init__(message=message)
 
 
-class InvalidRunStateError(ROBError):
+class InvalidRunStateError(ConstraintViolationError):
     """Exception indicating that an attempt to modify the state of a run was
     made that is not allowed in the current run state or that would result in
     an illegal sequence of workflow states.
@@ -216,7 +199,7 @@ class InvalidRunStateError(ROBError):
         super(InvalidRunStateError, self).__init__(message=msg)
 
 
-class InvalidTemplateError(ROBError):
+class InvalidTemplateError(ConstraintViolationError):
     """Exception indicating that a given workflow template is invalid or has
     missing elements.
     """
@@ -232,7 +215,7 @@ class InvalidTemplateError(ROBError):
         super(InvalidTemplateError, self).__init__(message=message)
 
 
-class MissingArgumentError(ROBError):
+class MissingArgumentError(ConstraintViolationError):
     """Exception indicating that a required parameter in a workflow template
     has no argument given for a workflow run.
     """
@@ -250,6 +233,23 @@ class MissingArgumentError(ROBError):
 
 
 # -- Unknown resources ---------------------------------------------------------
+
+class UnknownObjectError(ROBError):
+    """Generic error for references to unknown objects."""
+    def __init__(self, obj_id, type_name='object'):
+        """Initialize error message.
+
+        Parameters
+        ----------
+        obj_id: string
+            Unique object identifier
+        type_name: string, optional
+            Name of type of the referenced object
+        """
+        super(UnknownObjectError, self).__init__(
+            message='unknown {} \'{}\''.format(type_name, obj_id)
+        )
+
 
 class UnknownBenchmarkError(UnknownObjectError):
     """Exception indicating that a given benchmark identifier is unknown."""

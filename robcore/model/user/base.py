@@ -124,6 +124,10 @@ class UserManager(object):
         Returns
         -------
         list(robcore.model.user.base.UserHandle)
+
+        Raises
+        ------
+        robcore.error.UnauthenticatedAccessError
         """
         # Construct search query based on whether the query argument is given
         # or not
@@ -201,10 +205,6 @@ class UserManager(object):
         Returns
         -------
         robcore.model.user.base.UserHandle
-
-        Raises
-        ------
-        robcore.error.UnauthenticatedAccessError
         """
         sql = 'DELETE FROM user_key WHERE user_id = ?'
         self.con.execute(sql, (user.identifier,))
