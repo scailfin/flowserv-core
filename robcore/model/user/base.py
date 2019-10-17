@@ -136,13 +136,10 @@ class UserManager(object):
         sql += ' ORDER BY name'
         # Execute search query and generate result set
         rs = list()
-        with self.con.cursor() as cur:
-            rows = cur.execute(sql, para)
-            if not rows is None:
-                for row in rows.fetchall():
-                    user_id = row['user_id']
-                    user_name = row['name']
-                    rs.append(UserHandle(identifier=user_id, name=user_name))
+        for row in self.con.execute(sql, para).fetchall():
+            user_id = row['user_id']
+            user_name = row['name']
+            rs.append(UserHandle(identifier=user_id, name=user_name))
         return rs
 
     def login_user(self, username, password):
@@ -254,17 +251,16 @@ class UserManager(object):
             raise err.ConstraintViolationError('username too long')
         # If a user with the given username already exists raise an error
         sql = 'SELECT user_id FROM api_user WHERE name = ?'
-        with self.con.cursor() as cur:
-            if not cur.execute(sql, (username,)).fetchone() is None:
-                raise err.DuplicateUserError(username)
-            # Insert new user into database after creating an unique user identifier
-            # and the password hash.
-            user_id = util.get_unique_identifier()
-            pwd_hash = pbkdf2_sha256.hash(password.strip())
-            active = 0 if verify else 1
-            sql = 'INSERT INTO api_user(user_id, name, secret, active) '
-            sql += 'VALUES(?, ?, ?, ?)'
-            cur.execute(sql, (user_id, username, pwd_hash, active))
+        if not self.con.execute(sql, (username,)).fetchone() is None:
+            raise err.DuplicateUserError(username)
+        # Insert new user into database after creating an unique user identifier
+        # and the password hash.
+        user_id = util.get_unique_identifier()
+        pwd_hash = pbkdf2_sha256.hash(password.strip())
+        active = 0 if verify else 1
+        sql = 'INSERT INTO api_user(user_id, name, secret, active) '
+        sql += 'VALUES(?, ?, ?, ?)'
+        self.con.execute(sql, (user_id, username, pwd_hash, active))
         self.con.commit()
         # Log user in after successful registration and return API key
         return UserHandle(identifier=user_id, name=username)

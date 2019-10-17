@@ -19,9 +19,11 @@
 DROP TABLE IF EXISTS run_result_file;
 DROP TABLE IF EXISTS run_error_log;
 DROP TABLE IF EXISTS benchmark_run;
+DROP TABLE IF EXISTS submission_file;
 DROP TABLE IF EXISTS submission_member;
 DROP TABLE IF EXISTS benchmark_submission;
 DROP TABLE IF EXISTS benchmark;
+DROP TABLE IF EXISTS password_request;
 DROP TABLE IF EXISTS user_key;
 DROP TABLE IF EXISTS api_user;
 

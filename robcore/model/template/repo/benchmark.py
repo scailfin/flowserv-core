@@ -122,30 +122,20 @@ class BenchmarkRepository(object):
         )
 
     def delete_benchmark(self, benchmark_id):
-        """Delete the benchmark with the given identifier. The return value
-        indicates if the benchmark existed or not.
+        """Delete the benchmark with the given identifier.
 
         Parameters
         ----------
         benchmark_id: string
             Unique benchmark identifier
-
-        Returns
-        -------
-        bool
         """
         # Delete the workflow template.
         result = self.template_repo.delete_template(benchmark_id)
         # Delete the benchmark record. Use rowcount to determine if the record
         # existed.
         sql = 'DELETE FROM benchmark WHERE benchmark_id = ?'
-        cur = self.con.cursor()
-        rowcount = cur.execute(sql, (benchmark_id,)).rowcount
+        self.con.execute(sql, (benchmark_id,))
         self.con.commit()
-        # If the benchmark existed the delete_template method would return True
-        # and the SQL rowcount is one. Here, we return True if either of these
-        # vaues indicate that the benchmark existed.
-        return result or rowcount > 0
 
     def get_benchmark(self, benchmark_id):
         """Get descriptor for the benchmark with the given identifier. Raises

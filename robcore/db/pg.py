@@ -7,7 +7,9 @@
 # terms of the MIT License; see LICENSE file for more details.
 
 """Implementation of the database connector for PostgreSQL. Uses the psycopg
-adapter to connect to the underlying database.
+adapter to connect to the underlying database. For compatibility with the
+SQLLite connection object a special Postgres connection object is implemented
+that supports methods commit() and execute().
 """
 
 import os
@@ -23,6 +25,52 @@ PG_ROB_DATABASE = 'PG_ROB_DATABASE'
 PG_ROB_USER = 'PG_ROB_USER'
 PG_ROB_PASSWORD = 'PG_ROB_PASSWORD'
 PG_ROB_PORT = 'PG_ROB_PORT'
+
+
+class PostgresConnection(object):
+    """Wrapper around an open postgres connection object."""
+    def __init__(self, con):
+        """
+        """
+        self.con = con
+        self.cur = None
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        if not self.cur is None:
+            self.cur.close()
+            self.cur = None
+        if not self.con is None:
+            self.con.close()
+            self.con = None
+        return False
+
+    def close(self):
+        self.__exit__(None, None, None)
+
+    def commit(self):
+        self.con.commit()
+
+    def cursor(self):
+        if not self.cur is None:
+            self.cur.close()
+        self.cur = self.con.cursor()
+        return self.cur
+
+    def execute(self, sql, args=None):
+        self.cur = self.cursor()
+        if not args is None:
+            # Replace all query parameters. Note that code assumes that every
+            # '?'' character in SQL query represents a parameter. It does not
+            # account for cases where , for example, a '?' is part of a query
+            # string.
+            sql = sql.replace('?', '%s')
+            self.cur.execute(sql, args)
+        else:
+            self.cur.execute(sql)
+        return self.cur
 
 
 class PostgresConnector(DatabaseConnector):
@@ -80,12 +128,14 @@ class PostgresConnector(DatabaseConnector):
         DB-API 2.0 database connection
         """
         import psycopg2
-        return psycopg2.connect(
-            host=self.host,
-            database=self.database,
-            user=self.user,
-            password=self.password,
-            port=self.port
+        return PostgresConnection(
+            psycopg2.connect(
+                host=self.host,
+                database=self.database,
+                user=self.user,
+                password=self.password,
+                port=self.port
+            )
         )
 
     def info(self, indent=''):
@@ -113,5 +163,7 @@ class PostgresConnector(DatabaseConnector):
         """
         with self.connect() as con:
             with open(schema_file) as f:
+                # Note that the result of connect() is a connection object that
+                # wrapps a database connection.
                 con.cursor().execute(f.read())
             con.commit()
