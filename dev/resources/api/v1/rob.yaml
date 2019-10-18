@@ -55,18 +55,11 @@ paths:
       operationId: "listBenchmarks"
       produces:
       - "application/json"
-      parameters:
-      - name: "api_key"
-        in: "header"
-        required: false
-        type: "string"
       responses:
         200:
           description: "Listing of benchmark descriptors"
           schema:
             $ref: "#/definitions/BenchmarkListing"
-        403:
-          description: "Forbidden operation"
   /benchmarks/{benchmarkId}:
     get:
       tags:
@@ -77,10 +70,6 @@ paths:
       produces:
       - "application/json"
       parameters:
-      - name: "api_key"
-        in: "header"
-        required: false
-        type: "string"
       - in: "path"
         name: "benchmarkId"
         description: "Unique benchmark identifier"
@@ -91,8 +80,8 @@ paths:
           description: "Benchmark handle"
           schema:
             $ref: "#/definitions/BenchmarkHandle"
-        403:
-          description: "Forbidden operation"
+        404:
+          description: "Unknown benchmark"
   /benchmarks/{benchmarkId}/leaderboard:
     get:
       tags:
@@ -103,22 +92,28 @@ paths:
       produces:
       - "application/json"
       parameters:
-      - name: "api_key"
-        in: "header"
-        required: false
-        type: "string"
       - in: "path"
         name: "benchmarkId"
         description: "Unique benchmark identifier"
         required: true
         type: string
+      - in: "query"
+        name: "orderBy"
+        description: "List of result column names to order by (can include optional sort order). FOrmat is columnName[:ASC|DESC],"
+        required: false
+        type: string
+      - in: "query"
+        name: "includeAll"
+        description: "Include all results (if true) or only one per submission (if false)"
+        required: false
+        type: boolean
       responses:
         200:
           description: "Benchmark leaderboard"
           schema:
             $ref: "#/definitions/BenchmarkLeaderboard"
-        403:
-          description: "Forbidden operation"
+        404:
+          description: "Unknown benchmark"
 # ------------------------------------------------------------------------------
 # Submissions
 # ------------------------------------------------------------------------------
