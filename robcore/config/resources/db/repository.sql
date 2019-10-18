@@ -42,7 +42,7 @@ DROP TABLE IF EXISTS api_user;
 -- identifier that is visible to the user and that is used for display purposes.
 --
 CREATE TABLE api_user(
-    user_id CHAR(32) NOT NULL,
+    user_id VARCHAR(32) NOT NULL,
     secret VARCHAR(512) NOT NULL,
     name VARCHAR(512) NOT NULL,
     active INTEGER NOT NULL,
@@ -54,8 +54,8 @@ CREATE TABLE api_user(
 -- Maintain API keys for users that are currently logged in
 --
 CREATE TABLE user_key(
-    user_id CHAR(32) NOT NULL REFERENCES api_user (user_id),
-    api_key CHAR(32) NOT NULL,
+    user_id VARCHAR(32) NOT NULL REFERENCES api_user (user_id),
+    api_key VARCHAR(32) NOT NULL,
     expires CHAR(26) NOT NULL,
     PRIMARY KEY(user_id),
     UNIQUE (api_key)
@@ -65,8 +65,8 @@ CREATE TABLE user_key(
 -- Manage requests to reset a user password.
 --
 CREATE TABLE password_request(
-    user_id CHAR(32) NOT NULL REFERENCES api_user (user_id),
-    request_id CHAR(32) NOT NULL,
+    user_id VARCHAR(32) NOT NULL REFERENCES api_user (user_id),
+    request_id VARCHAR(32) NOT NULL,
     expires CHAR(26) NOT NULL,
     PRIMARY KEY(user_id),
     UNIQUE (request_id)
@@ -85,7 +85,7 @@ CREATE TABLE password_request(
 -- workflow template.
 --
 CREATE TABLE benchmark(
-    benchmark_id CHAR(32) NOT NULL,
+    benchmark_id VARCHAR(32) NOT NULL,
     name VARCHAR(512) NOT NULL,
     description TEXT,
     instructions TEXT,
@@ -101,10 +101,10 @@ CREATE TABLE benchmark(
 -- members to the submission.
 --
 CREATE TABLE benchmark_submission(
-    submission_id CHAR(32) NOT NULL,
+    submission_id VARCHAR(32) NOT NULL,
     name VARCHAR(512) NOT NULL,
-    benchmark_id CHAR(32) NOT NULL REFERENCES benchmark (benchmark_id),
-    owner_id CHAR(32) NOT NULL REFERENCES api_user (user_id),
+    benchmark_id VARCHAR(32) NOT NULL REFERENCES benchmark (benchmark_id),
+    owner_id VARCHAR(32) NOT NULL REFERENCES api_user (user_id),
     PRIMARY KEY(submission_id),
     UNIQUE(benchmark_id, name)
 );
@@ -113,8 +113,8 @@ CREATE TABLE benchmark_submission(
 -- Each file that is uploaded for a submission is assigned a unique identifier
 --
 CREATE TABLE submission_file(
-    file_id CHAR(32) NOT NULL,
-    submission_id CHAR(32) NOT NULL REFERENCES benchmark_submission (submission_id),
+    file_id VARCHAR(32) NOT NULL,
+    submission_id VARCHAR(32) NOT NULL REFERENCES benchmark_submission (submission_id),
     name VARCHAR(512) NOT NULL,
     PRIMARY KEY(file_id)
 );
@@ -124,8 +124,8 @@ CREATE TABLE submission_file(
 -- a n:m relationship between users and submissions.
 --
 CREATE TABLE submission_member(
-    submission_id CHAR(32) NOT NULL REFERENCES benchmark_submission (submission_id),
-    user_id CHAR(32) NOT NULL REFERENCES api_user (user_id),
+    submission_id VARCHAR(32) NOT NULL REFERENCES benchmark_submission (submission_id),
+    user_id VARCHAR(32) NOT NULL REFERENCES api_user (user_id),
     PRIMARY KEY(submission_id, user_id)
 );
 
@@ -134,8 +134,8 @@ CREATE TABLE submission_member(
 -- workflow parameters, and timestamps
 --
 CREATE TABLE benchmark_run(
-    run_id CHAR(32) NOT NULL,
-    submission_id CHAR(32) NOT NULL REFERENCES benchmark_submission (submission_id),
+    run_id VARCHAR(32) NOT NULL,
+    submission_id VARCHAR(32) NOT NULL REFERENCES benchmark_submission (submission_id),
     state VARCHAR(8) NOT NULL,
     created_at CHAR(26) NOT NULL,
     started_at CHAR(26),
@@ -148,7 +148,7 @@ CREATE TABLE benchmark_run(
 -- Log for error messages for runs that are in error state.
 --
 CREATE TABLE run_error_log(
-    run_id CHAR(32) NOT NULL REFERENCES benchmark_run (run_id),
+    run_id VARCHAR(32) NOT NULL REFERENCES benchmark_run (run_id),
     message TEXT NOT NULL,
     pos INTEGER NOT NULL,
     PRIMARY KEY(run_id, pos)
@@ -158,7 +158,7 @@ CREATE TABLE run_error_log(
 -- File resources that are created by successful benchmark runs.
 --
 CREATE TABLE run_result_file(
-    run_id CHAR(32) NOT NULL REFERENCES benchmark_run (run_id),
+    run_id VARCHAR(32) NOT NULL REFERENCES benchmark_run (run_id),
     file_id TEXT NOT NULL,
     file_path TEXT NOT NULL,
     PRIMARY KEY(run_id, file_id)
