@@ -110,7 +110,7 @@ class TestBenchmarkRepository(object):
             repo.add_benchmark(name='A benchmark')
 
     def test_delete_benchmark(self, tmpdir):
-        """Test deleting a benchmarks from the repository"""
+        """Test deleting a benchmarks from the repository."""
         # Initialize the repository
         repo, connector = self.init(str(tmpdir))
         bm_1 = repo.add_benchmark(name='A', src_dir=TEMPLATE_DIR)
@@ -134,8 +134,8 @@ class TestBenchmarkRepository(object):
                 instructions='instr',
                 src_dir=TEMPLATE_DIR
             )
-        assert repo.delete_benchmark(bm_2.identifier)
-        assert not repo.delete_benchmark(bm_2.identifier)
+        repo.delete_benchmark(bm_2.identifier)
+        repo.delete_benchmark(bm_2.identifier)
         ids = [b.identifier for b in repo.list_benchmarks()]
         assert bm_1.identifier in ids
         assert bm_3.identifier in ids
@@ -146,12 +146,12 @@ class TestBenchmarkRepository(object):
             src_dir=TEMPLATE_DIR
         )
         for bm in [bm_1, bm_2, bm_3]:
-            assert repo.delete_benchmark(bm.identifier)
+            repo.delete_benchmark(bm.identifier)
         for bm in [bm_1, bm_2, bm_3]:
-            assert not repo.delete_benchmark(bm.identifier)
+            repo.delete_benchmark(bm.identifier)
 
     def test_get_benchmark(self, tmpdir):
-        """Test retrieving benchmarks from the repository"""
+        """Test retrieving benchmarks from the repository."""
         # Initialize the repository
         repo, connector = self.init(str(tmpdir))
         bm_1 = repo.add_benchmark(name='A', src_dir=TEMPLATE_DIR)
@@ -166,7 +166,7 @@ class TestBenchmarkRepository(object):
         assert repo.get_benchmark(bm_1.identifier).identifier == bm_1.identifier
         assert repo.get_benchmark(bm_2.identifier).identifier == bm_2.identifier
         # Delete first benchmark
-        assert repo.delete_benchmark(bm_1.identifier)
+        repo.delete_benchmark(bm_1.identifier)
         with pytest.raises(err.UnknownBenchmarkError):
             repo.get_benchmark(bm_1.identifier).identifier == bm_1.identifier
         assert repo.get_benchmark(bm_2.identifier).identifier == bm_2.identifier
@@ -225,3 +225,53 @@ class TestBenchmarkRepository(object):
                 description='C',
                 instructions='D'
             )
+
+    def test_update_benchmark(self, tmpdir):
+        """Test updating benchmark properties."""
+        # Initialize the repository
+        repo, connector = self.init(str(tmpdir))
+        bm_1 = repo.add_benchmark(name='A', src_dir=TEMPLATE_DIR)
+        bm_2 = repo.add_benchmark(
+            name='My benchmark',
+            description='desc',
+            instructions='instr',
+            src_dir=TEMPLATE_DIR
+        )
+        # Update the name of the first benchmark. It is possible to change the
+        # name to and existing name only if it is the same benchmark
+        bm_1 = repo.update_benchmark(benchmark_id=bm_1.identifier, name='B')
+        assert bm_1.name == 'B'
+        bm_1 = repo.update_benchmark(benchmark_id=bm_1.identifier, name='B')
+        assert bm_1.name == 'B'
+        with pytest.raises(err.ConstraintViolationError):
+            repo.update_benchmark(
+                benchmark_id=bm_1.identifier,
+                name='My benchmark'
+            )
+        # Update description and instructions
+        bm_1 = repo.update_benchmark(
+            benchmark_id=bm_1.identifier,
+            description='My description',
+            instructions='My instructions'
+        )
+        assert bm_1.name == 'B'
+        assert bm_1.description == 'My description'
+        assert bm_1.instructions == 'My instructions'
+        bm_2 = repo.update_benchmark(
+            benchmark_id=bm_2.identifier,
+            name='The name',
+            description='The description',
+            instructions='The instructions'
+        )
+        assert bm_2.name == 'The name'
+        assert bm_2.description == 'The description'
+        assert bm_2.instructions == 'The instructions'
+        # Do nothing
+        bm_1 = repo.update_benchmark(benchmark_id=bm_1.identifier)
+        assert bm_1.name == 'B'
+        assert bm_1.description == 'My description'
+        assert bm_1.instructions == 'My instructions'
+        bm_2 = repo.update_benchmark(benchmark_id=bm_2.identifier)
+        assert bm_2.name == 'The name'
+        assert bm_2.description == 'The description'
+        assert bm_2.instructions == 'The instructions'

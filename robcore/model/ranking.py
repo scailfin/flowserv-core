@@ -183,20 +183,25 @@ def create_result_table(con, benchmark_id, schema, commit_changes=True):
         Commit all changes to the database if true
     """
     result_table = RESULT_TABLE(benchmark_id)
-    cols = list(['run_id  CHAR(32) NOT NULL'])
+    cols = list(['run_id CHAR(32) NOT NULL'])
     for col in schema.columns:
         stmt = col.identifier
         if col.data_type == pd.DT_INTEGER:
             stmt += ' INTEGER'
         elif col.data_type == pd.DT_DECIMAL:
-            stmt += ' DOUBLE'
+            # Data type REAL is supported by PostgreSQL and SQLite3 but
+            # potentially not by Orcale or other database management systems.
+            # It may be necessary in the future to use a DBMS-dendent value
+            # here (e.g., based on information that is provided by the given
+            # database connection)
+            stmt += ' REAL'
         else:
             stmt += ' TEXT'
         if col.required:
             stmt += ' NOT NULL'
         cols.append(stmt)
     sql = 'CREATE TABLE {}({}, PRIMARY KEY(run_id))'
-    con.execute(sql.format(result_table, ','.join(cols)))
+    con.execute(sql.format(result_table, ', '.join(cols)))
     if commit_changes:
         con.commit()
 

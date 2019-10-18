@@ -246,8 +246,9 @@ class SubmissionManager(object):
             raise err.UnknownBenchmarkError(benchmark_id)
         # Ensure that the given name is valid and unique for the benchmark
         sql = 'SELECT name FROM benchmark_submission '
-        sql += 'WHERE benchmark_id = \'{}\' AND name = ?'.format(benchmark_id)
-        constraint.validate_name(name, con=self.con, sql=sql)
+        sql += 'WHERE benchmark_id = ? AND name = ?'
+        args = (benchmark_id, name)
+        constraint.validate_name(name, con=self.con, sql=sql, args=args)
         # Create a unique identifier for the new submission and the submission
         # upload directory
         identifier = util.get_unique_identifier()
@@ -631,9 +632,9 @@ class SubmissionManager(object):
         if not name is None and name != submission.name:
             # Ensure that the given name is valid and unique for the benchmark
             sql = 'SELECT name FROM benchmark_submission '
-            sql += 'WHERE benchmark_id = \'{}\' AND name = ?'
-            sql = sql.format(submission.benchmark_id)
-            constraint.validate_name(name, con=self.con, sql=sql)
+            sql += 'WHERE benchmark_id = ? AND name = ?'
+            args = (submission.benchmark_id, name)
+            constraint.validate_name(name, con=self.con, sql=sql, args=args)
             sql = 'UPDATE benchmark_submission SET name = ? '
             sql += 'WHERE submission_id = ?'
             self.con.execute(sql, (name, submission_id))

@@ -41,8 +41,11 @@ class TestDatabaseConstraints(object):
         with pytest.raises(err.ConstraintViolationError) as ex:
             constraint.validate_name(name='A' * 1024)
             assert str(ex) == 'invalid name'
-        # - Duplicate name
+        # - Duplicate name (also test option to exclude a given row)
         sql = 'SELECT name FROM api_user WHERE name = ?'
         with pytest.raises(err.ConstraintViolationError) as ex:
             constraint.validate_name(name=user_id, con=con, sql=sql)
             assert str(ex) == 'name \'{}\' exists'.format(user_id)
+        sql = 'SELECT name FROM api_user WHERE name = ? AND user_id <> ?'
+        args = (user_id, user_id)
+        constraint.validate_name(name=user_id, con=con, sql=sql, args=args)

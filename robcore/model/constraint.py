@@ -13,7 +13,7 @@ defined for the objects that are stored in the database.
 import robcore.error as err
 
 
-def validate_name(name, con=None, sql=None):
+def validate_name(name, con=None, sql=None, args=None):
     """Validate the given name. Raises an error if the given name violates the
     current constraints for names. The constraints are:
 
@@ -23,7 +23,19 @@ def validate_name(name, con=None, sql=None):
 
     To test name uniqueness a database connection and SQL statement is expected.
     The SQL statement should be parameterized with the name as the only
-    parameter.
+    parameter. If no query arguments are given the name is expected to be the
+    only argument.
+
+    Parameters
+    ----------
+    name: string
+        Name that is being validated
+    con: DB-API 2.0 database connection, optional
+        Connection to underlying database
+    sql: string, optional
+        SQL query to check if a given name exists or not
+    args: tuple or list, optional
+        Optional list of arguments for the query.
 
     Raises
     ------
@@ -37,5 +49,9 @@ def validate_name(name, con=None, sql=None):
     # Validate uniqueness if a database connection and SQL statement are given
     if con is None or sql is None:
         return
-    if not con.execute(sql, (name,)).fetchone() is None:
+    if not args is None:
+        query_args = args
+    else:
+        query_args = (name,)
+    if not con.execute(sql, query_args).fetchone() is None:
         raise err.ConstraintViolationError('name \'{}\' exists'.format(name))

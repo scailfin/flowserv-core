@@ -244,3 +244,65 @@ class BenchmarkRepository(object):
                 )
             )
         return result
+
+    def update_benchmark(
+        self, benchmark_id, name=None, description=None, instructions=None
+    ):
+        """Update name, description, and instructions for a given benchmark.
+
+        Raises an error if the given benchmark does not exist or if the name is
+        not unique.
+
+        Parameters
+        ----------
+        benchmark_id: string
+            Unique benchmark identifier
+        name: string, optional
+            Unique benchmark headline name
+        description: string, optional
+            Optional short description for display in benchmark listings
+        instructions: string, optional
+            Text containing detailed instructions for benchmark participants
+
+        Returns
+        -------
+        robcore.model.template.benchmark.BenchmarkHandle
+
+        Raises
+        ------
+        robcore.error.ConstraintViolationError
+        robcore.error.UnknownBenchmarkError
+        """
+        # Create the SQL update statement depending on the given arguments
+        args = list()
+        sql = 'UPDATE benchmark SET'
+        if not name is None:
+            # Ensure that the name is unique
+            constraint_sql = 'SELECT name FROM benchmark '
+            constraint_sql += 'WHERE name = ? AND benchmark_id <> ?'
+            constraint.validate_name(
+                name,
+                con=self.con,
+                sql=constraint_sql,
+                args=(name, benchmark_id))
+            args.append(name)
+            sql += ' name = ?'
+        if not description is None:
+            if len(args) > 0:
+                sql += ','
+            args.append(description)
+            sql += ' description = ?'
+        if not instructions is None:
+            if len(args) > 0:
+                sql += ','
+            args.append(instructions)
+            sql += ' instructions = ?'
+        # If none of the optional arguments was given we do not need to update
+        # anything
+        if len(args) > 0:
+            args.append(benchmark_id)
+            sql += ' WHERE benchmark_id = ?'
+            self.con.execute(sql, args)
+            self.con.commit()
+        # Return the handle for the updated benchmark
+        return self.get_benchmark(benchmark_id)
