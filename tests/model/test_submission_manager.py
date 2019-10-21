@@ -152,6 +152,14 @@ class TestSubmissionManager(object):
                 name='A' * 513,
                 user_id=USER_1
             )
+        # - Unknown user
+        with pytest.raises(err.UnknownUserError):
+            manager.create_submission(
+                benchmark_id=BENCHMARK_1,
+                name='D',
+                user_id=USER_1,
+                members=[USER_2, 'not a user']
+            )
 
     def test_delete_submission(self, tmpdir):
         """Test creating and deleting submissions."""
@@ -298,3 +306,56 @@ class TestSubmissionManager(object):
         results = s3.get_results(order_by=[SortColumn('col1')])
         assert results.size() == 1
         assert len(results.get(0).values) == 0
+
+
+    def test_list_submissions(self, tmpdir):
+        """Test listing a submissions."""
+        # Create database and submission manager
+        manager, _ = TestSubmissionManager.init(str(tmpdir))
+        # Create a new submission with a single user
+        manager.create_submission(
+            benchmark_id=BENCHMARK_1,
+            name='A',
+            user_id=USER_1
+        )
+        manager.create_submission(
+            benchmark_id=BENCHMARK_1,
+            name='B',
+            user_id=USER_2,
+            members=[USER_3]
+        )
+        manager.create_submission(
+            benchmark_id=BENCHMARK_2,
+            name='C',
+            user_id=USER_1
+        )
+        # Get listing of all submissions
+        names = [s.name for s in manager.list_submissions()]
+        assert len(names) == 3
+        for n in ['A', 'B', 'C']:
+            assert n in names
+        # Get listing of all submissions for benchmark 1 and 2
+        names = [s.name for s in manager.list_submissions(benchmark_id=BENCHMARK_1)]
+        assert len(names) == 2
+        for n in ['A', 'B']:
+            assert n in names
+        names = [s.name for s in manager.list_submissions(benchmark_id=BENCHMARK_2)]
+        assert len(names) == 1
+        assert 'C' in names
+        # Get listings for users 1, 2, and 3
+        names = [s.name for s in manager.list_submissions(user_id=USER_1)]
+        assert len(names) == 2
+        for n in ['A', 'C']:
+            assert n in names
+        names = [s.name for s in manager.list_submissions(user_id=USER_2)]
+        assert len(names) == 1
+        assert 'B' in names
+        names = [s.name for s in manager.list_submissions(user_id=USER_3)]
+        assert len(names) == 1
+        assert 'B' in names
+        # List submissions with both optional parameters given
+        names = [s.name for s in manager.list_submissions(benchmark_id=BENCHMARK_2, user_id=USER_1)]
+        assert len(names) == 1
+        assert 'C' in names
+        names = [s.name for s in manager.list_submissions(benchmark_id=BENCHMARK_2, user_id=USER_3)]
+        assert len(names) == 0

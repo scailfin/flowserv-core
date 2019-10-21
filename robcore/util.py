@@ -126,7 +126,7 @@ def to_datetime(timestamp):
         return datetime.datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S')
 
 
-def validate_doc(doc, mandatory_labels, optional_labels=None):
+def validate_doc(doc, mandatory_labels=None, optional_labels=None):
     """Raises error if a dictionary contains labels that are not in the given
     label lists or if there are labels in the mandatory list that are not in the
     dictionary. Returns the given dictionary (if valid).
@@ -149,11 +149,12 @@ def validate_doc(doc, mandatory_labels, optional_labels=None):
     ValueError
     """
     # Ensure that all mandatory labels are present in the dictionary
-    for key in mandatory_labels:
-        if not key in doc:
-            raise ValueError('missing element \'{}\''.format(key))
+    if not mandatory_labels is None:
+        for key in mandatory_labels:
+            if not key in doc:
+                raise ValueError('missing element \'{}\''.format(key))
     # Raise error if additional elements are present in the dictionary
-    labels = mandatory_labels
+    labels = mandatory_labels if not mandatory_labels is None else list()
     if not optional_labels is None:
         labels = labels + optional_labels
     for key in doc:

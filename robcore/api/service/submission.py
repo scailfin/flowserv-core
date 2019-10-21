@@ -43,6 +43,32 @@ class SubmissionService(object):
         if self.serialize is None:
             self.serialize = SubmissionSerializer(self.urls)
 
+    def authorize_member(self, submission_id, user):
+        """Ensure that the user is a member of the given submission if the
+        submission exists. A unauthorized error is raised if the submission
+        exists and the user is not a member of the submission. A unknown
+        submission error is raised if submission does not exist.
+
+        Parameters
+        ----------
+        submission_id: string
+            Unique submission identifier
+        user: robcore.model.user.base.UserHandle
+            Handle for user that is requesting access
+
+        Raises
+        ------
+        robcore.error.UnauthorizedAccessError
+        robcore.error.UnknownSubmissionError
+        """
+        if not self.auth.is_submission_member(submission_id=submission_id, user=user):
+            # At this point it is not clear whether the user is not a member of
+            # an existing submission or if the submission does not exist. The
+            # attempt to load the submission will fail if the submission does
+            # not exist.
+            self.manager.get_submission(submission_id, load_members=False)
+            raise err.UnauthorizedAccessError()
+
     def create_submission(self, benchmark_id, name, user, members=None):
         """Create a new submission for a given benchmark. Each submission for
         the benchmark has a unique name, a submission owner, and a list of
@@ -91,29 +117,20 @@ class SubmissionService(object):
         user: robcore.model.user.base.UserHandle
             Handle for user that requested the deletion
 
-        Returns
-        -------
-        dict
-
         Raises
         ------
         robcore.error.UnauthorizedAccessError
         robcore.error.UnknownFileError
         """
         # Raise an error if the user does not have delete rights for the
-        # submission
-        if not self.auth.is_submission_member(submission_id=submission_id, user=user):
-            raise err.UnauthorizedAccessError()
+        # submission or if the submission does not exist.
+        self.authorize_member(submission_id=submission_id, user=user)
         self.manager.delete_file(submission_id=submission_id, file_id=file_id)
-        return self.list_files(submission_id=submission_id, user=user)
 
     def delete_submission(self, submission_id, user):
         """Get a given submission and all associated runs and results. If the
         user is not an administrator or a member of the submission an
         unauthorized access error is raised.
-
-        Returns a listing of the remaining submissions that the user is a
-        member of.
 
         Parameters
         ----------
@@ -122,20 +139,15 @@ class SubmissionService(object):
         user: robcore.model.user.base.UserHandle
             Handle for user that is deleting the submission
 
-        Returns
-        -------
-        dict
-
         Raises
         ------
         robcore.error.UnauthorizedAccessError
         robcore.error.UnknownSubmissionError
         """
         # Raise an error if the user is not authorized to delete the submission
-        if not self.auth.is_submission_member(submission_id=submission_id, user=user):
-            raise err.UnauthorizedAccessError()
+        # or if the submission does not exist
+        self.authorize_member(submission_id=submission_id, user=user)
         self.manager.delete_submission(submission_id)
-        return self.list_submissions(user)
 
     def get_file(self, submission_id, file_id, user):
         """Get handle for file with given identifier that was uploaded by the
@@ -158,27 +170,23 @@ class SubmissionService(object):
         ------
         robcore.error.UnauthorizedAccessError
         robcore.error.UnknownFileError
+        robcore.error.UnknownSubmissionError
         """
-        # Raise an error if the user does not have access rights for the
-        # submission files
-        if not self.auth.is_submission_member(submission_id=submission_id, user=user):
-            raise err.UnauthorizedAccessError()
-        # Return the file handle and of a serialization
+        # Raise an error if the user does not have  access rights for the
+        # submission files or if the submission does not exist.
+        self.authorize_member(submission_id=submission_id, user=user)
+        # Return the file handle and a serialization of tit
         fh = self.manager.get_file(submission_id=submission_id, file_id=file_id)
         doc = self.serialize.file_handle(submission_id=submission_id, fh=fh)
         return fh, doc
 
-    def get_submission(self, submission_id, user):
-        """Get handle for submission with the given identifier. If the user is
-        not an administrator or a member of the submission an unauthorized
-        access error is raised.
+    def get_submission(self, submission_id):
+        """Get handle for submission with the given identifier.
 
         Parameters
         ----------
         submission_id: string
             Unique submission identifier
-        user: robcore.model.user.base.UserHandle
-            Handle for user that is accessing the submission
 
         Returns
         -------
@@ -211,29 +219,40 @@ class SubmissionService(object):
         robcore.error.UnauthorizedAccessError
         robcore.error.UnknownSubmissionError
         """
-        # Ensure that the user is authorized to retrieve the file listing for
-        # the given submission
-        if not self.auth.is_submission_member(submission_id=submission_id, user=user):
-            raise err.UnauthorizedAccessError()
+        # Raise an error if the user does not have  access rights for the
+        # submission files or if the submission does not exist.
+        self.authorize_member(submission_id=submission_id, user=user)
         files = self.manager.list_files(submission_id)
         return self.serialize.file_listing(
             submission_id=submission_id,
             files=files
         )
 
-    def list_submissions(self, user):
-        """Get a listing of all submissions that a user is a member of.
+    def list_submissions(self, benchmark_id=None, user=None):
+        """Get a listing of all submissions. If the user handle is given the
+        result contains only those submissions that the user is a member of.
+        If the benchmark identifier is given the result contains submissions
+        only for the given benchmark.
 
         Parameters
         ----------
-        user: robcore.model.user.base.UserHandle
+        benchmark_id: string, optional
+            Unique benchmark identifier
+        user: robcore.model.user.base.UserHandle, optional
             Handle for user that is requesting the submission listing
 
         Returns
         -------
         dict
         """
-        submissions = self.manager.list_submissions(user=user)
+        if not user is None:
+            user_id = user.identifier
+        else:
+            user_id = None
+        submissions = self.manager.list_submissions(
+            benchmark_id=benchmark_id,
+            user_id=user_id
+        )
         return self.serialize.submission_listing(submissions)
 
     def update_submission(self, submission_id, user, name=None, members=None):
@@ -264,9 +283,9 @@ class SubmissionService(object):
         robcore.error.UnauthorizedAccessError
         robcore.error.UnknownSubmissionError
         """
-        # Raise an error if the user is not authorized to modify the submission
-        if not self.auth.is_submission_member(submission_id=submission_id, user=user):
-            raise err.UnauthorizedAccessError()
+        # Raise an error if the user does not have  access rights for the
+        # submission or if the submission does not exist.
+        self.authorize_member(submission_id=submission_id, user=user)
         submission = self.manager.update_submission(
             submission_id,
             name=name,
@@ -298,10 +317,9 @@ class SubmissionService(object):
         robcore.error.UnauthorizedAccessError
         robcore.error.UnknownSubmissionError
         """
-        # Ensure that the user is authorized to modify files for the given
-        # submission
-        if not self.auth.is_submission_member(submission_id=submission_id, user=user):
-            raise err.UnauthorizedAccessError()
+        # Raise an error if the user does not have  access rights for the
+        # submission files or if the submission does not exist.
+        self.authorize_member(submission_id=submission_id, user=user)
         # Return serialization of the uploaded file
         fh = self.manager.upload_file(
             submission_id=submission_id,

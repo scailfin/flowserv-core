@@ -220,6 +220,9 @@ class SubmissionManager(object):
         the user identified by user_id is always part of the list of submission
         members.
 
+        If a list of members is given it is ensured that each identifier in the
+        list references an existing user.
+
         Parameters
         ----------
         benchmark_id: string
@@ -239,6 +242,7 @@ class SubmissionManager(object):
         ------
         robcore.error.ConstraintViolationError
         robcore.error.UnknownBenchmarkError
+        robcore.error.UnknownUserError
         """
         # Ensure that the benchmark exists
         sql = 'SELECT * FROM benchmark WHERE benchmark_id = ?'
@@ -249,6 +253,13 @@ class SubmissionManager(object):
         sql += 'WHERE benchmark_id = ? AND name = ?'
         args = (benchmark_id, name)
         constraint.validate_name(name, con=self.con, sql=sql, args=args)
+        # Ensure that all users in the given member list exist
+        if not members is None:
+            sql = 'SELECT user_id FROM api_user WHERE user_id = ?'
+            for member_id in members:
+                if self.con.execute(sql, (member_id,)).fetchone() is None:
+                    raise err.UnknownUserError(member_id)
+
         # Create a unique identifier for the new submission and the submission
         # upload directory
         identifier = util.get_unique_identifier()
@@ -533,14 +544,18 @@ class SubmissionManager(object):
             members.append(user)
         return members
 
-    def list_submissions(self, user=None):
+    def list_submissions(self, benchmark_id=None, user_id=None):
         """Get a listing of submission descriptors. If the user is given only
-        those submissions are returned that the user is a member of.
+        those submissions are returned that the user is a member of. If the
+        benchmark identifier is given only submissions for the given benchmark
+        are included.
 
         Parameters
         ----------
-        user: robcore.model.user.base.UserHandle, optional
-            User handle
+        benchmark_id: string, optional
+            Unique benchmark identifier
+        user_id: string, optional
+            Unique user identifier
 
         Returns
         -------
@@ -549,14 +564,20 @@ class SubmissionManager(object):
         # Generate SQL query depending on whether the user is given or not
         sql = 'SELECT s.submission_id, s.name, s.benchmark_id, s.owner_id '
         sql += 'FROM benchmark_submission s'
-        if user is None:
-            para = ()
-        else:
+        para = list()
+        if not user_id is None:
             sql += ' WHERE s.submission_id IN ('
             sql += 'SELECT m.submission_id '
             sql += 'FROM submission_member m '
             sql += 'WHERE m.user_id = ?)'
-            para = (user.identifier,)
+            para.append(user_id)
+        if not benchmark_id is None:
+            if user_id is None:
+                sql += ' WHERE '
+            else:
+                sql += ' AND '
+            sql += 's.benchmark_id = ?'
+            para.append(benchmark_id)
         # Create list of submission handle from query result
         submissions = list()
         for row in self.con.execute(sql, para).fetchall():

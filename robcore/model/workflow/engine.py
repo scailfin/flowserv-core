@@ -42,7 +42,7 @@ class BenchmarkEngine(object):
         self.con = con
         self.backend = backend
 
-    def cancel_run(self, run_id):
+    def cancel_run(self, run_id, reason=None):
         """Cancel the given run. This will raise an error if the run is not in
         an active state.
 
@@ -50,6 +50,8 @@ class BenchmarkEngine(object):
         ----------
         run_id: string
             Unique submission identifier
+        reason: string, optional
+            Optional text describing the reason for cancelling the run
 
         Returns
         -------
@@ -69,7 +71,10 @@ class BenchmarkEngine(object):
         # Cancel execution at the backend
         self.backend.cancel_run(run_id)
         # Update the run state and return the run handle
-        state = run.state.cancel()
+        messages = None
+        if not reason is None:
+            messages = list([reason])
+        state = run.state.cancel(messages=messages)
         store.update_run(
             con=self.con,
             run_id=run_id,
@@ -125,6 +130,21 @@ class BenchmarkEngine(object):
                 except OSError:
                     pass
         return run
+
+    def exists_run(self, run_id):
+        """Test if a run with the given identifier exists in the underlying
+        database.
+
+        Parameters
+        ----------
+        run_id: string
+            Unique run identifier
+
+        Returns
+        -------
+        bool
+        """
+        return store.exists_run(con=self.con, run_id=run_id)
 
     def get_run(self, run_id):
         """Get handle for the given run. The run state and associated submission

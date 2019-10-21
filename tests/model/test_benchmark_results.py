@@ -21,6 +21,7 @@ from robcore.model.template.repo.fs import TemplateFSRepository
 from robcore.model.template.schema import SortColumn
 from robcore.model.workflow.resource import FileResource
 
+import robcore.error as err
 import robcore.model.ranking as ranking
 import robcore.model.workflow.run as runstore
 import robcore.model.workflow.state as wfstate
@@ -172,6 +173,12 @@ class TestBenchmarkResultRanking(object):
         run_2 = results.get(1)
         assert run_2.submission_id == SUBMISSION_1
         assert run_2.get('col1') == 10
+        # Error for queries that specify an unknown sort column
+        with pytest.raises(err.InvalidSortColumnError):
+            repo.get_leaderboard(
+                benchmark_id=BENCHMARK_1,
+                order_by=[SortColumn('col2', False), SortColumn('abc', False)]
+            )
 
     def test_insert_results(self, tmpdir):
         """Test inserting results for submission runs."""

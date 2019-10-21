@@ -214,6 +214,25 @@ def delete_run(con, run_id, commit_changes=True):
         con.commit()
 
 
+def exists_run(con, run_id):
+    """Test if a run with the given identifier exists in the underlying
+    database.
+
+    Parameters
+    ----------
+    con: DB-API 2.0 database connection
+        Connection to underlying database
+    run_id: string
+        Unique run identifier
+
+    Returns
+    -------
+    bool
+    """
+    sql = 'SELECT run_id FROM benchmark_run WHERE run_id = ?'
+    return not con.execute(sql, (run_id,)).fetchone() is None
+    
+
 def get_run(con, run_id):
     """Get handle for the given run from the underlying database.
 

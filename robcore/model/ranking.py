@@ -301,6 +301,10 @@ def query(
     Returns
     -------
     robcore.model.ranking.ResultRanking
+
+    Raises
+    ------
+    robcore.error.InvalidSortColumnError
     """
     # Mapping of schema column names to renamed column identifier
     mapping = schema.rename()
@@ -317,10 +321,13 @@ def query(
         if not filter_stmt is None:
             sql += ' AND ' + filter_stmt
         # Create ORDER BY clause
+        sort_stmt = list()
         if order_by is None:
             order_by = schema.get_default_order()
-        sort_stmt = list()
         for col in order_by:
+            # Ensure that the order by column exists in the result schema
+            if not col.identifier in mapping:
+                raise err.InvalidSortColumnError(col.identifier)
             stmt_el = mapping[col.identifier]
             if col.sort_desc:
                 stmt_el += ' DESC'

@@ -199,6 +199,23 @@ class InvalidRunStateError(ConstraintViolationError):
         super(InvalidRunStateError, self).__init__(message=msg)
 
 
+class InvalidSortColumnError(ConstraintViolationError):
+    """Exception indicating that a given sort column in a leader board query
+    does not exist in the result schema.
+    """
+    def __init__(self, col_name):
+        """Initialize error message.
+
+        Parameters
+        ----------
+        col_name : string
+            Name of column that is not in the schema
+        """
+        super(InvalidSortColumnError, self).__init__(
+            message='unknown result column {}'.format(col_name)
+        )
+
+
 class InvalidTemplateError(ConstraintViolationError):
     """Exception indicating that a given workflow template is invalid or has
     missing elements.

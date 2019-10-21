@@ -6,17 +6,15 @@
 # ROB is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
-"""Defines environment variables and their default values that are used to
-control the configurtion of the API. Also provides methods to access the
-configuration values.
+"""This module defines environment variables and their default values that are
+used to configure the API. In addition, the module provides methods to access
+the configuration values in the environment variables.
 """
 
 import robcore.config.base as config
 
 
-"""Names of environment variables that are used to configure the authentication
-module.
-"""
+"""Names of environment variables that are used to configure the API."""
 # Base directory to store uploaded files and submission results
 ROB_API_BASEDIR = 'ROB_API_DIR'
 # Host name for API server

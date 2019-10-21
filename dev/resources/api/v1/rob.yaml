@@ -112,12 +112,37 @@ paths:
           description: "Benchmark leaderboard"
           schema:
             $ref: "#/definitions/BenchmarkLeaderboard"
+        400:
+          description: "Invalid sort statement"
         404:
           description: "Unknown benchmark"
 # ------------------------------------------------------------------------------
 # Submissions
 # ------------------------------------------------------------------------------
   /benchmarks/{benchmarkId}/submissions:
+    get:
+      tags:
+      - "submission"
+      summary: "List submissions for benchmark"
+      description: "Get a list of all submissions for a given benchmark"
+      operationId: "listSubmissions"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "path"
+        name: "benchmarkId"
+        description: "Unique benchmark identifier"
+        required: true
+        type: string
+      responses:
+        200:
+          description: "Submission listing"
+          schema:
+            $ref: "#/definitions/SubmissionListing"
+        403:
+          description: "Forbidden operation"
+      security:
+        - api_key: []
     post:
       tags:
       - "submission"
@@ -127,10 +152,6 @@ paths:
       produces:
       - "application/json"
       parameters:
-      - name: "api_key"
-        in: "header"
-        required: false
-        type: "string"
       - in: "path"
         name: "benchmarkId"
         description: "Unique benchmark identifier"
@@ -152,8 +173,8 @@ paths:
                 items:
                   type: string
       responses:
-        200:
-          description: "Run state"
+        201:
+          description: "Submission handle"
           schema:
             $ref: "#/definitions/SubmissionHandle"
         400:
@@ -162,25 +183,26 @@ paths:
           description: "Forbidden operation"
         404:
           description: "Unknown benchmark"
+      security:
+        - api_key: []
   /submissions:
     get:
       tags:
       - "submission"
-      summary: "List submissions"
+      summary: "List user submissions"
       description: "List all submissions that a user is a member of"
-      operationId: "listSubmissions"
+      operationId: "listUserSubmissions"
       produces:
       - "application/json"
-      parameters:
-      - name: "api_key"
-        in: "header"
-        required: false
-        type: "string"
       responses:
         200:
           description: "Submission listing"
           schema:
             $ref: "#/definitions/SubmissionListing"
+        403:
+          description: "Forbidden operation"
+      security:
+        - api_key: []
   /submissions/{submissionId}:
     delete:
       tags:
@@ -191,10 +213,6 @@ paths:
       produces:
       - "application/json"
       parameters:
-      - name: "api_key"
-        in: "header"
-        required: false
-        type: "string"
       - in: "path"
         name: "submissionId"
         description: "Unique submission identifier"
@@ -202,13 +220,13 @@ paths:
         type: string
       responses:
         204:
-          description: "Submission listing"
-          schema:
-            $ref: "#/definitions/SubmissionListing"
+          description: "Submission deleted"
         403:
           description: "Forbidden operation"
         404:
           description: "Unknown submission"
+      security:
+        - api_key: []
     get:
       tags:
       - "submission"
@@ -218,10 +236,6 @@ paths:
       produces:
       - "application/json"
       parameters:
-      - name: "api_key"
-        in: "header"
-        required: false
-        type: "string"
       - in: "path"
         name: "submissionId"
         description: "Unique submission identifier"
@@ -234,6 +248,8 @@ paths:
             $ref: "#/definitions/SubmissionHandle"
         404:
           description: "Unknown submission"
+      security:
+        - api_key: []
     put:
       tags:
       - "submission"
@@ -243,10 +259,6 @@ paths:
       produces:
       - "application/json"
       parameters:
-      - name: "api_key"
-        in: "header"
-        required: false
-        type: "string"
       - in: "path"
         name: "submissionId"
         description: "Unique submission identifier"
@@ -266,14 +278,18 @@ paths:
                 items:
                   type: string
       responses:
-        204:
+        200:
           description: "Updated submission handle"
           schema:
             $ref: "#/definitions/SubmissionHandle"
+        400:
+          description: "Invalid submission statement"
         403:
           description: "Forbidden operation"
         404:
           description: "Unknown submission/user"
+      security:
+        - api_key: []
 # ------------------------------------------------------------------------------
 # Runs
 # ------------------------------------------------------------------------------
@@ -287,10 +303,6 @@ paths:
       produces:
       - "application/json"
       parameters:
-      - name: "api_key"
-        in: "header"
-        required: false
-        type: "string"
       - in: "path"
         name: "submissionId"
         description: "Unique submission identifier"
@@ -305,6 +317,8 @@ paths:
           description: "Forbidden operation"
         404:
           description: "Unknown submission"
+      security:
+        - api_key: []
     post:
       tags:
       - "run"
@@ -314,15 +328,6 @@ paths:
       produces:
       - "application/json"
       parameters:
-      - name: "api_key"
-        in: "header"
-        required: false
-        type: "string"
-      - in: "path"
-        name: "benchmarkId"
-        description: "Unique benchmark identifier"
-        required: true
-        type: string
       - in: "path"
         name: "submissionId"
         description: "Unique submission identifier"
@@ -342,14 +347,18 @@ paths:
               items:
                 $ref: '#/definitions/RunArgument'
       responses:
-        200:
+        201:
           description: "Run state"
           schema:
             $ref: "#/definitions/RunHandle"
+        400:
+          description: "Invalid argument list"
         403:
           description: "Forbidden operation"
         404:
           description: "Unknown submission"
+      security:
+        - api_key: []
   /runs/{runId}:
     delete:
       tags:
@@ -360,10 +369,6 @@ paths:
       produces:
       - "application/json"
       parameters:
-      - name: "api_key"
-        in: "header"
-        required: false
-        type: "string"
       - in: "path"
         name: "runId"
         description: "Unique run identifier"
@@ -371,13 +376,15 @@ paths:
         type: string
       responses:
         204:
-          description: "Run listing"
-          schema:
-            $ref: "#/definitions/RunListing"
+          description: "Run deleted"
+        400:
+          description: "Invalid request for run state"
         403:
           description: "Forbidden operation"
         404:
           description: "Unknown run"
+      security:
+        - api_key: []
     get:
       tags:
       - "run"
@@ -387,10 +394,6 @@ paths:
       produces:
       - "application/json"
       parameters:
-      - name: "api_key"
-        in: "header"
-        required: false
-        type: "string"
       - in: "path"
         name: "runId"
         description: "Unique run identifier"
@@ -405,8 +408,9 @@ paths:
           description: "Forbidden operation"
         404:
           description: "Unknown run"
-  /runs/{runId}/cancel:
-    post:
+      security:
+        - api_key: []
+    put:
       tags:
       - "run"
       summary: "Cancel run"
@@ -415,24 +419,33 @@ paths:
       produces:
       - "application/json"
       parameters:
-      - name: "api_key"
-        in: "header"
-        required: false
-        type: "string"
       - in: "path"
         name: "runId"
         description: "Unique run identifier"
         required: true
         type: string
+      - name: body
+        in: body
+        required: true
+        description: Run arguments
+        schema:
+          type: object
+          properties:
+            reason:
+              type: string
       responses:
         200:
           description: "Run handle"
           schema:
             $ref: "#/definitions/RunHandle"
+        400:
+          description: "Invalid request for run state"
         403:
           description: "Forbidden operation"
         404:
           description: "Unknown run"
+      security:
+        - api_key: []
 # ------------------------------------------------------------------------------
 # Files
 # ------------------------------------------------------------------------------
@@ -446,10 +459,6 @@ paths:
       produces:
       - "application/json"
       parameters:
-      - name: "api_key"
-        in: "header"
-        required: false
-        type: "string"
       - in: "path"
         name: "submissionId"
         description: "Unique submission identifier"
@@ -464,6 +473,8 @@ paths:
           description: "Forbidden operation"
         404:
           description: "Unknown submission"
+      security:
+        - api_key: []
     post:
       tags:
       - "file"
@@ -475,15 +486,16 @@ paths:
       produces:
       - "application/json"
       parameters:
-      - name: "api_key"
-        in: "header"
-        required: false
-        type: "string"
       - in: "path"
         name: "submissionId"
         description: "Unique submission identifier"
         required: true
         type: string
+      - in: "formData"
+        name: "file"
+        description: "Uploaded file"
+        required: true
+        type: file
       responses:
         201:
           description: "Handle for uploaded file"
@@ -495,6 +507,8 @@ paths:
           description: "Unknown submission"
         413:
             description: "Uploaded file size exceeds limit"
+      security:
+        - api_key: []
   /submissions/{submissionId}/files/{fileId}:
     delete:
       tags:
@@ -505,10 +519,6 @@ paths:
       produces:
       - "application/json"
       parameters:
-      - name: "api_key"
-        in: "header"
-        required: false
-        type: "string"
       - in: "path"
         name: "submissionId"
         description: "Unique submission identifier"
@@ -522,12 +532,12 @@ paths:
       responses:
         204:
           description: "List of uploaded files"
-          schema:
-            $ref: "#/definitions/FileListing"
         403:
           description: "Forbidden operation"
         404:
           description: "Unknown submission or file"
+      security:
+        - api_key: []
     get:
       tags:
       - "file"
@@ -538,10 +548,6 @@ paths:
       - "text/csv"
       - "application/gzip"
       parameters:
-      - name: "api_key"
-        in: "header"
-        required: false
-        type: "string"
       - in: "path"
         name: "submissionId"
         description: "Unique submission identifier"
@@ -555,8 +561,12 @@ paths:
       responses:
         200:
           description: "File"
+        403:
+          description: "Forbidden operation"
         404:
           description: "Unknown submission or file"
+      security:
+        - api_key: []
 # ------------------------------------------------------------------------------
 # Users
 # ------------------------------------------------------------------------------

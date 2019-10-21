@@ -48,6 +48,15 @@ class WorkflowState(object):
         self.type_id = type_id
         self.created_at = created_at if not created_at is None else datetime.now()
 
+    def __str__(self):
+        """Get printable representation of the state type.
+
+        Returns
+        -------
+        string
+        """
+        return self.type_id
+
     def has_changed(self, state):
         """True if the type of this state object differs from the type of the
         given state object.
@@ -62,7 +71,7 @@ class WorkflowState(object):
         bool
         """
         return self.type_id != state.type_id
-        
+
     def is_active(self):
         """A workflow is in active state if it is either pending or running.
 

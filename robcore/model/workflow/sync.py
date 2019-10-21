@@ -31,8 +31,8 @@ class SyncWorkflowEngine(WorkflowController):
     that follow the syntax of REANA serial workflows.
     """
     def __init__(self, base_dir):
-        """Initialize the base directory. Workflow runs are maintained a
-        sub-directories in the base directory (named by the run identifier).
+        """Initialize the base directory. Workflow runs are maintained in
+        sub-directories in this base directory (named by the run identifier).
         Workflow results are kept as files in the base directory.
 
         Parameters

@@ -48,7 +48,11 @@ LINKS = 'links'
 REF = 'href'
 REL = 'rel'
 
+# Runs
+REASON = 'reason'
+
 # Submissions
+BENCHMARK = 'benchmark'
 SUBMISSIONS = 'submissions'
 MEMBERS = 'members'
 OWNER_ID = 'ownerId'

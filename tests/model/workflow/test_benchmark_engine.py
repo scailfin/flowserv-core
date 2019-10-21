@@ -81,6 +81,7 @@ class TestBenchmarkEngine(object):
         )
         assert len(run1.list_files()) == 0
         assert run1.get_file(bm.RESULT_FILE_ID) is None
+        assert engine.exists_run(run1.identifier)
         run2 = engine.start_run(
             submission_id=SUBMISSION_2,
             arguments=dict(),
@@ -94,6 +95,7 @@ class TestBenchmarkEngine(object):
         # Cancel the run
         run1 = engine.cancel_run(run1.identifier)
         assert run1.is_canceled()
+        assert engine.exists_run(run1.identifier)
         # Error when trying to cancel an inactive run
         with pytest.raises(err.InvalidRunStateError):
             engine.cancel_run(run1.identifier)
@@ -101,6 +103,7 @@ class TestBenchmarkEngine(object):
         engine.delete_run(run1.identifier)
         assert len(engine.list_runs(SUBMISSION_1)) == 0
         assert len(engine.list_runs(SUBMISSION_2)) == 1
+        assert not engine.exists_run(run1.identifier)
         # Error when deleting a non-existing run
         with pytest.raises(err.UnknownRunError):
             engine.delete_run(run1.identifier)

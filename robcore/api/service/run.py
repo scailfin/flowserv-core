@@ -18,6 +18,7 @@ from robcore.model.template.parameter.value import TemplateArgument
 import robcore.api.serialize.labels as labels
 import robcore.error as err
 import robcore.model.user.auth as res
+import robcore.model.workflow.run as store
 import robcore.util as util
 
 
@@ -54,7 +55,46 @@ class RunService(object):
         if self.serialize is None:
             self.serialize = RunSerializer(self.urls)
 
-    def cancel_run(self, run_id, user):
+    def authorize_member(self, user, submission_id=None, run_id=None):
+        """Ensure that the user is a member of the submission for a run.
+        A unauthorized error is raised if the submission exists and the user is
+        not a member of the submission. A unknown submission error is raised if
+        submission does not exist.
+
+        Parameters
+        ----------
+        submission_id: string, optional
+            Unique submission identifier
+        run_id: string, optional
+            Unique run identifier
+        user: robcore.model.user.base.UserHandle
+            Handle for user that is requesting access
+
+        Raises
+        ------
+        robcore.error.UnauthorizedAccessError
+        robcore.error.UnknownSubmissionError
+        """
+        is_member = self.auth.is_submission_member(
+            submission_id=submission_id,
+            run_id=run_id,
+            user=user
+        )
+        if not is_member:
+            # At this point it is not clear whether the user is not a member of
+            # an existing submission or if the submission or run does not exist.
+            if not run_id is None and not self.engine.exists_run(run_id=run_id):
+                raise err.UnknownRunError(run_id)
+            elif not submission_id is None:
+                # The attempt to load the submission will fail if the
+                # submission does not exist.
+                self.submissions.get_submission(
+                    submission_id=submission_id,
+                    load_members=False
+                )
+            raise err.UnauthorizedAccessError()
+
+    def cancel_run(self, run_id, user, reason=None):
         """Cancel the run with the given identifier. Returns a serialization of
         the handle for the canceled run.
 
@@ -67,6 +107,8 @@ class RunService(object):
             Unique run identifier
         user: robcore.model.user.base.UserHandle
             User that requested the operation
+        reason: string, optional
+            Optional text describing the reason for cancelling the run
 
         Returns
         -------
@@ -78,10 +120,10 @@ class RunService(object):
         robcore.error.UnknownRunError
         robcore.error.InvalidRunStateError
         """
-        # Ensure that the user has sufficient access rights to cancel the run
-        if not self.auth.is_submission_member(run_id=run_id, user=user):
-            raise err.UnauthorizedAccessError()
-        self.engine.cancel_run(run_id)
+        # Raise an error if the user does not have rights to cancel the run or
+        # if the run does not exist.
+        self.authorize_member(run_id=run_id, user=user)
+        self.engine.cancel_run(run_id, reason=reason)
         return self.get_run(run_id=run_id, user=user)
 
     def delete_run(self, run_id, user):
@@ -98,21 +140,16 @@ class RunService(object):
         user: robcore.model.user.base.UserHandle
             User that requested the operation
 
-        Returns
-        -------
-        dict
-
         Raises
         ------
         robcore.error.UnauthorizedAccessError
         robcore.error.UnknownRunError
         robcore.error.InvalidRunStateError
         """
-        # Ensure that the user has sufficient access rights to delete the run
-        if not self.auth.is_submission_member(run_id=run_id, user=user):
-            raise err.UnauthorizedAccessError()
+        # Raise an error if the user does not have rights to delete the run or
+        # if the run does not exist.
+        self.authorize_member(run_id=run_id, user=user)
         run = self.engine.delete_run(run_id)
-        return self.list_runs(submission_id=run.submission_id, user=user)
 
     def get_run(self, run_id, user):
         """Get handle for the given run.
@@ -136,9 +173,9 @@ class RunService(object):
         robcore.error.UnauthorizedAccessError
         robcore.error.UnknownRunError
         """
-        # Ensure that the user has read access for the run
-        if not self.auth.is_submission_member(run_id=run_id, user=user):
-            raise err.UnauthorizedAccessError()
+        # Raise an error if the user does not have rights to access the run or
+        # if the run does not exist.
+        self.authorize_member(run_id=run_id, user=user)
         run = self.engine.get_run(run_id)
         return self.serialize.run_handle(run)
 
@@ -164,9 +201,9 @@ class RunService(object):
         robcore.error.UnauthorizedAccessError
         robcore.error.UnknownSubmissionError
         """
-        # Ensure that the user has read access for submission runs
-        if not self.auth.is_submission_member(submission_id=submission_id, user=user):
-            raise err.UnauthorizedAccessError()
+        # Raise an error if the user does not have rights to access the
+        # submission runs or if the submission does not exist.
+        self.authorize_member(submission_id=submission_id, user=user)
         return self.serialize.run_listing(
             runs=self.submissions.get_runs(submission_id),
             submission_id=submission_id
@@ -175,8 +212,8 @@ class RunService(object):
     def start_run(self, submission_id, arguments, user):
         """Start a new workflow run for the given submission. The user provided
         arguments are expected to be a list of (key,value)-pairs. The key value
-        identifies the template parameter. The of the value depends on the type
-        of the parameter.
+        identifies the template parameter. The data type of the value depends
+        on the type of the parameter.
 
         Returns a serialization of the handle for the started run.
 
@@ -204,9 +241,9 @@ class RunService(object):
         robcore.error.UnknownParameterError
         robcore.error.UnknownSubmissionError
         """
-        # Ensure that the user has sufficient access rights to create a new run
-        if not self.auth.is_submission_member(submission_id=submission_id, user=user):
-            raise err.UnauthorizedAccessError()
+        # Raise an error if the user does not have rights to start new runs for
+        # the submission or if the submission does not exist.
+        self.authorize_member(submission_id=submission_id, user=user)
         # Get the submission handle. This will raise an error if the submission
         # is unknown.
         submission = self.submissions.get_submission(submission_id)

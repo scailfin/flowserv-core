@@ -88,11 +88,13 @@ class SubmissionSerializer(object):
         dict
         """
         s_id = submission.identifier
+        b_id = submission.benchmark_id
         return {
             labels.ID: s_id,
             labels.NAME: submission.name,
             labels.LINKS: hateoas.serialize({
                 hateoas.SELF: self.urls.get_submission(s_id),
+                hateoas.BENCHMARK: self.urls.get_benchmark(b_id),
                 hateoas.action(hateoas.UPLOAD): self.urls.upload_file(s_id)
             })
         }
@@ -110,6 +112,7 @@ class SubmissionSerializer(object):
         dict
         """
         doc = self.submission_descriptor(submission)
+        doc[labels.BENCHMARK] = submission.benchmark_id
         members = list()
         for u in submission.get_members():
             members.append({labels.ID: u.identifier, labels.USERNAME: u.name})

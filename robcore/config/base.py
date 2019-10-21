@@ -19,7 +19,7 @@ import robcore.error as err
 ROB_TEST = 'ROB_TEST'
 
 
-def get_variable(name, default_value, raise_error):
+def get_variable(name, default_value=None, raise_error=None):
     """Get the value for the given  environment variable. Raises a
     MissingConfigurationError if the raise_error flag is True and the variable
     is not set. If the raise_error flag is False and the environment variables
@@ -29,7 +29,7 @@ def get_variable(name, default_value, raise_error):
     ----------
     name: string
         Environment variable name
-    default_value: string
+    default_value: string, optional
         Default value if variable is not set and raise_error flag is False
     raise_error: bool
         Flag indicating whether an error is raised if the environment variable

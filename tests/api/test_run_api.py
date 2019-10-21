@@ -96,7 +96,8 @@ class TestRunApi(object):
         with pytest.raises(err.UnauthorizedAccessError):
             runs.delete_run(run_id=run_id, user=user2)
         # Delete the run
-        r = runs.delete_run(run_id=run_id, user=user)
+        runs.delete_run(run_id=run_id, user=user)
+        r = runs.list_runs(submission_id=submission_id, user=user)
         util.validate_doc(doc=r, mandatory_labels=RUN_LISTING)
         serialize.validate_links(r, RELS_LISTING)
         assert len(r[labels.RUNS]) == 0
