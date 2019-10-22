@@ -151,6 +151,51 @@ class RunService(object):
         self.authorize_member(run_id=run_id, user=user)
         run = self.engine.delete_run(run_id)
 
+    def get_resource_file(self, run_id, resource_id, user):
+        """Get file handle for a resource file that was generated as the result
+        of a successful workflow run.
+
+        Raises an unauthorized access error if the user does not have read
+        access to the run.
+
+        Parameters
+        ----------
+        run_id: string
+            Unique run identifier
+        resource_id: string
+            UNique resource file identifier
+        user: robcore.model.user.base.UserHandle
+            User that requested the operation
+
+        Returns
+        -------
+        robcore.io.files.FileHandle
+
+        Raises
+        ------
+        robcore.error.UnauthorizedAccessError
+        robcore.error.UnknownRunError
+        robcore.error.UnknownResourceError
+        """
+        # Raise an error if the user does not have rights to access the run or
+        # if the run does not exist.
+        self.authorize_member(run_id=run_id, user=user)
+        # Get the run handle. The files in the handle are keyed by their unique
+        # name and not hte unique resource identifier that is used in web API
+        # requests. We need to find the resource by iterating over the list of
+        # available resources.
+        run = self.engine.get_run(run_id)
+        resource = None
+        for r in run.list_resources():
+            if r.resource_id == resource_id:
+                resource = r
+                break
+        # Raise error if the resource does not exist
+        if resource is None:
+            raise err.UnknownResourceError(resource_id)
+        # Return file handle for resource file
+        return resource.file_handle()
+
     def get_run(self, run_id, user):
         """Get handle for the given run.
 

@@ -11,6 +11,8 @@
 import os
 import shutil
 
+from robcore.io.files import FileHandle
+
 
 class FileResource(object):
     """Handle for file resources that are created as the result of a workflow
@@ -62,3 +64,12 @@ class FileResource(object):
         string
         """
         return self.file_path
+
+    def file_handle(self):
+        """Get handle for the resource file on disk.
+
+        Returns
+        -------
+        robcore.io.files.FileHandle
+        """
+        return FileHandle(filepath=self.file_path)
