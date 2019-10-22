@@ -10,8 +10,8 @@
 and benchmark leader boards.
 """
 
-from robcore.api.serialize.benchmark import BenchmarkSerializer
-from robcore.api.route import UrlFactory
+from robcore.view.benchmark import BenchmarkSerializer
+from robcore.view.route import UrlFactory
 
 
 class BenchmarkService(object):
@@ -28,9 +28,9 @@ class BenchmarkService(object):
             Connection to underlying database
         repo: robcore.model.template.repo.benchmark.BenchmarkRepository
             Repository to access registered benchmarks
-        urls: robcore.api.route.UrlFactory
+        urls: robcore.view.route.UrlFactory
             Factory for API resource Urls
-        serializer: robcore.api.serialize.benchmark.BenchmarkSerializer, optional
+        serializer: robcore.view.benchmark.BenchmarkSerializer, optional
             Override the default serializer
         """
         self.repo = repo

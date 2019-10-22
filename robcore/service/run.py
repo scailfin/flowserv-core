@@ -10,12 +10,12 @@
 runs.
 """
 
-from robcore.api.serialize.run import RunSerializer
-from robcore.api.route import UrlFactory
+from robcore.view.run import RunSerializer
+from robcore.view.route import UrlFactory
 from robcore.io.files import InputFile
 from robcore.model.template.parameter.value import TemplateArgument
 
-import robcore.api.serialize.labels as labels
+import robcore.view.labels as labels
 import robcore.error as err
 import robcore.model.user.auth as res
 import robcore.model.workflow.run as store
@@ -41,9 +41,9 @@ class RunService(object):
             Repository to access registered benchmarks
         auth: robcore.model.user.auth.Auth
             Implementation of the authorization policy for the API
-        urls: robcore.api.route.UrlFactory
+        urls: robcore.view.route.UrlFactory
             Factory for API resource Urls
-        serializer: robcore.api.serialize.submission.SubmissionSerializer, optional
+        serializer: robcore.view.submission.SubmissionSerializer, optional
             Override the default serializer
         """
         self.engine = engine

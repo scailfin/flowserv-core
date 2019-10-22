@@ -446,6 +446,36 @@ paths:
           description: "Unknown run"
       security:
         - api_key: []
+  /runs/{runId}/resources/{resourceId}:
+    get:
+      tags:
+      - "run"
+      summary: "Download result file"
+      description: "Download a result file from a successful workflow run"
+      operationId: "downloadResultFile"
+      produces:
+      - "text/csv"
+      - "application/gzip"
+      parameters:
+      - in: "path"
+        name: "runId"
+        description: "Unique run identifier"
+        required: true
+        type: string
+      - in: "path"
+        name: "resourceId"
+        description: "Unique resource identifier"
+        required: true
+        type: string
+      responses:
+        200:
+          description: "File"
+        403:
+          description: "Forbidden operation"
+        404:
+          description: "Unknown run or resource"
+      security:
+        - api_key: []
 # ------------------------------------------------------------------------------
 # Files
 # ------------------------------------------------------------------------------
@@ -1051,6 +1081,21 @@ definitions:
         type: array
         items:
           type: string
+      resources:
+        type: array
+        items:
+          type: object
+          required:
+          - id
+          - name
+          - links
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+            links:
+              $ref: "#/definitions/HATEOASLinks"
       links:
         $ref: "#/definitions/HATEOASLinks"
   RunListing:

@@ -8,8 +8,8 @@
 
 """Serializer for benchmark submissions."""
 
-import robcore.api.serialize.hateoas as hateoas
-import robcore.api.serialize.labels as labels
+import robcore.view.hateoas as hateoas
+import robcore.view.labels as labels
 
 
 class SubmissionSerializer(object):
@@ -19,7 +19,7 @@ class SubmissionSerializer(object):
 
         Parameters
         ----------
-        urls: robcore.api.route.UrlFactory
+        urls: robcore.view.route.UrlFactory
             Factory for resource urls
         """
         self.urls = urls

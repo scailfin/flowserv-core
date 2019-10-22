@@ -10,10 +10,10 @@
 
 import os
 
-from robcore.api.service.benchmark import BenchmarkService
-from robcore.api.service.run import RunService
-from robcore.api.service.submission import SubmissionService
-from robcore.api.service.user import UserService
+from robcore.service.benchmark import BenchmarkService
+from robcore.service.run import RunService
+from robcore.service.submission import SubmissionService
+from robcore.service.user import UserService
 from robcore.model.user.auth import DefaultAuthPolicy, OpenAccessAuth
 from robcore.model.submission import SubmissionManager
 from robcore.model.template.repo.benchmark import BenchmarkRepository

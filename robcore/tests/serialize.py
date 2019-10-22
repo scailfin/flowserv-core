@@ -8,8 +8,8 @@
 
 """Helper methods to test object serialization."""
 
-import robcore.api.serialize.hateoas as hateoas
-import robcore.api.serialize.labels as labels
+import robcore.view.hateoas as hateoas
+import robcore.view.labels as labels
 import robcore.util as util
 
 

@@ -16,8 +16,8 @@ from robcore.model.workflow.resource import FileResource
 from robcore.tests.io import FakeStream
 
 import robcore.error as err
-import robcore.api.serialize.hateoas as hateoas
-import robcore.api.serialize.labels as labels
+import robcore.view.hateoas as hateoas
+import robcore.view.labels as labels
 import robcore.tests.api as api
 import robcore.tests.serialize as serialize
 import robcore.util as util
@@ -42,7 +42,7 @@ RELS_INACTIVE = [hateoas.SELF, hateoas.action(hateoas.DELETE)]
 RELS_LISTING = [hateoas.SELF, hateoas.SUBMIT]
 
 
-class TestRunApi(object):
+class TestRunView(object):
     """Test API methods that execute, access and manipulate benchmark runs."""
     @staticmethod
     def init(base_dir):
@@ -62,7 +62,7 @@ class TestRunApi(object):
 
     def test_cancel_and_delete_runs(self, tmpdir):
         """Test cancel and delete for submission runs."""
-        runs, submissions, users, benchmark = TestRunApi.init(str(tmpdir))
+        runs, submissions, users, benchmark = TestRunView.init(str(tmpdir))
         # Get handle for USER_1
         user = users[0]
         # Create new submission with a single member and upload the names
@@ -104,7 +104,7 @@ class TestRunApi(object):
 
     def test_execute_run(self, tmpdir):
         """Test starting new runs for a submission."""
-        runs, submissions, users, benchmark = TestRunApi.init(str(tmpdir))
+        runs, submissions, users, benchmark = TestRunView.init(str(tmpdir))
         # Get handle for USER_1
         user = users[0]
         # Create new submission with a single member and upload the names
@@ -174,7 +174,7 @@ class TestRunApi(object):
 
     def test_get_run(self, tmpdir):
         """Test retrieving a run."""
-        runs, submissions, users, benchmark = TestRunApi.init(str(tmpdir))
+        runs, submissions, users, benchmark = TestRunView.init(str(tmpdir))
         # Get handle for USER_1
         user = users[0]
         # Create new submission with a single member and upload the names
@@ -210,7 +210,7 @@ class TestRunApi(object):
 
     def test_list_runs(self, tmpdir):
         """Test retrieving a list of runs for a submission."""
-        runs, submissions, users, benchmark = TestRunApi.init(str(tmpdir))
+        runs, submissions, users, benchmark = TestRunView.init(str(tmpdir))
         # Get handle for USER_1
         user = users[0]
         # Create new submission with a single member and upload the names
@@ -264,7 +264,7 @@ class TestRunApi(object):
 
     def test_run_arguments(self, tmpdir):
         """Test converting run arguments for a submission."""
-        runs, submissions, users, benchmark = TestRunApi.init(str(tmpdir))
+        runs, submissions, users, benchmark = TestRunView.init(str(tmpdir))
         # Get handle for USER_1
         user = users[0]
         # Create new submission with a single member and upload the names

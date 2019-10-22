@@ -12,8 +12,8 @@ import pytest
 
 from robcore.model.user.auth import OpenAccessAuth
 
-import robcore.api.serialize.hateoas as hateoas
-import robcore.api.serialize.labels as labels
+import robcore.view.hateoas as hateoas
+import robcore.view.labels as labels
 import robcore.error as err
 import robcore.tests.api as api
 import robcore.tests.serialize as serialize
@@ -27,7 +27,7 @@ USER_LOGIN = [labels.ID, labels.USERNAME, labels.ACCESS_TOKEN, labels.LINKS]
 USER_LOGOUT = [labels.ID, labels.USERNAME, labels.LINKS]
 
 
-class TestUserApi(object):
+class TestUserView(object):
     """Test API methods that access and manipulate users."""
     def test_authenticate_user(self, tmpdir):
         """Test login and logout via API."""

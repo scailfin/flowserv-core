@@ -8,8 +8,8 @@
 
 """API component that provides information about the service iteself."""
 
-from robcore.api.serialize.server import ServiceSerializer
-from robcore.api.route import UrlFactory
+from robcore.view.server import ServiceSerializer
+from robcore.view.route import UrlFactory
 
 import robcore.config.api as config
 import robcore.version as version
@@ -25,9 +25,9 @@ class Service(object):
 
         Parameters
         ----------
-        urls: robcore.api.route.UrlFactory
+        urls: robcore.view.route.UrlFactory
             Factory for API resource Urls
-        serializer: robcore.api.serialize.server.ServiceSerializer, optional
+        serializer: robcore.view.server.ServiceSerializer, optional
             Override the default serializer
 
         Raises

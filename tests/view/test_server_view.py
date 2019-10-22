@@ -10,11 +10,11 @@
 
 import os
 
-from robcore.api.service.server import Service
+from robcore.service.server import Service
 
 import robcore.config.api as config
-import robcore.api.serialize.hateoas as hateoas
-import robcore.api.serialize.labels as labels
+import robcore.view.hateoas as hateoas
+import robcore.view.labels as labels
 import robcore.tests.serialize as serialize
 import robcore.version as version
 import robcore.util as util

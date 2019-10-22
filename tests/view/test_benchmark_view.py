@@ -10,8 +10,8 @@
 
 import os
 
-import robcore.api.serialize.hateoas as hateoas
-import robcore.api.serialize.labels as labels
+import robcore.view.hateoas as hateoas
+import robcore.view.labels as labels
 import robcore.model.template.parameter.declaration as pd
 import robcore.tests.api as api
 import robcore.tests.serialize as serialize
@@ -28,7 +28,7 @@ USER_1 = util.get_unique_identifier()
 RELS = [hateoas.SELF, hateoas.LEADERBOARD]
 
 
-class TestBenchmarkApi(object):
+class TestBenchmarkView(object):
     """Test API methods that access and list benchmarks and leader boards."""
     @staticmethod
     def init(base_dir):
@@ -67,7 +67,7 @@ class TestBenchmarkApi(object):
 
     def test_get_benchmark(self, tmpdir):
         """Test get benchmark handle."""
-        repo, _, benchmarks = TestBenchmarkApi.init(str(tmpdir))
+        repo, _, benchmarks = TestBenchmarkView.init(str(tmpdir))
         r = repo.get_benchmark(benchmarks[0].identifier)
         util.validate_doc(
             doc=r,
@@ -124,7 +124,7 @@ class TestBenchmarkApi(object):
 
     def test_get_leaderboard(self, tmpdir):
         """Test get benchmark leaderboard."""
-        repo, submissions, benchmarks = TestBenchmarkApi.init(str(tmpdir))
+        repo, submissions, benchmarks = TestBenchmarkView.init(str(tmpdir))
         # Create one submission and add three results for the first benchmark
         controller = submissions.manager.engine.backend
         # Create two submissions for the first benchmark.
@@ -190,7 +190,7 @@ class TestBenchmarkApi(object):
 
     def test_list_benchmarks(self, tmpdir):
         """Test list benchmark descriptors."""
-        repo, _, benchmarks = TestBenchmarkApi.init(str(tmpdir))
+        repo, _, benchmarks = TestBenchmarkView.init(str(tmpdir))
         r = repo.list_benchmarks()
         util.validate_doc(
             doc=r,

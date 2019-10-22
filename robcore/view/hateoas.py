@@ -10,7 +10,7 @@
 State' (HATEOAS) references that are included in API responses.
 """
 
-import robcore.api.serialize.labels as labels
+import robcore.view.labels as labels
 
 
 """Definition of common HATEOAS link relationship types."""

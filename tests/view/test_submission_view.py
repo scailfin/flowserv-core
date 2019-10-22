@@ -14,8 +14,8 @@ import pytest
 from robcore.tests.io import FakeStream
 
 import robcore.error as err
-import robcore.api.serialize.hateoas as hateoas
-import robcore.api.serialize.labels as labels
+import robcore.view.hateoas as hateoas
+import robcore.view.labels as labels
 import robcore.tests.api as api
 import robcore.tests.serialize as serialize
 import robcore.util as util
@@ -37,7 +37,7 @@ RELS = [hateoas.SELF, hateoas.action(hateoas.UPLOAD), hateoas.BENCHMARK]
 RELSFH = [hateoas.action(hateoas.DOWNLOAD), hateoas.action(hateoas.DELETE)]
 
 
-class TestSubmissionsApi(object):
+class TestSubmissionsView(object):
     """Test API methods that access and list submissions and their results."""
     @staticmethod
     def init(base_dir):
@@ -57,7 +57,7 @@ class TestSubmissionsApi(object):
 
     def test_create_submission(self, tmpdir):
         """Test create new submission."""
-        service, users, benchmark = TestSubmissionsApi.init(str(tmpdir))
+        service, users, benchmark = TestSubmissionsView.init(str(tmpdir))
         # Get handle for USER_1
         user = users[0]
         # Create new submission with a single member
@@ -87,7 +87,7 @@ class TestSubmissionsApi(object):
 
     def test_delete_submission(self, tmpdir):
         """Test deleting submission."""
-        service, users, benchmark = TestSubmissionsApi.init(str(tmpdir))
+        service, users, benchmark = TestSubmissionsView.init(str(tmpdir))
         # Get handle forall three users
         user_1 = users[0]
         user_2 = users[1]
@@ -123,7 +123,7 @@ class TestSubmissionsApi(object):
         with a benchmark submission.
         """
         # Initialize the database and create a single submissions
-        service, users, benchmark = TestSubmissionsApi.init(str(tmpdir))
+        service, users, benchmark = TestSubmissionsView.init(str(tmpdir))
         user_1 = users[0]
         user_3 = users[2]
         r = service.create_submission(
@@ -207,7 +207,7 @@ class TestSubmissionsApi(object):
 
     def test_get_submission(self, tmpdir):
         """Test retrieving a submission handle."""
-        service, users, benchmark = TestSubmissionsApi.init(str(tmpdir))
+        service, users, benchmark = TestSubmissionsView.init(str(tmpdir))
         # Get handle forall three users
         user_1 = users[0]
         user_2 = users[1]
@@ -237,7 +237,7 @@ class TestSubmissionsApi(object):
 
     def test_list_submissions(self, tmpdir):
         """Test retrieving a submission handle."""
-        service, users, benchmark = TestSubmissionsApi.init(str(tmpdir))
+        service, users, benchmark = TestSubmissionsView.init(str(tmpdir))
         # Get handle forall three users
         user_1 = users[0]
         user_2 = users[1]
@@ -281,7 +281,7 @@ class TestSubmissionsApi(object):
 
     def test_update_submission(self, tmpdir):
         """Test updating submission name and member list."""
-        service, users, benchmark = TestSubmissionsApi.init(str(tmpdir))
+        service, users, benchmark = TestSubmissionsView.init(str(tmpdir))
         # Get handle forall three users
         user_1 = users[0]
         user_2 = users[1]
