@@ -14,11 +14,12 @@ import os
 import shutil
 
 from robcore.model.workflow.controller import WorkflowController
+from robcore.model.workflow.resource import FileResource
 from robcore.model.workflow.serial import SerialWorkflow
 
 import robcore.error as err
+import robcore.model.workflow.state as state
 import robcore.util as util
-import robcore.model.workflow.state as serialize
 
 
 class SyncWorkflowEngine(WorkflowController):
@@ -94,7 +95,7 @@ class SyncWorkflowEngine(WorkflowController):
         state = wf.run(run_dir, verbose=True)
         util.write_object(
             filename=run_file,
-            obj=serialize.serialize_state(state)
+            obj=serialize_state(state)
         )
         return state
 
@@ -145,7 +146,7 @@ class SyncWorkflowEngine(WorkflowController):
         run_file = self.get_run_file(run_id)
         if os.path.isfile(run_file):
             doc = util.read_object(filename=run_file)
-            return serialize.deserialize_state(doc)
+            return deserialize_state(doc)
         else:
             raise err.UnknownRunError(run_id)
 
@@ -170,3 +171,114 @@ class SyncWorkflowEngine(WorkflowController):
         run_file = self.get_run_file(run_id)
         if os.path.isfile(run_file):
             os.remove(run_file)
+
+
+# -- Serialization/Deserialization helper methods ------------------------------
+
+"""Labels for serialization."""
+LABEL_CREATED_AT = 'createdAt'
+LABEL_FILEPATH = 'filename'
+LABEL_FINISHED_AT = 'finishedAt'
+LABEL_ID = 'id'
+LABEL_MESSAGES = 'messages'
+LABEL_NAME = 'name'
+LABEL_RESOURCES = 'resources'
+LABEL_STARTED_AT = 'startedAt'
+LABEL_STATE_TYPE = 'type'
+LABEL_STOPPED_AT = 'stoppedAt'
+
+
+def deserialize_state(doc):
+    """Create instance of workflow state from a given dictionary serialization.
+
+    Parameters
+    ----------
+    doc: dict
+        Serialization if the workflow state
+
+    Returns
+    -------
+    robcore.model.workflow.state.WorkflowState
+
+    Raises
+    ------
+    KeyError
+    ValueError
+    """
+    type_id = doc[LABEL_STATE_TYPE]
+    # All state serializations have to have a 'created at' timestamp
+    created_at = util.to_datetime(doc[LABEL_CREATED_AT])
+    if type_id == state.STATE_PENDING:
+        return state.StatePending(created_at=created_at)
+    elif type_id == state.STATE_RUNNING:
+        return state.StateRunning(
+            created_at=created_at,
+            started_at=util.to_datetime(doc[LABEL_STARTED_AT])
+        )
+    elif type_id == state.STATE_CANCELED:
+        return state.StateCanceled(
+            created_at=created_at,
+            started_at=util.to_datetime(doc[LABEL_STARTED_AT]),
+            stopped_at=util.to_datetime(doc[LABEL_FINISHED_AT]),
+            messages=doc[LABEL_MESSAGES]
+        )
+    elif type_id == state.STATE_ERROR:
+        return state.StateError(
+            created_at=created_at,
+            started_at=util.to_datetime(doc[LABEL_STARTED_AT]),
+            stopped_at=util.to_datetime(doc[LABEL_FINISHED_AT]),
+            messages=doc[LABEL_MESSAGES]
+        )
+    elif type_id == state.STATE_SUCCESS:
+        files = dict()
+        for obj in doc[LABEL_RESOURCES]:
+            resource_name = obj[LABEL_NAME]
+            res = FileResource(
+                resource_id=obj[LABEL_ID],
+                resource_name=resource_name,
+                file_path=obj[LABEL_FILEPATH]
+            )
+            files[resource_name] = res
+        return state.StateSuccess(
+            created_at=created_at,
+            started_at=util.to_datetime(doc[LABEL_STARTED_AT]),
+            finished_at=util.to_datetime(doc[LABEL_FINISHED_AT]),
+            files=files
+        )
+    else:
+        raise ValueError('invalid state type \'{}\''.format(type_id))
+
+
+def serialize_state(state):
+    """Create dictionary serialization if a given workflow state.
+
+    Parameters
+    ----------
+    state: robcore.model.workflow.state.WorkflowState
+        Workflow state
+
+    Returns
+    -------
+    dict
+    """
+    doc = {
+        LABEL_STATE_TYPE: state.type_id,
+        LABEL_CREATED_AT: state.created_at.isoformat()
+    }
+    if state.is_running():
+        doc[LABEL_STARTED_AT] = state.started_at.isoformat()
+    elif state.is_canceled() or state.is_error():
+        doc[LABEL_STARTED_AT] = state.started_at.isoformat()
+        doc[LABEL_FINISHED_AT] = state.stopped_at.isoformat()
+        doc[LABEL_MESSAGES] = state.messages
+    elif state.is_success():
+        doc[LABEL_STARTED_AT] = state.started_at.isoformat()
+        doc[LABEL_FINISHED_AT] = state.finished_at.isoformat()
+        doc[LABEL_RESOURCES] = [
+            {
+                LABEL_ID: f.resource_id,
+                LABEL_NAME: f.resource_name,
+                LABEL_FILEPATH: f.file_path
+            } for f in state.files.values()
+        ]
+    return doc

@@ -246,8 +246,8 @@ class TestRunStore(object):
         filename = os.path.join(str(tmpdir), 'data.json')
         util.write_object(obj={'col1': 10, 'col2': 20}, filename=filename)
         files = [
-            FileResource(identifier=RESULT_FILE_ID, filename=filename),
-            FileResource(identifier='X', filename='/dev/null')
+            FileResource('0', RESULT_FILE_ID, filename),
+            FileResource('1', 'X', '/dev/null')
         ]
         # Test runs for a submission with a result schema
         run = store.create_run(

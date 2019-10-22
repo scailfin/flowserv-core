@@ -141,7 +141,7 @@ class TestWorkflowStates(object):
         assert error.messages[1] == 'State'
         # Set active run to success state
         success = state.success(
-            files={'myfile': FileResource('myfile', '/dev/null')}
+            files={'myfile': FileResource('0', 'myfile', '/dev/null')}
         )
         assert success.is_success()
         assert not success.is_error()
@@ -180,15 +180,16 @@ class TestWorkflowStates(object):
             created_at=created_at,
             started_at=started_at,
             finished_at=finished_at,
-            files=[FileResource('myfile', filename)]
+            files=[FileResource('0', 'myfile', filename)]
         )
         assert state.created_at == created_at
         assert state.started_at == started_at
         assert state.finished_at == finished_at
         assert len(state.files) == 1
         # Get the file resource
-        f = state.get_file('myfile')
+        f = state.get_resource('myfile')
         assert util.read_object(filename) == {'A': 1}
+        assert len(state.list_resources()) == 1
         f.delete()
         assert not os.path.exists(f.filename)
         # Invalid file resource lists
@@ -198,7 +199,7 @@ class TestWorkflowStates(object):
                 started_at=started_at,
                 finished_at=finished_at,
                 files=[
-                    FileResource('myfile', filename),
-                    FileResource('myfile', filename)
+                    FileResource('0', 'myfile', filename),
+                    FileResource('1', 'myfile', filename)
                 ]
             )

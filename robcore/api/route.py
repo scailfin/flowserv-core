@@ -109,6 +109,22 @@ class UrlFactory(object):
         """
         return self.list_files(submission_id) + '/' + file_id
 
+    def download_result_file(self, run_id, resource_id):
+        """Url to GET a run result file.
+
+        Parameters
+        ----------
+        run_ud: string
+            Unique run identifier
+        resource_id: string
+            Unique resource identifier
+
+        Returns
+        -------
+        string
+        """
+        return self.get_run(run_id) + '/resources/' + resource_id
+
     def get_benchmark(self, benchmark_id):
         """Url to GET benchmark handle.
 

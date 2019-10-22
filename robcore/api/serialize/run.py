@@ -38,15 +38,16 @@ class RunSerializer(object):
         -------
         dict
         """
-        links = {hateoas.SELF: self.urls.get_run(run.identifier)}
+        run_id = run.identifier
+        links = {hateoas.SELF: self.urls.get_run(run_id)}
         if run.is_active():
-            url = self.urls.cancel_run(run.identifier)
+            url = self.urls.cancel_run(run_id)
             links[hateoas.action(hateoas.CANCEL)] = url
         else:
-            url = self.urls.delete_run(run.identifier)
+            url = self.urls.delete_run(run_id)
             links[hateoas.action(hateoas.DELETE)] = url
         doc = {
-            labels.ID: run.identifier,
+            labels.ID: run_id,
             labels.STATE: run.state.type_id,
             labels.CREATED_AT: run.state.created_at.isoformat(),
             labels.LINKS: hateoas.serialize(links)
@@ -58,6 +59,16 @@ class RunSerializer(object):
             doc[labels.MESSAGES] = run.state.messages
         elif run.is_success():
             doc[labels.FINISHED_AT] = run.state.finished_at.isoformat()
+            # Serialize file resources
+            resources = list()
+            for res in run.list_resources():
+                r_url = self.urls.download_result_file(run_id, res.resource_id)
+                resources.append({
+                    labels.ID: res.resource_id,
+                    labels.NAME: res.resource_name,
+                    labels.LINKS: hateoas.serialize({hateoas.SELF: r_url})
+                })
+            doc[labels.RESOURCES] = resources
         return doc
 
     def run_handle(self, run):

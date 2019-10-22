@@ -33,7 +33,7 @@ RUN_HANDLE = RUN_LABELS + [labels.ARGUMENTS]
 RUN_PENDING = RUN_HANDLE
 RUN_RUNNING = RUN_PENDING + [labels.STARTED_AT]
 RUN_ERROR = RUN_RUNNING + [labels.FINISHED_AT, labels.MESSAGES]
-RUN_SUCCESS = RUN_RUNNING + [labels.FINISHED_AT]
+RUN_SUCCESS = RUN_RUNNING + [labels.FINISHED_AT, labels.RESOURCES]
 RUN_LISTING = [labels.RUNS, labels.LINKS]
 
 # Mandatory HATEOAS relationships in run descriptors
@@ -157,6 +157,12 @@ class TestRunApi(object):
         )
         util.validate_doc(doc=r, mandatory_labels=RUN_SUCCESS)
         serialize.validate_links(r, RELS_INACTIVE)
+        resources = r[labels.RESOURCES]
+        assert len(resources) == 1
+        res = resources[0]
+        util.validate_doc(doc=res, mandatory_labels=[labels.ID, labels.NAME, labels.LINKS])
+        assert res[labels.NAME] == 'results/analytics.json'
+        serialize.validate_links(res, [hateoas.SELF])
         # Error when trying to start a run without being a submission member
         user2 = users[1]
         with pytest.raises(err.UnauthorizedAccessError):

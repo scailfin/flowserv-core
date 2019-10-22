@@ -192,10 +192,10 @@ class TestSubmissionManager(object):
         assert len(submission.get_runs()) == 2
         filenames = list()
         for run in submission.get_runs():
-            for fh in run.list_files():
-                assert os.path.isfile(fh.filename)
-                assert not fh.filename in filenames
-                filenames.append(fh.filename)
+            for res in run.list_resources():
+                assert os.path.isfile(res.filename)
+                assert not res.filename in filenames
+                filenames.append(res.filename)
         manager.delete_submission(submission.identifier)
         assert not os.path.isdir(os.path.join(str(tmpdir), submission.identifier))
         for f in filenames:

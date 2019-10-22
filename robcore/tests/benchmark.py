@@ -139,9 +139,13 @@ class StateEngine(WorkflowController):
                 filename = util.get_unique_identifier() + '.json'
                 result_file = os.path.join(self.base_dir, filename)
                 util.write_object(filename=result_file, obj=self.values)
-                file_id = self.result_file_id
-                f = FileResource(identifier=file_id, filename=result_file)
-                files = {file_id: f}
+                resource_name = self.result_file_id
+                f = FileResource(
+                    resource_id=util.get_unique_identifier(),
+                    resource_name=resource_name,
+                    file_path=result_file
+                )
+                files = {resource_name: f}
             else:
                 files = None
             run = st.StatePending().start().success(files=files)

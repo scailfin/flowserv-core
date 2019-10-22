@@ -24,6 +24,7 @@ from robcore.model.workflow.state import StateError, StateSuccess
 
 import robcore.model.template.util as tmpl
 import robcore.model.workflow.io as fileio
+import robcore.util as util
 
 
 class SerialWorkflow(object):
@@ -164,10 +165,11 @@ class SerialWorkflow(object):
         )
         # Create dictionary of output files
         files = dict()
-        for file_id in output_files:
-            files[file_id] = FileResource(
-                identifier=file_id,
-                filename=os.path.join(run_dir, file_id)
+        for resource_name in output_files:
+            files[resource_name] = FileResource(
+                resource_id=util.get_unique_identifier(),
+                resource_name=resource_name,
+                file_path=os.path.join(run_dir, resource_name)
             )
         # Workflow executed successfully
         return StateSuccess(

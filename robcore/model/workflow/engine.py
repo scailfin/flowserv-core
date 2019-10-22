@@ -122,11 +122,11 @@ class BenchmarkEngine(object):
         # Delete all file resources.
         self.backend.remove_run(run_id)
         if run.is_success():
-            for fh in run.list_files():
+            for res in run.list_resources():
                 # Don't raise an error if the file does not exist or cannot be
                 # removed
                 try:
-                    fh.delete()
+                    res.delete()
                 except OSError:
                     pass
         return run

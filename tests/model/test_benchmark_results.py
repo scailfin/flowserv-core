@@ -89,7 +89,13 @@ class TestBenchmarkResultRanking(object):
         if not values is None:
             filename = os.path.join(base_dir, 'results.json')
             util.write_object(obj=values, filename=filename)
-            files = [FileResource(identifier=bm.RESULT_FILE_ID, filename=filename)]
+            files = [
+                FileResource(
+                    resource_id='0',
+                    resource_name=bm.RESULT_FILE_ID,
+                    file_path=filename
+                )
+            ]
         else:
             files = dict()
         runstore.update_run(

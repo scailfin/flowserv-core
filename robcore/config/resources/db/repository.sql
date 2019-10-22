@@ -159,7 +159,8 @@ CREATE TABLE run_error_log(
 --
 CREATE TABLE run_result_file(
     run_id VARCHAR(32) NOT NULL REFERENCES benchmark_run (run_id),
-    file_id TEXT NOT NULL,
+    file_id VARCHAR(32) NOT NULL,
+    resource_name TEXT NOT NULL,
     file_path TEXT NOT NULL,
     PRIMARY KEY(run_id, file_id)
 );

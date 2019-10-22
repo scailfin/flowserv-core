@@ -50,6 +50,7 @@ REL = 'rel'
 
 # Runs
 REASON = 'reason'
+RESOURCES = 'resources'
 
 # Submissions
 BENCHMARK = 'benchmark'

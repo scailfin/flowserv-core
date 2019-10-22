@@ -79,8 +79,8 @@ class TestBenchmarkEngine(object):
             arguments=dict(),
             template=template
         )
-        assert len(run1.list_files()) == 0
-        assert run1.get_file(bm.RESULT_FILE_ID) is None
+        assert len(run1.list_resources()) == 0
+        assert run1.get_resource(bm.RESULT_FILE_ID) is None
         assert engine.exists_run(run1.identifier)
         run2 = engine.start_run(
             submission_id=SUBMISSION_2,
@@ -117,12 +117,12 @@ class TestBenchmarkEngine(object):
             arguments=dict(),
             template=template
         )
-        assert len(run.list_files()) == 1
-        assert not run.get_file(bm.RESULT_FILE_ID) is None
+        assert len(run.list_resources()) == 1
+        assert not run.get_resource(bm.RESULT_FILE_ID) is None
         assert len(engine.list_runs(SUBMISSION_1)) == 1
         assert len(engine.list_runs(SUBMISSION_2)) == 1
         assert run.is_success()
-        result_file = run.state.get_file(bm.RESULT_FILE_ID).filename
+        result_file = run.state.get_resource(bm.RESULT_FILE_ID).filename
         assert os.path.isfile(result_file)
         engine.delete_run(run.identifier)
         assert not os.path.isfile(result_file)
