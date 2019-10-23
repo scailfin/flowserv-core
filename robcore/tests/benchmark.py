@@ -40,7 +40,7 @@ class StateEngine(WorkflowController):
     """
     def __init__(
         self, state=None, messages=None, values=None, result_file_id=None,
-        base_dir=None
+        base_dir=None, asynchronous_events=None
     ):
         """Initialize the workflow state that the engine is returning for all
         executed workflows. If the state is ERROR or CANCELED the given error
@@ -60,6 +60,9 @@ class StateEngine(WorkflowController):
             Identifier for result file resource for successful workfkow runs
         base_dir: string, optional
             Directory where the result file will be stored.
+        asynchronous_events: bool, optional
+            Flag indicating whether the controller is updating the underlying
+            database asynchronously or not
         """
         self.state = state if not state is None else st.STATE_PENDING
         self.messages = messages
@@ -69,8 +72,19 @@ class StateEngine(WorkflowController):
             self.base_dir = util.create_dir(base_dir)
         else:
             self.base_dir = None
+        self._async_events = asynchronous_events if not asynchronous_events is None else False
         # Index of workflow runs
         self.runs = dict()
+
+    def asynchronous_events(self):
+        """The value depends on the repsective argument that was given when the
+        object was instantiated.
+
+        Returns
+        -------
+        bool
+        """
+        return self._async_events
 
     def cancel_run(self, run_id):
         """Request to cancel execution of the given run.

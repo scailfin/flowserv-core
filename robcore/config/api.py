@@ -29,7 +29,7 @@ ROB_API_PORT = 'ROB_API_PORT'
 
 """Default values for environment variables."""
 DEFAULT_DIR = '.rob'
-DEFAULT_HOST = 'localhost'
+DEFAULT_HOST = 'http://localhost'
 DEFAULT_NAME = 'Reproducible Open Benchmarks for Data Analysis (API)'
 DEFAULT_PATH = '/rob/api/v1'
 DEFAULT_PORT = 5000

@@ -24,10 +24,8 @@ def validate_links(doc, keys):
     keys: list(string)
         List of mandatory relationship keys in the reference set
     """
-    # If the document contains the links key we assume that the user wants to
-    # validate that element
-    if labels.LINKS in doc:
-        doc = doc[labels.LINKS]
+    # We assume that the given document contains the links key
+    doc = doc[labels.LINKS]
     util.validate_doc(
         doc=hateoas.deserialize(doc),
         mandatory_labels=keys

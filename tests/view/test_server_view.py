@@ -11,6 +11,7 @@
 import os
 
 from robcore.service.server import Service
+from robcore.view.route import UrlFactory
 
 import robcore.config.api as config
 import robcore.view.hateoas as hateoas
@@ -44,3 +45,14 @@ class TestServiceDescriptor(object):
         serialize.validate_links(r, RELS)
         assert r[labels.NAME] == config.DEFAULT_NAME
         assert r[labels.VERSION] == version.__version__
+        for link in r[labels.LINKS]:
+            assert link[labels.REF].startswith('http://localhost')
+        # Test initialization of the UrlFactory
+        urls = UrlFactory(base_url='http://www.rob.org////')
+        r = Service(urls=urls).service_descriptor()
+        for link in r[labels.LINKS]:
+            ref = link[labels.REF]
+            if ref == 'http://www.rob.org':
+                continue
+            assert ref.startswith('http://www.rob.org/')
+            assert not ref.startswith('http://www.rob.org//')

@@ -166,9 +166,10 @@ class BenchmarkEngine(object):
         robcore.error.UnknownRunError
         """
         run = store.get_run(con=self.con, run_id=run_id)
-        # If the run is in an active state query the backend to see if there
-        # have been any changes to the state.
-        if run.is_active():
+        # If the run is in an active state and the backend does not update the
+        # state state asynchronously we have to query the backend to see if
+        # there has been a change to the run state.
+        if not self.backend.asynchronous_events() and run.is_active():
             state = self.backend.get_run_state(run_id)
             # If the run state in the backend is different from the run state
             # in the database we update the database.

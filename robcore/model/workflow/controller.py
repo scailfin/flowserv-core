@@ -38,6 +38,17 @@ class WorkflowController(object):
     workflow engine.
     """
     @abstractmethod
+    def asynchronous_events(self):
+        """Flag indicating whether the controller will update the workflow state
+        in the underlying database asynchronously.
+
+        Returns
+        -------
+        bool
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
     def cancel_run(self, run_id):
         """Request to cancel execution of the given run.
 
