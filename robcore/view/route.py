@@ -11,6 +11,10 @@
 import robcore.config.api as config
 
 
+"""Name of the header eleemnt that contains the access token."""
+HEADER_TOKEN = 'api_key'
+
+
 class UrlFactory(object):
     """The Url factory provides methods to generate API urls to access and
     manipulate resources. For each API route there is a corresponding factory
@@ -262,6 +266,24 @@ class UrlFactory(object):
         string
         """
         return self.user_base_url + '/register'
+
+    def request_password_reset(self):
+        """Url to POST a password reset request.
+
+        Returns
+        -------
+        string
+        """
+        return self.user_base_url + '/password/request'
+
+    def reset_password(self):
+        """Url to POST a new password.
+
+        Returns
+        -------
+        string
+        """
+        return self.user_base_url + '/password/reset'
 
     def service_descriptor(self):
         """Url to GET the service descriptor.
