@@ -15,11 +15,11 @@ from robcore.view.route import UrlFactory
 from robcore.io.files import InputFile
 from robcore.model.template.parameter.value import TemplateArgument
 
-import robcore.view.labels as labels
+import robcore.controller.run as store
 import robcore.error as err
 import robcore.model.user.auth as res
-import robcore.model.workflow.run as store
 import robcore.util as util
+import robcore.view.labels as labels
 
 
 class RunService(object):
@@ -338,6 +338,9 @@ class RunService(object):
                     validate=True
                 )
             run_args[arg_id] = val
+        # Before we start creating directories and copying files make sure that
+        # there are values for all template parameters (either in the arguments
+        # dictionary or set as default values)
         template.validate_arguments(run_args)
         # Start the run and return the serialized run handle.
         run = self.engine.start_run(

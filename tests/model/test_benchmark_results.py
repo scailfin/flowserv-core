@@ -21,9 +21,9 @@ from robcore.model.template.repo.fs import TemplateFSRepository
 from robcore.model.template.schema import SortColumn
 from robcore.model.workflow.resource import FileResource
 
+import robcore.controller.run as runstore
 import robcore.error as err
 import robcore.model.ranking as ranking
-import robcore.model.workflow.run as runstore
 import robcore.model.workflow.state as wfstate
 import robcore.tests.benchmark as bm
 import robcore.tests.db as db

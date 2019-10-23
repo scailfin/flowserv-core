@@ -14,7 +14,7 @@ from robcore.model.workflow.resource import FileResource
 
 import robcore.util as util
 import robcore.model.workflow.state as state
-import robcore.model.workflow.sync as sync
+import robcore.controller.backend.sync as sync
 
 
 """Default timestamps."""

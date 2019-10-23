@@ -13,7 +13,7 @@ modules.
 import os
 
 from robcore.model.template.schema import ResultColumn, ResultSchema
-from robcore.model.workflow.controller import WorkflowController
+from robcore.controller.backend.base import WorkflowController
 from robcore.model.workflow.resource import FileResource
 
 import robcore.error as err

@@ -13,7 +13,7 @@ import os
 import pytest
 
 from robcore.model.template.base import WorkflowTemplate
-from robcore.model.workflow.engine import BenchmarkEngine
+from robcore.controller.engine import BenchmarkEngine
 from robcore.tests.repo import DictRepo
 
 import robcore.error as err

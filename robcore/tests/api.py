@@ -18,7 +18,7 @@ from robcore.model.user.auth import DefaultAuthPolicy, OpenAccessAuth
 from robcore.model.submission import SubmissionManager
 from robcore.model.template.repo.benchmark import BenchmarkRepository
 from robcore.model.template.repo.fs import TemplateFSRepository
-from robcore.model.workflow.engine import BenchmarkEngine
+from robcore.controller.engine import BenchmarkEngine
 from robcore.model.user.base import UserManager
 from robcore.tests.benchmark import StateEngine
 

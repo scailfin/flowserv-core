@@ -120,6 +120,7 @@ def replace_args(spec, arguments, parameters):
     Raises
     ------
     robcore.error.InvalidTemplateError
+    robcore.error.MissingArgumentError
     """
     if isinstance(spec, dict):
         # The new object will contain the modified workflow specification

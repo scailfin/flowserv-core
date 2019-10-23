@@ -203,7 +203,7 @@ class SubmissionManager(object):
             Connection to underlying database
         directory : string
             Path to the base directory for storing uploaded filee
-        engine: robcore.model.workflow.engine.BenchmarkEngine
+        engine: robcore.controller.engine.BenchmarkEngine
             Benchmark workflow execution engine
         """
         self.con = con

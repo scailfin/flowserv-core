@@ -15,10 +15,9 @@ import shutil
 from robcore.io.files import FileHandle
 from robcore.model.template.repo.fs import TemplateFSRepository
 from robcore.model.template.parameter.value import TemplateArgument
-from robcore.model.workflow.io import FileCopy
 
 import robcore.error as err
-import robcore.model.workflow.io as backend
+import robcore.controller.io as backend
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))
@@ -37,8 +36,8 @@ class TestFileCopy(object):
     def test_input_dir_copy(self, tmpdir):
         """Test copying local directories into a workflow run directory."""
         # Copy file to target directory
-        loader = FileCopy(str(tmpdir))
-        loader(source=INPUT_DIR, target='workflow')
+        files = list([(INPUT_DIR, 'workflow')])
+        backend.copy_files(files=files, target_dir=str(tmpdir))
         dirname = os.path.join(str(tmpdir), 'workflow')
         assert os.path.isdir(dirname)
         assert os.path.isdir(os.path.join(dirname, 'code'))
@@ -47,7 +46,8 @@ class TestFileCopy(object):
         assert os.path.isfile(os.path.join(datadir, 'names.txt'))
         # Copy to target directory under parent that does not exist
         dst = os.path.join('run', 'files', 'wf')
-        loader(source=INPUT_DIR, target=dst)
+        files = list([(INPUT_DIR, dst)])
+        backend.copy_files(files=files, target_dir=str(tmpdir))
         dirname = os.path.join(str(tmpdir), dst)
         assert os.path.isdir(dirname)
         assert os.path.isdir(os.path.join(dirname, 'code'))
@@ -58,12 +58,13 @@ class TestFileCopy(object):
     def test_input_file_copy(self, tmpdir):
         """Test copying local input files into a workflow run directory."""
         # Copy file to target directory
-        loader = FileCopy(str(tmpdir))
-        loader(source=INPUT_FILE, target='input.data')
+        files = list([(INPUT_FILE, 'input.data')])
+        backend.copy_files(files=files, target_dir=str(tmpdir))
         assert os.path.isfile(os.path.join(str(tmpdir), 'input.data'))
         # Copy file to non-existing target directory
         target = os.path.join('data', 'input.data')
-        loader(source=INPUT_FILE, target=target)
+        files = list([(INPUT_FILE, target)])
+        backend.copy_files(files=files, target_dir=str(tmpdir))
         assert os.path.isfile(os.path.join(str(tmpdir), target))
 
     def test_prepare_inputs_for_local_run(self, tmpdir):
@@ -79,7 +80,7 @@ class TestFileCopy(object):
         run_dir = os.path.join(str(tmpdir), 'run')
         os.makedirs(run_dir)
         # Copy input files to run directory
-        backend.upload_files(
+        files = backend.get_upload_files(
             template=template,
             base_dir=repo.get_static_dir(template.identifier),
             files=template.workflow_spec.get('inputs', {}).get('files', []),
@@ -88,9 +89,9 @@ class TestFileCopy(object):
                     template.get_parameter('names'),
                     value=FileHandle(filepath=DATA_FILE)
                 )
-            },
-            loader=FileCopy(run_dir)
+            }
         )
+        backend.copy_files(files=files, target_dir=run_dir)
         # We should have the following files in the run directory:
         # code/helloworld.py
         # data/persons.txt
@@ -117,15 +118,15 @@ class TestFileCopy(object):
         assert 'Jane Doe' in friends
         assert 'Joe Bloggs' in friends
         # Error cases
+        # - Missing argumen values
         with pytest.raises(err.MissingArgumentError):
-            backend.upload_files(
+            backend.get_upload_files(
                 template=template,
                 base_dir=repo.get_static_dir(template.identifier),
                 files=template.workflow_spec.get('inputs', {}).get('files', []),
-                arguments={},
-                loader=FileCopy(run_dir)
+                arguments={}
             )
-        # Error when copying non-existing file
+        # - Error when copying non-existing file
         template = repo.add_template(
             src_dir=WORKFLOW_DIR,
             spec_file=SPEC_FILE
@@ -133,7 +134,7 @@ class TestFileCopy(object):
         shutil.rmtree(run_dir)
         os.makedirs(run_dir)
         with pytest.raises(IOError):
-            backend.upload_files(
+            files = backend.get_upload_files(
                 template=template,
                 base_dir=repo.get_static_dir(template.identifier),
                 files=template.workflow_spec.get('inputs', {}).get('files', []),
@@ -142,9 +143,9 @@ class TestFileCopy(object):
                         template.get_parameter('names'),
                         value=FileHandle(filepath=os.path.join(str(tmpdir), 'no.file'))
                     )
-                },
-                loader=FileCopy(run_dir)
+                }
             )
+            backend.copy_files(files=files, target_dir=run_dir)
         assert not os.path.isdir(os.path.join(run_dir, 'data'))
         # If the constant value for the names parameter is removed the names
         # file is copied to the run directory and not to the data folder
@@ -152,7 +153,7 @@ class TestFileCopy(object):
         para.as_constant = None
         shutil.rmtree(run_dir)
         os.makedirs(run_dir)
-        backend.upload_files(
+        files = backend.get_upload_files(
             template=template,
             base_dir=repo.get_static_dir(template.identifier),
             files=template.workflow_spec.get('inputs', {}).get('files', []),
@@ -161,9 +162,9 @@ class TestFileCopy(object):
                     parameter=para,
                     value=FileHandle(filepath=DATA_FILE)
                 )
-            },
-            loader=FileCopy(run_dir)
+            }
         )
+        backend.copy_files(files=files, target_dir=run_dir)
         # We should have the following files in the run directory:
         # code/helloworld.py
         # names.txt
@@ -181,7 +182,7 @@ class TestFileCopy(object):
         os.makedirs(run_dir)
         # Copy input files to run directory
         with pytest.raises(err.InvalidTemplateError):
-            backend.upload_files(
+            backend.get_upload_files(
                 template=template,
                 base_dir=repo.get_static_dir(template.identifier),
                 files=template.workflow_spec.get('inputs', {}).get('files', []),
@@ -190,6 +191,5 @@ class TestFileCopy(object):
                         template.get_parameter('names'),
                         value=FileHandle(filepath=DATA_FILE)
                     )
-                },
-                loader=FileCopy(run_dir)
+                }
             )

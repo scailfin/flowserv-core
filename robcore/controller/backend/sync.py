@@ -13,11 +13,12 @@ synchronously. Primarily intended for debugging and test purposes.
 import os
 import shutil
 
-from robcore.model.workflow.controller import WorkflowController
+from robcore.controller.backend.base import WorkflowController
 from robcore.model.workflow.resource import FileResource
-from robcore.model.workflow.serial import SerialWorkflow
 
 import robcore.error as err
+import robcore.controller.io as fileio
+import robcore.controller.serial as serial
 import robcore.model.workflow.state as state
 import robcore.util as util
 
@@ -31,7 +32,7 @@ class SyncWorkflowEngine(WorkflowController):
     This implementation of the workflow engine expects a workflow specification
     that follow the syntax of REANA serial workflows.
     """
-    def __init__(self, base_dir):
+    def __init__(self, base_dir, verbose=False):
         """Initialize the base directory. Workflow runs are maintained in
         sub-directories in this base directory (named by the run identifier).
         Workflow results are kept as files in the base directory.
@@ -40,9 +41,12 @@ class SyncWorkflowEngine(WorkflowController):
         ----------
         base_dir: string
             Path to the base directory
+        verbose: bool, optional
+            Print command strings to STDOUT during workflow execution
         """
         # Set base directory and ensure that it exists
         self.base_dir = util.create_dir(base_dir)
+        self.verbose = verbose
 
     def asynchronous_events(self):
         """All executed workflows will be in an inactive state. The synchronous
@@ -99,10 +103,21 @@ class SyncWorkflowEngine(WorkflowController):
         if os.path.isdir(run_dir):
             raise err.DuplicateRunError(run_id)
         os.makedirs(run_dir)
-        # Execute the workflow synchronously and write the resulting state to
-        # disk before returning
-        wf = SerialWorkflow(template, arguments)
-        state = wf.run(run_dir, verbose=True)
+        # Expand template parameters. Get (i) list of files that need to be
+        # copied, (ii) the expanded commands that represent the workflow steps,
+        # and (iii) the list of output files.
+        files = serial.upload_files(template, arguments)
+        commands = serial.commands(template, arguments)
+        output_files = serial.output_files(template, arguments)
+        # Copy workflow files and then execute the workflow synchronously.
+        fileio.copy_files(files=files, target_dir=run_dir)
+        state = serial.run(
+            run_dir=run_dir,
+            commands=commands,
+            output_files=output_files,
+            verbose=self.verbose
+        )
+        # Write the resulting state to disk before returning.
         util.write_object(
             filename=run_file,
             obj=serialize_state(state)

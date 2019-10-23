@@ -6,9 +6,7 @@
 # ROB is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
-"""Unit tests for the abstract workflow engine and the default synchronous
-engine implementation.
-"""
+"""Unit tests for the synchronous workflow controller."""
 
 import os
 import pytest
@@ -16,7 +14,7 @@ import pytest
 from robcore.io.files import FileHandle
 from robcore.model.template.base import WorkflowTemplate
 from robcore.model.template.parameter.value import TemplateArgument
-from robcore.model.workflow.sync import SyncWorkflowEngine
+from robcore.controller.backend.sync import SyncWorkflowEngine
 
 import robcore.error as err
 import robcore.util as util
@@ -53,6 +51,7 @@ class TestSynchronousWorkflowEngine(object):
         }
         # Run the workflow
         engine = SyncWorkflowEngine(str(tmpdir))
+        assert not engine.asynchronous_events()
         run_id = util.get_short_identifier()
         state = engine.exec_workflow(
             run_id=run_id,
@@ -154,7 +153,6 @@ class TestSynchronousWorkflowEngine(object):
         )
         assert state.is_error()
         assert len(state.messages) > 0
-        print(state.messages)
         state = engine.get_run_state(run_id)
         assert state.is_error()
         assert len(state.messages) > 0
@@ -188,7 +186,6 @@ class TestSynchronousWorkflowEngine(object):
         state = engine.get_run_state(run_id)
         assert state.is_error()
         assert len(state.messages) > 0
-        print(state.messages)
         # An error is raised if the input file does not exist
         with pytest.raises(IOError):
             engine.exec_workflow(

@@ -13,7 +13,7 @@ workflow controller.
 import os
 import pytest
 
-from robcore.model.workflow.sync import SyncWorkflowEngine
+from robcore.controller.backend.sync import SyncWorkflowEngine
 from robcore.tests.benchmark import StateEngine
 
 import robcore.config.engine as config

@@ -16,8 +16,8 @@ from robcore.model.workflow.run import RunHandle
 from robcore.model.template.schema import ResultSchema
 from robcore.model.workflow.state import StatePending
 
+import robcore.controller.run as store
 import robcore.error as err
-import robcore.model.workflow.run as store
 import robcore.util as util
 
 
@@ -36,7 +36,7 @@ class BenchmarkEngine(object):
         ----------
         con: DB-API 2.0 database connection
             Connection to the underlying database
-        backend: robcore.model.workflow.controller.WorkflowController
+        backend: robcore.controller.backend.base.WorkflowController
             Workflow controller that is responsible for workflow execution
         """
         self.con = con

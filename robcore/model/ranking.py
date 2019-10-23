@@ -6,7 +6,7 @@
 # ROB is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
-"""This module conatsins base classes that define the components of run result
+"""This module contains base classes that define the components of run result
 listings and leader boards. The module also contains methods to create, delete,
 and query benchmark run results in the underlying database.
 """
@@ -24,10 +24,10 @@ import robcore.util as util
 
 class ResultRanking(object):
     """The result ranking contains a sorted list of run results. The schema of
-    the respective result value dictionary os defined by the given column list.
+    the respective result value dictionary is defined by the given column list.
     """
     def __init__(self, columns, entries=None):
-        """Initialize the object properties
+        """Initialize the object properties.
 
         Parameters
         ----------
@@ -54,7 +54,7 @@ class ResultRanking(object):
         return self.entries[index]
 
     def names(self):
-        """List of unique identifier for columns in the result schema
+        """List of unique identifier for columns in the result schema.
 
         Returns
         -------
@@ -73,8 +73,8 @@ class ResultRanking(object):
 
 
 class RunResult(object):
-    """Handle for the analytics results of a successful workflow run. Maintains
-    the run identifier, run timestamps, submission information, and a dictionary
+    """Handle for analytics results of a successful workflow run. Maintains the
+    run identifier, run timestamps, submission information, and a dictionary
     containing the generated values. The elements in the dictionary are defined
     by the result schema in the respective benchmark template.
     """
@@ -205,11 +205,11 @@ def create_result_table(con, benchmark_id, schema, commit_changes=True):
     if commit_changes:
         con.commit()
 
+
 def insert_run_results(con, run_id, files, commit_changes=True):
     """Insert the results of a successful benchmark run into the respective
     result table of the underlying database. A benchmark may not have a result
     schema associated with it in which case no changes will be/can be made.
-
 
     This method does not automatically commit changes to the underlying database
     since it is expected to be called from within other methods that may need

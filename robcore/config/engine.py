@@ -44,7 +44,7 @@ def ROB_ENGINE():
 
     Returns
     -------
-    robcore.model.workflow.controller.WorkflowController
+    robcore.controller.backend.base.WorkflowController
 
     Raises
     ------
@@ -57,7 +57,7 @@ def ROB_ENGINE():
     # controller class. An error is raised if only one of the two environment
     # variables is set.
     if module_name is None and class_name is None:
-        from robcore.model.workflow.sync import SyncWorkflowEngine
+        from robcore.controller.backend.sync import SyncWorkflowEngine
         # Use the local directory for temporary files to store runs
         base_dir = tempfile.gettempdir()
         return SyncWorkflowEngine(base_dir=base_dir)

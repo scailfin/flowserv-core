@@ -8,9 +8,13 @@
 
 """Helper methods to create a new instance of the database."""
 
+import os
+
 from robcore.config.install import DB
 
+import robcore.config.db as config
 import robcore.db.driver as driver
+import robcore.db.sqlite as sqlite
 
 
 def init_db(base_dir):
@@ -24,7 +28,6 @@ def init_db(base_dir):
     dbms_id = driver.SQLITE[0]
     connect_string = '{}/{}'.format(base_dir, 'tmp.db')
     DB.init(dbms_id=dbms_id, connect_string=connect_string)
-    return driver.DatabaseDriver.get_connector(
-        dbms_id=dbms_id,
-        connect_string=connect_string
-    )
+    os.environ[config.ROB_DB_ID] = dbms_id
+    os.environ[sqlite.SQLITE_ROB_CONNECT] = connect_string
+    return driver.DatabaseDriver.get_connector()

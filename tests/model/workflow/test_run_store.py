@@ -21,7 +21,7 @@ import robcore.error as err
 import robcore.model.ranking as ranking
 import robcore.model.template.parameter.declaration as pd
 import robcore.model.template.parameter.value as pv
-import robcore.model.workflow.run as store
+import robcore.controller.run as store
 import robcore.tests.db as db
 import robcore.util as util
 

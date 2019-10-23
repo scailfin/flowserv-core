@@ -15,7 +15,7 @@ import pytest
 from passlib.hash import pbkdf2_sha256
 
 from robcore.model.submission import SubmissionManager
-from robcore.model.workflow.engine import BenchmarkEngine
+from robcore.controller.engine import BenchmarkEngine
 from robcore.tests.benchmark import StateEngine
 from robcore.tests.io import FakeStream
 
