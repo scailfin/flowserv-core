@@ -23,6 +23,7 @@ from robcore.db.driver import DatabaseDriver
 from robcore.controller.backend.base import WorkflowController
 from robcore.model.workflow.state import StatePending
 
+import robcore.config.engine as config
 import robcore.controller.backend.sync as sync
 import robcore.controller.io as fileio
 import robcore.controller.run as runstore
@@ -40,7 +41,7 @@ class MultiProcessWorkflowEngine(WorkflowController):
     get_run_state method since the controlling workflow engine is never expected
     to call the method on this controller.
     """
-    def __init__(self, base_dir, verbose=False):
+    def __init__(self, base_dir=None, verbose=False):
         """Initialize the base directory under which all workflow runs are
         maintained. If the directory does not exist it will be created.
 
@@ -52,7 +53,10 @@ class MultiProcessWorkflowEngine(WorkflowController):
             Print command strings to STDOUT during workflow execution
         """
         # Set base directory and ensure that it exists
-        self.base_dir = util.create_dir(base_dir)
+        if not base_dir is None:
+            self.base_dir = util.create_dir(base_dir)
+        else:
+             self.base_dir = util.create_dir(config.ENGIN_BASEDIR())
         self.verbose = verbose
         # Dictionary of all running tasks
         self.tasks = dict()

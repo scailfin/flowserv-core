@@ -21,7 +21,7 @@ class SubmissionService(object):
     """API component that provides methods to access benchmark submissions and
     their runs.
     """
-    def __init__(self, manager, auth, urls=None, serializer=None):
+    def __init__(self, manager, auth, repo, urls=None, serializer=None):
         """Initialize the internal reference to the submission manager and to
         the route factory.
 
@@ -31,6 +31,8 @@ class SubmissionService(object):
             Manager for benchmark submissions
         auth: robcore.model.user.auth.Auth
             Implementation of the authorization policy for the API
+        repo: robcore.model.template.repo.benchmark.BenchmarkRepository
+            Repository to access registered benchmarks
         urls: robcore.view.route.UrlFactory
             Factory for API resource Urls
         serializer: robcore.view.submission.SubmissionSerializer, optional
@@ -38,6 +40,7 @@ class SubmissionService(object):
         """
         self.manager = manager
         self.auth = auth
+        self.repo = repo
         self.urls = urls if not urls is None else UrlFactory()
         self.serialize = serializer
         if self.serialize is None:
@@ -100,7 +103,10 @@ class SubmissionService(object):
             user_id=user.identifier,
             members=members
         )
-        return self.serialize.submission_handle(submission)
+        return self.serialize.submission_handle(
+            submission=submission,
+            benchmark=self.repo.get_benchmark(benchmark_id)
+        )
 
     def delete_file(self, submission_id, file_id, user):
         """Delete file with given identifier that was previously uploaded.
@@ -180,6 +186,25 @@ class SubmissionService(object):
         doc = self.serialize.file_handle(submission_id=submission_id, fh=fh)
         return fh, doc
 
+    def get_benchmark(self, benchmark_id):
+        """Get descriptor for the benchmark with the given identifier. Raises
+        an error if no benchmark with the identifier exists.
+
+        Parameters
+        ----------
+        benchmark_id: string
+            Unique benchmark identifier
+
+        Returns
+        -------
+        robcore.model.template.benchmark.BenchmarkHandle
+
+        Raises
+        ------
+        robcore.error.UnknownBenchmarkError
+        """
+        return self.repo.get_benchmark(benchmark_id)
+
     def get_submission(self, submission_id):
         """Get handle for submission with the given identifier.
 
@@ -197,7 +222,10 @@ class SubmissionService(object):
         robcore.error.UnknownSubmissionError
         """
         submission = self.manager.get_submission(submission_id)
-        return self.serialize.submission_handle(submission)
+        return self.serialize.submission_handle(
+            submission=submission,
+            benchmark=self.repo.get_benchmark(submission.benchmark_id)
+        )
 
     def list_files(self, submission_id, user):
         """Get a listing of all files that have been uploaded for the given
@@ -291,7 +319,10 @@ class SubmissionService(object):
             name=name,
             members=members
         )
-        return self.serialize.submission_handle(submission)
+        return self.serialize.submission_handle(
+            submission=submission,
+            benchmark=self.repo.get_benchmark(submission.benchmark_id)
+        )
 
     def upload_file(self, submission_id, file, file_name, user):
         """Create a file for a given submission.

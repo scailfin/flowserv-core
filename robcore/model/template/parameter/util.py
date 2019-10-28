@@ -10,7 +10,7 @@
 
 from __future__ import print_function
 
-from robcore.io.files import FileHandle, InputFile
+from robcore.io.files import FileHandle
 from robcore.io.scanner import Scanner
 from robcore.model.template.parameter.base import TemplateParameter
 
@@ -129,7 +129,7 @@ def read_parameter(para, scanner, prompt_prefix=''):
 
     Returns
     -------
-    bool or float or int or string or robcore.model.template.parameter.base.InputFile
+    bool or float or int or string or tuple(string, string)
     """
     while True:
         print(prompt_prefix + para.prompt(), end='')
@@ -137,15 +137,19 @@ def read_parameter(para, scanner, prompt_prefix=''):
             if para.is_bool():
                 return scanner.next_bool(default_value=para.default_value)
             elif para.is_file():
+                # The scanner is primarily intended for the client command line
+                # interface to the web API. On the client side, when submitting
+                # a run with file parameters we only need to read the identifier
+                # of a previously uploaded file. If the optional target path is
+                # defined as variable we also need to read the target path.
+                # Therefore, the result here is a tuple of filename and target
+                # path. The target path may be None
                 filename = scanner.next_file(default_value=para.default_value)
                 target_path = None
                 if para.has_constant() and para.as_input():
                     print('Target Path:', end='')
                     target_path = scanner.next_string()
-                return InputFile(
-                    f_handle=FileHandle(filepath=filename),
-                    target_path=target_path
-                )
+                return (filename, target_path)
             elif para.is_float():
                 return scanner.next_float(default_value=para.default_value)
             elif para.is_int():

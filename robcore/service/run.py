@@ -222,7 +222,11 @@ class RunService(object):
         # if the run does not exist.
         self.authorize_member(run_id=run_id, user=user)
         run = self.engine.get_run(run_id)
-        return self.serialize.run_handle(run)
+        # Get the workflow template from the handle of the benchmark that the
+        # run submission belongs to.
+        submission = self.submissions.get_submission(run.submission_id)
+        benchmark = self.repo.get_benchmark(submission.benchmark_id)
+        return self.serialize.run_handle(run, benchmark)
 
     def list_runs(self, submission_id, user):
         """Get a listing of all run handles for the given submission.
@@ -270,6 +274,7 @@ class RunService(object):
         submission_id: string
             Unique run identifier
         arguments: list(dict)
+            List of user provided arguments for template parameters
         user: robcore.model.user.base.UserHandle
             User that requested the operation
 
@@ -348,4 +353,4 @@ class RunService(object):
             template=template,
             arguments=run_args
         )
-        return self.serialize.run_handle(run)
+        return self.serialize.run_handle(run, benchmark)

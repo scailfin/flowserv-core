@@ -25,6 +25,14 @@ import robcore.model.workflow.state as st
 import robcore.util as util
 
 
+"""Labels for file handle serialization."""
+LABEL_FILEHANDLE = 'fileHandle'
+LABEL_FILEPATH = 'filepath'
+LABEL_FILENAME = 'filename'
+LABEL_ID = 'identifier'
+LABEL_TARGETPATH = 'targetPath'
+
+
 # -- Methods for maintaining run information in the database -------------------
 
 def create_run(con, submission_id, arguments, commit_changes=True):
@@ -307,12 +315,12 @@ class ArgumentEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, InputFile):
             return {
-                'fileHandle': {
-                    'filepath': obj.filepath,
-                    'identifier': obj.identifier,
-                    'filename': obj.file_name,
+                LABEL_FILEHANDLE: {
+                    LABEL_FILEPATH: obj.filepath,
+                    LABEL_ID: obj.identifier,
+                    LABEL_FILENAME: obj.file_name,
                 },
-                'targetPath': obj.target_path
+                LABEL_TARGETPATH: obj.target_path
             }
         # Let the base class default method raise the TypeError
         return json.JSONEncoder.default(self, obj)

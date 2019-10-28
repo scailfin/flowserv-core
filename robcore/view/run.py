@@ -71,15 +71,18 @@ class RunSerializer(object):
             doc[labels.RESOURCES] = resources
         return doc
 
-    def run_handle(self, run):
+    def run_handle(self, run, benchmark):
         """Get serialization for a run handle. The run handle contains the same
         information than the run descriptor. In addition, the run handle also
-        contains the run arguments.
+        contains the run arguments and the parameter declaration for the
+        benchmark.
 
         Parameters
         ----------
         run: robcore.model.workflow.run.RunHandle
             Submission handle
+        benchmark: robcore.model.template.benchmark.BenchmarkHandle
+            Benchmark handle
 
         Returns
         -------
@@ -92,6 +95,8 @@ class RunSerializer(object):
                 labels.VALUE: run.arguments[key]
             } for key in run.arguments
         ]
+        parameters = benchmark.template.parameters.values()
+        doc[labels.PARAMETERS] = [p.to_dict() for p in parameters]
         return doc
 
     def run_listing(self, runs, submission_id):
@@ -114,6 +119,6 @@ class RunSerializer(object):
             ],
             labels.LINKS: hateoas.serialize({
                 hateoas.SELF: self.urls.list_runs(submission_id),
-                hateoas.SUBMIT: self.urls.submit_run(submission_id)
+                hateoas.SUBMIT: self.urls.start_run(submission_id)
             })
         }

@@ -95,12 +95,9 @@ class TestReadTemplateArguments(object):
             0.123
         ]))
         arguments = tmpl.read(template.list_parameters(), scanner=sc)
-        assert arguments['codeFile'].name == 'ABC.txt'
-        assert arguments['codeFile'].target_path == 'code/abc.py'
-        assert arguments['dataFile'].name == 'names.txt'
-        assert arguments['dataFile'].target_path is None
-        assert arguments['resultFile'].name == 'output.txt'
-        assert arguments['resultFile'].target_path is None
+        assert arguments['codeFile'] == ('ABC.txt', 'code/abc.py')
+        assert arguments['dataFile'] == ('data/names.txt', None)
+        assert arguments['resultFile'] == ('result/output.txt', None)
         assert arguments['sleeptime'] == 3
         assert arguments['verbose']
         assert arguments['outputType'] == 'XYZ'

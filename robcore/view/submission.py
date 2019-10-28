@@ -92,6 +92,7 @@ class SubmissionSerializer(object):
         return {
             labels.ID: s_id,
             labels.NAME: submission.name,
+            labels.BENCHMARK: submission.benchmark_id,
             labels.LINKS: hateoas.serialize({
                 hateoas.SELF: self.urls.get_submission(s_id),
                 hateoas.BENCHMARK: self.urls.get_benchmark(b_id),
@@ -99,24 +100,27 @@ class SubmissionSerializer(object):
             })
         }
 
-    def submission_handle(self, submission):
+    def submission_handle(self, submission, benchmark):
         """Get serialization for a submission handle.
 
         Parameters
         ----------
         submission: robcore.model.submission.SubmissionHandle
             Submission handle
+        benchmark: robcore.model.template.benchmark.BenchmarkHandle
+            Benchmark handle
 
         Returns
         -------
         dict
         """
         doc = self.submission_descriptor(submission)
-        doc[labels.BENCHMARK] = submission.benchmark_id
         members = list()
         for u in submission.get_members():
             members.append({labels.ID: u.identifier, labels.USERNAME: u.name})
         doc[labels.MEMBERS] = members
+        parameters = benchmark.template.parameters.values()
+        doc[labels.PARAMETERS] = [p.to_dict() for p in parameters]
         return doc
 
     def submission_listing(self, submissions):

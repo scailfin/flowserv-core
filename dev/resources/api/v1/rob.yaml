@@ -845,45 +845,7 @@ definitions:
       parameters:
         type: array
         items:
-          type: object
-          required:
-          - id
-          - name
-          - datatype
-          - index
-          - required
-          properties:
-            id:
-              type: string
-            name:
-              type: string
-            datatype:
-              type: string
-            index:
-              type: integer
-            required:
-              type: boolean
-            description:
-              type: string
-            as:
-              type: string
-            defaultValue:
-              type: string
-            parent:
-              type: string
-            values:
-              type: array
-              items:
-                type: object
-                required:
-                - value
-                properties:
-                  name:
-                    type: string
-                  value:
-                    type: string
-                  isDefault:
-                    type: boolean
+          $ref: '#/definitions/BenchmarkParameter'
       links:
         $ref: "#/definitions/HATEOASLinks"
   BenchmarkLeaderboard:
@@ -970,6 +932,46 @@ definitions:
           $ref: "#/definitions/BenchmarkDescriptor"
       links:
         $ref: "#/definitions/HATEOASLinks"
+  BenchmarkParameter:
+    type: object
+    required:
+    - id
+    - name
+    - datatype
+    - index
+    - required
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+      datatype:
+        type: string
+      index:
+        type: integer
+      required:
+        type: boolean
+      description:
+        type: string
+      as:
+        type: string
+      defaultValue:
+        type: string
+      parent:
+        type: string
+      values:
+        type: array
+        items:
+          type: object
+          required:
+          - value
+          properties:
+            name:
+              type: string
+            value:
+              type: string
+            isDefault:
+              type: boolean
   FileHandle:
     type: object
     description: "Handle for uploaded file"
@@ -1061,12 +1063,17 @@ definitions:
     description: "Handle containing all information for a benchmark run"
     required:
     - id
+    - parameters
     - arguments
     - state
     - links
     properties:
       id:
         type: string
+      parameters:
+        type: array
+        items:
+          $ref: '#/definitions/BenchmarkParameter'
       arguments:
         type: array
         items:
@@ -1132,6 +1139,7 @@ definitions:
     - id
     - name
     - members
+    - parameters
     - links
     properties:
       id:
@@ -1150,6 +1158,10 @@ definitions:
               type: string
             name:
               type: string
+      parameters:
+        type: array
+        items:
+          $ref: '#/definitions/BenchmarkParameter'
       links:
         $ref: "#/definitions/HATEOASLinks"
   SubmissionListing:
@@ -1166,11 +1178,14 @@ definitions:
           required:
           - id
           - name
+          - benchmark
           - links
           properties:
             id:
               type: string
             name:
+              type: string
+            benchmark:
               type: string
             links:
               $ref: "#/definitions/HATEOASLinks"

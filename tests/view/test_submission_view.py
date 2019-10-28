@@ -25,8 +25,8 @@ DIR = os.path.dirname(os.path.realpath(__file__))
 TEMPLATE_DIR = os.path.join(DIR, '../.files/benchmark/helloworld')
 
 # Mandatory submission descriptor (D), handle (H), and listing (L) labels
-DLABELS = [labels.ID, labels.NAME, labels.LINKS]
-HLABELS = [labels.ID, labels.NAME, labels.MEMBERS, labels.BENCHMARK, labels.LINKS]
+DLABELS = [labels.ID, labels.NAME, labels.BENCHMARK, labels.LINKS]
+HLABELS = DLABELS + [labels.MEMBERS, labels.PARAMETERS]
 LLABELS = [labels.SUBMISSIONS, labels.LINKS]
 
 # Mandatory labels for file handles

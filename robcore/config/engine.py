@@ -22,6 +22,7 @@ control their configuration.
 import os
 import tempfile
 
+import robcore.config.api as api
 import robcore.config.base as config
 import robcore.error as err
 
@@ -33,6 +34,19 @@ controller that is used by the workflow engine to execute workflows.
 ROB_ENGINE_CLASS = 'ROB_ENGINE_CLASS'
 # Name of the module that contains the workflow controller implementation
 ROB_ENGINE_MODULE = 'ROB_ENGINE_MODULE'
+
+
+def ENGIN_BASEDIR():
+    """Get base directory for workflow engine from the environment. At this
+    point we store run files in a sub-folder of the API base directory. If the
+    API base directory is not set the local director for temporary files is used.
+
+    Returns
+    -------
+    string
+    """
+    base_dir = api.API_BASEDIR(default_value=str(tempfile.gettempdir()))
+    return os.path.join(base_dir, 'runs')
 
 
 def ROB_ENGINE():
@@ -58,9 +72,7 @@ def ROB_ENGINE():
     # variables is set.
     if module_name is None and class_name is None:
         from robcore.controller.backend.sync import SyncWorkflowEngine
-        # Use the local directory for temporary files to store runs
-        base_dir = tempfile.gettempdir()
-        return SyncWorkflowEngine(base_dir=base_dir)
+        return SyncWorkflowEngine(base_dir=ENGIN_BASEDIR())
     elif not module_name is None and not class_name is None:
         from importlib import import_module
         module = import_module(module_name)

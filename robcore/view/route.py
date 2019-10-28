@@ -65,7 +65,21 @@ class UrlFactory(object):
         -------
         string
         """
-        return self.get_run(run_id) + '/cancel'
+        return self.get_run(run_id)
+
+    def create_submission(self, benchmark_id):
+        """Url to POST a create submission request for the given benchmark.
+
+        Parameters
+        ----------
+        benchmark_id: string
+            Unique benchmark identifier
+
+        Returns
+        -------
+        string
+        """
+        return self.list_submissions(benchmark_id=benchmark_id)
 
     def delete_file(self, submission_id, file_id):
         """Url to DELETE a previously uploaded file.
@@ -96,6 +110,20 @@ class UrlFactory(object):
         string
         """
         return self.get_run(run_id)
+
+    def delete_submission(self, submission_id):
+        """Url to DELETE a submission.
+
+        Parameters
+        ----------
+        submission_id: string
+            Unique submission identifier
+
+        Returns
+        -------
+        string
+        """
+        return self.get_submission(submission_id)
 
     def download_file(self, submission_id, file_id):
         """Url to GET a previously uploaded file.
@@ -143,19 +171,23 @@ class UrlFactory(object):
         """
         return self.benchmark_base_url + '/' + benchmark_id
 
-    def get_leaderboard(self, benchmark_id):
+    def get_leaderboard(self, benchmark_id, include_all=None):
         """Url to GET benchmark leaderboard.
 
         Parameters
         ----------
         benchmark_id: string
             Unique benchmark identifier
-
+        include_all: bool, optional
+            Flag to return all results and not just one result per submission
         Returns
         -------
         string
         """
-        return self.get_benchmark(benchmark_id) + '/leaderboard'
+        url = self.get_benchmark(benchmark_id) + '/leaderboard'
+        if not include_all is None and include_all:
+            url += '?includeAll'
+        return url
 
     def get_run(self, run_id):
         """Url to GET benchmark run handle.
@@ -208,14 +240,24 @@ class UrlFactory(object):
         """
         return self.get_submission(submission_id) + '/files'
 
-    def list_submissions(self):
-        """Url to GET list of submissions that a user is a memebr of.
+    def list_submissions(self, benchmark_id=None):
+        """Url to GET list of submissions. If the benchmark identifier is given
+        a list of all submissions for the benchmark is requested. Otherwise, the
+        list of all submissions that a user is a memebr of is requested.
+
+        Parameters
+        ----------
+        benchmark_id: string, optional
+            Unique benchmark identifier
 
         Returns
         -------
         string
         """
-        return self.submission_base_url
+        if not benchmark_id is None:
+            return self.get_benchmark(benchmark_id) + '/submissions'
+        else:
+            return self.submission_base_url
 
     def list_runs(self, submission_id):
         """Url to GET listing of benchmark runs for a given submission.
@@ -294,7 +336,7 @@ class UrlFactory(object):
         """
         return self.base_url
 
-    def submit_run(self, submission_id):
+    def start_run(self, submission_id):
         """Url to POST arguments to start a new run for a given submission.
 
         Parameters
@@ -307,6 +349,20 @@ class UrlFactory(object):
         string
         """
         return self.get_submission(submission_id) + '/runs'
+
+    def update_submission(self, submission_id):
+        """Url to PUT a submission update request.
+
+        Parameters
+        ----------
+        submission_id: string
+            Unique submission identifier
+
+        Returns
+        -------
+        string
+        """
+        return self.get_submission(submission_id)
 
     def upload_file(self, submission_id):
         """Url to POST a new file to upload. The uploaded file is associated
