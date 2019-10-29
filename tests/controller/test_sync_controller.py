@@ -21,7 +21,7 @@ import robcore.util as util
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))
-TEMPLATE_DIR = os.path.join(DIR, '../../.files/template')
+TEMPLATE_DIR = os.path.join(DIR, '../.files/template')
 # Workflow templates
 TEMPLATE_HELLOWORLD = os.path.join(TEMPLATE_DIR, './hello-world.yaml')
 TEMPLATE_WITH_INVALID_CMD = os.path.join(TEMPLATE_DIR, './template-invalid-cmd.yaml')

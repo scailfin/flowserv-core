@@ -172,6 +172,10 @@ paths:
                 type: array
                 items:
                   type: string
+              parameters:
+                type: array
+                items:
+                  $ref: '#/definitions/BenchmarkParameter'
       responses:
         201:
           description: "Submission handle"

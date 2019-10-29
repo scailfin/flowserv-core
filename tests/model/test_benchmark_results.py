@@ -58,11 +58,11 @@ class TestBenchmarkResultRanking(object):
         sql = 'INSERT INTO benchmark(benchmark_id, name) VALUES(?, ?)'
         con.execute(sql, (BENCHMARK_2, BENCHMARK_2))
         sql = 'INSERT INTO benchmark_submission('
-        sql += 'submission_id, name, benchmark_id, owner_id'
-        sql += ') VALUES(?, ?, ?, ?)'
-        con.execute(sql, (SUBMISSION_1, SUBMISSION_1, BENCHMARK_1, USER_ID))
-        con.execute(sql, (SUBMISSION_2, SUBMISSION_2, BENCHMARK_1, USER_ID))
-        con.execute(sql, (SUBMISSION_3, SUBMISSION_3, BENCHMARK_2, USER_ID))
+        sql += 'submission_id, name, benchmark_id, owner_id, parameters, workflow_spec'
+        sql += ') VALUES(?, ?, ?, ?, ?, ?)'
+        con.execute(sql, (SUBMISSION_1, SUBMISSION_1, BENCHMARK_1, USER_ID, '[]', '{}'))
+        con.execute(sql, (SUBMISSION_2, SUBMISSION_2, BENCHMARK_1, USER_ID, '[]', '{}'))
+        con.execute(sql, (SUBMISSION_3, SUBMISSION_3, BENCHMARK_2, USER_ID, '[]', '{}'))
         ranking.create_result_table(
             con=con,
             benchmark_id=BENCHMARK_1,

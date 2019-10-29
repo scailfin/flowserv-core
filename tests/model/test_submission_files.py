@@ -66,12 +66,16 @@ class TestSubmissionManagerFilestore(object):
         s1 = manager.create_submission(
             benchmark_id=BENCHMARK_1,
             name='A',
-            user_id=USER_1
+            user_id=USER_1,
+            parameters=dict(),
+            workflow_spec=dict()
         )
         s2 = manager.create_submission(
             benchmark_id=BENCHMARK_1,
             name='B',
-            user_id=USER_1
+            user_id=USER_1,
+            parameters=dict(),
+            workflow_spec=dict()
         )
         return manager, s1, s2
 

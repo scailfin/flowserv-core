@@ -47,10 +47,11 @@ class TestBenchmarkEngine(object):
         sql += 'VALUES(?, ?, ?)'
         schema = json.dumps(bm.BENCHMARK_SCHEMA.to_dict())
         con.execute(sql, (BENCHMARK_ID, BENCHMARK_ID, schema))
-        sql = 'INSERT INTO benchmark_submission(submission_id, name, benchmark_id, owner_id) '
-        sql += 'VALUES(?, ?, ?, ?)'
-        con.execute(sql, (SUBMISSION_1, SUBMISSION_1, BENCHMARK_ID, USER_ID))
-        con.execute(sql, (SUBMISSION_2, SUBMISSION_2, BENCHMARK_ID, USER_ID))
+        sql = 'INSERT INTO benchmark_submission('
+        sql += 'submission_id, name, benchmark_id, owner_id, parameters, workflow_spec'
+        sql += ') VALUES(?, ?, ?, ?, ?, ?)'
+        con.execute(sql, (SUBMISSION_1, SUBMISSION_1, BENCHMARK_ID, USER_ID, '[]', '{}'))
+        con.execute(sql, (SUBMISSION_2, SUBMISSION_2, BENCHMARK_ID, USER_ID, '[]', '{}'))
         ranking.create_result_table(
             con=con,
             benchmark_id=BENCHMARK_ID,

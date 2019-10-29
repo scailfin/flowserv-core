@@ -56,6 +56,7 @@ def init_api(base_dir, open_access=False):
     # API Services
     repository = BenchmarkService(repo=benchmark_repo)
     submissions = SubmissionService(
+        engine=engine,
         manager=submission_manager,
         auth=auth,
         repo=benchmark_repo

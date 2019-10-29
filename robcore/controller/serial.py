@@ -22,6 +22,7 @@ from string import Template
 from robcore.model.workflow.resource import FileResource
 from robcore.model.workflow.state import StateError, StateSuccess
 
+import robcore.error as err
 import robcore.model.template.util as tmpl
 import robcore.controller.io as fileio
 import robcore.util as util
@@ -68,6 +69,55 @@ def commands(template, arguments):
             result.append(Template(cmd).substitute(workflow_parameters))
     return result
 
+
+def modify_spec(workflow_spec, tmpl_parameters, add_parameters):
+    """Modify a given workflow specification by adding the given parameters
+    to a given set of template parameters.
+
+    Returns the modified workflow specification and the modified parameter
+    index. Raises an error if the parameter identifier in the resulting
+    parameter index are no longer unique.
+
+    Parameters
+    ----------
+    workflow_spec: dict
+        Workflow specification
+    tmpl_parameters: dict(robcore.model.template.parameter.base.TemplateParameter)
+        Existing template parameters
+    add_parameters: dict(robcore.model.template.parameter.base.TemplateParameter)
+        Additional template parameters
+
+    Returns
+    -------
+    dict, dict(robcore.model.template.parameter.base.TemplateParameter)
+
+    Raises
+    ------
+    robcore.error.DuplicateParameterError
+    robcore.error.InvalidTemplateError
+    """
+    # Get a copy of the files and parameters sections of the inputs declaration
+    inputs = workflow_spec.get('inputs', dict())
+    in_files = list(inputs.get('files', list()))
+    in_params = dict(inputs.get('parameters', dict()))
+    # Ensure that the identifier for all parameters are unique
+    para_merge = dict(tmpl_parameters)
+    for para in add_parameters.values():
+        if para.identifier in para_merge:
+            raise err.DuplicateParameterError(para.identifier)
+        para_merge[para.identifier] = para
+        # Depending on whether the type of the parameter is a file or not we
+        # add a parameter reference to the respective input section
+        if para.is_file():
+            in_files.append('$[[{}]]'.format(para.identifier))
+        else:
+            if para.identifier in in_params:
+                msg = 'duplicate parameter \'{}\' in input list'
+                raise err.InvalidTemplateError(msg.format(para.identifier))
+            in_params[para.identifier] = '$[[{}]]'.format(para.identifier)
+    spec = dict(workflow_spec)
+    spec['inputs'] = {'files': in_files, 'parameters': in_params}
+    return spec, para_merge
 
 def run(run_dir, commands, output_files, verbose=False):
     """Run serial workflow commands. Expects all workflow files in the given run

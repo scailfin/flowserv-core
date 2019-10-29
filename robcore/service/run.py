@@ -348,8 +348,7 @@ class RunService(object):
         # dictionary or set as default values)
         template.validate_arguments(run_args)
         # Start the run and return the serialized run handle.
-        run = self.engine.start_run(
-            submission_id=submission_id,
+        run = submission.start_run(
             template=template,
             arguments=run_args
         )

@@ -114,6 +114,23 @@ class DuplicateArgumentError(ConstraintViolationError):
         )
 
 
+class DuplicateParameterError(ConstraintViolationError):
+    """Exception indicating that a given template parameter does not have a
+    unique identifier.
+    """
+    def __init__(self, identifier):
+        """Initialize error message for duplicate template parameters.
+
+        Parameters
+        ----------
+        identifier: string
+            Unique parameter identifier
+        """
+        super(DuplicateParameterError, self).__init__(
+            message='non-unique template parameter \'{}\''.format(identifier)
+        )
+
+
 class DuplicateRunError(ConstraintViolationError):
     """Exception indicating that a given run identifier is not unique.
     """

@@ -81,10 +81,11 @@ class TestRunStore(object):
             commit_changes=False
         )
         con.execute(sql, (BID_NOSCHEMA, BID_NOSCHEMA, None))
-        sql = 'INSERT INTO benchmark_submission(submission_id, name, benchmark_id, owner_id) '
-        sql += ' VALUES(?, ?, ?, ?)'
-        con.execute(sql, (SID_SCHEMA, SID_SCHEMA, BID_SCHEMA, USER_ID))
-        con.execute(sql, (SID_NOSCHEMA, SID_NOSCHEMA, BID_NOSCHEMA, USER_ID))
+        sql = 'INSERT INTO benchmark_submission('
+        sql += 'submission_id, name, benchmark_id, owner_id, parameters, workflow_spec'
+        sql += ') VALUES(?, ?, ?, ?, ?, ?)'
+        con.execute(sql, (SID_SCHEMA, SID_SCHEMA, BID_SCHEMA, USER_ID, '[]', '{}'))
+        con.execute(sql, (SID_NOSCHEMA, SID_NOSCHEMA, BID_NOSCHEMA, USER_ID, '[]', '{}'))
         con.commit()
         return con
 

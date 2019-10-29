@@ -22,28 +22,35 @@ import shutil
 
 from robcore.model.user.base import UserHandle
 from robcore.io.files import FileHandle
+from robcore.model.template.base import WorkflowTemplate
 from robcore.model.template.schema import ResultSchema
 
 import robcore.error as err
 import robcore.model.constraint as constraint
 import robcore.model.ranking as ranking
+import robcore.model.template.parameter.util as pd
 import robcore.util as util
 
 
 class SubmissionHandle(object):
-    """A submission is a set of workflow runs that are submmited by a group of
-    users that participate in a benchmark.
+    """A submission represents a user-specific version of a benchmark template.
+    Submissions group users that participate in a benchmark as well as the
+    workflow runs that are executed by those users.
 
     Submissions have unique identifier and names that are used to identify them
     internally and externally. Each submission has an owner and a list of team
     memebers.
 
+    FOr each submission the users can define additional input parameters that
+    are required by their submission code. Threfore, the submission maintains
+    a modified copy of the benchmark template.
+
     Maintains an optional reference to the submission manager that allows to
     load submission members and runs on-demand.
     """
     def __init__(
-        self, identifier, name, benchmark_id, owner_id, members=None,
-        manager=None
+        self, identifier, name, benchmark_id, owner_id, parameters,
+        workflow_spec, engine, members=None, manager=None
     ):
         """Initialize the object properties.
 
@@ -57,6 +64,12 @@ class SubmissionHandle(object):
             Unique benchmark identifier
         owner_id: string
             Unique identifier for the user that created the submission
+        parameters: dict(string:robcore.model.template.parameter.base.TemplateParameter)
+            Workflow template parameter declarations
+        workflow_spec: dict
+            Workflow specification
+        engine: robcore.controller.engine.BenchmarkEngine
+            Benchmark workflow execution engine
         members: list(robcore.model.user.base.UserHandle)
             List of handles for team members
         manager: robcore.model.submission.SubmissionManager, optional
@@ -66,6 +79,9 @@ class SubmissionHandle(object):
         self.name = name
         self.benchmark_id = benchmark_id
         self.owner_id = owner_id
+        self.parameters = parameters
+        self.workflow_spec = workflow_spec
+        self.engine = engine
         self.members = members
         self.manager = manager
 
@@ -159,6 +175,9 @@ class SubmissionHandle(object):
 
     def start_run(self, arguments, template):
         """Run benchmark for the submission with the given set of arguments.
+        Generates a modified workflow template using the given base template
+        and the submission-specific parameter declarations and workflow
+        specification.
 
         Parameters
         ----------
@@ -176,10 +195,16 @@ class SubmissionHandle(object):
         ------
         robcore.error.MissingArgumentError
         """
-        self.manager.start_run(
+        return self.engine.start_run(
             submission_id=self.identifier,
             arguments=arguments,
-            template=template
+            template=WorkflowTemplate(
+                identifier=template.identifier,
+                source_dir=template.source_dir,
+                workflow_spec=self.workflow_spec,
+                parameters=self.parameters,
+                result_schema=template.result_schema
+            )
         )
 
 
@@ -211,9 +236,16 @@ class SubmissionManager(object):
         self.directory = util.create_dir(os.path.abspath(directory))
         self.engine = engine
 
-    def create_submission(self, benchmark_id, name, user_id, members=None):
+    def create_submission(
+        self, benchmark_id, name, user_id, parameters, workflow_spec,
+        members=None
+    ):
         """Create a new submission for a given benchmark. Within each benchmark,
         the names of submissions are expected to be unique.
+
+        A submission may define additional parameters for a template. The full
+        parameter list is stored with the submission as well as the workflow
+        specification.
 
         A submission may have a list of users that are submission members which
         allows them to submit runs. The user that creates the submission, i.e.,
@@ -231,6 +263,10 @@ class SubmissionManager(object):
             Submission name
         user_id: string
             Unique identifier of the user that created the submission
+        parameters: list(robcore.model.template.parameter.base.TemplateParameter)
+            List of workflow template parameter declarations for the submission
+        workflow_spec: dict
+            Workflow specification
         members: list(string), optional
             Optional list of user identifiers for other sumbission members
 
@@ -259,7 +295,6 @@ class SubmissionManager(object):
             for member_id in members:
                 if self.con.execute(sql, (member_id,)).fetchone() is None:
                     raise err.UnknownUserError(member_id)
-
         # Create a unique identifier for the new submission and the submission
         # upload directory
         identifier = util.get_unique_identifier()
@@ -273,9 +308,16 @@ class SubmissionManager(object):
                 members.add(user_id)
         # Enter submission information into database and commit all changes
         sql = 'INSERT INTO benchmark_submission('
-        sql += 'submission_id, benchmark_id, name, owner_id'
-        sql += ') VALUES(?, ?, ?, ?)'
-        values = (identifier, benchmark_id, name, user_id)
+        sql += 'submission_id, benchmark_id, name, owner_id, parameters, workflow_spec'
+        sql += ') VALUES(?, ?, ?, ?, ?, ?)'
+        values = (
+            identifier,
+            benchmark_id,
+            name,
+            user_id,
+            json.dumps([p.to_dict() for p in parameters.values()]),
+            json.dumps(workflow_spec)
+        )
         self.con.execute(sql, values)
         sql = 'INSERT INTO submission_member(submission_id, user_id) VALUES(?, ?)'
         for member_id in members:
@@ -465,7 +507,7 @@ class SubmissionManager(object):
         robcore.error.UnknownSubmissionError
         """
         # Get submission information. Raise error if the identifier is unknown.
-        sql = 'SELECT name, benchmark_id, owner_id '
+        sql = 'SELECT name, benchmark_id, owner_id, parameters, workflow_spec '
         sql += 'FROM benchmark_submission '
         sql += 'WHERE submission_id = ?'
         row = self.con.execute(sql, (submission_id,)).fetchone()
@@ -474,6 +516,11 @@ class SubmissionManager(object):
         name = row['name']
         benchmark_id = row['benchmark_id']
         owner_id = row['owner_id']
+        parameters = pd.create_parameter_index(
+            json.loads(row['parameters']),
+            validate=False
+        )
+        workflow_spec = json.loads(row['workflow_spec'])
         # Get list of team members (only of load flag is True)
         if load_members:
             members = self.list_members(submission_id)
@@ -485,6 +532,9 @@ class SubmissionManager(object):
             name=name,
             benchmark_id=benchmark_id,
             owner_id=owner_id,
+            parameters=parameters,
+            workflow_spec=workflow_spec,
+            engine=self.engine,
             members=members,
             manager=self
         )
@@ -562,7 +612,8 @@ class SubmissionManager(object):
         list(robcore.model.submission.SubmissionHandle)
         """
         # Generate SQL query depending on whether the user is given or not
-        sql = 'SELECT s.submission_id, s.name, s.benchmark_id, s.owner_id '
+        sql = 'SELECT s.submission_id, s.name, s.benchmark_id, s.owner_id, '
+        sql += 's.parameters, s.workflow_spec '
         sql += 'FROM benchmark_submission s'
         para = list()
         if not user_id is None:
@@ -581,47 +632,22 @@ class SubmissionManager(object):
         # Create list of submission handle from query result
         submissions = list()
         for row in self.con.execute(sql, para).fetchall():
+            parameters = pd.create_parameter_index(
+                json.loads(row['parameters']),
+                validate=False
+            )
             s = SubmissionHandle(
                 identifier=row['submission_id'],
                 name=row['name'],
                 benchmark_id=row['benchmark_id'],
                 owner_id=row['owner_id'],
+                parameters=parameters,
+                workflow_spec=json.loads(row['workflow_spec']),
+                engine=self.engine,
                 manager=self
             )
             submissions.append(s)
         return submissions
-
-    def start_run(self, submission_id, arguments, template):
-        """Run benchmark for a given submission with the given set of arguments.
-
-        This method does not check if the submission exists. Thie method is
-        primarily intended to be called by the submission handle to start runs.
-        Existence of the submission is expected to have been verified when the
-        submission handle was created.
-
-        Parameters
-        ----------
-        submission_id: string
-            Unique submission identifier
-        arguments: dict(robcore.model.template.parameter.value.TemplateArgument)
-            Dictionary of argument values for parameters in the template
-        template: robcore.model.template.base.WorkflowTemplate
-            Workflow template containing the parameterized specification and the
-            parameter declarations
-
-        Returns
-        -------
-        robcore.model.workflow.run.RunHandle
-
-        Raises
-        ------
-        robcore.error.MissingArgumentError
-        """
-        return self.engine.start_run(
-            submission_id=submission_id,
-            arguments=arguments,
-            template=template
-        )
 
     def update_submission(self, submission_id, name=None, members=None):
         """Update the name and/or list of members for a submission.

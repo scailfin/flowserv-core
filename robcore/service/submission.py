@@ -21,12 +21,14 @@ class SubmissionService(object):
     """API component that provides methods to access benchmark submissions and
     their runs.
     """
-    def __init__(self, manager, auth, repo, urls=None, serializer=None):
+    def __init__(self, engine, manager, auth, repo, urls=None, serializer=None):
         """Initialize the internal reference to the submission manager and to
         the route factory.
 
         Parameters
         ----------
+        engine: robcore.model.benchmark.engine.BenchmarkEngine
+            Benchmark engine
         manager: robcore.model.submission.SubmissionManager
             Manager for benchmark submissions
         auth: robcore.model.user.auth.Auth
@@ -38,6 +40,7 @@ class SubmissionService(object):
         serializer: robcore.view.submission.SubmissionSerializer, optional
             Override the default serializer
         """
+        self.engine = engine
         self.manager = manager
         self.auth = auth
         self.repo = repo
@@ -72,7 +75,9 @@ class SubmissionService(object):
             self.manager.get_submission(submission_id, load_members=False)
             raise err.UnauthorizedAccessError()
 
-    def create_submission(self, benchmark_id, name, user, members=None):
+    def create_submission(
+        self, benchmark_id, name, user, parameters=None, members=None
+    ):
         """Create a new submission for a given benchmark. Each submission for
         the benchmark has a unique name, a submission owner, and a list of
         additional submission members.
@@ -85,6 +90,8 @@ class SubmissionService(object):
             Unique team name
         user: robcore.model.user.base.UserHandle
             Handle for the submission owner
+        parameters: dict(string:robcore.model.template.parameter.base.TemplateParameter), optional
+            Workflow template parameter declarations
         members: list(string), optional
             List of user identifier for submission members
 
@@ -97,16 +104,31 @@ class SubmissionService(object):
         robcore.error.ConstraintViolationError
         robcore.error.UnknownBenchmarkError
         """
+        # Get the template for the given benchmark. This will raise an exception
+        # if the benchmark is unknown.
+        benchmark = self.repo.get_benchmark(benchmark_id)
+        # If additional parameters are given we need to modify the workflow
+        # specification accordingly. This may raise an error if a given
+        # parameter identifier is not unique.
+        template = benchmark.get_template()
+        workflow_spec = template.workflow_spec
+        if not parameters is None:
+            workflow_spec, parameters = self.engine.backend.modify_template(
+                workflow_spec=workflow_spec,
+                tmpl_parameters=template.parameters,
+                add_parameters=parameters
+            )
+        else:
+            parameters = template.parameters
         submission = self.manager.create_submission(
             benchmark_id=benchmark_id,
             name=name,
             user_id=user.identifier,
+            parameters=parameters,
+            workflow_spec=workflow_spec,
             members=members
         )
-        return self.serialize.submission_handle(
-            submission=submission,
-            benchmark=self.repo.get_benchmark(benchmark_id)
-        )
+        return self.serialize.submission_handle(submission=submission)
 
     def delete_file(self, submission_id, file_id, user):
         """Delete file with given identifier that was previously uploaded.
@@ -222,10 +244,7 @@ class SubmissionService(object):
         robcore.error.UnknownSubmissionError
         """
         submission = self.manager.get_submission(submission_id)
-        return self.serialize.submission_handle(
-            submission=submission,
-            benchmark=self.repo.get_benchmark(submission.benchmark_id)
-        )
+        return self.serialize.submission_handle(submission=submission)
 
     def list_files(self, submission_id, user):
         """Get a listing of all files that have been uploaded for the given
@@ -319,10 +338,7 @@ class SubmissionService(object):
             name=name,
             members=members
         )
-        return self.serialize.submission_handle(
-            submission=submission,
-            benchmark=self.repo.get_benchmark(submission.benchmark_id)
-        )
+        return self.serialize.submission_handle(submission=submission)
 
     def upload_file(self, submission_id, file, file_name, user):
         """Create a file for a given submission.

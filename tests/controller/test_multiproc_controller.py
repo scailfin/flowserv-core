@@ -27,7 +27,7 @@ import robcore.util as util
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))
-TEMPLATE_DIR = os.path.join(DIR, '../../.files/benchmark/helloworld')
+TEMPLATE_DIR = os.path.join(DIR, '../.files/benchmark/helloworld')
 # Workflow templates
 TEMPLATE_HELLOWORLD = os.path.join(TEMPLATE_DIR, './benchmark.yaml')
 # Input files
@@ -59,9 +59,20 @@ class TestMultiProcessWorkflowEngine(object):
         template = WorkflowTemplate.from_dict(doc, source_dir=TEMPLATE_DIR)
         schema = json.dumps(template.get_schema().to_dict())
         con.execute(sql, (BENCHMARK_ID, BENCHMARK_ID, schema))
-        sql = 'INSERT INTO benchmark_submission(submission_id, name, benchmark_id, owner_id) '
-        sql += 'VALUES(?, ?, ?, ?)'
-        con.execute(sql, (SUBMISSION_ID, SUBMISSION_ID, BENCHMARK_ID, USER_ID))
+        sql = 'INSERT INTO benchmark_submission('
+        sql += 'submission_id, name, benchmark_id, owner_id, parameters, workflow_spec'
+        sql += ') VALUES(?, ?, ?, ?, ?, ?)'
+        con.execute(
+            sql,
+            (
+                SUBMISSION_ID,
+                SUBMISSION_ID,
+                BENCHMARK_ID,
+                USER_ID,
+                json.dumps([p.to_dict() for p in template.parameters.values()]),
+                json.dumps(template.workflow_spec)
+            )
+        )
         ranking.create_result_table(
             con=con,
             benchmark_id=BENCHMARK_ID,

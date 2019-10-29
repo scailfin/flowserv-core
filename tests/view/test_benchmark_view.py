@@ -133,21 +133,25 @@ class TestBenchmarkView(object):
         s1 = submissions.manager.create_submission(
             benchmark_id=bm.identifier,
             name='A',
-            user_id=USER_1
+            user_id=USER_1,
+            parameters=dict(),
+            workflow_spec=dict()
         )
         s2 = submissions.manager.create_submission(
             benchmark_id=bm.identifier,
             name='B',
-            user_id=USER_1
+            user_id=USER_1,
+            parameters=dict(),
+            workflow_spec=dict()
         )
         # Create two successful runs for the first submission and one run for
         # the second submission.
         controller.success({'avg_count': 12, 'max_len': 12.4})
-        submissions.manager.start_run(s1.identifier, dict(), template)
+        s1.start_run(dict(), template)
         controller.success({'avg_count': 10, 'max_len': 12.4})
-        submissions.manager.start_run(s1.identifier, dict(), template)
+        s1.start_run(dict(), template)
         controller.success({'avg_count': 11, 'max_len': 12.4})
-        submissions.manager.start_run(s2.identifier, dict(), template)
+        s2.start_run(dict(), template)
         # Get the benchmark leaderboard
         r = repo.get_leaderboard(bm.identifier, include_all=False)
         util.validate_doc(

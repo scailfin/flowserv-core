@@ -105,6 +105,8 @@ CREATE TABLE benchmark_submission(
     name VARCHAR(512) NOT NULL,
     benchmark_id VARCHAR(32) NOT NULL REFERENCES benchmark (benchmark_id),
     owner_id VARCHAR(32) NOT NULL REFERENCES api_user (user_id),
+    parameters TEXT NOT NULL,
+    workflow_spec TEXT NOT NULL,
     PRIMARY KEY(submission_id),
     UNIQUE(benchmark_id, name)
 );

@@ -176,6 +176,41 @@ class SyncWorkflowEngine(WorkflowController):
         else:
             raise err.UnknownRunError(run_id)
 
+    def modify_template(self, workflow_spec, tmpl_parameters, add_parameters):
+        """Modify a given workflow specification by adding the given parameters
+        to a given set of template parameters.
+
+        This function is dependent on the workflow specification syntax that is
+        supported by a workflow engine.
+
+        Returns the modified workflow specification and the modified parameter
+        index. Raises an error if the parameter identifier in the resulting
+        parameter index are no longer unique.
+
+        Parameters
+        ----------
+        workflow_spec: dict
+            Workflow specification
+        tmpl_parameters: dict(robcore.model.template.parameter.base.TemplateParameter)
+            Existing template parameters
+        add_parameters: dict(robcore.model.template.parameter.base.TemplateParameter)
+            Additional template parameters
+
+        Returns
+        -------
+        dict, dict(robcore.model.template.parameter.base.TemplateParameter)
+
+        Raises
+        ------
+        robcore.error.DuplicateParameterError
+        robcore.error.InvalidTemplateError
+        """
+        return serial.modify_spec(
+            workflow_spec=workflow_spec,
+            tmpl_parameters=tmpl_parameters,
+            add_parameters=add_parameters
+        )
+
     def remove_run(self, run_id):
         """Remove all files and directories that belong to the run with the
         given identifier.

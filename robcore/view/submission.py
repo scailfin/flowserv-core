@@ -100,15 +100,13 @@ class SubmissionSerializer(object):
             })
         }
 
-    def submission_handle(self, submission, benchmark):
+    def submission_handle(self, submission):
         """Get serialization for a submission handle.
 
         Parameters
         ----------
         submission: robcore.model.submission.SubmissionHandle
             Submission handle
-        benchmark: robcore.model.template.benchmark.BenchmarkHandle
-            Benchmark handle
 
         Returns
         -------
@@ -119,7 +117,7 @@ class SubmissionSerializer(object):
         for u in submission.get_members():
             members.append({labels.ID: u.identifier, labels.USERNAME: u.name})
         doc[labels.MEMBERS] = members
-        parameters = benchmark.template.parameters.values()
+        parameters = submission.parameters.values()
         doc[labels.PARAMETERS] = [p.to_dict() for p in parameters]
         return doc
 

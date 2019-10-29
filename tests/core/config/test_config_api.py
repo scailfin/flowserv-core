@@ -32,6 +32,8 @@ class TestConfigAPI(object):
             assert config.API_BASEDIR(raise_error=True)
         os.environ[config.ROB_API_BASEDIR] = 'ABC'
         assert config.API_BASEDIR(default_value='XYZ') == 'ABC'
+        # Cleanup
+        del os.environ[config.ROB_API_BASEDIR]
 
     def test_config_host(self):
         """Test method to get the API server host name."""
