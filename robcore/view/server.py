@@ -52,5 +52,6 @@ class ServiceSerializer(object):
                 hateoas.LOGOUT: self.urls.logout(),
                 hateoas.REGISTER: self.urls.register_user(),
                 hateoas.BENCHMARKS: self.urls.list_benchmarks(),
+                hateoas.SUBMISSIONS: self.urls.list_submissions()
             })
         }
