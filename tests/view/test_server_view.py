@@ -26,7 +26,8 @@ RELS = [
     hateoas.LOGIN,
     hateoas.LOGOUT,
     hateoas.REGISTER,
-    hateoas.BENCHMARKS
+    hateoas.BENCHMARKS,
+    hateoas.SUBMISSIONS
 ]
 
 
@@ -40,7 +41,12 @@ class TestServiceDescriptor(object):
         r = Service().service_descriptor()
         util.validate_doc(
             doc=r,
-            mandatory_labels=[labels.NAME, labels.LINKS, labels.VERSION]
+            mandatory_labels=[
+                labels.NAME,
+                labels.LINKS,
+                labels.VERSION,
+                labels.VALID_TOKEN
+            ]
         )
         serialize.validate_links(r, RELS)
         assert r[labels.NAME] == config.DEFAULT_NAME

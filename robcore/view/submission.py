@@ -8,6 +8,8 @@
 
 """Serializer for benchmark submissions."""
 
+from robcore.view.run import RunSerializer
+
 import robcore.view.hateoas as hateoas
 import robcore.view.labels as labels
 
@@ -118,7 +120,17 @@ class SubmissionSerializer(object):
             members.append({labels.ID: u.identifier, labels.USERNAME: u.name})
         doc[labels.MEMBERS] = members
         parameters = submission.parameters.values()
+        # Include submission specific list of benchmark template parameters
         doc[labels.PARAMETERS] = [p.to_dict() for p in parameters]
+        # Include descriptors for all submission runs
+        runs = RunSerializer(urls=self.urls)
+        doc[labels.RUNS] = [
+            runs.run_descriptor(r) for r in submission.get_runs()
+        ]
+        # Include handles for all uploaded files
+        files = submission.list_files()
+        doc[labels.FILES] = [self.file_handle(submission.identifier, f) for f in files]
+
         return doc
 
     def submission_listing(self, submissions):

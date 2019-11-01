@@ -49,9 +49,15 @@ class Service(object):
         """
         return config.API_NAME()
 
-    def service_descriptor(self):
+    def service_descriptor(self, username=None):
         """Get serialization of descriptor containing the basic information
-        about the API.
+        about the API. The optional user name indicates whether a request for
+        the service descriptor contained a valid access token.
+
+        Parameters
+        ----------
+        username: string, optional
+            Name of the user that was authenticated by a given access token
 
         Returns
         -------
@@ -59,7 +65,8 @@ class Service(object):
         """
         return self.serialize.service_descriptor(
             name=self.name,
-            version=self.version
+            version=self.version,
+            username=username
         )
 
     @property

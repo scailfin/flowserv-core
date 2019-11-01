@@ -28,9 +28,13 @@ class ServiceSerializer(object):
         """
         self.urls = urls
 
-    def service_descriptor(self, name, version):
+    def service_descriptor(self, name, version, username=None):
         """Serialization of the service descriptor. The descriptor contains the
-        service name, version, and a list of HATEOAS references.
+        service name, version, and a list of HATEOAS references. The optional
+        user name indicates whether a request for the service descriptor
+        contained a valid access token. If the user name is not None it will be
+        included in the service descriptor and the valid token flag is set to
+        True.
 
         Parameters
         ----------
@@ -38,14 +42,18 @@ class ServiceSerializer(object):
             Service name
         version: string
             Service version number
+        username: string, optional
+            Name of the user that was authenticated by a given access token
 
         Returns
         -------
         dict
         """
-        return {
+        valid_token = not username is None
+        obj = {
             labels.NAME: name,
             labels.VERSION: version,
+            labels.VALID_TOKEN: valid_token,
             labels.LINKS: hateoas.serialize({
                 hateoas.SELF: self.urls.service_descriptor(),
                 hateoas.LOGIN: self.urls.login(),
@@ -55,3 +63,6 @@ class ServiceSerializer(object):
                 hateoas.SUBMISSIONS: self.urls.list_submissions()
             })
         }
+        if not username is None:
+            obj[labels.USERNAME] = username
+        return obj

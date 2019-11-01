@@ -24,7 +24,7 @@ module.
 ROB_AUTH_LOGINTTL = 'ROB_AUTH_TTL'
 
 """Default values for environment variables."""
-DEFAULT_LOGINTTL = 4 * 60 * 60
+DEFAULT_LOGINTTL = 24 * 60 * 60
 
 # -- Public helper methods to access configuration values ----------------------
 

@@ -14,6 +14,7 @@ ID = 'id'
 NAME = 'name'
 STATE = 'state'
 VERSION = 'version'
+VALID_TOKEN = 'validToken'
 
 # Timestamps
 CREATED_AT = 'createdAt'

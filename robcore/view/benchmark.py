@@ -42,12 +42,17 @@ class BenchmarkSerializer(object):
         """
         benchmark_id = benchmark.identifier
         leaderboard_url = self.urls.get_leaderboard(benchmark_id)
+        rel_submission_create = hateoas.action(
+            hateoas.CREATE,
+            resource=hateoas.SUBMISSIONS
+        )
         obj = {
             labels.ID: benchmark_id,
             labels.NAME: benchmark.name,
             labels.LINKS: hateoas.serialize({
                 hateoas.SELF: self.urls.get_benchmark(benchmark_id),
-                hateoas.LEADERBOARD: leaderboard_url
+                hateoas.LEADERBOARD: leaderboard_url,
+                rel_submission_create: self.urls.create_submission(benchmark_id)
             })
         }
         if benchmark.has_description():

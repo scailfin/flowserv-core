@@ -43,20 +43,22 @@ WHOAMI = 'whoami'
 # ------------------------------------------------------------------------------
 # Reference categories
 # ------------------------------------------------------------------------------
-def action(rel):
+def action(rel, resource='self'):
     """Add relationship category prefix for references that transform a web
-    reource.
+    reource. If the resource identifier is not given 'self' is assumed.
 
     Parameters
     ----------
     rel: string
         Link relationship identifier
+    resource: string, optional
+        Identifier (or type) of the resource that is being modified.
 
     Returns
     -------
     string
     """
-    return 'self:{}'.format(rel)
+    return '{}:{}'.format(resource, rel)
 
 
 # ------------------------------------------------------------------------------

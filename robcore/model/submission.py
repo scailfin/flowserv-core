@@ -167,6 +167,21 @@ class SubmissionHandle(object):
                 return True
         return False
 
+    def list_files(self):
+        """Get list of handles for all files that have been uploaded for the
+        submission.
+
+        Parameters
+        ----------
+        submission_id: string
+            Unique submission identifier
+
+        Returns
+        -------
+        list(robcore.io.files.FileHandle)
+        """
+        return self.manager.list_files(self.identifier)
+
     def reset_members(self):
         """Set member list to None if the list had been updated. This will
         ensure that submission members will be loaded on-demand.

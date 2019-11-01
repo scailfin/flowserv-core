@@ -1128,11 +1128,16 @@ definitions:
     required:
     - name
     - version
+    - validToken
     - links
     properties:
       name:
         type: string
       version:
+        type: string
+      validToken:
+        type: boolean
+      username:
         type: string
       links:
         $ref: "#/definitions/HATEOASLinks"
@@ -1144,6 +1149,8 @@ definitions:
     - name
     - members
     - parameters
+    - files
+    - runs
     - links
     properties:
       id:
@@ -1166,6 +1173,14 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/BenchmarkParameter'
+      files:
+        type: array
+        items:
+          $ref: "#/definitions/FileHandle"
+      runs:
+        type: array
+        items:
+          $ref: "#/definitions/RunDescriptor"
       links:
         $ref: "#/definitions/HATEOASLinks"
   SubmissionListing:
