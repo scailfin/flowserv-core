@@ -98,7 +98,9 @@ class SubmissionSerializer(object):
             labels.LINKS: hateoas.serialize({
                 hateoas.SELF: self.urls.get_submission(s_id),
                 hateoas.BENCHMARK: self.urls.get_benchmark(b_id),
-                hateoas.action(hateoas.UPLOAD): self.urls.upload_file(s_id)
+                hateoas.action(hateoas.UPLOAD): self.urls.upload_file(s_id),
+                hateoas.action(hateoas.SUBMIT): self.urls.start_run(s_id)
+
             })
         }
 
