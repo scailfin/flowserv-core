@@ -75,9 +75,13 @@ def create_parameter_index(parameters, validate=True):
 
 # -- Read parameter values -----------------------------------------------------
 
-def read(parameters, scanner=None):
+def read(parameters, scanner=None, files=None):
     """Read values for each of the template parameters using a given input
     scanner. If no scanner is given values are read from standard input.
+
+    The optional list of file handles is used for convenience when the user is
+    asked to input the identifier of an uploaded file. It allows to display the
+    identifier of available files for easy copy and paste.
 
     Returns a dictionary of argument values that can be passed to the workflow
     execution engine to run a parameterized workflow.
@@ -88,6 +92,8 @@ def read(parameters, scanner=None):
         List of workflow template parameter declarations
     scanner: robcore.io.scanner.Scanner
         Input scanner to read parameter values
+    files: list()
+        List of idenifier, name pairs
 
     Returns
     -------
@@ -110,14 +116,14 @@ def read(parameters, scanner=None):
                 if not val is None:
                     arguments[child.identifier] = val
         else:
-            val = read_parameter(para, sc)
+            val = read_parameter(para, sc, files=files)
             if not val is None:
                 arguments[para.identifier] = val
     return arguments
 
 
 
-def read_parameter(para, scanner, prompt_prefix=''):
+def read_parameter(para, scanner, prompt_prefix='', files=None):
     """Read value for a given template parameter declaration. Prompts the
     user to enter a value for the given parameter and returns the converted
     value that was entered by the user.
@@ -126,6 +132,10 @@ def read_parameter(para, scanner, prompt_prefix=''):
     ----------
     para: robcore.model.template.parameter.TemplateParameter
         Workflow template parameter declaration
+    scanner: robcore.io.scanner.Scanner
+    prompt_prefix: string, optional
+    files: list()
+        List of idenifier, name pairs
 
     Returns
     -------
@@ -141,9 +151,19 @@ def read_parameter(para, scanner, prompt_prefix=''):
                 # interface to the web API. On the client side, when submitting
                 # a run with file parameters we only need to read the identifier
                 # of a previously uploaded file. If the optional target path is
-                # defined as variable we also need to read the target path.
+                # defined as 'variable' we also need to read the target path.
                 # Therefore, the result here is a tuple of filename and target
-                # path. The target path may be None
+                # path. The target path may be None.
+                if not files is None:
+                    print('\n\nAvailable files')
+                    print('---------------')
+                    for fh in files:
+                        print('{}\t{} ({})'.format(
+                            fh.identifier,
+                            fh.name,
+                            fh.upload_time())
+                        )
+                    print('\n> ', end='')
                 filename = scanner.next_file(default_value=para.default_value)
                 target_path = None
                 if para.has_constant() and para.as_input():

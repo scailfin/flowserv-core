@@ -181,16 +181,26 @@ class UserManager(object):
             raise err.UnknownUserError(username)
         user_id = user['user_id']
         name = user['name']
-        # Remove any API key that may be associated with the user currently
+        ttl = dt.datetime.now() + dt.timedelta(seconds=self.login_timeout)
+        # Check if a valid access token is currently associated with the user.
+        sql = 'SELECT api_key, expires FROM user_key WHERE user_id = ?'
+        rs = self.con.execute(sql, (user_id,)).fetchone()
+        if not rs is None:
+            api_key = rs['api_key']
+            expires = dateutil.parser.parse(rs['expires'])
+            if expires >= dt.datetime.now():
+                # Update the expiry time for the active access token
+                sql = 'UPDATE user_key SET expires=? WHERE user_id = ?'
+                self.con.execute(sql, (ttl.isoformat(), user_id))
+                return UserHandle(identifier=user_id, name=name, api_key=api_key)
         sql = 'DELETE FROM user_key WHERE user_id = ?'
         self.con.execute(sql, (user_id,))
         # Create a new API key for the user and set the expiry date. The key
         # expires login_timeout seconds from now.
         api_key = util.get_unique_identifier()
-        expires = dt.datetime.now() + dt.timedelta(seconds=self.login_timeout)
         # Insert API key and expiry date into database and return the key
         sql = 'INSERT INTO user_key(user_id, api_key, expires) VALUES(?, ?, ?)'
-        self.con.execute(sql, (user_id, api_key, expires.isoformat()))
+        self.con.execute(sql, (user_id, api_key, ttl.isoformat()))
         self.con.commit()
         return UserHandle(identifier=user_id, name=name, api_key=api_key)
 

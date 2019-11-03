@@ -18,7 +18,38 @@ file to provide access to the file.
 import os
 from datetime import datetime
 
-from robcore.util import get_unique_identifier
+import robcore.util as util
+
+
+class FileDescriptor(object):
+    """Descriptor for an uploaded file. Contains the file identifier, name,
+    and the upload timestamp.
+    """
+    def __init__(self, identifier, name, created_at):
+        """Initialize the object properties.
+
+        Parameters
+        ----------
+        identifier: string
+            Unique file identifier
+        name: string
+            Name of the uploaded file
+        created_at: datetime.datetime
+            Timestamp of file upload (in UTC timezone)
+        """
+        self.identifier = identifier
+        self.name = name
+        self.created_at = created_at
+
+    def upload_time(self):
+        """Get string representation of the upload timestamp (created_at) in
+        local timezone.
+
+        Returns
+        -------
+        string
+        """
+        return util.to_localstr(date=self.created_at)
 
 
 class FileHandle(object):
@@ -40,7 +71,7 @@ class FileHandle(object):
             Base name of the file
         """
         self.filepath = os.path.abspath(filepath)
-        self.identifier = identifier if not identifier is None else get_unique_identifier()
+        self.identifier = identifier if not identifier is None else util.get_unique_identifier()
         self.file_name = file_name if not file_name is None else os.path.basename(self.filepath)
 
     @property

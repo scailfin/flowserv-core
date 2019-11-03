@@ -52,6 +52,12 @@ class RunSerializer(object):
             labels.CREATED_AT: run.state.created_at.isoformat(),
             labels.LINKS: hateoas.serialize(links)
         }
+        doc[labels.ARGUMENTS] = [
+            {
+                labels.ID: key,
+                labels.VALUE: run.arguments[key]
+            } for key in run.arguments
+        ]
         if not run.is_pending():
             doc[labels.STARTED_AT] = run.state.started_at.isoformat()
         if run.is_canceled() or run.is_error():
@@ -89,12 +95,6 @@ class RunSerializer(object):
         dict
         """
         doc = self.run_descriptor(run)
-        doc[labels.ARGUMENTS] = [
-            {
-                labels.ID: key,
-                labels.VALUE: run.arguments[key]
-            } for key in run.arguments
-        ]
         parameters = benchmark.template.parameters.values()
         doc[labels.PARAMETERS] = [p.to_dict() for p in parameters]
         return doc

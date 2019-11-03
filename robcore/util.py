@@ -16,6 +16,7 @@ import datetime
 import errno
 import json
 import os
+import time
 import uuid
 import yaml
 
@@ -68,6 +69,24 @@ def get_short_identifier():
     return get_unique_identifier()[:8]
 
 
+def from_utc_datetime(utc_datetime):
+    """Convert a timestamp in UTC time to local time. This code is based on
+    https://stackoverflow.com/questions/4770297/convert-utc-datetime-string-to-local-datetime
+
+    Parameters
+    ----------
+    utc_datetime: datetime.datetime
+        Timestamp in UTC timezone
+
+    Returns
+    -------
+    datetime.datetime
+    """
+    now_timestamp = time.time()
+    offset = datetime.datetime.fromtimestamp(now_timestamp) - datetime.datetime.utcfromtimestamp(now_timestamp)
+    return utc_datetime + offset
+
+
 def read_object(filename, format=None):
     """Load a Json object from a file. The file may either be in Yaml or in Json
     format.
@@ -113,7 +132,7 @@ def to_datetime(timestamp):
 
     Returns
     -------
-    datatime.datetime
+    datetime.datetime
         Datetime object
     """
     # Do nothing if the timestamp is None
@@ -124,6 +143,28 @@ def to_datetime(timestamp):
         return datetime.datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%f')
     except ValueError:
         return datetime.datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S')
+
+
+def to_localstr(date=None, text=None):
+    """Convert a date or string representation of a timestamp in UTC timezone
+    to local timezone. Removes the milli-seconds from the returned string.
+
+    Parameters
+    ----------
+    date: datetime.datetime, optional
+        Timestamp as datetime object
+    text: string, optional
+        Timestamp as string
+
+    Returns
+    -------
+    string
+    """
+    if not date is None:
+        ts = from_utc_datetime(date)
+    elif not text is None:
+        ts = from_utc_datetime(to_datetime(text))
+    return str(ts)[:-7]
 
 
 def validate_doc(doc, mandatory_labels=None, optional_labels=None):
