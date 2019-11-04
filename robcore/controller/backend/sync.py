@@ -103,7 +103,6 @@ class SyncWorkflowEngine(WorkflowController):
         if os.path.isdir(run_dir):
             raise err.DuplicateRunError(run_id)
         os.makedirs(run_dir)
-        print('run directory is {}'.format(run_dir))
         # Expand template parameters. Get (i) list of files that need to be
         # copied, (ii) the expanded commands that represent the workflow steps,
         # and (iii) the list of output files.

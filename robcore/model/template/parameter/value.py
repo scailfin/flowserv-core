@@ -74,6 +74,20 @@ class TemplateArgument(ParameterBase):
         if validate:
             self.validate()
 
+    def get_value(self):
+        """Get a scalar representation of the value. If the type of the argument
+        vaue is an input file the file's target path is returned. Otherwise, the
+        value is returned as is.
+
+        Returns
+        -------
+        string, int, or float
+        """
+        if isinstance(self.value, InputFile):
+            return self.value.target_path
+        else:
+            return self.value
+
     def validate(self):
         """Validate the argument value against the parameter declaration. This
         method does not return any value but it raises a ValueError if the
@@ -87,7 +101,7 @@ class TemplateArgument(ParameterBase):
             if not isinstance(self.value, bool):
                 raise ValueError('expected bool for \'{}\''.format(self.identifier))
         elif self.is_float():
-            if not isinstance(self.value, float):
+            if not isinstance(self.value, float) and not isinstance(self.value, int):
                 raise ValueError('expected float for \'{}\''.format(self.identifier))
         elif self.is_int():
             if not isinstance(self.value, int):

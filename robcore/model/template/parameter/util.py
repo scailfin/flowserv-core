@@ -169,6 +169,8 @@ def read_parameter(para, scanner, prompt_prefix='', files=None):
                 if para.has_constant() and para.as_input():
                     print('Target Path:', end='')
                     target_path = scanner.next_string()
+                    if target_path == '':
+                        target_path = para.default_value
                 return (filename, target_path)
             elif para.is_float():
                 return scanner.next_float(default_value=para.default_value)

@@ -227,6 +227,8 @@ class ResultSchema(object):
         -------
         list(robcore.model.template.schema.SortColumn)
         """
+        if len(self.order_by) > 0:
+            return self.order_by
         col = self.columns[0]
         return [SortColumn(identifier=col.identifier, sort_desc=True)]
 

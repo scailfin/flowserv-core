@@ -60,12 +60,19 @@ def commands(template, arguments):
         arguments=arguments,
         parameters=template.parameters
     )
+    # Add any workflow argument that is not contained in the modified parameter
+    # list as a workflow parameter that is available for replacement.
+    for key in arguments:
+        if not key in workflow_parameters:
+            workflow_parameters[key] = arguments[key].get_value()
     # Add all command stings in workflow steps to result after replacing
     # references to parameters
     result = list()
     spec = workflow_spec.get('workflow', {}).get('specification', {})
     for step in spec.get('steps', []):
         for cmd in step.get('commands', []):
+            if cmd.startswith('$[[') and cmd.endswith(']]'):
+                cmd = workflow_parameters[cmd[3:-2]]
             result.append(Template(cmd).substitute(workflow_parameters))
     return result
 
@@ -140,7 +147,7 @@ def run(run_dir, commands, output_files, verbose=False):
     robcore.model.workflow.state.WorkflowState
     """
     # Run workflow step-by-step
-    ts_start = datetime.now()
+    ts_start = datetime.utcnow()
     for cmd in commands:
         # Print command if verbose
         if verbose:
@@ -174,7 +181,7 @@ def run(run_dir, commands, output_files, verbose=False):
                     created_at=ts_start,
                     messages=[str(ex)]
                 )
-    ts_end = datetime.now()
+    ts_end = datetime.utcnow()
     # Create dictionary of output files
     files = dict()
     for resource_name in output_files:
