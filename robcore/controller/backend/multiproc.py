@@ -28,6 +28,7 @@ import robcore.controller.backend.sync as sync
 import robcore.controller.io as fileio
 import robcore.controller.run as runstore
 import robcore.controller.serial as serial
+import robcore.error as err
 import robcore.util as util
 
 
@@ -242,9 +243,9 @@ class MultiProcessWorkflowEngine(WorkflowController):
             # check the run state. We assume that it has been verified by the
             # caller that the task can be deleted.
             if run_id in self.tasks:
-                pool = tasks[run_id]
+                pool = self.tasks[run_id]
                 pool.close()
-                del tasks[run_id]
+                del self.tasks[run_id]
 
 
 # ------------------------------------------------------------------------------
