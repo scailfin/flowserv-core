@@ -51,7 +51,7 @@ match = re.search(r"^__version__\s*=\s*['\"]([^'\"]*)['\"]", filecontent, re.M)
 if not match is None:
     version = match.group(1)
 else:
-    raise RuntimeError("unable to find version string in %s." % (filecontent,))
+    raise RuntimeError('unable to find version string in %s.' % (filecontent,))
 
 
 # Get long project description text from the README.rst file
@@ -62,7 +62,7 @@ with open('README.rst', 'rt') as f:
 setup(
     name='rob-core',
     version=version,
-    description='Workflow Templates for Reproducible Open Benchmarks',
+    description='Reproducible Open Benchmarks for Data Analysis Platform (Core Infrastructure)',
     long_description=readme,
     long_description_content_type='text/x-rst',
     keywords='reproducibility benchmarks data analysis',
@@ -81,6 +81,7 @@ setup(
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python'

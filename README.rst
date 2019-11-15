@@ -21,8 +21,11 @@ The *Reproducible Open Benchmarks for Data Analysis Platform (ROB)* is an experi
 The goal of ROB is to allow benchmark participants to evaluate the performance of their algorithms in a controlled competition-style format. The overall architecture of ROB is shown below.
 
 .. figure:: https://github.com/scailfin/rob-core/blob/master/docs/figures/architecture.png
-   :scale: 50 %
-   :alt: ROB Architecture
+    :height: 604 px
+    :width: 530 px
+    :scale: 50 %
+    :align: center
+    :alt: ROB Architecture
 
    **Overview of the ROB architecture.**
 
