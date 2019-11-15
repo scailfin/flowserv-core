@@ -20,14 +20,14 @@ The *Reproducible Open Benchmarks for Data Analysis Platform (ROB)* is an experi
 
 The goal of ROB is to allow benchmark participants to evaluate the performance of their algorithms in a controlled competition-style format. The overall architecture of ROB is shown below.
 
-.. figure:: ./docs/figures/architecture.png
+.. figure:: https://github.com/scailfin/rob-core/blob/master/docs/figures/architecture.png
     :height: 604 px
     :width: 530 px
     :scale: 50 %
     :align: center
     :alt: ROB Architecture
 
-   **Overview of the ROB architecture.**
+    **Overview of the ROB architecture.**
 
 
 In ROB, the benchmark coordinator defines a workflow template along with input data. The template contains placeholders for workflow steps that are implemented by the benchmark participants (e.g., by providing Docker containers that satisfy the workflow steps). The ROB backend processes workflows on submission. Execution results are maintained in an internal database. The ROB user interface allows participants to submit new benchmark runs and to view the current leader board for the benchmark.
