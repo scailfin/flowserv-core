@@ -28,7 +28,7 @@ DIR = os.path.dirname(os.path.realpath(__file__))
 TEMPLATE_DIR = os.path.join(DIR, '../.files/benchmark/helloworld')
 
 # Mandatory labels for run handles
-RUN_LABELS = [labels.ID, labels.STATE, labels.CREATED_AT, labels.LINKS]
+RUN_LABELS = [labels.ID, labels.STATE, labels.CREATED_AT, labels.ARGUMENTS, labels.LINKS]
 RUN_HANDLE = RUN_LABELS + [labels.ARGUMENTS, labels.PARAMETERS]
 RUN_PENDING = RUN_HANDLE
 RUN_RUNNING = RUN_PENDING + [labels.STARTED_AT]

@@ -72,10 +72,10 @@ class TestUserAuthentication(object):
         # Re-login user 1 and authenticate
         user_1 = users.login_user(USER_1, USER_1)
         assert auth.authenticate(user_1.api_key).identifier == USER_1
-        # If a user logs in again all previous keys become invalid
+        # If a user logs in again the previous key does not become invalid
         user_3 = users.login_user(USER_1, USER_1)
-        with pytest.raises(err.UnauthenticatedAccessError):
-            auth.authenticate(user_1.api_key)
+        assert auth.authenticate(user_1.api_key).identifier == USER_1
+        assert auth.authenticate(user_3.api_key).identifier == USER_1
         # Attempt to authenticate unknown user raises error
         with pytest.raises(err.UnknownUserError):
             users.login_user('unknown', USER_1)

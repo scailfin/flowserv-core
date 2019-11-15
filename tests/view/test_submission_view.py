@@ -26,14 +26,19 @@ TEMPLATE_DIR = os.path.join(DIR, '../.files/benchmark/helloworld')
 
 # Mandatory submission descriptor (D), handle (H), and listing (L) labels
 DLABELS = [labels.ID, labels.NAME, labels.BENCHMARK, labels.LINKS]
-HLABELS = DLABELS + [labels.MEMBERS, labels.PARAMETERS]
+HLABELS = DLABELS + [labels.MEMBERS, labels.PARAMETERS, labels.RUNS, labels.FILES]
 LLABELS = [labels.SUBMISSIONS, labels.LINKS]
 
 # Mandatory labels for file handles
 FILE_HANDLE = [labels.ID, labels.NAME, labels.CREATED_AT, labels.FILESIZE, labels.LINKS]
 
 # Mandatory HATEOAS relationships in submission handles
-RELS = [hateoas.SELF, hateoas.action(hateoas.UPLOAD), hateoas.BENCHMARK]
+RELS = [
+    hateoas.SELF,
+    hateoas.action(hateoas.UPLOAD),
+    hateoas.action(hateoas.SUBMIT),
+    hateoas.BENCHMARK
+]
 RELSFH = [hateoas.action(hateoas.DOWNLOAD), hateoas.action(hateoas.DELETE)]
 
 

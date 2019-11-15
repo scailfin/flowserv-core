@@ -25,7 +25,11 @@ TEMPLATE_DIR = os.path.join(DIR, '../.files/benchmark/helloworld')
 USER_1 = util.get_unique_identifier()
 
 # Mandatory HATEOAS relationships in benchmark handles and descriptors
-RELS = [hateoas.SELF, hateoas.LEADERBOARD]
+RELS = [
+    hateoas.SELF,
+    hateoas.LEADERBOARD,
+    hateoas.action(hateoas.CREATE, resource=hateoas.SUBMISSIONS)
+]
 
 
 class TestBenchmarkView(object):

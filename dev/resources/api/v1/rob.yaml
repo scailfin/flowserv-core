@@ -1046,7 +1046,7 @@ definitions:
     required:
     - id
     - state
-    - parameters
+    - arguments
     - links
     properties:
       id:
@@ -1057,10 +1057,10 @@ definitions:
         type: string
       finishedAt:
         type: string
-      parameters:
+      arguments:
         type: array
         items:
-          $ref: '#/definitions/BenchmarkParameter'
+          $ref: "#/definitions/RunArgument"
       messages:
         type: array
         items:
