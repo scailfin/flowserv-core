@@ -2,17 +2,8 @@
 Reproducible Open Benchmarks for Data Analysis Platform
 =======================================================
 
-.. image:: https://img.shields.io/pypi/pyversions/rob-core.svg
-   :target: https://pypi.org/pypi/rob-core
-
-.. image:: https://api.travis-ci.org/scailfin/benchmark-templates.svg?branch=master
-   :target: https://travis-ci.org/scailfin/rob-core?branch=master
-
-.. image:: https://codecov.io/gh/scailfin/benchmark-templates/branch/master/graph/badge.svg
- :target: https://codecov.io/gh/scailfin/rob-core
-
 .. image:: https://img.shields.io/badge/License-MIT-yellow.svg
-   :target: https://github.com/scailfin/rob-core/blob/master/LICENSE
+    :target: https://github.com/scailfin/rob-core/blob/master/LICENSE
 
 
 

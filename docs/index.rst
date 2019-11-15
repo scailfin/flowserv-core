@@ -15,6 +15,9 @@ Welcome to Workflow Templates for Reproducible for Data Analysis Benchmarks's do
    readme
    workflow
    benchmark
+   configuration
+   parameters
+   api
 
 Indices and tables
 ==================

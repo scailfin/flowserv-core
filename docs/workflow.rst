@@ -48,7 +48,7 @@ What are Parameterized Workflow Templates?
 
 Similar to REANA workflow specifications, parameterized workflow templates are serialized in YAML or JSON format. Each template has two main elements: ``workflow`` and ``parameters``. The ``workflow`` element is mandatory and the ``parameters`` element is optional.
 
-The ``workflow`` element contains the workflow specification. The structure and syntax of this specification is dependent on the backend (engine) that is used to execute workflows. The workflow engine is for example specified as part of the configuration for the `Reproducible Benchmark Engine <https://github.com/scailfin/benchmark-engine>`_. If the benchmark engine uses the `REANA Workflow Engine <https://github.com/scailfin/benchmark-reana-backend>`_ for example, the workflow specification is expected to follow the the common syntax for REANA workflow specifications.
+The ``workflow`` element contains the workflow specification. The structure and syntax of this specification is dependent on the backend (engine) that is used to execute workflows. If the `REANA Workflow Engine <https://github.com/scailfin/benchmark-reana-backend>`_ is being used, the workflow specification is expected to follow the the common syntax for REANA workflow specifications.
 
 The ``parameters`` section defines those parts of a workflow that are variable with respect to user inputs. We refer to these are *template parameters*. Template parameters can for example be used to define input and output values for workflow steps or identify Docker container images that contain the code for individual workflow steps. The detailed parameter declarations are intended to be used by front-end tools to render forms that collect user input.
 
