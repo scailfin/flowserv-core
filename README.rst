@@ -5,6 +5,12 @@ Reproducible Open Benchmarks for Data Analysis Platform
 .. image:: https://img.shields.io/badge/License-MIT-yellow.svg
     :target: https://github.com/scailfin/rob-core/blob/master/LICENSE
 
+.. image:: https://github.com/scailfin/rob-core/workflows/build/badge.svg
+    :target: https://github.com/scailfin/rob-core/actions?query=workflow%3A%22build%22
+
+.. image:: https://codecov.io/gh/scailfin/rob-core/branch/master/graph/badge.svg
+    :target: https://codecov.io/gh/scailfin/rob-core
+
 
 
 About
