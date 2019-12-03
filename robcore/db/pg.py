@@ -40,7 +40,7 @@ class PostgresConnection(object):
     in SQLLite3 are dictionaries. There is also a difference in how the two
     databases handle SQL query parameters.
 
-    This wrapper object tires to emulate the SQLite3 behavior in order to be
+    This wrapper object attempts to emulate the SQLite3 behavior in order to be
     able to use the same code to interact with the underlying database
     independently of the database system.
 

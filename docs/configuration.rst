@@ -10,7 +10,7 @@ All components of the *Reproducible Open Benchmarks for Data Analysis Platform (
 API
 ---
 
-The following environment variables control the configuration of the **ROB** API. Note that the RESTful web services that provide access to the API via HTTP requests can use additional configuration parameters.
+The following environment variables control the configuration of the **ROB API**. Note that the RESTful Web services that provide access to the API via HTTP requests can use additional configuration parameters.
 
 The base directory where all API-related files are stored is specified using  the environment variable **ROB_API_DIR**. The default value is ``.rob``.
 
@@ -30,7 +30,7 @@ The environment variable **ROB_AUTH_TTL** is used to specify the time period (in
 Database
 --------
 
-Database connections are established using the environment variable **ROB_DBMS**  that determines the type of the database system that is used. **ROB** currently supports the following two database systems: `SQLite <https://sqlite.org/index.html>`_ (identified by either ``SQLITE`` or ``SQLITE3``) and `PostgreSQL <https://www.postgresql.org/>`_ (identified by ``POSTGRES``, ``POSTGRESQL``, ``PSQL``, or ``PG``).
+Database connections are established using the environment variable **ROB_DBMS**  that determines the type of the database system that is used. ROB currently supports the following two database systems: `SQLite <https://sqlite.org/index.html>`_ (identified by either ``SQLITE`` or ``SQLITE3``) and `PostgreSQL <https://www.postgresql.org/>`_ (identified by ``POSTGRES``, ``POSTGRESQL``, ``PSQL``, or ``PG``).
 
 Depending on the specified database system additional environment variables are used to specify database connection parameter.
 
@@ -38,7 +38,7 @@ Depending on the specified database system additional environment variables are 
 Connect to SQLite
 -----------------
 
-When using SQLite as the underlying database system for **ROB**, the environment variable **SQLITE_ROB_CONNECT** is expected to contain the path to the database file.
+When using SQLite as the underlying database system, the environment variable **SQLITE_ROB_CONNECT** is expected to contain the path to the database file.
 
 
 Connect to PostgreSQL
@@ -63,4 +63,3 @@ The benchmark engine uses a workflow controller to handle execution of benchmark
 - **ROB_ENGINE_MODULE**: The full name of the module that contains the implementation of the workflow controller interface
 
 The specified controller module is imported dynamically. Each implementation of the workflow controller may define additional environment variables that are required for configuration.
-
