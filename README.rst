@@ -36,10 +36,12 @@ More Information
 
 Workflow templates are motivated by the goal to allow users to run pre-defined data analytics workflows while providing their own input data, parameters, as well as their own code modules. Workflow templates are inspired by, but not limited to, workflow specifications for the `Reproducible Research Data Analysis Platform (REANA) <http://www.reanahub.io/>`_. The `Workflow Templates Section <https://github.com/scailfin/rob-core/blob/master/docs/workflow.rst>`_ provides further information about templates and their syntax. These templates are used by ROB to run benchmark workflows and to maintain benchmark results.
 
-The Reproducible Open Benchmarks API defines the main interface to programmatically interact with ROB. The API implementation that is included in this repository provides a default serialization of all API resources as Python dictionaries. The API is intended to be used by Web applications. These applications can be build using different frameworks. The `current default Web API implementation <https://github.com/scailfin/rob-wepapi-flask>`_ uses the `Flask web framework <https://flask.palletsprojects.com>`_.
+The Reproducible Open Benchmarks API defines the main interface to programmatically interact with ROB. The API implementation that is included in this repository provides a default serialization of all API resources as Python dictionaries. The API is intended to be used by Web applications. These applications can be build using different frameworks. The `current default Web API implementation <https://github.com/scailfin/rob-webapi-flask>`_ uses the `Flask web framework <https://flask.palletsprojects.com>`_.
 
 There currently exist two different interfaces to interact with a ROB Web API: the `Command Line Client <https://github.com/scailfin/rob-client>`_ and the `Web User Interface <https://github.com/scailfin/rob-ui>`_. See the respective repositories for further information on how to install and use these interfaces.
 
+
+For an overview of ROB there are `slides <https://github.com/scailfin/rob-core/blob/master/docs/slides/ROB-MSDSE2019.pdf>`_ from the ROB Demo at the `Moore-Sloan Data Science Environment's annual summit 2019 <https://sites.google.com/msdse.org/summit2019/home>`_ and our `presentation <https://indico.cern.ch/event/822074/contributions/3471463/attachments/1865533/3067815/Reproducible_Benchmarks_for_Data_Analysis-v3.pdf>`_ at the `Analysis Systems Topical Workshop <https://indico.cern.ch/event/822074/>`_.
 
 
 Note

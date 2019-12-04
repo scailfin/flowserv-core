@@ -65,7 +65,7 @@ setup(
     description='Reproducible Open Benchmarks for Data Analysis Platform (Core Infrastructure)',
     long_description=readme,
     long_description_content_type='text/x-rst',
-    keywords='reproducibility benchmarks data analysis',
+    keywords='reproducibility benchmarks data-analysis',
     url='https://github.com/scailfin/rob-core',
     author='Heiko Mueller',
     author_email='heiko.muller@gmail.com',

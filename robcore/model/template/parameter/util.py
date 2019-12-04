@@ -163,7 +163,7 @@ def read_parameter(para, scanner, prompt_prefix='', files=None):
                             fh.name,
                             fh.upload_time())
                         )
-                    print('\n> ', end='')
+                    print('\n{}: '.format(para.name), end='')
                 filename = scanner.next_file(default_value=para.default_value)
                 target_path = None
                 if para.has_constant() and para.as_input():
