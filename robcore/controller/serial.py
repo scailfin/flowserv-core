@@ -79,7 +79,10 @@ def commands(template, arguments):
 
 def modify_spec(workflow_spec, tmpl_parameters, add_parameters):
     """Modify a given workflow specification by adding the given parameters
-    to a given set of template parameters.
+    to a given set of template parameters. If a parameter in the add_parameters
+    list already exists the name, index, default value, the value list and the
+    required flag of the existing are overwritten by the values of the new
+    parameter.
 
     Returns the modified workflow specification and the modified parameter
     index. Raises an error if the parameter identifier in the resulting
@@ -100,7 +103,6 @@ def modify_spec(workflow_spec, tmpl_parameters, add_parameters):
 
     Raises
     ------
-    robcore.error.DuplicateParameterError
     robcore.error.InvalidTemplateError
     """
     # Get a copy of the files and parameters sections of the inputs declaration
@@ -111,17 +113,15 @@ def modify_spec(workflow_spec, tmpl_parameters, add_parameters):
     para_merge = dict(tmpl_parameters)
     for para in add_parameters.values():
         if para.identifier in para_merge:
-            raise err.DuplicateParameterError(para.identifier)
+            para = para_merge[para.identifier].merge(para)
         para_merge[para.identifier] = para
         # Depending on whether the type of the parameter is a file or not we
         # add a parameter reference to the respective input section
         if para.is_file():
             in_files.append('$[[{}]]'.format(para.identifier))
         else:
-            if para.identifier in in_params:
-                msg = 'duplicate parameter \'{}\' in input list'
-                raise err.InvalidTemplateError(msg.format(para.identifier))
-            in_params[para.identifier] = '$[[{}]]'.format(para.identifier)
+            if para.identifier not in in_params:
+                in_params[para.identifier] = '$[[{}]]'.format(para.identifier)
     spec = dict(workflow_spec)
     spec['inputs'] = {'files': in_files, 'parameters': in_params}
     return spec, para_merge

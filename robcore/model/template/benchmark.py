@@ -10,6 +10,8 @@
 repository.
 """
 
+from robcore.model.template.base import WorkflowTemplate
+
 
 class BenchmarkHandle(object):
     """Each benchmark is associated with a workflow template. The handle
@@ -81,9 +83,10 @@ class BenchmarkHandle(object):
         """
         return self.instructions if not self.instructions is None else ''
 
-    def get_template(self):
+    def get_template(self, workflow_spec=None, parameters=None):
         """Get associated workflow template. The template is loaded on-demand
-        if necessary.
+        if necessary. If either of the optional parameters are given, a modified
+        copy of the template is returned.
 
         Returns
         -------
@@ -92,6 +95,37 @@ class BenchmarkHandle(object):
         # Load template if None
         if self.template is None:
             self.template = self.repo.template_repo.get_template(self.identifier)
+        # If any of the optional parameters are given return a modified copy of
+        # the workflow template.
+        """    def __init__(
+                self, workflow_spec, source_dir, identifier=None, parameters=None,
+                result_schema=None
+            ):
+        """
+        if workflow_spec and parameters:
+            return WorkflowTemplate(
+                identifier=self.template.identifier,
+                workflow_spec=workflow_spec,
+                parameters=parameters,
+                source_dir=self.template.source_dir,
+                result_schema=self.template.result_schema,
+            )
+        elif workflow_spec:
+            return WorkflowTemplate(
+                identifier=self.template.identifier,
+                workflow_spec=workflow_spec,
+                parameters=self.template.parameters,
+                source_dir=self.template.source_dir,
+                result_schema=self.template.result_schema,
+            )
+        elif parameters:
+            return WorkflowTemplate(
+                identifier=self.template.identifier,
+                workflow_spec=self.template.workflow_spec,
+                parameters=parameters,
+                source_dir=self.template.source_dir,
+                result_schema=self.template.result_schema,
+            )
         return self.template
 
     def has_description(self):

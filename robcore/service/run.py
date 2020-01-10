@@ -225,8 +225,7 @@ class RunService(object):
         # Get the workflow template from the handle of the benchmark that the
         # run submission belongs to.
         submission = self.submissions.get_submission(run.submission_id)
-        benchmark = self.repo.get_benchmark(submission.benchmark_id)
-        return self.serialize.run_handle(run, benchmark)
+        return self.serialize.run_handle(run, submission)
 
     def list_runs(self, submission_id, user):
         """Get a listing of all run handles for the given submission.
@@ -298,9 +297,14 @@ class RunService(object):
         # is unknown.
         submission = self.submissions.get_submission(submission_id)
         # Get the workflow template from the handle of the benchmark that the
-        # submission belongs to.
+        # submission belongs to. Get a modified copy of the template based on
+        # the (potentially) modified workflow specification and parameters of
+        # the submission.
         benchmark = self.repo.get_benchmark(submission.benchmark_id)
-        template = benchmark.get_template()
+        template = benchmark.get_template(
+            workflow_spec=submission.workflow_spec,
+            parameters=submission.parameters
+        )
         # Create instances of the template arguments from the given list of
         # values. At this point we only distinguish between scalar values and
         # input files. Arguments of type record and list have to be added in a
@@ -352,4 +356,4 @@ class RunService(object):
             template=template,
             arguments=run_args
         )
-        return self.serialize.run_handle(run, benchmark)
+        return self.serialize.run_handle(run, submission)

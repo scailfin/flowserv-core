@@ -8,8 +8,6 @@
 
 """Test functionality of the serial workflow module."""
 
-import pytest
-
 import robcore.error as err
 import robcore.controller.serial as serial
 import robcore.model.template.parameter.declaration as pd
@@ -67,26 +65,25 @@ class TestSerialWorkflow(object):
         assert len(mod_para) == 5
         for key in ['inputfile', 'sleeptime', 'greeting', 'gtfile', 'waittime']:
             assert key in mod_para
-        # Error cases
-        # - Duplicate parameter
+        # - Duplicate parameters get merged. No error is raised.
         add_parameters = putil.create_parameter_index([
             pd.parameter_declaration('greeting', data_type=pd.DT_FILE),
             pd.parameter_declaration('waittime')
         ])
-        with pytest.raises(err.DuplicateParameterError):
-            mod_spec, mod_para = serial.modify_spec(
-                workflow_spec=workflow_spec,
-                tmpl_parameters=tmpl_parameters,
-                add_parameters=add_parameters
-            )
-        # - Invalid parameter list
-            add_parameters = putil.create_parameter_index([
-                pd.parameter_declaration('message'),
-                pd.parameter_declaration('waittime')
-            ])
-            with pytest.raises(err.InvalidTemplateError):
-                mod_spec, mod_para = serial.modify_spec(
-                    workflow_spec=workflow_spec,
-                    tmpl_parameters=tmpl_parameters,
-                    add_parameters=add_parameters
-                )
+        mod_spec, mod_para = serial.modify_spec(
+            workflow_spec=workflow_spec,
+            tmpl_parameters=tmpl_parameters,
+            add_parameters=add_parameters
+        )
+        assert 'waittime' in mod_para
+        add_parameters = putil.create_parameter_index([
+            pd.parameter_declaration('message'),
+            pd.parameter_declaration('waittime')
+        ])
+        mod_spec, mod_para = serial.modify_spec(
+            workflow_spec=workflow_spec,
+            tmpl_parameters=tmpl_parameters,
+            add_parameters=add_parameters
+        )
+        assert 'message' in mod_para
+        assert 'waittime' in mod_para

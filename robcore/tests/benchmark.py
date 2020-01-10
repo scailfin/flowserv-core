@@ -16,10 +16,11 @@ from robcore.model.template.schema import ResultColumn, ResultSchema
 from robcore.controller.backend.base import WorkflowController
 from robcore.model.workflow.resource import FileResource
 
+import robcore.controller.serial as serial
 import robcore.error as err
-import robcore.util as util
 import robcore.model.template.parameter.declaration as pd
 import robcore.model.workflow.state as st
+import robcore.util as util
 
 
 """Result schema for the default benchmark."""
@@ -186,6 +187,42 @@ class StateEngine(WorkflowController):
             return self.runs[run_id]
         else:
             raise err.UnknownRunError(run_id)
+
+    def modify_template(self, workflow_spec, tmpl_parameters, add_parameters):
+        """Modify a given workflow specification by adding the given parameters
+        to a given set of template parameters.
+
+        This function is dependent on the workflow specification syntax that is
+        supported by a workflow engine.
+
+        Returns the modified workflow specification and the modified parameter
+        index. Raises an error if the parameter identifier in the resulting
+        parameter index are no longer unique.
+
+        Parameters
+        ----------
+        workflow_spec: dict
+            Workflow specification
+        tmpl_parameters: dict(robcore.model.template.parameter.base.TemplateParameter)
+            Existing template parameters
+        add_parameters: dict(robcore.model.template.parameter.base.TemplateParameter)
+            Additional template parameters
+
+        Returns
+        -------
+        dict, dict(robcore.model.template.parameter.base.TemplateParameter)
+
+        Raises
+        ------
+        robcore.error.DuplicateParameterError
+        robcore.error.InvalidTemplateError
+        """
+        return serial.modify_spec(
+            workflow_spec=workflow_spec,
+            tmpl_parameters=tmpl_parameters,
+            add_parameters=add_parameters
+        )
+
 
     def remove_run(self, run_id):
         """Remove associated result files if the run is in success state.

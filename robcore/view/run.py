@@ -77,25 +77,26 @@ class RunSerializer(object):
             doc[labels.RESOURCES] = resources
         return doc
 
-    def run_handle(self, run, benchmark):
+    def run_handle(self, run, submission):
         """Get serialization for a run handle. The run handle contains the same
         information than the run descriptor. In addition, the run handle also
-        contains the run arguments and the parameter declaration for the
-        benchmark.
+        contains the run arguments and the parameter declaration taken from the
+        submission handle (since it may differ from the parameter list of
+        the benchmark).
 
         Parameters
         ----------
         run: robcore.model.workflow.run.RunHandle
             Submission handle
-        benchmark: robcore.model.template.benchmark.BenchmarkHandle
-            Benchmark handle
+        submission: robcore.model.submission.SubmissionHandle
+            Submission handle
 
         Returns
         -------
         dict
         """
         doc = self.run_descriptor(run)
-        parameters = benchmark.template.parameters.values()
+        parameters = submission.parameters.values()
         doc[labels.PARAMETERS] = [p.to_dict() for p in parameters]
         return doc
 

@@ -190,6 +190,32 @@ class TemplateParameter(ParameterBase):
         """
         return not self.as_constant is None
 
+    def merge(self, para):
+        """Merge the parameter with the values of a given parameter. This will
+        only affect the following parameter properties: name, description
+
+        Returns a modified copy of the parameter.
+
+        Parameters
+        ----------
+        para: robcore.model.template.parameter.base.TemplateParameter
+            Declaration of the modified parameter
+
+        Returns
+        -------
+        robcore.model.template.parameter.base.TemplateParameter
+        """
+        obj = dict(self.obj)
+        obj[pd.LABEL_NAME] = para.obj[pd.LABEL_NAME]
+        obj[pd.LABEL_DESCRIPTION] = para.obj[pd.LABEL_DESCRIPTION]
+        obj[pd.LABEL_INDEX] = para.obj[pd.LABEL_INDEX]
+        obj[pd.LABEL_REQUIRED] = para.obj[pd.LABEL_REQUIRED]
+        if pd.LABEL_DEFAULT in para.obj:
+            obj[pd.LABEL_DEFAULT] = para.obj[pd.LABEL_DEFAULT]
+        if pd.LABEL_VALUES in para.obj:
+            obj[pd.LABEL_VALUES] = para.obj[pd.LABEL_VALUES]
+        return TemplateParameter(obj=obj, children=self.children)
+
     def prompt(self):
         """Get default input prompt for the parameter declaration. The prompt
         contains an indication of the data type, the parameter name and the
