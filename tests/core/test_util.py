@@ -38,6 +38,37 @@ class TestUtilityMethods(object):
             assert dt.minute == 23
             assert dt.second == 19
 
+    def test_jquery(self):
+        """Test the Json query function."""
+        doc = {
+            'A': 1,
+            'B': 2,
+            'C': {
+                'D': 3,
+                'E': {
+                    'F': 4,
+                    'G': {
+                        'H': 5
+                    }
+                }
+            },
+            'I': {
+                'J': 4,
+                'K': [1, 2, 3]
+            }
+        }
+        assert util.jquery(doc=doc, path=['A']) == 1
+        assert util.jquery(doc=doc, path=['B']) == 2
+        assert util.jquery(doc=doc, path=['C', 'D']) == 3
+        assert util.jquery(doc=doc, path=['C', 'E', 'F']) == 4
+        assert util.jquery(doc=doc, path=['C', 'E', 'G']) == {'H': 5}
+        assert util.jquery(doc=doc, path=['I', 'K']) == [1, 2, 3]
+        assert util.jquery(doc=doc, path=['C', 'E', 'G', 'H']) == 5
+        assert util.jquery(doc=doc, path=['C', 'D', 'Z']) is None
+        assert util.jquery(doc=doc, path=['C', 'E', 'Z']) is None
+        assert util.jquery(doc=doc, path=['I', 'K', 'K']) is None
+        assert util.jquery(doc=doc, path=['Z']) is None
+
     def test_read_write_object(self, tmpdir):
         """Test reading and writing dictionary objects to file in Json format
         and in Yaml format.

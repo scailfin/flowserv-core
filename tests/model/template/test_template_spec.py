@@ -26,9 +26,10 @@ import robcore.model.template.util as tmplutil
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))
-BENCHMARK_YAML_FILE = os.path.join(DIR, '../../.files/benchmark/predictor.yaml')
+PREDICTOR_YAML_FILE = os.path.join(DIR, '../../.files/benchmark/predictor.yaml')
 TEMPLATE_JSON_FILE = os.path.join(DIR, '../../.files/template/template.json')
 TEMPLATE_YAML_FILE = os.path.join(DIR, '../../.files/template/template.yaml')
+TOPTAGGER_YAML_FILE = os.path.join(DIR, '../../.files/benchmark/top-tagger.yaml')
 # Benchmark templates with errors
 BENCHMARK_DIR = os.path.join(DIR, '../../.files/benchmark')
 BENCHMARK_ERR_1 = 'ERROR1'
@@ -40,11 +41,27 @@ BENCHMARK_ERR_4 = 'ERROR4'
 class TestWorkflowTemplate(object):
     """Unit tests for classes and methods in the template base module."""
     def test_benchmark(self):
-        """Test reading benchmark template with order by clause."""
-        doc = util.read_object(filename=BENCHMARK_YAML_FILE)
+        """Test reading benchmark template with order by clause and schema
+        path elements.
+        """
+        doc = util.read_object(filename=PREDICTOR_YAML_FILE)
         template = WorkflowTemplate.from_dict(doc, 'dev/null')
         assert len(template.parameters) == 1
         assert len(template.get_schema().order_by) == 2
+        schema = template.get_schema()
+        assert len(schema.columns) == 2
+        for col in schema.columns:
+            assert col.path is None
+            assert len(col.jpath()) == 1
+            assert col.jpath()[0] == col.identifier
+        doc = util.read_object(filename=TOPTAGGER_YAML_FILE)
+        template = WorkflowTemplate.from_dict(doc, 'dev/null')
+        assert len(template.parameters) == 4
+        schema = template.get_schema()
+        assert len(schema.columns) == 3
+        for col in schema.columns:
+            assert col.path is not None
+            assert len(col.jpath()) == 2
 
     def test_from_dict(self):
         """Test creating workflow template instances from dictionaries."""
