@@ -140,6 +140,7 @@ class TemplateParameter(ParameterBase):
         self.values = obj[pd.LABEL_VALUES] if pd.LABEL_VALUES in obj else None
         self.parent = obj[pd.LABEL_PARENT] if pd.LABEL_PARENT in obj else None
         self.as_constant = obj[pd.LABEL_AS] if pd.LABEL_AS in obj else None
+        self.module = obj[pd.LABEL_MODULE] if pd.LABEL_MODULE in obj else None
         self.children = children
 
     def add_child(self, para):
@@ -214,6 +215,8 @@ class TemplateParameter(ParameterBase):
             obj[pd.LABEL_DEFAULT] = para.obj[pd.LABEL_DEFAULT]
         if pd.LABEL_VALUES in para.obj:
             obj[pd.LABEL_VALUES] = para.obj[pd.LABEL_VALUES]
+        if pd.LABEL_MODULE in para.obj:
+            obj[pd.LABEL_MODULE] = para.obj[pd.LABEL_MODULE]
         return TemplateParameter(obj=obj, children=self.children)
 
     def prompt(self):

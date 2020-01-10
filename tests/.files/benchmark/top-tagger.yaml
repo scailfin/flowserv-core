@@ -27,6 +27,7 @@ parameters:
       datatype: 'string'
       defaultValue: 'python:3.7'
       index: 0
+      module: 'preproc'
     - id: 'cmdPreProc'
       name: 'Command  (Pre-Processing)'
       datatype: 'string'
@@ -36,11 +37,13 @@ parameters:
         data/preprocess/transformer.pkl
         results/'
       index: 1
+      module: 'preproc'
     - id: 'envML'
       name: 'Environment (ML)'
       datatype: 'string'
       defaultValue: 'python:3.7'
       index: 2
+      module: 'eval'
     - id: 'cmdML'
       name: 'Command (ML)'
       datatype: 'string'
@@ -49,6 +52,14 @@ parameters:
         data/evaluate/
         results'
       index: 3
+      module: 'eval'
+modules:
+    - id: 'preproc'
+      name: 'Pre-Processing Step'
+      index: 0
+    - id: 'eval'
+      name: 'ML Evaluation Step'
+      index: 1
 results:
     file: 'results/results.json'
     schema:

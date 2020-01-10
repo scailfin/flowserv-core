@@ -37,6 +37,27 @@ LABEL_RESULTS = 'results'
 LABEL_WORKFLOW = 'workflow'
 
 
+class WorkflowModuleHandle(object):
+    """Handle for specifications of workflow modules that are used to group
+    workflow parameters.
+    """
+    def __init__(self, identifier, name, index):
+        """Initialize the object properties.
+
+        Parameters
+        ----------
+        identifier: string
+            Unique module identifier
+        name: string
+            Human-readable module name
+        index: int
+            Module sort order index
+        """
+        self.identifier = identifier
+        self.name = name
+        self.index = index
+
+
 class WorkflowTemplate(object):
     """Workflow templates are parameterized workflow specifications. Each
     template has a unique identifier.
@@ -54,7 +75,7 @@ class WorkflowTemplate(object):
     """
     def __init__(
         self, workflow_spec, source_dir, identifier=None, parameters=None,
-        result_schema=None
+        result_schema=None, modules=None
     ):
         """Initialize the components of the workflow template. A ValueError is
         raised if the identifier of template parameters are not unique.
@@ -73,6 +94,8 @@ class WorkflowTemplate(object):
             their unique identifier.
         result_schema: robcore.model.template.schema.ResultSchema
             Schema of the result for extended templates that define benchmarks.
+        modules: list(robcore.module.template.base.WorkflowModuleHandle), optional
+            List of workflow modules that group template parameters
 
         Raises
         ------
@@ -111,6 +134,7 @@ class WorkflowTemplate(object):
             self.parameters = dict()
         # Schema declaration for benchmark results. The schema may be None.
         self.result_schema = result_schema
+        self.modules = modules
 
     @staticmethod
     def from_dict(doc, source_dir, identifier=None, validate=True):

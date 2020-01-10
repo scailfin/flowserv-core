@@ -31,6 +31,7 @@ LABEL_DESCRIPTION = 'description'
 LABEL_ID = 'id'
 LABEL_IS_DEFAULT = 'isDefault'
 LABEL_INDEX = 'index'
+LABEL_MODULE = 'module'
 LABEL_NAME = 'name'
 LABEL_PARENT = 'parent'
 LABEL_REQUIRED = 'required'
@@ -69,6 +70,7 @@ PARAMETER_SCHEMA = {
             {'type': 'number'}
         ]},
         LABEL_INDEX: {'type': 'number'},
+        LABEL_MODULE: {'type': 'string'},
         LABEL_AS: {'type': 'string'}
     },
     'required': [LABEL_ID]
@@ -131,7 +133,7 @@ def enum_value(value, text=None, is_default=False):
 def parameter_declaration(
         identifier, name=None, data_type=DT_STRING, description=None, index=0,
         required=True, values=None, parent=None, default_value=None,
-        as_const=None
+        module=None, as_const=None
     ):
     """Create a dictionary that contains a module parameter specification.
 
@@ -158,6 +160,8 @@ def parameter_declaration(
         List of valid parameter values (for selection in a front-end form)
     parent: string, optional
         Identifier of a grouping element
+    module: string, optional
+        Identifier of the module the parameter belongs to
     default_value: bool, string, number, optional
         Optional default value for a scalar parameter. Default values for file
         parameters are ignored.
@@ -179,24 +183,26 @@ def parameter_declaration(
         raise InvalidParameterError('invalid parameter data type \'{}\''.format(data_type))
     para = {
         LABEL_ID: identifier,
-        LABEL_NAME: name if not name is None else identifier,
+        LABEL_NAME: name if name is not None else identifier,
         LABEL_DATATYPE: data_type,
         LABEL_INDEX: index,
         LABEL_REQUIRED: required
     }
     # Set optional properties
-    if not description is None:
+    if description is not None:
         para[LABEL_DESCRIPTION] = description
     else:
         para[LABEL_DESCRIPTION] = para[LABEL_NAME]
-    if not values is None:
+    if values is not None:
         para[LABEL_VALUES] = values
-    if not parent is None:
+    if parent is not None:
         para[LABEL_PARENT] = parent
-    if not as_const is None:
+    if as_const is not None:
         para[LABEL_AS] = as_const
-    if not default_value is None:
+    if default_value is not None:
         para[LABEL_DEFAULT] = default_value
+    if module is not None:
+        para[LABEL_MODULE] = module
     return para
 
 
