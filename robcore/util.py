@@ -87,6 +87,36 @@ def from_utc_datetime(utc_datetime):
     return utc_datetime + offset
 
 
+def jquery(doc, path):
+    """Json query to extract the value at the given path in a nested dictionary
+    object.
+
+    Returns None if the element that is specified by the path does not exist.
+
+    Parameters
+    ----------
+    doc: dict
+        Nested dictionary
+    path: list(string)
+        List of elements in the query path
+
+    Returns
+    -------
+    any
+    """
+    if not path or not doc or not isinstance(doc, dict):
+        # If the path or document is empty or the document is not a dictionary
+        # return None.
+        return None
+    elif len(path) == 1:
+        # If there is only one element in the path return the assocuated value
+        # or None if the element does not exist
+        return doc.get(path[0])
+    else:
+        # Recursively traverse the document
+        return jquery(doc=doc.get(path[0], dict()), path=path[1:])
+
+
 def read_object(filename, format=None):
     """Load a Json object from a file. The file may either be in Yaml or in Json
     format.

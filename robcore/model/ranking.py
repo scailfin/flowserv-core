@@ -256,14 +256,12 @@ def insert_run_results(con, run_id, files, commit_changes=True):
         columns = list(['run_id'])
         values = list([run_id])
         for col in schema.columns:
-            if col.identifier in results:
-                values.append(results[col.identifier])
-            elif col.required:
+            val = util.jquery(doc=results, path=col.jpath())
+            if val is None and col.required:
                 msg = 'missing value for \'{}\''
                 raise err.ConstraintViolationError(msg.format(col.identifier))
-            else:
-                values.append(None)
             columns.append(col.identifier)
+            values.append(val)
         # Execute insert statement (does not commit changes).
         sql = 'INSERT INTO {}({}) VALUES({})'.format(
              RESULT_TABLE(row['benchmark_id']),

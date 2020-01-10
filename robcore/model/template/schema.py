@@ -24,6 +24,7 @@ DATA_TYPES = [pd.DT_DECIMAL, pd.DT_INTEGER, pd.DT_STRING]
 # Column specification
 COLUMN_ID = 'id'
 COLUMN_NAME = 'name'
+COLUMN_PATH = 'path'
 COLUMN_REQUIRED = 'required'
 COLUMN_TYPE = 'type'
 # Leader board default sort order
@@ -39,11 +40,16 @@ class ResultColumn(object):
     """Column in the result schema of a benchmark. Each column has a unique
     identifier and unique name. The identifier is used as column name in the
     database schema. The name is for display purposes in a user interface.
+    The optional path element is used to extract the column value from nested
+    result files.
     """
-    def __init__(self, identifier, name, data_type, required=None):
+    def __init__(self, identifier, name, data_type, path=None, required=None):
         """Initialize the unique column identifier, name, and the data type. If
         the value of data_type is not in the list of supported data types an
         error is raised.
+
+        The optional path element references the column value in nested result
+        files. If no path is given the column identifier is used instead.
 
         Parameters
         ----------
@@ -53,6 +59,8 @@ class ResultColumn(object):
             Unique column name
         data_type: string
             Data type identifier
+        path: string, optional
+            Path to column value in nested result files.
         required: bool, optional
             Indicates whether a value is expected for this column in every
             benchmark run result
@@ -68,7 +76,8 @@ class ResultColumn(object):
         self.identifier = identifier
         self.name = name
         self.data_type = data_type
-        self.required = required if not required is None else True
+        self.path = path
+        self.required = required if required is not None else True
 
     @staticmethod
     def from_dict(doc):
@@ -94,7 +103,7 @@ class ResultColumn(object):
             util.validate_doc(
                 doc,
                 mandatory_labels=[COLUMN_ID, COLUMN_NAME, COLUMN_TYPE],
-                optional_labels=[COLUMN_REQUIRED]
+                optional_labels=[COLUMN_PATH, COLUMN_REQUIRED]
             )
         except ValueError as ex:
             raise err.InvalidTemplateError(str(ex))
@@ -103,8 +112,24 @@ class ResultColumn(object):
             identifier=doc[COLUMN_ID],
             name=doc[COLUMN_NAME],
             data_type=doc[COLUMN_TYPE],
+            path=doc.get(COLUMN_PATH),
             required=doc.get(COLUMN_REQUIRED)
         )
+
+    def jpath(self):
+        """The Json path for a result column is a list of element keys that
+        reference the column value in a nested document. If the internal path
+        variable is not set the column identifier is returned as the only
+        element in the path.
+
+        Returns
+        -------
+        list(string)
+        """
+        if self.path is not None:
+            return self.path.split('/')
+        else:
+            return list([self.identifier])
 
     def to_dict(self):
         """Get dictionary serialization for the column object.
@@ -113,12 +138,16 @@ class ResultColumn(object):
         -------
         dict
         """
-        return {
+        doc = {
             COLUMN_ID: self.identifier,
             COLUMN_NAME: self.name,
             COLUMN_TYPE: self.data_type,
             COLUMN_REQUIRED: self.required
         }
+        # Add the path expression if it is given
+        if self.path is not None:
+            doc[COLUMN_PATH] = self.path
+        return doc
 
 
 class ResultSchema(object):
