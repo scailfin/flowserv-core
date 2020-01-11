@@ -61,6 +61,7 @@ class WorkflowModuleHandle(object):
         self.name = name
         self.index = index
 
+    @staticmethod
     def from_dict(doc):
         """Create object instance from dictionary serializarion.
 
