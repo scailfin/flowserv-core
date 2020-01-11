@@ -20,19 +20,17 @@ from functools import partial
 from multiprocessing import Lock, Pool
 
 from robcore.db.driver import DatabaseDriver
-from robcore.controller.backend.base import WorkflowController
+from robcore.controller.backend.base import BaseWorkflowController
 from robcore.model.workflow.state import StatePending
 
-import robcore.config.engine as config
 import robcore.controller.backend.sync as sync
 import robcore.controller.io as fileio
 import robcore.controller.run as runstore
 import robcore.controller.serial as serial
 import robcore.error as err
-import robcore.util as util
 
 
-class MultiProcessWorkflowEngine(WorkflowController):
+class MultiProcessWorkflowEngine(BaseWorkflowController):
     """The workflow engine is used to execute workflow templates for a given
     set of arguments. Each workflow is executed as a serial workflow in a
     separate process.
@@ -53,26 +51,15 @@ class MultiProcessWorkflowEngine(WorkflowController):
         verbose: bool, optional
             Print command strings to STDOUT during workflow execution
         """
-        # Set base directory and ensure that it exists
-        if not base_dir is None:
-            self.base_dir = util.create_dir(base_dir)
-        else:
-             self.base_dir = util.create_dir(config.ENGIN_BASEDIR())
+        super(MultiProcessWorkflowEngine, self).__init__(
+            base_dir=base_dir,
+            is_async=True
+        )
         self.verbose = verbose
         # Dictionary of all running tasks
         self.tasks = dict()
         # Lock to manage asynchronous access to the task dictionary
         self.lock = Lock()
-
-    def asynchronous_events(self):
-        """The workflow controller will update the underlying database whenever
-        the state of an executed workflow changes.
-
-        Returns
-        -------
-        bool
-        """
-        return True
 
     def cancel_run(self, run_id):
         """Request to cancel execution of the given run. This method is usually
@@ -174,78 +161,6 @@ class MultiProcessWorkflowEngine(WorkflowController):
             state = state.error(messages=[message])
         # Return the workflow state
         return state
-
-    def get_run_dir(self, run_id):
-        """Get the path to directory that stores the run files.
-
-        Parameters
-        ----------
-        run_id: string
-            Unique run identifier
-
-        Returns
-        -------
-        string
-        """
-        return os.path.join(self.base_dir, run_id)
-
-    def modify_template(self, workflow_spec, tmpl_parameters, add_parameters):
-        """Modify a given workflow specification by adding the given parameters
-        to a given set of template parameters.
-
-        This function is dependent on the workflow specification syntax that is
-        supported by a workflow engine.
-
-        Returns the modified workflow specification and the modified parameter
-        index. Raises an error if the parameter identifier in the resulting
-        parameter index are no longer unique.
-
-        Parameters
-        ----------
-        workflow_spec: dict
-            Workflow specification
-        tmpl_parameters: dict(robcore.model.template.parameter.base.TemplateParameter)
-            Existing template parameters
-        add_parameters: dict(robcore.model.template.parameter.base.TemplateParameter)
-            Additional template parameters
-
-        Returns
-        -------
-        dict, dict(robcore.model.template.parameter.base.TemplateParameter)
-
-        Raises
-        ------
-        robcore.error.DuplicateParameterError
-        robcore.error.InvalidTemplateError
-        """
-        return serial.modify_spec(
-            workflow_spec=workflow_spec,
-            tmpl_parameters=tmpl_parameters,
-            add_parameters=add_parameters
-        )
-
-    def remove_run(self, run_id):
-        """Remove all files and directories that belong to the run with the
-        given identifier. This method does not verify that the task is in an
-        inactive state. It is assume that the constraint has been checked by
-        the caller.
-
-        Parameters
-        ----------
-        run_id: string
-            Unique run identifier
-        """
-        run_dir = self.get_run_dir(run_id)
-        if os.path.isdir(run_dir):
-            shutil.rmtree(run_dir)
-        with self.lock:
-            # Remove the task if it is still in the index list. Here we do not
-            # check the run state. We assume that it has been verified by the
-            # caller that the task can be deleted.
-            if run_id in self.tasks:
-                pool = self.tasks[run_id]
-                pool.close()
-                del self.tasks[run_id]
 
 
 # ------------------------------------------------------------------------------

@@ -23,8 +23,17 @@ also responsible for retrieving output files and for providing access to these
 files.
 """
 
+import os
+import shutil
+
 from abc import abstractmethod
 
+import robcore.config.engine as config
+import robcore.controller.serial as serial
+import robcore.util as util
+
+
+# -- Controller Interface ------------------------------------------------------
 
 class WorkflowController(object):
     """The workflow controller is used to start execution of workflow templates
@@ -152,3 +161,97 @@ class WorkflowController(object):
         robcore.error.UnknownRunError
         """
         raise NotImplementedError()
+
+
+# -- Default Abstract Container ------------------------------------------------
+
+class BaseWorkflowController(WorkflowController):
+    """Abstract class that implements the base methods for a workflow controller
+    that maintains run files in separate run folders on the local disk.
+    """
+    def __init__(self, base_dir=None, is_async=True):
+        """Initialize the base directory under which all workflow runs are
+        maintained. If the directory does not exist it will be created.
+
+        Parameters
+        ----------
+        base_dir: string
+            Path to directory on disk
+        verbose: bool, optional
+            Print command strings to STDOUT during workflow execution
+        """
+        # Set base directory and ensure that it exists
+        if not base_dir is None:
+            self.base_dir = util.create_dir(base_dir)
+        else:
+             self.base_dir = util.create_dir(config.ENGIN_BASEDIR())
+        self.is_async = is_async
+
+    def asynchronous_events(self):
+        """The workflow controller will update the underlying database whenever
+        the state of an executed workflow changes.
+
+        Returns
+        -------
+        bool
+        """
+        return self.is_async
+
+    def get_run_dir(self, run_id):
+        """Get the path to directory that stores the run files.
+
+        Parameters
+        ----------
+        run_id: string
+            Unique run identifier
+
+        Returns
+        -------
+        string
+        """
+        return os.path.join(self.base_dir, run_id)
+
+    def modify_template(self, workflow_spec, tmpl_parameters, add_parameters):
+        """Modify a given workflow specification by adding the given parameters
+        to a given set of template parameters.
+
+        This function is dependent on the workflow specification syntax that is
+        supported by a workflow engine.
+
+        Returns the modified workflow specification and the modified parameter
+        index. Raises an error if the parameter identifier in the resulting
+        parameter index are no longer unique.
+
+        Parameters
+        ----------
+        workflow_spec: dict
+            Workflow specification
+        tmpl_parameters: dict(robcore.model.template.parameter.base.TemplateParameter)
+            Existing template parameters
+        add_parameters: dict(robcore.model.template.parameter.base.TemplateParameter)
+            Additional template parameters
+
+        Returns
+        -------
+        dict, dict(robcore.model.template.parameter.base.TemplateParameter)
+        """
+        return serial.modify_spec(
+            workflow_spec=workflow_spec,
+            tmpl_parameters=tmpl_parameters,
+            add_parameters=add_parameters
+        )
+
+    def remove_run(self, run_id):
+        """Remove all files and directories that belong to the run with the
+        given identifier. This method does not verify that the task is in an
+        inactive state. It is assume that the constraint has been checked by
+        the caller.
+
+        Parameters
+        ----------
+        run_id: string
+            Unique run identifier
+        """
+        run_dir = self.get_run_dir(run_id)
+        if os.path.isdir(run_dir):
+            shutil.rmtree(run_dir)
