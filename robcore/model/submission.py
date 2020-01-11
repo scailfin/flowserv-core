@@ -218,7 +218,8 @@ class SubmissionHandle(object):
                 source_dir=template.source_dir,
                 workflow_spec=self.workflow_spec,
                 parameters=self.parameters,
-                result_schema=template.result_schema
+                result_schema=template.result_schema,
+                modules=template.modules
             )
         )
 

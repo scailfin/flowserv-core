@@ -850,6 +850,21 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/BenchmarkParameter'
+      modules:
+        type: array
+        items:
+          type: object
+          required:
+            - id
+            - name
+            - index
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+            index:
+              type: number
       links:
         $ref: "#/definitions/HATEOASLinks"
   BenchmarkLeaderboard:

@@ -109,6 +109,7 @@ class BenchmarkHandle(object):
                 parameters=parameters,
                 source_dir=self.template.source_dir,
                 result_schema=self.template.result_schema,
+                modules=self.template.modules
             )
         elif workflow_spec:
             return WorkflowTemplate(
@@ -117,6 +118,7 @@ class BenchmarkHandle(object):
                 parameters=self.template.parameters,
                 source_dir=self.template.source_dir,
                 result_schema=self.template.result_schema,
+                modules=self.template.modules
             )
         elif parameters:
             return WorkflowTemplate(
@@ -125,6 +127,7 @@ class BenchmarkHandle(object):
                 parameters=parameters,
                 source_dir=self.template.source_dir,
                 result_schema=self.template.result_schema,
+                modules=self.template.modules
             )
         return self.template
 

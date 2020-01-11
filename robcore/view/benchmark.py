@@ -78,6 +78,16 @@ class BenchmarkSerializer(object):
         # Add parameter declarations to the serialized benchmark descriptor
         parameters = benchmark.template.parameters.values()
         obj[labels.PARAMETERS] = [p.to_dict() for p in parameters]
+        # Add module definitions if given
+        modules = benchmark.template.modules
+        if modules is not None:
+            obj[labels.MODULES] = [
+                {
+                    labels.ID: m.identifier,
+                    labels.NAME: m.name,
+                    labels.INDEX: m.index
+                } for m in modules]
+        modules
         return obj
 
     def benchmark_leaderboard(self, benchmark_id, ranking):

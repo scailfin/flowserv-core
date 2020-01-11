@@ -79,7 +79,8 @@ class TestBenchmarkView(object):
                 labels.ID,
                 labels.NAME,
                 labels.LINKS,
-                labels.PARAMETERS
+                labels.PARAMETERS,
+                labels.MODULES
             ]
         )
         serialize.validate_links(r, RELS)
@@ -108,7 +109,8 @@ class TestBenchmarkView(object):
                 labels.NAME,
                 labels.DESCRIPTION,
                 labels.LINKS,
-                labels.PARAMETERS
+                labels.PARAMETERS,
+                labels.MODULES
             ]
         )
         serialize.validate_links(r, RELS)
@@ -121,7 +123,8 @@ class TestBenchmarkView(object):
                 labels.DESCRIPTION,
                 labels.INSTRUCTIONS,
                 labels.LINKS,
-                labels.PARAMETERS
+                labels.PARAMETERS,
+                labels.MODULES
             ]
         )
         serialize.validate_links(r, RELS)

@@ -11,6 +11,7 @@
 # Common resource labels
 DATA_TYPE = 'type'
 ID = 'id'
+INDEX = 'index'
 NAME = 'name'
 STATE = 'state'
 VERSION = 'version'
@@ -25,6 +26,7 @@ FINISHED_AT = 'finishedAt'
 BENCHMARKS = 'benchmarks'
 DESCRIPTION = 'description'
 INSTRUCTIONS = 'instructions'
+MODULES = 'modules'
 PARAMETERS = 'parameters'
 
 # Benchmark leaderboard

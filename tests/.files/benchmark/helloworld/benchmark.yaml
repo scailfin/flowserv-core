@@ -39,6 +39,10 @@ parameters:
     - id: greeting
       datatype: string
       defaultValue: 'Hello'
+modules:
+    - id: 'main'
+      name: 'Main Step'
+      index: 0
 results:
     file: 'results/analytics.json'
     schema:

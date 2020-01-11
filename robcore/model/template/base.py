@@ -32,9 +32,13 @@ import robcore.model.template.util as tmplutil
 
 """Top-level elements of dictionary serialization for template handles."""
 LABEL_ID = 'id'
+LABEL_MODULES = 'modules'
 LABEL_PARAMETERS = 'parameters'
 LABEL_RESULTS = 'results'
 LABEL_WORKFLOW = 'workflow'
+# Additional labels for workflw module handles
+LABEL_INDEX = 'index'
+LABEL_NAME = 'name'
 
 
 class WorkflowModuleHandle(object):
@@ -56,6 +60,45 @@ class WorkflowModuleHandle(object):
         self.identifier = identifier
         self.name = name
         self.index = index
+
+    def from_dict(doc):
+        """Create object instance from dictionary serializarion.
+
+        Parameters
+        ----------
+        doc: dict
+            Dictionary serialization for workflow module handles
+
+        Returns
+        -------
+        robcore.module.template.base.WorkflowModuleHandle
+
+        Raises
+        ------
+        ValueError
+        """
+        util.validate_doc(
+            doc,
+            mandatory_labels=[LABEL_ID, LABEL_NAME, LABEL_INDEX]
+        )
+        return WorkflowModuleHandle(
+            identifier=doc[LABEL_ID],
+            name=doc[LABEL_NAME],
+            index=doc[LABEL_INDEX]
+        )
+
+    def to_dict(self):
+        """Get dictionary serialization for workflow module handle.
+
+        Returns
+        -------
+        dict
+        """
+        return {
+            LABEL_ID: self.identifier,
+            LABEL_NAME: self.name,
+            LABEL_INDEX: self.index
+        }
 
 
 class WorkflowTemplate(object):
@@ -190,6 +233,12 @@ class WorkflowTemplate(object):
             for key in tmplutil.get_parameter_references(workflow_spec):
                 if not key in parameters:
                     raise err.UnknownParameterError(key)
+        # Add module information if given
+        modules = None
+        if LABEL_MODULES in doc:
+            modules = [
+                WorkflowModuleHandle.from_dict(m) for m in doc[LABEL_MODULES]
+            ]
         # Get schema object from serialization if present
         schema = None
         if LABEL_RESULTS in doc:
@@ -203,7 +252,8 @@ class WorkflowTemplate(object):
             workflow_spec=workflow_spec,
             source_dir=source_dir,
             parameters=parameters,
-            result_schema=schema
+            result_schema=schema,
+            modules=modules
         )
 
     def get_parameter(self, identifier):
@@ -267,7 +317,9 @@ class WorkflowTemplate(object):
             doc[LABEL_PARAMETERS] = [
                 p.to_dict() for p in self.parameters.values()
             ]
-        if not self.result_schema is None:
+        if self.modules is not None:
+            doc[LABEL_MODULES] = [m.to_dict() for m in self.modules]
+        if self.result_schema is not None:
             doc[LABEL_RESULTS] = self.result_schema.to_dict()
         # Return the template serialization
         return doc
