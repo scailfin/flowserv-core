@@ -327,7 +327,7 @@ class StateRunning(WorkflowState):
 
         Parameters
         ----------
-        files: dict(robcore.model.workflow.resource.FileResource), optional
+        files: dict(robcore.model.resource.FileResource), optional
             Optional dictionary of created files
 
         Returns
@@ -359,7 +359,7 @@ class StateSuccess(WorkflowState):
             Timestamp when the workflow started running
         finished_at: datetime.datetime, optional
             Timestamp when workflow execution completed
-        files: list or dict(robcore.model.workflow.resource.FileResource), optional
+        files: list or dict(robcore.model.resource.FileResource), optional
             Optional dictionary of created files
 
         Raises
@@ -395,7 +395,7 @@ class StateSuccess(WorkflowState):
 
         Returns
         -------
-        robcore.model.workflow.resource.FileResource
+        robcore.model.resource.FileResource
         """
         return self.files.get(identifier)
 
@@ -405,6 +405,6 @@ class StateSuccess(WorkflowState):
 
         Returns
         -------
-        list(robcore.model.workflow.resource.FileResource)
+        list(robcore.model.resource.FileResource)
         """
         return self.files.values()

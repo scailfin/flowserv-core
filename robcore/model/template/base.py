@@ -22,6 +22,7 @@ the modified workflow specification in which references to template parameters
 have been replaced by parameter values.
 """
 
+from robcore.model.template.command import PostProcessingStep
 from robcore.model.template.schema import ResultSchema
 
 import robcore.error as err
@@ -34,9 +35,10 @@ import robcore.model.template.util as tmplutil
 LABEL_ID = 'id'
 LABEL_MODULES = 'modules'
 LABEL_PARAMETERS = 'parameters'
+LABEL_POSTPROCESSING = 'postproc'
 LABEL_RESULTS = 'results'
 LABEL_WORKFLOW = 'workflow'
-# Additional labels for workflw module handles
+# Additional labels for workflow module handles
 LABEL_INDEX = 'index'
 LABEL_NAME = 'name'
 
@@ -119,7 +121,7 @@ class WorkflowTemplate(object):
     """
     def __init__(
         self, workflow_spec, source_dir, identifier=None, parameters=None,
-        result_schema=None, modules=None
+        modules=None, postproc_task=None, result_schema=None
     ):
         """Initialize the components of the workflow template. A ValueError is
         raised if the identifier of template parameters are not unique.
@@ -136,10 +138,12 @@ class WorkflowTemplate(object):
         parameters: dict(string:robcore.model.template.parameter.base.TemplateParameter), optional
             Dictionary of workflow template parameter declarations keyed by
             their unique identifier.
-        result_schema: robcore.model.template.schema.ResultSchema
-            Schema of the result for extended templates that define benchmarks.
         modules: list(robcore.module.template.base.WorkflowModuleHandle), optional
             List of workflow modules that group template parameters
+        postproc_task: robcore.model.template.command.PostProcessingStep, optional
+            Optional workflow post-processing step
+        result_schema: robcore.model.template.schema.ResultSchema
+            Schema of the result for extended templates that define benchmarks.
 
         Raises
         ------
@@ -176,9 +180,10 @@ class WorkflowTemplate(object):
                         raise err.InvalidTemplateError(msg)
         else:
             self.parameters = dict()
-        # Schema declaration for benchmark results. The schema may be None.
-        self.result_schema = result_schema
+        # Optional components (may be None)
         self.modules = modules
+        self.postproc_task = postproc_task
+        self.result_schema = result_schema
 
     @staticmethod
     def from_dict(doc, source_dir, identifier=None, validate=True):
@@ -217,8 +222,9 @@ class WorkflowTemplate(object):
         # Get identifier if present in document
         if LABEL_ID in doc:
             identifier = doc[LABEL_ID]
-        # Workflow specification
+        # -- Workflow specification -------------------------------------------
         workflow_spec = doc[LABEL_WORKFLOW]
+        # -- Parameter declarations -------------------------------------------
         # Add given parameter declarations to the parameter list. Ensure that
         # all default values are set
         if LABEL_PARAMETERS in doc:
@@ -234,13 +240,18 @@ class WorkflowTemplate(object):
             for key in tmplutil.get_parameter_references(workflow_spec):
                 if not key in parameters:
                     raise err.UnknownParameterError(key)
-        # Add module information if given
+        # -- Post-processing task ---------------------------------------------
+        postproc_task = None
+        if LABEL_POSTPROCESSING in doc:
+            obj = doc[LABEL_POSTPROCESSING]
+            postproc_task = PostProcessingStep.from_dict(obj)
+        # -- Parameter module information -------------------------------------
         modules = None
         if LABEL_MODULES in doc:
-            modules = [
-                WorkflowModuleHandle.from_dict(m) for m in doc[LABEL_MODULES]
-            ]
-        # Get schema object from serialization if present
+            modules = list()
+            for m in doc[LABEL_MODULES]:
+                modules.append(WorkflowModuleHandle.from_dict(m))
+        # -- Result schema ---------------------------------------------------
         schema = None
         if LABEL_RESULTS in doc:
             try:
@@ -251,6 +262,7 @@ class WorkflowTemplate(object):
         return WorkflowTemplate(
             identifier=identifier,
             workflow_spec=workflow_spec,
+            postproc_task=postproc_task,
             source_dir=source_dir,
             parameters=parameters,
             result_schema=schema,
@@ -318,6 +330,8 @@ class WorkflowTemplate(object):
             doc[LABEL_PARAMETERS] = [
                 p.to_dict() for p in self.parameters.values()
             ]
+        if self.postproc_task is not None:
+            doc[LABEL_POSTPROCESSING] = self.postproc_task.to_dict()
         if self.modules is not None:
             doc[LABEL_MODULES] = [m.to_dict() for m in self.modules]
         if self.result_schema is not None:

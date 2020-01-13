@@ -43,7 +43,7 @@ class RunHandle(object):
 
         Returns
         -------
-        robcore.model.workflow.resource.FileResource
+        robcore.model.resource.FileResource
         """
         if not self.is_success():
             return None
@@ -109,7 +109,7 @@ class RunHandle(object):
 
         Returns
         -------
-        list(robcore.model.workflow.resource.FileResource)
+        list(robcore.model.resource.FileResource)
         """
         if not self.is_success():
             return list()

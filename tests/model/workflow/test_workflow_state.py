@@ -16,7 +16,7 @@ from robcore.model.workflow.state import (
     StateCanceled, StateError, StatePending, StateRunning, StateSuccess,
     WorkflowState
 )
-from robcore.model.workflow.resource import FileResource
+from robcore.model.resource import FileResource
 
 import robcore.util as util
 

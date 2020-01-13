@@ -19,6 +19,7 @@ from robcore.model.template.base import WorkflowTemplate
 
 import robcore.error as err
 import robcore.util as util
+import robcore.model.template.command as cmd
 import robcore.model.template.parameter.declaration as pd
 import robcore.model.template.base as tmpl
 import robcore.model.template.schema as schema
@@ -54,6 +55,7 @@ class TestWorkflowTemplate(object):
             assert col.path is None
             assert len(col.jpath()) == 1
             assert col.jpath()[0] == col.identifier
+        # Complete workflow template
         doc = util.read_object(filename=TOPTAGGER_YAML_FILE)
         template = WorkflowTemplate.from_dict(doc, 'dev/null')
         assert len(template.parameters) == 4
@@ -62,6 +64,33 @@ class TestWorkflowTemplate(object):
         for col in schema.columns:
             assert col.path is not None
             assert len(col.jpath()) == 2
+        assert len(template.modules) == 2
+        assert template.postproc_task is not None
+        template = WorkflowTemplate.from_dict(template.to_dict(), 'dev/null')
+        assert len(template.parameters) == 4
+        schema = template.get_schema()
+        assert len(schema.columns) == 3
+        for col in schema.columns:
+            assert col.path is not None
+            assert len(col.jpath()) == 2
+        assert len(template.modules) == 2
+        assert template.modules[0].identifier == 'preproc'
+        assert template.modules[0].name == 'Pre-Processing Step'
+        assert template.modules[1].identifier == 'eval'
+        assert template.modules[1].name == 'ML Evaluation Step'
+        step = template.postproc_task
+        assert step.env == 'toptagger:1.0'
+        assert step.mounts == ['code/', 'evaluate/']
+        assert step.inputs == ['results/yProbBest.pkl']
+        assert len(step.commands) == 1
+        assert len(step.outputs) == 1
+        assert list(step.outputs.values())[0].identifier == 'roc'
+        # Error raised if output resource identifier are not unique
+        doc = template.to_dict()
+        s = doc[tmpl.LABEL_POSTPROCESSING]
+        s[cmd.LABEL_OUTPUTS].append(s[cmd.LABEL_OUTPUTS][0])
+        with pytest.raises(err.DuplicateResourceError):
+            template = WorkflowTemplate.from_dict(doc, 'dev/null')
 
     def test_from_dict(self):
         """Test creating workflow template instances from dictionaries."""

@@ -10,7 +10,7 @@
 
 import pytest
 
-from robcore.model.workflow.resource import FileResource
+from robcore.model.resource import FileResource
 
 import robcore.util as util
 import robcore.model.workflow.state as state

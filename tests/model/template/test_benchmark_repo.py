@@ -163,7 +163,9 @@ class TestBenchmarkRepository(object):
             con=connector.connect(),
             template_repo=TemplateFSRepository(base_dir=str(tmpdir))
         )
-        assert repo.get_benchmark(bm_1.identifier).identifier == bm_1.identifier
+        benchmark = repo.get_benchmark(bm_1.identifier)
+        assert benchmark.identifier == bm_1.identifier
+        assert len(benchmark.get_resources()) == 0
         assert repo.get_benchmark(bm_2.identifier).identifier == bm_2.identifier
         # Delete first benchmark
         repo.delete_benchmark(bm_1.identifier)

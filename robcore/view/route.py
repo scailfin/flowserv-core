@@ -171,6 +171,22 @@ class UrlFactory(object):
         """
         return self.benchmark_base_url + '/' + benchmark_id
 
+    def get_benchmark_resource(self, benchmark_id, resource_id):
+        """Url to GET a benchmark resource.
+
+        Parameters
+        ----------
+        benchmark_id: string
+            Unique benchmark identifier
+        resource_id: string
+            Unique resource identifier
+
+        Returns
+        -------
+        string
+        """
+        return self.get_benchmark(benchmark_id) + '/resources/' + resource_id
+
     def get_leaderboard(self, benchmark_id, include_all=None):
         """Url to GET benchmark leaderboard.
 

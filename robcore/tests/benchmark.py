@@ -14,7 +14,7 @@ import os
 
 from robcore.model.template.schema import ResultColumn, ResultSchema
 from robcore.controller.backend.base import WorkflowController
-from robcore.model.workflow.resource import FileResource
+from robcore.model.resource import FileResource
 
 import robcore.controller.serial as serial
 import robcore.error as err

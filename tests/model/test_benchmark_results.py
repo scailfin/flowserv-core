@@ -19,7 +19,7 @@ from passlib.hash import pbkdf2_sha256
 from robcore.model.template.repo.benchmark import BenchmarkRepository
 from robcore.model.template.repo.fs import TemplateFSRepository
 from robcore.model.template.schema import SortColumn
-from robcore.model.workflow.resource import FileResource
+from robcore.model.resource import FileResource
 
 import robcore.controller.run as runstore
 import robcore.error as err

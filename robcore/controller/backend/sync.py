@@ -14,7 +14,7 @@ import os
 import shutil
 
 from robcore.controller.backend.base import WorkflowController
-from robcore.model.workflow.resource import FileResource
+from robcore.model.resource import FileResource
 
 import robcore.error as err
 import robcore.controller.io as fileio
@@ -107,13 +107,13 @@ class SyncWorkflowEngine(WorkflowController):
         # copied, (ii) the expanded commands that represent the workflow steps,
         # and (iii) the list of output files.
         files = serial.upload_files(template, arguments)
-        commands = serial.commands(template, arguments)
+        steps = serial.commands(template, arguments)
         output_files = serial.output_files(template, arguments)
         # Copy workflow files and then execute the workflow synchronously.
         fileio.copy_files(files=files, target_dir=run_dir)
         state = serial.run(
             run_dir=run_dir,
-            commands=commands,
+            steps=steps,
             output_files=output_files,
             verbose=self.verbose
         )

@@ -34,7 +34,7 @@ class BenchmarkSerializer(object):
         Parameters
         ----------
         benchmark: robcore.model.template.benchmark.BenchmarkHandle
-            Competition handle
+            Benchmark handle
 
         Returns
         -------
@@ -67,8 +67,8 @@ class BenchmarkSerializer(object):
 
         Parameters
         ----------
-        benchmark: enataengine.benchmark.base.BenchmarkHandle
-            Handle for benchmark resource
+        benchmark: robcore.model.template.benchmark.BenchmarkHandle
+            Benchmark handle
 
         Returns
         -------
@@ -90,13 +90,13 @@ class BenchmarkSerializer(object):
         modules
         return obj
 
-    def benchmark_leaderboard(self, benchmark_id, ranking):
+    def benchmark_leaderboard(self, benchmark, ranking):
         """Get dictionary serialization for a benchmark leaderboard.
 
         Parameters
         ----------
-        benchmark_id: string
-            Unique benchmark identifier
+        benchmark: robcore.model.template.benchmark.BenchmarkHandle
+            Benchmark handle
         leaderboard: robcore.model.ranking.ResultRanking
             List of entries in the benchmark leaderboard
 
@@ -104,6 +104,8 @@ class BenchmarkSerializer(object):
         -------
         dict
         """
+        benchmark_id = benchmark.identifier
+        # Serialize ranking entries
         entries = list()
         for run in ranking.entries:
             results = list()
@@ -122,6 +124,17 @@ class BenchmarkSerializer(object):
                 },
                 labels.RESULTS: results
             })
+        # Serialize available benchmark post-processing resources
+        resources = list()
+        for r in benchmark.get_resources():
+            resource_id = r.identifier
+            url = self.urls.get_benchmark_resource(benchmark_id, resource_id)
+            resources.append({
+                labels.ID: resource_id,
+                labels.NAME: r.name,
+                labels.CONTENT_TYPE: r.content_type,
+                label.LINKS: hateoas.serialize({hateoas.SELF: url})
+            })
         return {
             labels.SCHEMA: [{
                     labels.ID: c.identifier,
@@ -130,6 +143,7 @@ class BenchmarkSerializer(object):
                 } for c in ranking.columns
             ],
             labels.RANKING: entries,
+            labels.RESOURCES: resources,
             labels.LINKS: hateoas.serialize({
                 hateoas.SELF: self.urls.get_leaderboard(benchmark_id),
                 hateoas.BENCHMARK: self.urls.get_benchmark(benchmark_id)

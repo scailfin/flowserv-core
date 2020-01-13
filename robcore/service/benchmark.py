@@ -87,7 +87,7 @@ class BenchmarkService(object):
             include_all=include_all
         )
         return self.serialize.benchmark_leaderboard(
-            benchmark_id=benchmark_id,
+            benchmark=self.repo.get_benchmark(benchmark_id),
             ranking=results
         )
 

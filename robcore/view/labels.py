@@ -24,10 +24,12 @@ FINISHED_AT = 'finishedAt'
 
 # Benchmark resources
 BENCHMARKS = 'benchmarks'
+CONTENT_TYPE = 'contentType'
 DESCRIPTION = 'description'
 INSTRUCTIONS = 'instructions'
 MODULES = 'modules'
 PARAMETERS = 'parameters'
+RESOURCES = 'resources'
 
 # Benchmark leaderboard
 RANKING = 'ranking'
@@ -53,7 +55,6 @@ REL = 'rel'
 
 # Runs
 REASON = 'reason'
-RESOURCES = 'resources'
 
 # Submissions
 BENCHMARK = 'benchmark'

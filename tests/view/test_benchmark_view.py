@@ -24,6 +24,9 @@ TEMPLATE_DIR = os.path.join(DIR, '../.files/benchmark/helloworld')
 # Default benchmark user
 USER_1 = util.get_unique_identifier()
 
+# Mandatory leader board  labels
+RANKING_LABELS = [labels.RANKING, labels.SCHEMA, labels.RESOURCES, labels.LINKS]
+
 # Mandatory HATEOAS relationships in benchmark handles and descriptors
 RELS = [
     hateoas.SELF,
@@ -163,14 +166,14 @@ class TestBenchmarkView(object):
         r = repo.get_leaderboard(bm.identifier, include_all=False)
         util.validate_doc(
             doc=r,
-            mandatory_labels=[labels.RANKING, labels.SCHEMA, labels.LINKS]
+            mandatory_labels=RANKING_LABELS
         )
         serialize.validate_links(r, [hateoas.SELF, hateoas.BENCHMARK])
         assert len(r[labels.RANKING]) == 2
         r = repo.get_leaderboard(bm.identifier, include_all=True)
         util.validate_doc(
             doc=r,
-            mandatory_labels=[labels.RANKING, labels.SCHEMA, labels.LINKS]
+            mandatory_labels=RANKING_LABELS
         )
         serialize.validate_links(r, [hateoas.SELF, hateoas.BENCHMARK])
         ranking = r[labels.RANKING]

@@ -12,7 +12,7 @@ import os
 import pytest
 
 from robcore.model.workflow.state import StatePending
-from robcore.model.workflow.resource import FileResource
+from robcore.model.resource import FileResource
 from robcore.tests.io import FakeStream
 
 import robcore.error as err

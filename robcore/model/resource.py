@@ -6,13 +6,86 @@
 # ROB is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
-"""Handles for file resources that are created by successful workflow runs."""
+"""Handles for workflow resources that are created by successful workflow runs.
+This includes for example files that are created by individual workflow runs or
+by workflow post-processing steps.
+"""
 
 import os
 import shutil
 
 from robcore.io.files import FileHandle
 
+import robcore.util as util
+
+
+"""Labels for descriptor serializations."""
+LABEL_ID = 'id'
+LABEL_NAME = 'name'
+LABEL_CONTENTTYPE = 'type'
+LABEL_FILENAME = 'file'
+
+
+# -- Descriptors -------------------------------------------------------------
+
+class ResourceDescriptor(object):
+    """Descriptor for a workflow resource. Descriptors are part of workflow
+    templates. They define metadata of workflow outputs.
+    """
+    def __init__(self, identifier, name, content_type, filename=None):
+        """
+        """
+        self.identifier = identifier
+        self.name = name
+        self.content_type = content_type
+        self.filename = filename
+
+    @staticmethod
+    def from_dict(doc, validate=False):
+        """Create descriptor instance from a given dictionary serialization.
+        If the validate flag is True a ValueError is raised if the document
+        has missing mandatory labels or contains additional labels.
+
+        Parameters
+        ----------
+        doc: dict
+            Dictionary serialization as created by the to_dict() method
+
+        Returns
+        -------
+        robcore.model.resource.ResourceDescriptor
+        """
+        if validate:
+            util.validate_doc(
+                doc,
+                mandatory_labels=[LABEL_ID, LABEL_NAME, LABEL_CONTENTTYPE],
+                optional_labels=[LABEL_FILENAME]
+            )
+        return ResourceDescriptor(
+            identifier=doc[LABEL_ID],
+            name=doc[LABEL_NAME],
+            content_type=doc[LABEL_CONTENTTYPE],
+            filename=doc[LABEL_FILENAME] if LABEL_FILENAME in doc else None
+        )
+
+    def to_dict(self):
+        """Get dictionary serialization for the resource descriptor.
+
+        Returns
+        -------
+        dict
+        """
+        doc = {
+            LABEL_ID: self.identifier,
+            LABEL_NAME: self.name,
+            LABEL_CONTENTTYPE: self.content_type
+        }
+        if self.filename is not None:
+            doc[LABEL_FILENAME] = self.filename
+        return doc
+
+
+# -- Resource Handles ---------------------------------------------------------
 
 class FileResource(object):
     """Handle for file resources that are created as the result of a workflow

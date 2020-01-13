@@ -16,7 +16,7 @@ import json
 import os
 
 from robcore.io.files import InputFile
-from robcore.model.workflow.resource import FileResource
+from robcore.model.resource import FileResource
 from robcore.model.workflow.run import RunHandle
 
 import robcore.error as err

@@ -131,6 +131,22 @@ class DuplicateParameterError(ConstraintViolationError):
         )
 
 
+class DuplicateResourceError(ConstraintViolationError):
+    """Exception indicating that a given resource identifier is not unique.
+    """
+    def __init__(self, identifier):
+        """Initialize error message for duplicate resource identifier.
+
+        Parameters
+        ----------
+        identifier: string
+            Unique run identifier
+        """
+        super(DuplicateResourceError, self).__init__(
+            message='non-unique resource identifier \'{}\''.format(identifier)
+        )
+
+
 class DuplicateRunError(ConstraintViolationError):
     """Exception indicating that a given run identifier is not unique.
     """

@@ -15,7 +15,7 @@ import pytest
 from robcore.io.files import FileHandle, InputFile
 from robcore.model.template.parameter.base import TemplateParameter
 from robcore.model.template.schema import ResultColumn, ResultSchema
-from robcore.model.workflow.resource import FileResource
+from robcore.model.resource import FileResource
 
 import robcore.error as err
 import robcore.model.ranking as ranking
