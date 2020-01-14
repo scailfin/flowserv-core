@@ -12,7 +12,9 @@ the workflow template and the result files of individual workflow runs.
 """
 
 import json
+import os
 
+from robcore.io.files import FileHandle
 from robcore.model.template.benchmark import BenchmarkHandle
 from robcore.model.template.schema import ResultSchema
 
@@ -20,13 +22,14 @@ import robcore.error as err
 import robcore.model.constraint as constraint
 import robcore.model.ranking as ranking
 import robcore.model.template.parameter.declaration as pd
+import robcore.util as util
 
 
 class BenchmarkRepository(object):
     """The repository maintains benchmarks as well as the results of benchmark
     runs.
     """
-    def __init__(self, con, template_repo):
+    def __init__(self, con, template_repo, resource_base_dir):
         """Initialize the database connection and the template store.
 
         Parameters
@@ -35,9 +38,14 @@ class BenchmarkRepository(object):
             Connection to underlying database
         template_store: robcore.model.template.repo.base.TemplateRepository, optional
             Repository for workflow templates
+        resource_base_dir: string
+            Path to the base directory that contains post-processing results
+            for all benchmarks
         """
         self.con = con
         self.template_repo = template_repo
+        # Create the resource directory if it does not exist
+        self.resource_base_dir = util.create_dir(resource_base_dir)
 
     def add_benchmark(
         self, name, description=None, instructions=None, src_dir=None,
@@ -104,11 +112,27 @@ class BenchmarkRepository(object):
             result_schema = json.dumps(schema.to_dict())
         else:
             result_schema = None
+        # Get serialization of the post-processing task
+        pp_task = None
+        if template.postproc_task is not None:
+            pp_task = json.dumps(template.postproc_task.to_dict())
         # Insert benchmark into database and return descriptor
-        sql = 'INSERT INTO benchmark'
-        sql += '(benchmark_id, name, description, instructions, result_schema) '
-        sql += 'VALUES(?, ?, ?, ?, ?)'
-        values = (t_id, name, description, instructions, result_schema)
+        sql = (
+            'INSERT INTO benchmark'
+            '(benchmark_id, name, description, instructions, postproc_task, '
+            'result_schema, static_dir, resource_dir) '
+            'VALUES(?, ?, ?, ?, ?, ?, ?, ?)'
+        )
+        values = (
+            t_id,
+            name,
+            description,
+            instructions,
+            pp_task,
+            result_schema,
+            template.source_dir,
+            util.create_dir(os.path.join(self.resource_base_dir, t_id))
+        )
         self.con.execute(sql, values)
         # Commit all changes and return the benchmark descriptor
         self.con.commit()
@@ -156,9 +180,11 @@ class BenchmarkRepository(object):
         """
         # Get benchmark information from database. If the result is empty an
         # error is raised
-        sql = 'SELECT benchmark_id, name, description, instructions '
-        sql += 'FROM benchmark '
-        sql += 'WHERE benchmark_id = ?'
+        sql = (
+            'SELECT benchmark_id, name, description, instructions '
+            'FROM benchmark '
+            'WHERE benchmark_id = ?'
+        )
         rs = self.con.execute(sql, (benchmark_id,)).fetchone()
         if rs is None:
             raise err.UnknownBenchmarkError(benchmark_id)
@@ -172,6 +198,43 @@ class BenchmarkRepository(object):
             template=self.template_repo.get_template(benchmark_id),
             repo=self
         )
+
+    def get_benchmark_resource(self, benchmark_id, resource_id):
+        """Get file handle for a benchmark resource that has been generated
+        by the post-processing step.
+
+        Parameters
+        ----------
+        benchmark_id: string
+            Unique benchmark identifier
+        resource_id: string
+            Unique resource identifier
+
+        Returns
+        -------
+        robcore.io.files.FileHandle
+
+        Raises
+        ------
+        robcore.error.UnknownBenchmarkError
+        robcore.error.UnknownResourceError
+        """
+        # Get benchmark information from database. If the result is empty an
+        # error is raised
+        sql = 'SELECT resource_dir FROM benchmark WHERE benchmark_id = ?'
+        rs = self.con.execute(sql, (benchmark_id,)).fetchone()
+        if rs is None:
+            raise err.UnknownBenchmarkError(benchmark_id)
+        # Check if the requested resource file exists. If the file does not
+        # exists an error is raised. In the future we may want to include the
+        # post-processing declaration in above query to have access to the
+        # content type of the file.
+        res_dir = os.path.join(self.resource_base_dir, benchmark_id)
+        res_file = os.path.join(res_dir, resource_id)
+        if not os.path.isfile(res_file):
+            raise err.UnknownResourceError(resource_id)
+        # Return handle for the resource file
+        return FileHandle(filepath=res_file, file_name=resource_id)
 
     def get_leaderboard(self, benchmark_id, order_by=None, include_all=False):
         """Get current leaderboard for a given benchmark. The result is a

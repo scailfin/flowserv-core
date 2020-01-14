@@ -34,10 +34,9 @@ postproc:
     commands:
         - 'python code/plot.py ${results} evaluate/labels.pkl ${output-dir}'
     outputs:
-        - id: 'roc'
+        - id: 'ROC.png'
           name: 'ROC Curves'
           type: 'image/png'
-          file: 'ROC.png'
 modules:
     - id: 'preproc'
       name: 'Pre-Processing Step'

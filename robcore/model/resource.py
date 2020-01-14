@@ -23,7 +23,6 @@ import robcore.util as util
 LABEL_ID = 'id'
 LABEL_NAME = 'name'
 LABEL_CONTENTTYPE = 'type'
-LABEL_FILENAME = 'file'
 
 
 # -- Descriptors -------------------------------------------------------------
@@ -32,13 +31,21 @@ class ResourceDescriptor(object):
     """Descriptor for a workflow resource. Descriptors are part of workflow
     templates. They define metadata of workflow outputs.
     """
-    def __init__(self, identifier, name, content_type, filename=None):
-        """
+    def __init__(self, identifier, name, content_type):
+        """Initialize the object properties.
+
+        Parameters
+        ----------
+        identifier: string
+            Unique resource identifier
+        name: string
+            Descriptive resource name
+        content_type: string
+            Resource type identifier
         """
         self.identifier = identifier
         self.name = name
         self.content_type = content_type
-        self.filename = filename
 
     @staticmethod
     def from_dict(doc, validate=False):
@@ -58,14 +65,12 @@ class ResourceDescriptor(object):
         if validate:
             util.validate_doc(
                 doc,
-                mandatory_labels=[LABEL_ID, LABEL_NAME, LABEL_CONTENTTYPE],
-                optional_labels=[LABEL_FILENAME]
+                mandatory_labels=[LABEL_ID, LABEL_NAME, LABEL_CONTENTTYPE]
             )
         return ResourceDescriptor(
             identifier=doc[LABEL_ID],
             name=doc[LABEL_NAME],
-            content_type=doc[LABEL_CONTENTTYPE],
-            filename=doc[LABEL_FILENAME] if LABEL_FILENAME in doc else None
+            content_type=doc[LABEL_CONTENTTYPE]
         )
 
     def to_dict(self):
@@ -75,14 +80,11 @@ class ResourceDescriptor(object):
         -------
         dict
         """
-        doc = {
+        return {
             LABEL_ID: self.identifier,
             LABEL_NAME: self.name,
             LABEL_CONTENTTYPE: self.content_type
         }
-        if self.filename is not None:
-            doc[LABEL_FILENAME] = self.filename
-        return doc
 
 
 # -- Resource Handles ---------------------------------------------------------

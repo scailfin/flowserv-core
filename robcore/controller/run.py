@@ -14,11 +14,15 @@ platform, e.g., the submission manager and the workflow execution engine.
 
 import json
 import os
+import shutil
 
 from robcore.io.files import InputFile
 from robcore.model.resource import FileResource
+from robcore.model.template.command import PostProcessingStep
+from robcore.model.template.schema import ResultSchema
 from robcore.model.workflow.run import RunHandle
 
+import robcore.controller.postproc as postproc
 import robcore.error as err
 import robcore.model.ranking as ranking
 import robcore.model.workflow.state as st
@@ -33,7 +37,7 @@ LABEL_ID = 'identifier'
 LABEL_TARGETPATH = 'targetPath'
 
 
-# -- Methods for maintaining run information in the database -------------------
+# -- Methods for maintaining run information in the database ------------------
 
 def create_run(con, submission_id, arguments, commit_changes=True):
     """Create a new entry for a run that is in pending state. Returns a handle
@@ -248,57 +252,144 @@ def update_run(con, run_id, state, commit_changes=True):
     robcore.error.ConstraintViolationError
     """
     # Query template to update the state.
-    sqltmpl = 'UPDATE benchmark_run SET state=\'' + state.type_id + '\''
-    sqltmpl = sqltmpl + ', {} WHERE run_id = \'' + run_id + '\''
+    sqltmpl = (
+        "UPDATE benchmark_run SET state='" + state.type_id + "', {} "
+        "WHERE run_id = '" + run_id + "'"
+    )
     stmts = list()
     # Only update the state in the database if the workflow is not pending.
     # For pending workflows an entry is created when the run starts.
+    # -- RUNNING --------------------------------------------------------------
     if state.is_running():
         stmts.append(
             (sqltmpl.format('started_at=?'),
             (state.started_at.isoformat(),))
         )
+    # -- CANCELED -------------------------------------------------------------
     elif state.is_canceled():
         stmts.append(
             (sqltmpl.format('started_at=?, ended_at=?'),
             (state.started_at.isoformat(), state.stopped_at.isoformat()))
         )
         # Insert statements for error messages
-        instmpl = 'INSERT INTO run_error_log(run_id, message, pos) '
-        instmpl += 'VALUES(?, ?, ?)'
+        instmpl = (
+            'INSERT INTO run_error_log(run_id, message, pos) '
+            'VALUES(?, ?, ?)'
+        )
         messages = state.messages
         for i in range(len(messages)):
             stmts.append((instmpl, (run_id, messages[i], i)))
+    # -- ERROR ----------------------------------------------------------------
     elif state.is_error():
         stmts.append(
             (sqltmpl.format('started_at=?, ended_at=?'),
             (state.started_at.isoformat(), state.stopped_at.isoformat()))
         )
         # Insert statements for error messages
-        instmpl = 'INSERT INTO run_error_log(run_id, message, pos) '
-        instmpl += 'VALUES(?, ?, ?)'
+        instmpl = (
+            'INSERT INTO run_error_log(run_id, message, pos) '
+            'VALUES(?, ?, ?)'
+        )
         messages = state.messages
         for i in range(len(messages)):
             stmts.append((instmpl, (run_id, messages[i], i)))
+    # -- SUCCESS --------------------------------------------------------------
     elif state.is_success():
         stmts.append(
             (sqltmpl.format('started_at=?, ended_at=?'),
             (state.started_at.isoformat(), state.finished_at.isoformat()))
         )
-        instmpl = 'INSERT INTO run_result_file'
-        instmpl += '(run_id, file_id, resource_name, file_path) '
-        instmpl += 'VALUES(?, ?, ?, ?)'
+        # SQL statements to insert run result file information
+        instmpl = (
+            'INSERT INTO run_result_file'
+            '(run_id, file_id, resource_name, file_path) '
+            'VALUES(?, ?, ?, ?)'
+        )
         for f in state.files.values():
             insargs = (run_id, f.resource_id, f.resource_name, f.file_path)
             stmts.append((instmpl, insargs))
-        # Create the DML statement to insert the result values. This
-        # requires to query the database in order to get the result schema
+        # Insert the result values.
         ranking.insert_run_results(
             con=con,
             run_id=run_id,
             files=state.files,
             commit_changes=False
         )
+        # Get the identifier of the associated benchmark together with (i) the
+        # definitions of the result schema, (ii) the optional post-processing
+        # step, (iii) the key for the most recent post-processing results, and
+        # (iv) the template folders for static files and post-processing
+        # results.
+        sql = (
+            'SELECT b.benchmark_id, b.result_schema, b.postproc_task, '
+            'b.resource_key, b.static_dir, b.resource_dir '
+            'FROM benchmark b, benchmark_submission s, benchmark_run r '
+            'WHERE b.benchmark_id = s.benchmark_id AND '
+            's.submission_id = r.submission_id AND r.run_id = ?'
+        )
+        rs = con.execute(sql, (run_id,)).fetchone()
+        if rs['result_schema'] is not None and rs['postproc_task'] is not None:
+            # Get the latest leader board for the benchmark to see if it it has
+            # changes since the last post-processing execution.
+            benchmark_id = rs['benchmark_id']
+            leaders = ranking.query(
+                con=con,
+                benchmark_id=benchmark_id,
+                schema=ResultSchema.from_dict(json.loads(rs['result_schema']))
+            )
+            # Use sorted list of run identifier in the ranking as unique key
+            # to identify changes to previous post-processing results.
+            runs = sorted([r.run_id for r in leaders.entries])
+            resource_key = rs['resource_key']
+            if resource_key is not None:
+                resource_key = json.loads(resource_key)
+            else:
+                resource_key = list()
+            if runs != resource_key:
+                # Run post-processing task if the current post-processing
+                # resources where generated for a different set of runs than
+                # those in the current leader board.
+                src_dir = rs['static_dir']
+                resource_dir = rs['resource_dir']
+                # Get post-processing task definition
+                doc = json.loads(rs['postproc_task'])
+                postproc_task = PostProcessingStep.from_dict(doc)
+                # Prepare the submission data and output directory
+                in_dir, out_dir = postproc.prepare_post_proc_dir(
+                    con=con,
+                    ranking=leaders,
+                    files=postproc_task.inputs,
+                    current_run=(run_id, state)
+                )
+                # Run workflow step in a Docker container
+                postproc.run_post_processing(
+                    task=postproc_task,
+                    template_dir=src_dir,
+                    in_dir=in_dir,
+                    out_dir=out_dir
+                )
+                # Copy files from output directory to the benchmark's resource
+                # directory
+                for filename in postproc_task.outputs:
+                    source_file = os.path.join(out_dir, filename)
+                    target_file = os.path.join(resource_dir, filename)
+                    if os.path.isfile(source_file):
+                        shutil.copy(src=source_file, dst=target_file)
+                    elif os.path.isfile(target_file):
+                        # Remove the target file if it exists but wasn't
+                        # created during post-processing (possibly due to an
+                        # error during processing)
+                        os.remove(target_file)
+                # Update resource key in the benchmark table
+                sql = (
+                    "UPDATE benchmark "
+                    "SET resource_key = ? "
+                    "WHERE benchmark_id = ?"
+                )
+                con.execute(sql, (json.dumps(runs), benchmark_id))
+                # Delete temporary input and output directories
+                shutil.rmtree(in_dir)
+                shutil.rmtree(out_dir)
     # Execute all SQL statements
     for sql, values in stmts:
         con.execute(sql, values)
@@ -306,7 +397,7 @@ def update_run(con, run_id, state, commit_changes=True):
         con.commit()
 
 
-# -- Helper classes ------------------------------------------------------------
+# -- Helper classes -----------------------------------------------------------
 
 class ArgumentEncoder(json.JSONEncoder):
     """JSON encoder for run argument values. The encoder is required to handle

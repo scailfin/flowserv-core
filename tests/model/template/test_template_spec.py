@@ -84,7 +84,7 @@ class TestWorkflowTemplate(object):
         assert step.inputs == ['results/yProbBest.pkl']
         assert len(step.commands) == 1
         assert len(step.outputs) == 1
-        assert list(step.outputs.values())[0].identifier == 'roc'
+        assert list(step.outputs.values())[0].identifier == 'ROC.png'
         # Error raised if output resource identifier are not unique
         doc = template.to_dict()
         s = doc[tmpl.LABEL_POSTPROCESSING]

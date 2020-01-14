@@ -237,12 +237,14 @@ def insert_run_results(con, run_id, files, commit_changes=True):
     # result is not empty). There may, however, not be a schema defined for
     # the benchmark. In this case the result table will not exist and not data
     # has to be written to the database.
-    sql = 'SELECT b.benchmark_id, b.result_schema FROM '
-    sql += 'benchmark b, benchmark_submission s, benchmark_run r '
-    sql += 'WHERE r.run_id = ? AND r.submission_id = s.submission_id '
-    sql += 'AND s.benchmark_id = b.benchmark_id'
+    sql = (
+        'SELECT b.benchmark_id, b.result_schema FROM '
+        'benchmark b, benchmark_submission s, benchmark_run r '
+        'WHERE r.run_id = ? AND r.submission_id = s.submission_id '
+        'AND s.benchmark_id = b.benchmark_id'
+    )
     row = con.execute(sql, (run_id,)).fetchone()
-    if not row['result_schema'] is None:
+    if row['result_schema'] is not None:
         # Create instance of the result schema from database serialization
         schema = ResultSchema.from_dict(json.loads(row['result_schema']))
         # Read the results from the result file that is specified in the
@@ -348,7 +350,7 @@ def query(
     ranking = ResultRanking(columns=schema.columns)
     for row in rs:
         submission_id = row['submission_id']
-        # Skip entry of this is not the first result for the submission and
+        # Skip entry if this is not the first result for the submission and
         # the include_all flag is false.
         if not include_all:
             if submission_id in submissions:

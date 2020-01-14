@@ -1,0 +1,25 @@
+workflow:
+    version: '0.3.0'
+    workflow:
+      type: 'serial'
+      specification:
+        steps:
+          - environment: 'bash'
+            commands:
+              - 'echo "Hello World"'
+    outputs:
+      files:
+       - 'results.json'
+modules:
+    - id: 'main'
+      name: 'Main Step'
+      index: 0
+results:
+    file: 'results/analytics.json'
+    schema:
+        - id: 'score'
+          name: 'Score'
+          type: 'int'
+    orderBy:
+        - id: 'score'
+          sortDesc: true

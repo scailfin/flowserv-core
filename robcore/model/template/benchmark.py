@@ -90,17 +90,17 @@ class BenchmarkHandle(object):
 
         Returns
         -------
-        list(robcore.model.resource.ResourceDescriptor)
+        dict(robcore.model.resource.ResourceDescriptor)
         """
         # Load template if None
         if self.template is None:
             self.template = self.repo.template_repo.get_template(self.identifier)
         # Return list of prost-processing outputs
         if self.template.postproc_task is not None:
-            return list(self.template.postproc_task.outputs.values())
+            return self.template.postproc_task.outputs
         else:
-            return list()
-            
+            return dict()
+
     def get_template(self, workflow_spec=None, parameters=None):
         """Get associated workflow template. The template is loaded on-demand
         if necessary. If either of the optional parameters are given, a modified

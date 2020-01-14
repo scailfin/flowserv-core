@@ -25,6 +25,9 @@ from robcore.tests.benchmark import StateEngine
 import robcore.tests.db as db
 
 
+RESULT_FILE = 'results/analytics.json'
+
+
 def init_api(base_dir, open_access=False):
     """Initialize the database, benchmark repository, submission, and user
     manager. Returns sercive objects for benchmarks, submissions, users, runs,
@@ -37,7 +40,7 @@ def init_api(base_dir, open_access=False):
         auth = DefaultAuthPolicy(con=con)
     controller = StateEngine(
         base_dir=os.path.join(base_dir, 'runs'),
-        result_file_id='results/analytics.json'
+        result_file_id=RESULT_FILE
     )
     engine = BenchmarkEngine(
         con=con,
@@ -45,7 +48,8 @@ def init_api(base_dir, open_access=False):
     )
     benchmark_repo = BenchmarkRepository(
         con=con,
-        template_repo=TemplateFSRepository(base_dir=base_dir)
+        template_repo=TemplateFSRepository(base_dir=base_dir),
+        resource_base_dir=os.path.join(base_dir, 'resources')
     )
     submission_manager = SubmissionManager(
         con=con,
@@ -68,4 +72,4 @@ def init_api(base_dir, open_access=False):
         submissions=submission_manager,
         auth=auth
     )
-    return repository, submissions, users, runs, auth
+    return repository, submissions, users, runs, auth, controller, con

@@ -52,7 +52,9 @@ class TestRunView(object):
         Returns the run service, submission service, two user handles, and the
         handle for the created benchmark.
         """
-        repository, submissions, user_service, runs, _ = api.init_api(base_dir)
+        repository, submissions, user_service, runs, _, _, _ = api.init_api(
+            base_dir
+        )
         users = list()
         for i in range(2):
             user_id = util.get_unique_identifier()

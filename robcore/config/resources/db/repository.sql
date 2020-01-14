@@ -22,6 +22,7 @@ DROP TABLE IF EXISTS benchmark_run;
 DROP TABLE IF EXISTS submission_file;
 DROP TABLE IF EXISTS submission_member;
 DROP TABLE IF EXISTS benchmark_submission;
+DROP TABLE IF EXISTS benchmark_resources;
 DROP TABLE IF EXISTS benchmark;
 DROP TABLE IF EXISTS password_request;
 DROP TABLE IF EXISTS user_key;
@@ -81,15 +82,19 @@ CREATE TABLE password_request(
 
 --
 -- Each benchmark has a unique name, a short descriptor and a set of
--- instructions. We also store the result schema information from the
--- workflow template.
+-- instructions. We also store the optional post-processing task description
+-- and the result schema information from the workflow template.
 --
 CREATE TABLE benchmark(
     benchmark_id VARCHAR(32) NOT NULL,
     name VARCHAR(512) NOT NULL,
     description TEXT,
     instructions TEXT,
+    postproc_task TEXT,
     result_schema TEXT,
+    resource_key TEXT,
+    static_dir VARCHAR(1024),
+    resource_dir VARCHAR(1024),
     PRIMARY KEY(benchmark_id),
     UNIQUE(name)
 );

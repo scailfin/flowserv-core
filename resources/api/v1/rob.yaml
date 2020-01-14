@@ -27,6 +27,9 @@ schemes:
 - "http"
 paths:
 # ------------------------------------------------------------------------------
+# API Routes
+# ------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Service
 # ------------------------------------------------------------------------------
   /:
@@ -116,6 +119,32 @@ paths:
           description: "Invalid sort statement"
         404:
           description: "Unknown benchmark"
+  /benchmarks/{benchmarkId}/resources/{resourceId}:
+    get:
+      tags:
+      - "benchmark"
+      summary: "Download resource file"
+      description: "Download a benchmark resource file"
+      operationId: "downloadResource"
+      produces:
+      - "text/csv"
+      - "image/png"
+      parameters:
+      - in: "path"
+        name: "benchmarkId"
+        description: "Unique benchmark identifier"
+        required: true
+        type: string
+      - in: "path"
+        name: "resourceId"
+        description: "Unique resource identifier"
+        required: true
+        type: string
+      responses:
+        200:
+          description: "File"
+        404:
+          description: "Unknown benchmark resource"
 # ------------------------------------------------------------------------------
 # Submissions
 # ------------------------------------------------------------------------------
@@ -850,21 +879,6 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/BenchmarkParameter'
-      modules:
-        type: array
-        items:
-          type: object
-          required:
-            - id
-            - name
-            - index
-          properties:
-            id:
-              type: string
-            name:
-              type: string
-            index:
-              type: number
       links:
         $ref: "#/definitions/HATEOASLinks"
   BenchmarkLeaderboard:
@@ -937,6 +951,23 @@ definitions:
               type: string
             type:
               type: string
+      resources:
+        type: array
+        items:
+          type: object
+          required:
+            - id
+            - name
+            - contentType
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+            contentType:
+              type: string
+            links:
+              $ref: "#/definitions/HATEOASLinks"
       links:
         $ref: "#/definitions/HATEOASLinks"
   BenchmarkListing:

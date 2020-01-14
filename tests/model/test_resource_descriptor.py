@@ -15,7 +15,6 @@ from robcore.model.resource import ResourceDescriptor, LABEL_NAME
 
 def test_descriptor_serialization():
     """Unit test for resource descriptor (de-)serialization."""
-    # Descriptor without optional file name
     r1 = ResourceDescriptor(
         identifier='A',
         name='Descriptor',
@@ -25,27 +24,9 @@ def test_descriptor_serialization():
     assert r2.identifier == 'A'
     assert r2.name == 'Descriptor'
     assert r2.content_type == 'image/png'
-    assert r2.filename is None
     assert r1.identifier == r2.identifier
     assert r1.name == r2.name
     assert r1.content_type == r2.content_type
-    assert r1.filename == r2.filename
-    # Descriptor with optional file name
-    r1 = ResourceDescriptor(
-        identifier='A',
-        name='Descriptor',
-        content_type='image/png',
-        filename='my-file.png'
-    )
-    r2 = ResourceDescriptor.from_dict(r1.to_dict())
-    assert r2.identifier == 'A'
-    assert r2.name == 'Descriptor'
-    assert r2.content_type == 'image/png'
-    assert r2.filename == 'my-file.png'
-    assert r1.identifier == r2.identifier
-    assert r1.name == r2.name
-    assert r1.content_type == r2.content_type
-    assert r1.filename == r2.filename
     # Invalid serializations.
     doc1 = r2.to_dict()
     del doc1[LABEL_NAME]

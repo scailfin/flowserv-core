@@ -72,7 +72,8 @@ class TestBenchmarkResultRanking(object):
         con.commit()
         repo = BenchmarkRepository(
             con=con,
-            template_repo=TemplateFSRepository(base_dir=base_dir)
+            template_repo=TemplateFSRepository(base_dir=base_dir),
+            resource_base_dir=os.path.join(base_dir, 'resources')
         )
         return con, repo
 

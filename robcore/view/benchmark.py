@@ -126,14 +126,14 @@ class BenchmarkSerializer(object):
             })
         # Serialize available benchmark post-processing resources
         resources = list()
-        for r in benchmark.get_resources():
+        for r in benchmark.get_resources().values():
             resource_id = r.identifier
             url = self.urls.get_benchmark_resource(benchmark_id, resource_id)
             resources.append({
                 labels.ID: resource_id,
                 labels.NAME: r.name,
                 labels.CONTENT_TYPE: r.content_type,
-                label.LINKS: hateoas.serialize({hateoas.SELF: url})
+                labels.LINKS: hateoas.serialize({hateoas.SELF: url})
             })
         return {
             labels.SCHEMA: [{

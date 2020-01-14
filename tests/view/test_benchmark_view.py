@@ -44,7 +44,7 @@ class TestBenchmarkView(object):
         benchmark reposiroty, the list of the benchmark handles, and the open
         database connection.
         """
-        repo, submissions, users, _, _ = api.init_api(base_dir)
+        repo, submissions, users, _, _, _, _ = api.init_api(base_dir)
         # Create one new user
         users.register_user(USER_1, USER_1)
         # Create three benchmarks

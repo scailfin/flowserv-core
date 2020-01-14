@@ -13,6 +13,8 @@ and benchmark leader boards.
 from robcore.view.benchmark import BenchmarkSerializer
 from robcore.view.route import UrlFactory
 
+import robcore.error as err
+
 
 class BenchmarkService(object):
     """API component that provides methods to access benchmarks and benchmark
@@ -57,6 +59,28 @@ class BenchmarkService(object):
         """
         benchmark = self.repo.get_benchmark(benchmark_id)
         return self.serialize.benchmark_handle(benchmark)
+
+    def get_benchmark_resource(self, benchmark_id, resource_id):
+        """Get file handle for a benchmark resource that has been generated
+        by the post-processing step.
+
+        Parameters
+        ----------
+        benchmark_id: string
+            Unique benchmark identifier
+        resource_id: string
+            Unique resource identifier
+
+        Returns
+        -------
+        robcore.io.files.FileHandle
+
+        Raises
+        ------
+        robcore.error.UnknownBenchmarkError
+        robcore.error.UnknownResourceError
+        """
+        return self.repo.get_benchmark_resource(benchmark_id, resource_id)
 
     def get_leaderboard(self, benchmark_id, order_by=None, include_all=False):
         """Get serialization of the leader board for the given benchmark.

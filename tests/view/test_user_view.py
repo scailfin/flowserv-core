@@ -31,7 +31,7 @@ class TestUserView(object):
     """Test API methods that access and manipulate users."""
     def test_authenticate_user(self, tmpdir):
         """Test login and logout via API."""
-        _, _, users, _, auth = api.init_api(str(tmpdir), open_access=True)
+        _, _, users, _, auth, _, _ = api.init_api(str(tmpdir), open_access=True)
         # Register a new user that is automatically activated
         users.register_user(username='myuser', password='mypwd', verify=False)
         # Login
@@ -69,7 +69,7 @@ class TestUserView(object):
 
     def test_list_users(self, tmpdir):
         """Test user listings and queries."""
-        _, _, users, _, _ = api.init_api(str(tmpdir), open_access=True)
+        _, _, users, _, _, _, _ = api.init_api(str(tmpdir), open_access=True)
         # Register three active users
         users.register_user(username='a@user', password='mypwd', verify=False)
         users.register_user(username='me@user', password='mypwd', verify=False)
@@ -92,7 +92,7 @@ class TestUserView(object):
 
     def test_register_user(self, tmpdir):
         """Test new user registration via API."""
-        _, _, users, _, _ = api.init_api(str(tmpdir), open_access=True)
+        _, _, users, _, _, _, _ = api.init_api(str(tmpdir), open_access=True)
         # Register a new user without activating the user
         r = users.register_user(username='myuser', password='mypwd', verify=True)
         util.validate_doc(doc=r, mandatory_labels=USER_LOGOUT)
@@ -127,7 +127,7 @@ class TestUserView(object):
 
     def test_reset_password(self, tmpdir):
         """Test requesting a reset and resetting the password for a user."""
-        _, _, users, _, _ = api.init_api(str(tmpdir), open_access=True)
+        _, _, users, _, _, _, _ = api.init_api(str(tmpdir), open_access=True)
         # Register a new user
         users.register_user(username='myuser', password='mypwd', verify=False)
         # Request password reset

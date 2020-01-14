@@ -27,6 +27,7 @@ import robcore.tests.db as db
 DIR = os.path.dirname(os.path.realpath(__file__))
 TEMPLATE_DIR = os.path.join(DIR, '../../.files/benchmark/helloworld')
 TEMPLATE_WITHOUT_SCHEMA = os.path.join(DIR, '../../.files/template/template.json')
+TOPTAGGER_YAML_FILE = os.path.join(DIR, '../../.files/benchmark/top-tagger.yaml')
 
 
 """Fake template for descriptor initialization."""
@@ -42,7 +43,8 @@ class TestBenchmarkRepository(object):
         connector = db.init_db(base_dir)
         repo = BenchmarkRepository(
             con=connector.connect(),
-            template_repo=TemplateFSRepository(base_dir=base_dir)
+            template_repo=TemplateFSRepository(base_dir=base_dir),
+            resource_base_dir=os.path.join(base_dir, 'resources')
         )
         return repo, connector
 
@@ -92,6 +94,14 @@ class TestBenchmarkRepository(object):
             sql = 'SELECT result_schema FROM benchmark WHERE benchmark_id = ?'
             rs = con.execute(sql, (bm_2.identifier,)).fetchone()
             assert rs['result_schema'] is None
+        # Template with post-processing step
+        bm_3 = repo.add_benchmark(
+            name='Top Tagger',
+            description='desc',
+            instructions='instr',
+            src_dir=TEMPLATE_DIR,
+            spec_file=TOPTAGGER_YAML_FILE
+        )
         # Test error conditions
         # - Missing name
         with pytest.raises(err.ConstraintViolationError):
@@ -161,7 +171,8 @@ class TestBenchmarkRepository(object):
         # Re-connect to the repository
         repo = BenchmarkRepository(
             con=connector.connect(),
-            template_repo=TemplateFSRepository(base_dir=str(tmpdir))
+            template_repo=TemplateFSRepository(base_dir=str(tmpdir)),
+            resource_base_dir=os.path.join(str(tmpdir), 'resources')
         )
         benchmark = repo.get_benchmark(bm_1.identifier)
         assert benchmark.identifier == bm_1.identifier
