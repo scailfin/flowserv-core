@@ -26,7 +26,7 @@ class BenchmarkHandle(object):
     """
     def __init__(
         self, identifier, name=None, description=None, instructions=None,
-        template=None, repo=None
+        template=None, result_id=None, repo=None
     ):
         """Initialize the handle properties. If no name is given the
         identifier is used as a name.
@@ -46,6 +46,8 @@ class BenchmarkHandle(object):
             Text containing detailed instructions for benchmark participants
         template: robcore.model.template.base.WorkflowTemplate, optional
             Template for the associated workflow
+        result_id: string
+            Unique identifier of the current post-processing result set
         repo: robcore.model.template.repo.benchmark.BenchmarkRepository, optional
             Template repository to load the template on demand.
 
@@ -61,6 +63,7 @@ class BenchmarkHandle(object):
         self.description = description
         self.instructions = instructions
         self.template = template
+        self.result_id = result_id
         self.repo = repo
 
     def get_description(self):
@@ -88,18 +91,24 @@ class BenchmarkHandle(object):
         (optional) post-processing tasks. If the template does not have a
         post-processing task, an empty list is returned.
 
+        Returns None if no post-processing resources were defined for the
+        benchmark in the workflow template.
+
         Returns
         -------
-        dict(robcore.model.resource.ResourceDescriptor)
+        robcore.model.template.benchmark.BenchmarkResources
         """
         # Load template if None
         if self.template is None:
             self.template = self.repo.template_repo.get_template(self.identifier)
         # Return list of prost-processing outputs
         if self.template.postproc_task is not None:
-            return self.template.postproc_task.outputs
+            return BenchmarkResources(
+                result_id=self.result_id,
+                values=list(self.template.postproc_task.outputs.values())
+            )
         else:
-            return dict()
+            return None
 
     def get_template(self, workflow_spec=None, parameters=None):
         """Get associated workflow template. The template is loaded on-demand
@@ -115,11 +124,6 @@ class BenchmarkHandle(object):
             self.template = self.repo.template_repo.get_template(self.identifier)
         # If any of the optional parameters are given return a modified copy of
         # the workflow template.
-        """    def __init__(
-                self, workflow_spec, source_dir, identifier=None, parameters=None,
-                result_schema=None
-            ):
-        """
         if workflow_spec and parameters:
             return WorkflowTemplate(
                 identifier=self.template.identifier,
@@ -166,3 +170,33 @@ class BenchmarkHandle(object):
         bool
         """
         return not self.instructions is None
+
+
+# -- Benahcmark resource information ------------------------------------------
+
+class BenchmarkResources(object):
+    """Wrapper for benahcmark post-processing resource information. Maintains
+    the list of resource definitions and the identifier of the most recent
+    benchmark post-processing run.
+    """
+    def __init__(self, result_id, values):
+        """Initialize the object properties.
+
+        Parameters
+        ----------
+        result_id: string
+            Unique identifier of the post-processing result set
+        values: list(robcore.model.resource.ResourceDescriptor)
+            List of descriptors for post-processing resources
+        """
+        self.result_id = result_id
+        self.values = values
+
+    def __iter__(self):
+        """Make list of resource descriptors iterable.
+
+        Returns
+        -------
+        iterator
+        """
+        return iter(self.values)

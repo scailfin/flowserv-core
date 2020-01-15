@@ -26,13 +26,15 @@ FORMAT_JSON = 'JSON'
 FORMAT_YAML = 'YAML'
 
 
-def create_dir(directory):
+def create_dir(directory, abs=False):
     """Safely create the given directory path if it does not exist.
 
     Parameters
     ----------
     directory: string
         Path to directory that is being created.
+    abs: boolean, optional
+        Return absolute path if true
 
     Returns
     -------
@@ -45,7 +47,10 @@ def create_dir(directory):
         except OSError as e:
             if e.errno != errno.EEXIST:
                 raise
-    return directory
+    if abs:
+        return os.path.abspath(directory)
+    else:
+        return directory
 
 
 def get_unique_identifier():

@@ -176,7 +176,7 @@ class TestBenchmarkRepository(object):
         )
         benchmark = repo.get_benchmark(bm_1.identifier)
         assert benchmark.identifier == bm_1.identifier
-        assert len(benchmark.get_resources()) == 0
+        assert benchmark.get_resources() is None
         assert repo.get_benchmark(bm_2.identifier).identifier == bm_2.identifier
         # Delete first benchmark
         repo.delete_benchmark(bm_1.identifier)
@@ -204,10 +204,12 @@ class TestBenchmarkRepository(object):
             description='C',
             instructions='D',
             template=TEMPLATE,
+            result_id='R',
             repo=DictRepo(templates={'A': TEMPLATE})
         )
         assert b.identifier == 'A'
         assert b.name == 'B'
+        assert b.result_id == 'R'
         assert b.has_description()
         assert b.get_description() == 'C'
         assert b.has_instructions()

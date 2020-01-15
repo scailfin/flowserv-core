@@ -40,19 +40,19 @@ class BenchmarkSerializer(object):
         -------
         dict
         """
-        benchmark_id = benchmark.identifier
-        leaderboard_url = self.urls.get_leaderboard(benchmark_id)
+        b_id = benchmark.identifier
+        leaderboard_url = self.urls.get_leaderboard(b_id)
         rel_submission_create = hateoas.action(
             hateoas.CREATE,
             resource=hateoas.SUBMISSIONS
         )
         obj = {
-            labels.ID: benchmark_id,
+            labels.ID: b_id,
             labels.NAME: benchmark.name,
             labels.LINKS: hateoas.serialize({
-                hateoas.SELF: self.urls.get_benchmark(benchmark_id),
+                hateoas.SELF: self.urls.get_benchmark(b_id),
                 hateoas.LEADERBOARD: leaderboard_url,
-                rel_submission_create: self.urls.create_submission(benchmark_id)
+                rel_submission_create: self.urls.create_submission(b_id)
             })
         }
         if benchmark.has_description():
@@ -104,7 +104,7 @@ class BenchmarkSerializer(object):
         -------
         dict
         """
-        benchmark_id = benchmark.identifier
+        b_id = benchmark.identifier
         # Serialize ranking entries
         entries = list()
         for run in ranking.entries:
@@ -126,16 +126,19 @@ class BenchmarkSerializer(object):
             })
         # Serialize available benchmark post-processing resources
         resources = list()
-        for r in benchmark.get_resources().values():
-            resource_id = r.identifier
-            url = self.urls.get_benchmark_resource(benchmark_id, resource_id)
-            resources.append({
-                labels.ID: resource_id,
-                labels.NAME: r.name,
-                labels.CONTENT_TYPE: r.content_type,
-                labels.CAPTION: r.caption,
-                labels.LINKS: hateoas.serialize({hateoas.SELF: url})
-            })
+        current_resources = benchmark.get_resources()
+        if current_resources is not None:
+            result_id = current_resources.result_id
+            for r in current_resources:
+                r_id = r.identifier
+                url = self.urls.get_benchmark_resource(b_id, result_id, r_id)
+                resources.append({
+                    labels.ID: resource_id,
+                    labels.NAME: r.name,
+                    labels.CONTENT_TYPE: r.content_type,
+                    labels.CAPTION: r.caption,
+                    labels.LINKS: hateoas.serialize({hateoas.SELF: url})
+                })
         return {
             labels.SCHEMA: [{
                     labels.ID: c.identifier,
@@ -146,8 +149,8 @@ class BenchmarkSerializer(object):
             labels.RANKING: entries,
             labels.RESOURCES: resources,
             labels.LINKS: hateoas.serialize({
-                hateoas.SELF: self.urls.get_leaderboard(benchmark_id),
-                hateoas.BENCHMARK: self.urls.get_benchmark(benchmark_id)
+                hateoas.SELF: self.urls.get_leaderboard(b_id),
+                hateoas.BENCHMARK: self.urls.get_benchmark(b_id)
             })
         }
 

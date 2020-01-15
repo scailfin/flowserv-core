@@ -60,7 +60,7 @@ class BenchmarkService(object):
         benchmark = self.repo.get_benchmark(benchmark_id)
         return self.serialize.benchmark_handle(benchmark)
 
-    def get_benchmark_resource(self, benchmark_id, resource_id):
+    def get_benchmark_resource(self, benchmark_id, result_id, resource_id):
         """Get file handle for a benchmark resource that has been generated
         by the post-processing step.
 
@@ -68,6 +68,8 @@ class BenchmarkService(object):
         ----------
         benchmark_id: string
             Unique benchmark identifier
+        result_id: string
+            Unique identifier of the post-processing result set
         resource_id: string
             Unique resource identifier
 
@@ -80,7 +82,11 @@ class BenchmarkService(object):
         robcore.error.UnknownBenchmarkError
         robcore.error.UnknownResourceError
         """
-        return self.repo.get_benchmark_resource(benchmark_id, resource_id)
+        return self.repo.get_benchmark_resource(
+            benchmark_id,
+            result_id,
+            resource_id
+        )
 
     def get_leaderboard(self, benchmark_id, order_by=None, include_all=False):
         """Get serialization of the leader board for the given benchmark.

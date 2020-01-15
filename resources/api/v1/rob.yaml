@@ -119,7 +119,7 @@ paths:
           description: "Invalid sort statement"
         404:
           description: "Unknown benchmark"
-  /benchmarks/{benchmarkId}/resources/{resourceId}:
+  /benchmarks/{benchmarkId}/resources/{resultId}/{resourceId}:
     get:
       tags:
       - "benchmark"
@@ -133,6 +133,11 @@ paths:
       - in: "path"
         name: "benchmarkId"
         description: "Unique benchmark identifier"
+        required: true
+        type: string
+      - in: "path"
+        name: "resultId"
+        description: "Unique identifier of the post-processing result set"
         required: true
         type: string
       - in: "path"

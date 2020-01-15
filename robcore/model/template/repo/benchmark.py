@@ -45,7 +45,7 @@ class BenchmarkRepository(object):
         self.con = con
         self.template_repo = template_repo
         # Create the resource directory if it does not exist
-        self.resource_base_dir = util.create_dir(resource_base_dir)
+        self.resource_base_dir = util.create_dir(resource_base_dir, abs=True)
 
     def add_benchmark(
         self, name, description=None, instructions=None, src_dir=None,
@@ -120,7 +120,7 @@ class BenchmarkRepository(object):
         sql = (
             'INSERT INTO benchmark'
             '(benchmark_id, name, description, instructions, postproc_task, '
-            'result_schema, static_dir, resource_dir) '
+            'result_schema, static_dir, resources_dir) '
             'VALUES(?, ?, ?, ?, ?, ?, ?, ?)'
         )
         values = (
@@ -181,7 +181,7 @@ class BenchmarkRepository(object):
         # Get benchmark information from database. If the result is empty an
         # error is raised
         sql = (
-            'SELECT benchmark_id, name, description, instructions '
+            'SELECT benchmark_id, name, description, instructions, resources_id '
             'FROM benchmark '
             'WHERE benchmark_id = ?'
         )
@@ -196,10 +196,11 @@ class BenchmarkRepository(object):
             description=rs['description'],
             instructions=rs['instructions'],
             template=self.template_repo.get_template(benchmark_id),
+            result_id=rs['resources_id'],
             repo=self
         )
 
-    def get_benchmark_resource(self, benchmark_id, resource_id):
+    def get_benchmark_resource(self, benchmark_id, result_id, resource_id):
         """Get file handle for a benchmark resource that has been generated
         by the post-processing step.
 
@@ -207,6 +208,8 @@ class BenchmarkRepository(object):
         ----------
         benchmark_id: string
             Unique benchmark identifier
+        result_id: string
+            Unique identifier of the result run that generated the resources
         resource_id: string
             Unique resource identifier
 
@@ -221,7 +224,7 @@ class BenchmarkRepository(object):
         """
         # Get benchmark information from database. If the result is empty an
         # error is raised
-        sql = 'SELECT resource_dir FROM benchmark WHERE benchmark_id = ?'
+        sql = 'SELECT resources_dir FROM benchmark WHERE benchmark_id = ?'
         rs = self.con.execute(sql, (benchmark_id,)).fetchone()
         if rs is None:
             raise err.UnknownBenchmarkError(benchmark_id)
@@ -229,7 +232,7 @@ class BenchmarkRepository(object):
         # exists an error is raised. In the future we may want to include the
         # post-processing declaration in above query to have access to the
         # content type of the file.
-        res_dir = os.path.join(self.resource_base_dir, benchmark_id)
+        res_dir = os.path.join(rs['resources_dir'], result_id)
         res_file = os.path.join(res_dir, resource_id)
         if not os.path.isfile(res_file):
             raise err.UnknownResourceError(resource_id)

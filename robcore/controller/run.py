@@ -322,7 +322,7 @@ def update_run(con, run_id, state, commit_changes=True):
         # results.
         sql = (
             'SELECT b.benchmark_id, b.result_schema, b.postproc_task, '
-            'b.resource_key, b.static_dir, b.resource_dir '
+            'b.resources_key, b.static_dir, b.resources_dir '
             'FROM benchmark b, benchmark_submission s, benchmark_run r '
             'WHERE b.benchmark_id = s.benchmark_id AND '
             's.submission_id = r.submission_id AND r.run_id = ?'
@@ -340,7 +340,7 @@ def update_run(con, run_id, state, commit_changes=True):
             # Use sorted list of run identifier in the ranking as unique key
             # to identify changes to previous post-processing results.
             runs = sorted([r.run_id for r in leaders.entries])
-            resource_key = rs['resource_key']
+            resource_key = rs['resources_key']
             if resource_key is not None:
                 resource_key = json.loads(resource_key)
             else:
@@ -349,8 +349,6 @@ def update_run(con, run_id, state, commit_changes=True):
                 # Run post-processing task if the current post-processing
                 # resources where generated for a different set of runs than
                 # those in the current leader board.
-                src_dir = rs['static_dir']
-                resource_dir = rs['resource_dir']
                 # Get post-processing task definition
                 doc = json.loads(rs['postproc_task'])
                 postproc_task = PostProcessingStep.from_dict(doc)
@@ -364,29 +362,28 @@ def update_run(con, run_id, state, commit_changes=True):
                 # Run workflow step in a Docker container
                 postproc.run_post_processing(
                     task=postproc_task,
-                    template_dir=src_dir,
+                    template_dir=rs['static_dir'],
                     in_dir=in_dir,
                     out_dir=out_dir
                 )
                 # Copy files from output directory to the benchmark's resource
-                # directory
+                # directory. Create a new unique subfolder for all resources.
+                res_run_id = util.get_unique_identifier()
+                resources_dir = util.create_dir(
+                    os.path.join(rs['resources_dir'], res_run_id)
+                )
                 for filename in postproc_task.outputs:
                     source_file = os.path.join(out_dir, filename)
-                    target_file = os.path.join(resource_dir, filename)
+                    target_file = os.path.join(resources_dir, filename)
                     if os.path.isfile(source_file):
                         shutil.copy(src=source_file, dst=target_file)
-                    elif os.path.isfile(target_file):
-                        # Remove the target file if it exists but wasn't
-                        # created during post-processing (possibly due to an
-                        # error during processing)
-                        os.remove(target_file)
                 # Update resource key in the benchmark table
                 sql = (
                     "UPDATE benchmark "
-                    "SET resource_key = ? "
+                    "SET resource_key = ?, resources_id = ? "
                     "WHERE benchmark_id = ?"
                 )
-                con.execute(sql, (json.dumps(runs), benchmark_id))
+                con.execute(sql, (json.dumps(runs), res_run_id, benchmark_id))
                 # Delete temporary input and output directories
                 shutil.rmtree(in_dir)
                 shutil.rmtree(out_dir)

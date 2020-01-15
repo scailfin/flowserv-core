@@ -92,9 +92,10 @@ CREATE TABLE benchmark(
     instructions TEXT,
     postproc_task TEXT,
     result_schema TEXT,
-    resource_key TEXT,
+    resources_id VARCHAR(32),
+    resources_key TEXT,
+    resources_dir VARCHAR(1024),
     static_dir VARCHAR(1024),
-    resource_dir VARCHAR(1024),
     PRIMARY KEY(benchmark_id),
     UNIQUE(name)
 );
