@@ -24,6 +24,7 @@ FINISHED_AT = 'finishedAt'
 
 # Benchmark resources
 BENCHMARKS = 'benchmarks'
+CAPTION = 'caption'
 CONTENT_TYPE = 'contentType'
 DESCRIPTION = 'description'
 INSTRUCTIONS = 'instructions'

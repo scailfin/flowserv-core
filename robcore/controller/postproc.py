@@ -15,6 +15,7 @@ import shutil
 import tempfile
 
 from docker.errors import ContainerError, ImageNotFound, APIError
+from string import Template
 
 import robcore.util as util
 
@@ -122,10 +123,7 @@ def run_post_processing(task, template_dir, in_dir, out_dir):
     client = docker.from_env()
     try:
         for cmd in task.commands:
-            if '$in' in cmd:
-                cmd = cmd.replace('$in', '/in')
-            if '$out' in cmd:
-                cmd = cmd.replace('$out', '/out')
+            cmd = Template(cmd).substitute({'in': '/in', 'out': '/out'})
             client.containers.run(
                 image=task.env,
                 command=cmd,

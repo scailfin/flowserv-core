@@ -80,7 +80,7 @@ class TestWorkflowTemplate(object):
         assert template.modules[1].name == 'ML Evaluation Step'
         step = template.postproc_task
         assert step.env == 'toptagger:1.0'
-        assert step.mounts == ['code/', 'evaluate/']
+        assert step.mounts == ['code/', 'data/']
         assert step.inputs == ['results/yProbBest.pkl']
         assert len(step.commands) == 1
         assert len(step.outputs) == 1

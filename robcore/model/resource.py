@@ -20,9 +20,10 @@ import robcore.util as util
 
 
 """Labels for descriptor serializations."""
+LABEL_CAPTION = 'caption'
+LABEL_CONTENTTYPE = 'type'
 LABEL_ID = 'id'
 LABEL_NAME = 'name'
-LABEL_CONTENTTYPE = 'type'
 
 
 # -- Descriptors -------------------------------------------------------------
@@ -31,7 +32,7 @@ class ResourceDescriptor(object):
     """Descriptor for a workflow resource. Descriptors are part of workflow
     templates. They define metadata of workflow outputs.
     """
-    def __init__(self, identifier, name, content_type):
+    def __init__(self, identifier, name, content_type, caption=None):
         """Initialize the object properties.
 
         Parameters
@@ -42,10 +43,13 @@ class ResourceDescriptor(object):
             Descriptive resource name
         content_type: string
             Resource type identifier
+        caption: string, optional
+            Optional caption for figures
         """
         self.identifier = identifier
         self.name = name
         self.content_type = content_type
+        self.caption = caption
 
     @staticmethod
     def from_dict(doc, validate=False):
@@ -65,12 +69,14 @@ class ResourceDescriptor(object):
         if validate:
             util.validate_doc(
                 doc,
-                mandatory_labels=[LABEL_ID, LABEL_NAME, LABEL_CONTENTTYPE]
+                mandatory_labels=[LABEL_ID, LABEL_NAME, LABEL_CONTENTTYPE],
+                optional_labels=[LABEL_CAPTION]
             )
         return ResourceDescriptor(
             identifier=doc[LABEL_ID],
             name=doc[LABEL_NAME],
-            content_type=doc[LABEL_CONTENTTYPE]
+            content_type=doc[LABEL_CONTENTTYPE],
+            caption=doc[LABEL_CAPTION] if LABEL_CAPTION in doc else None
         )
 
     def to_dict(self):
@@ -80,11 +86,14 @@ class ResourceDescriptor(object):
         -------
         dict
         """
-        return {
+        doc = {
             LABEL_ID: self.identifier,
             LABEL_NAME: self.name,
             LABEL_CONTENTTYPE: self.content_type
         }
+        if self.caption is not None:
+            doc[LABEL_CAPTION] = self.caption
+        return doc
 
 
 # -- Resource Handles ---------------------------------------------------------

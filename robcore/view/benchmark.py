@@ -133,6 +133,7 @@ class BenchmarkSerializer(object):
                 labels.ID: resource_id,
                 labels.NAME: r.name,
                 labels.CONTENT_TYPE: r.content_type,
+                labels.CAPTION: r.caption,
                 labels.LINKS: hateoas.serialize({hateoas.SELF: url})
             })
         return {
