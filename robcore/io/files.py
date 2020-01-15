@@ -91,6 +91,16 @@ class FileHandle(object):
             os.remove(self.filepath)
 
     @property
+    def last_modified(self):
+        """Last modification timestamp for the file.
+
+        Returns
+        -------
+        datetime
+        """
+        datetime.utcfromtimestamp(os.path.getmtime(self.filepath))
+
+    @property
     def name(self):
         """Method for accessing the file name.
 
