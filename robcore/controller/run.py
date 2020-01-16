@@ -380,7 +380,7 @@ def update_run(con, run_id, state, commit_changes=True):
                 # Update resource key in the benchmark table
                 sql = (
                     "UPDATE benchmark "
-                    "SET resource_key = ?, resources_id = ? "
+                    "SET resources_key = ?, resources_id = ? "
                     "WHERE benchmark_id = ?"
                 )
                 con.execute(sql, (json.dumps(runs), res_run_id, benchmark_id))

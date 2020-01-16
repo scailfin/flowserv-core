@@ -129,16 +129,17 @@ class BenchmarkSerializer(object):
         current_resources = benchmark.get_resources()
         if current_resources is not None:
             result_id = current_resources.result_id
-            for r in current_resources:
-                r_id = r.identifier
-                url = self.urls.get_benchmark_resource(b_id, result_id, r_id)
-                resources.append({
-                    labels.ID: resource_id,
-                    labels.NAME: r.name,
-                    labels.CONTENT_TYPE: r.content_type,
-                    labels.CAPTION: r.caption,
-                    labels.LINKS: hateoas.serialize({hateoas.SELF: url})
-                })
+            if result_id is not None:
+                for r in current_resources:
+                    r_id = r.identifier
+                    url = self.urls.get_benchmark_resource(b_id, result_id, r_id)
+                    resources.append({
+                        labels.ID: r_id,
+                        labels.NAME: r.name,
+                        labels.CONTENT_TYPE: r.content_type,
+                        labels.CAPTION: r.caption,
+                        labels.LINKS: hateoas.serialize({hateoas.SELF: url})
+                    })
         return {
             labels.SCHEMA: [{
                     labels.ID: c.identifier,
