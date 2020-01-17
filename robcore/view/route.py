@@ -125,6 +125,38 @@ class UrlFactory(object):
         """
         return self.get_submission(submission_id)
 
+    def download_benchmark_resource(self, benchmark_id, result_id, resource_id):
+        """Url to GET a benchmark resource.
+
+        Parameters
+        ----------
+        benchmark_id: string
+            Unique benchmark identifier
+        resource_id: string
+            Unique resource identifier
+
+        Returns
+        -------
+        string
+        """
+        return self.download_benchmark_resources(benchmark_id, result_id) + '/' + resource_id
+
+    def download_benchmark_resources(self, benchmark_id, result_id):
+        """Url to GET a benchmark resource archive.
+
+        Parameters
+        ----------
+        benchmark_id: string
+            Unique benchmark identifier
+        resource_id: string
+            Unique resource identifier
+
+        Returns
+        -------
+        string
+        """
+        return self.get_benchmark(benchmark_id) + '/resources/' + result_id
+
     def download_file(self, submission_id, file_id):
         """Url to GET a previously uploaded file.
 
@@ -155,7 +187,23 @@ class UrlFactory(object):
         -------
         string
         """
-        return self.get_run(run_id) + '/resources/' + resource_id
+        return self.download_result_files(run_id) + '/' + resource_id
+
+    def download_result_files(self, run_id):
+        """Url to GET a run result file archive.
+
+        Parameters
+        ----------
+        run_ud: string
+            Unique run identifier
+        resource_id: string
+            Unique resource identifier
+
+        Returns
+        -------
+        string
+        """
+        return self.get_run(run_id) + '/resources'
 
     def get_benchmark(self, benchmark_id):
         """Url to GET benchmark handle.
@@ -170,22 +218,6 @@ class UrlFactory(object):
         string
         """
         return self.benchmark_base_url + '/' + benchmark_id
-
-    def get_benchmark_resource(self, benchmark_id, result_id, resource_id):
-        """Url to GET a benchmark resource.
-
-        Parameters
-        ----------
-        benchmark_id: string
-            Unique benchmark identifier
-        resource_id: string
-            Unique resource identifier
-
-        Returns
-        -------
-        string
-        """
-        return self.get_benchmark(benchmark_id) + '/resources/' + result_id + '/' + resource_id
 
     def get_leaderboard(self, benchmark_id, include_all=None):
         """Url to GET benchmark leaderboard.

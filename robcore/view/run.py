@@ -46,6 +46,9 @@ class RunSerializer(object):
         else:
             url = self.urls.delete_run(run_id)
             links[hateoas.action(hateoas.DELETE)] = url
+            if run.is_success():
+                url = self.urls.download_result_files(run_id)
+                links[hateoas.RESULTS] = url
         doc = {
             labels.ID: run_id,
             labels.STATE: run.state.type_id,

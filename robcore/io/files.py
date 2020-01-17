@@ -21,6 +21,37 @@ from datetime import datetime
 import robcore.util as util
 
 
+class FileDescriptor(object):
+    """Descriptor for an uploaded file. Contains the file identifier, name,
+    and the upload timestamp.
+    """
+    def __init__(self, identifier, name, created_at):
+        """Initialize the object properties.
+
+        Parameters
+        ----------
+        identifier: string
+            Unique file identifier
+        name: string
+            Name of the uploaded file
+        created_at: datetime.datetime
+            Timestamp of file upload (in UTC timezone)
+        """
+        self.identifier = identifier
+        self.name = name
+        self.created_at = created_at
+
+    def upload_time(self):
+        """Get string representation of the upload timestamp (created_at) in
+        local timezone.
+
+        Returns
+        -------
+        string
+        """
+        return util.to_localstr(date=self.created_at)
+
+
 class FileHandle(object):
     """Handle for files that are managed by the file store. Each file has a
     unique identifier and a file name. Files are maintaind in folders on the

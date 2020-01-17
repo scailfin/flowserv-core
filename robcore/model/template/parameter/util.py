@@ -134,8 +134,8 @@ def read_parameter(para, scanner, prompt_prefix='', files=None):
         Workflow template parameter declaration
     scanner: robcore.io.scanner.Scanner
     prompt_prefix: string, optional
-    files: list()
-        List of idenifier, name pairs
+    files: list(robcore.io.files.FileDescriptor)
+        List of file descriptors
 
     Returns
     -------

@@ -131,7 +131,7 @@ class BenchmarkSerializer(object):
             result_id = current_resources.result_id
             if result_id is not None:
                 for r in current_resources:
-                    url = self.urls.get_benchmark_resource(
+                    url = self.urls.download_benchmark_resource(
                         benchmark_id=b_id,
                         result_id=result_id,
                         resource_id=r.identifier
@@ -154,7 +154,11 @@ class BenchmarkSerializer(object):
             labels.RESOURCES: resources,
             labels.LINKS: hateoas.serialize({
                 hateoas.SELF: self.urls.get_leaderboard(b_id),
-                hateoas.BENCHMARK: self.urls.get_benchmark(b_id)
+                hateoas.BENCHMARK: self.urls.get_benchmark(b_id),
+                hateoas.RESOURCES: self.urls.download_benchmark_resources(
+                    benchmark_id=b_id,
+                    result_id=result_id
+                )
             })
         }
 
