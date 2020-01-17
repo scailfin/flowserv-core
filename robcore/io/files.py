@@ -21,43 +21,12 @@ from datetime import datetime
 import robcore.util as util
 
 
-class FileDescriptor(object):
-    """Descriptor for an uploaded file. Contains the file identifier, name,
-    and the upload timestamp.
-    """
-    def __init__(self, identifier, name, created_at):
-        """Initialize the object properties.
-
-        Parameters
-        ----------
-        identifier: string
-            Unique file identifier
-        name: string
-            Name of the uploaded file
-        created_at: datetime.datetime
-            Timestamp of file upload (in UTC timezone)
-        """
-        self.identifier = identifier
-        self.name = name
-        self.created_at = created_at
-
-    def upload_time(self):
-        """Get string representation of the upload timestamp (created_at) in
-        local timezone.
-
-        Returns
-        -------
-        string
-        """
-        return util.to_localstr(date=self.created_at)
-
-
 class FileHandle(object):
     """Handle for files that are managed by the file store. Each file has a
     unique identifier and a file name. Files are maintaind in folders on the
     file system.
     """
-    def __init__(self, filepath, identifier=None, file_name=None):
+    def __init__(self, filepath, identifier=None, file_name=None, mimetype=None):
         """Initialize the file identifier, the (full) file path, and the file
         name. The file path is mandatory.
 
@@ -69,10 +38,13 @@ class FileHandle(object):
             Unique file identifier
         file_name: string, optional
             Base name of the file
+        mimetype: string, optional
+            File mime-type (if known)
         """
         self.filepath = os.path.abspath(filepath)
-        self.identifier = identifier if not identifier is None else util.get_unique_identifier()
-        self.file_name = file_name if not file_name is None else os.path.basename(self.filepath)
+        self.identifier = identifier if identifier is not None else util.get_unique_identifier()
+        self.file_name = file_name if file_name is not None else os.path.basename(self.filepath)
+        self.mimetype = mimetype
 
     @property
     def created_at(self):

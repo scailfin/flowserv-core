@@ -115,17 +115,29 @@ class TestSubmissionManagerFilestore(object):
         """Test accessing uploaded files."""
         # Initialize database. Get submission manager and submission handles
         manager, s1, s2 = TestSubmissionManagerFilestore.init(str(tmpdir))
-        # Upload one file for submission 1
+        # Upload one file for submission 1 (without a file-type)
         fh = manager.upload_file(
             submission_id=s1.identifier,
             file=FakeStream(data={'A': 1}),
             file_name='A.json'
         )
+        assert fh.mimetype == 'application/json'
         file_id = fh.identifier
         fh = manager.get_file(s1.identifier, file_id)
         assert fh.identifier == file_id
         assert fh.name == 'A.json'
+        assert fh.mimetype == 'application/json'
         assert util.read_object(filename=fh.filepath) == {'A': 1}
+        # Upload one file for submission 1 (with file-type)
+        fh = manager.upload_file(
+            submission_id=s1.identifier,
+            file=FakeStream(data={'A': 1}),
+            file_name='A.json',
+            file_type='abc'
+        )
+        assert fh.mimetype == 'abc'
+        fh = manager.get_file(s1.identifier, fh.identifier)
+        assert fh.mimetype == 'abc'
         # Error situations
         # - File handle is unknown for s2
         with pytest.raises(err.UnknownFileError):

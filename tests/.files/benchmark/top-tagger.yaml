@@ -37,7 +37,6 @@ postproc:
         - id: 'ROC.png'
           name: 'ROC Curves'
           caption: 'ROC curves for all algorithms evaluated on the test sample, shown as the AUC ensemble median of  multiple  trainings. '
-          type: 'image/png'
 modules:
     - id: 'preproc'
       name: 'Pre-Processing Step'

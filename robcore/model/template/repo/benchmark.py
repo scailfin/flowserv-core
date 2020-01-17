@@ -12,6 +12,7 @@ the workflow template and the result files of individual workflow runs.
 """
 
 import json
+import mimetypes
 import os
 
 from robcore.io.files import FileHandle
@@ -236,8 +237,15 @@ class BenchmarkRepository(object):
         res_file = os.path.join(res_dir, resource_id)
         if not os.path.isfile(res_file):
             raise err.UnknownResourceError(resource_id)
-        # Return handle for the resource file
-        return FileHandle(filepath=res_file, file_name=resource_id)
+        #
+        # Return handle for the resource file. Guess mime-type for the resource
+        # file from the resource identifier
+        mimetype, _ = mimetypes.guess_type(url=resource_id)
+        return FileHandle(
+            filepath=res_file,
+            file_name=resource_id,
+            mimetype=mimetype
+        )
 
     def get_leaderboard(self, benchmark_id, order_by=None, include_all=False):
         """Get current leaderboard for a given benchmark. The result is a

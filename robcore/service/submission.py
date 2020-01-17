@@ -340,7 +340,7 @@ class SubmissionService(object):
         )
         return self.serialize.submission_handle(submission=submission)
 
-    def upload_file(self, submission_id, file, file_name, user):
+    def upload_file(self, submission_id, file, file_name, user, file_type=None):
         """Create a file for a given submission.
 
         Parameters
@@ -353,6 +353,9 @@ class SubmissionService(object):
             Unique submission identifier
         user: robcore.model.user.base.UserHandle
             Handle for user that is uploading the file
+        file_type: string, optional
+            Identifier for the file type (e.g., the file MimeType). This could
+            also by the identifier of a content handler.
 
         Returns
         -------
@@ -371,6 +374,7 @@ class SubmissionService(object):
         fh = self.manager.upload_file(
             submission_id=submission_id,
             file=file,
-            file_name=file_name
+            file_name=file_name,
+            file_type=file_type
         )
         return self.serialize.file_handle(submission_id=submission_id, fh=fh)

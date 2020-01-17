@@ -180,14 +180,15 @@ class TestWorkflowStates(object):
             created_at=created_at,
             started_at=started_at,
             finished_at=finished_at,
-            files=[FileResource('0', 'myfile', filename)]
+            files=[FileResource('0', 'myfile.json', filename)]
         )
         assert state.created_at == created_at
         assert state.started_at == started_at
         assert state.finished_at == finished_at
         assert len(state.files) == 1
         # Get the file resource
-        f = state.get_resource('myfile')
+        f = state.get_resource('myfile.json')
+        assert f.mimetype == 'application/json'
         assert util.read_object(filename) == {'A': 1}
         assert len(state.list_resources()) == 1
         f.delete()
@@ -199,7 +200,7 @@ class TestWorkflowStates(object):
                 started_at=started_at,
                 finished_at=finished_at,
                 files=[
-                    FileResource('0', 'myfile', filename),
-                    FileResource('1', 'myfile', filename)
+                    FileResource('0', 'myfile.json', filename),
+                    FileResource('1', 'myfile.json', filename)
                 ]
             )

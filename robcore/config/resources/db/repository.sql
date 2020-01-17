@@ -124,6 +124,8 @@ CREATE TABLE submission_file(
     file_id VARCHAR(32) NOT NULL,
     submission_id VARCHAR(32) NOT NULL REFERENCES benchmark_submission (submission_id),
     name VARCHAR(512) NOT NULL,
+    file_type VARCHAR(255),
+    mimetype VARCHAR(255),
     PRIMARY KEY(file_id)
 );
 
@@ -170,5 +172,6 @@ CREATE TABLE run_result_file(
     file_id VARCHAR(32) NOT NULL,
     resource_name TEXT NOT NULL,
     file_path TEXT NOT NULL,
+    mimetype VARCHAR(255),
     PRIMARY KEY(run_id, file_id)
 );

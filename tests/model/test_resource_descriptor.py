@@ -17,16 +17,13 @@ def test_descriptor_serialization():
     """Unit test for resource descriptor (de-)serialization."""
     r1 = ResourceDescriptor(
         identifier='A',
-        name='Descriptor',
-        content_type='image/png'
+        name='Descriptor'
     )
     r2 = ResourceDescriptor.from_dict(r1.to_dict())
     assert r2.identifier == 'A'
     assert r2.name == 'Descriptor'
-    assert r2.content_type == 'image/png'
     assert r1.identifier == r2.identifier
     assert r1.name == r2.name
-    assert r1.content_type == r2.content_type
     # Invalid serializations.
     doc1 = r2.to_dict()
     del doc1[LABEL_NAME]

@@ -11,6 +11,7 @@ This includes for example files that are created by individual workflow runs or
 by workflow post-processing steps.
 """
 
+import mimetypes
 import os
 import shutil
 
@@ -21,7 +22,6 @@ import robcore.util as util
 
 """Labels for descriptor serializations."""
 LABEL_CAPTION = 'caption'
-LABEL_CONTENTTYPE = 'type'
 LABEL_ID = 'id'
 LABEL_NAME = 'name'
 
@@ -32,7 +32,7 @@ class ResourceDescriptor(object):
     """Descriptor for a workflow resource. Descriptors are part of workflow
     templates. They define metadata of workflow outputs.
     """
-    def __init__(self, identifier, name, content_type, caption=None):
+    def __init__(self, identifier, name, caption=None):
         """Initialize the object properties.
 
         Parameters
@@ -41,14 +41,11 @@ class ResourceDescriptor(object):
             Unique resource identifier
         name: string
             Descriptive resource name
-        content_type: string
-            Resource type identifier
         caption: string, optional
             Optional caption for figures
         """
         self.identifier = identifier
         self.name = name
-        self.content_type = content_type
         self.caption = caption
 
     @staticmethod
@@ -69,13 +66,12 @@ class ResourceDescriptor(object):
         if validate:
             util.validate_doc(
                 doc,
-                mandatory_labels=[LABEL_ID, LABEL_NAME, LABEL_CONTENTTYPE],
+                mandatory_labels=[LABEL_ID, LABEL_NAME],
                 optional_labels=[LABEL_CAPTION]
             )
         return ResourceDescriptor(
             identifier=doc[LABEL_ID],
             name=doc[LABEL_NAME],
-            content_type=doc[LABEL_CONTENTTYPE],
             caption=doc[LABEL_CAPTION] if LABEL_CAPTION in doc else None
         )
 
@@ -88,8 +84,7 @@ class ResourceDescriptor(object):
         """
         doc = {
             LABEL_ID: self.identifier,
-            LABEL_NAME: self.name,
-            LABEL_CONTENTTYPE: self.content_type
+            LABEL_NAME: self.name
         }
         if self.caption is not None:
             doc[LABEL_CAPTION] = self.caption
@@ -112,7 +107,7 @@ class FileResource(object):
     manner in order to be accessible as long as information about the workflow
     run is maintained by the workflow engine.
     """
-    def __init__(self, resource_id, resource_name, file_path):
+    def __init__(self, resource_id, resource_name, file_path, mimetype=None):
         """Initialize the resource identifier, name and the file handle that
         provides access to the file on disk.
 
@@ -126,10 +121,17 @@ class FileResource(object):
             directory
         file_path: string
             Path to access the resource file on disk
+        mimetype: string, optional
+            File mime-type (if known)
         """
         self.resource_id = resource_id
         self.resource_name = resource_name
         self.file_path = file_path
+        # Guess the mime-type from the file name if not given
+        if mimetype is not None:
+            self.mimetype = mimetype
+        else:
+            self.mimetype, _ = mimetypes.guess_type(url=resource_name)
 
     def delete(self):
         """Delete the associated file on disk."""
@@ -156,4 +158,4 @@ class FileResource(object):
         -------
         robcore.io.files.FileHandle
         """
-        return FileHandle(filepath=self.file_path)
+        return FileHandle(filepath=self.file_path, mimetype=self.mimetype)

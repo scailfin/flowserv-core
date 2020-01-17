@@ -17,6 +17,7 @@ directories for the respective submissions.
 """
 
 import json
+import mimetypes
 import os
 import shutil
 
@@ -430,15 +431,18 @@ class SubmissionManager(object):
         # Retrieve file information from disk. Use both identifier to ensure
         # that the file belongs to the submission. Raise error if the file
         # does not exist.
-        sql = 'SELECT name FROM submission_file '
-        sql += 'WHERE submission_id = ? AND file_id = ?'
+        sql = (
+            'SELECT name, mimetype FROM submission_file '
+            'WHERE submission_id = ? AND file_id = ?'
+        )
         row = self.con.execute(sql, (submission_id, file_id)).fetchone()
         if row is None:
             raise err.UnknownFileError(file_id)
         return FileHandle(
             identifier=file_id,
             file_name=row['name'],
-            filepath=os.path.join(self.directory, submission_id, file_id)
+            filepath=os.path.join(self.directory, submission_id, file_id),
+            mimetype=row['mimetype']
         )
 
     def get_results(self, submission_id, order_by=None):
@@ -574,15 +578,18 @@ class SubmissionManager(object):
         list(robcore.io.files.FileHandle)
         """
         # Create the result set from a SQL query of the submission file table
-        sql = 'SELECT file_id, name FROM submission_file '
-        sql += 'WHERE submission_id = ?'
+        sql = (
+            'SELECT file_id, name, mimetype FROM submission_file '
+            'WHERE submission_id = ?'
+        )
         rs = list()
         for row in self.con.execute(sql, (submission_id,)).fetchall():
             file_id = row['file_id']
             fh = FileHandle(
                 identifier=file_id,
                 file_name=row['name'],
-                filepath=os.path.join(self.directory, submission_id, file_id)
+                filepath=os.path.join(self.directory, submission_id, file_id),
+                mimetype=row['mimetype']
             )
             rs.append(fh)
         return rs
@@ -721,7 +728,7 @@ class SubmissionManager(object):
         self.con.commit()
         return submission
 
-    def upload_file(self, submission_id, file, file_name):
+    def upload_file(self, submission_id, file, file_name, file_type=None):
         """Create a new entry from a given file stream. Will copy the given
         file to a file in the base directory.
 
@@ -733,6 +740,9 @@ class SubmissionManager(object):
             File object (e.g., uploaded via HTTP request)
         file_name: string
             Name of the file
+        file_type: string, optional
+            Identifier for the file type (e.g., the file MimeType). This could
+            also by the identifier of a content handler.
 
         Returns
         -------
@@ -745,23 +755,36 @@ class SubmissionManager(object):
         """
         # Ensure that the given file name is valid
         constraint.validate_name(file_name)
-        # Get submission handle to ensure that the submission exists
+        # Get submission handle. These steps ensure that the submission and the
+        # directory for submission uploads exists.
         self.get_submission(submission_id, load_members=False)
-        # Ensure that the directory for submission uploads exists
-        file_dir = os.path.join(self.directory, submission_id)
-        # Create a new unique identifier for the file.
+        file_dir = util.create_dir(os.path.join(self.directory, submission_id))
+        # Get the mime-type of the uploaded file. At this point we assume that
+        # the file_type either contains the mime-type or that it is None. In the
+        # latter case the mime-type is guessed from the name of the uploaded
+        # file (may be None).
+        if file_type is not None:
+            mimetype = file_type
+        else:
+            mimetype, _ = mimetypes.guess_type(url=file_name)
+        # Create a new unique identifier for the file and save the file object
+        # to the new file path.
         identifier = util.get_unique_identifier()
-        # Save the file object to the new file path
         output_file = os.path.join(file_dir, identifier)
         file.save(output_file)
         # Insert information into database
-        sql = 'INSERT INTO submission_file(submission_id, file_id, name) '
-        sql += 'VALUES(?, ?, ?)'
-        self.con.execute(sql, (submission_id, identifier, file_name))
+        sql = (
+            'INSERT INTO submission_file'
+            '(submission_id, file_id, file_type, mimetype, name) '
+            'VALUES(?, ?, ?, ?, ?)'
+        )
+        params = (submission_id, identifier, file_type, mimetype, file_name)
+        self.con.execute(sql, params)
         self.con.commit()
         # Return handle to uploaded file
         return FileHandle(
             identifier=identifier,
             filepath=output_file,
-            file_name=file_name
+            file_name=file_name,
+            mimetype=mimetype
         )
