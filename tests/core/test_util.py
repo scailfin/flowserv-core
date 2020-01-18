@@ -88,7 +88,7 @@ class TestUtilityMethods(object):
         )
         out_file = os.path.join(str(tmpdir), 'run.tar.gz')
         with open(out_file, 'wb') as f:
-            f.write(file_like_object.getbuffer())
+            f.write(file_like_object.getvalue())
         tar = tarfile.open(out_file, mode='r:gz')
         # Validate that there are 5 entries in the tar file
         names = list()
@@ -106,7 +106,7 @@ class TestUtilityMethods(object):
         )
         out_file = os.path.join(str(tmpdir), 'run.tar.gz')
         with open(out_file, 'wb') as f:
-            f.write(file_like_object.getbuffer())
+            f.write(file_like_object.getvalue())
         tar = tarfile.open(out_file, mode='r:gz')
         assert len(tar.getmembers()) > 5
 
