@@ -89,8 +89,10 @@ def from_utc_datetime(utc_datetime):
     -------
     datetime.datetime
     """
-    now_timestamp = datetime.datetime.utcfromtimestamp(time.time())
-    offset = datetime.datetime.fromtimestamp(now_timestamp) - now_timestamp
+    now_timestamp = time.time()
+    ts_now = datetime.datetime.fromtimestamp(now_timestamp)
+    ts_utc = datetime.datetime.utcfromtimestamp(now_timestamp)
+    offset = ts_now - ts_utc
     return utc_datetime + offset
 
 

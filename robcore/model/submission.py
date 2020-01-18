@@ -307,7 +307,7 @@ class SubmissionManager(object):
         args = (benchmark_id, name)
         constraint.validate_name(name, con=self.con, sql=sql, args=args)
         # Ensure that all users in the given member list exist
-        if not members is None:
+        if members is not None:
             sql = 'SELECT user_id FROM api_user WHERE user_id = ?'
             for member_id in members:
                 if self.con.execute(sql, (member_id,)).fetchone() is None:
@@ -321,12 +321,14 @@ class SubmissionManager(object):
             members = set([user_id])
         else:
             members = set(members)
-            if not user_id in members:
+            if user_id not in members:
                 members.add(user_id)
         # Enter submission information into database and commit all changes
-        sql = 'INSERT INTO benchmark_submission('
-        sql += 'submission_id, benchmark_id, name, owner_id, parameters, workflow_spec'
-        sql += ') VALUES(?, ?, ?, ?, ?, ?)'
+        sql = (
+            'INSERT INTO benchmark_submission(submission_id, benchmark_id, '
+            'name, owner_id, parameters, workflow_spec'
+            ') VALUES(?, ?, ?, ?, ?, ?)'
+        )
         values = (
             identifier,
             benchmark_id,
@@ -336,7 +338,10 @@ class SubmissionManager(object):
             json.dumps(workflow_spec)
         )
         self.con.execute(sql, values)
-        sql = 'INSERT INTO submission_member(submission_id, user_id) VALUES(?, ?)'
+        sql = (
+            'INSERT INTO submission_member(submission_id, user_id) '
+            'VALUES(?, ?)'
+        )
         for member_id in members:
             self.con.execute(sql, (identifier, member_id))
         self.con.commit()
@@ -454,8 +459,8 @@ class SubmissionManager(object):
         submission_id: string
             Unique submission identifier
         order_by: list(robcore.model.template.schema.SortColumn), optional
-            Use the given attribute to sort run results. If not given the schema
-            default attribute is used
+            Use the given attribute to sort run results. If not given the
+            schema default attribute is used
 
         Returns
         -------
@@ -493,8 +498,8 @@ class SubmissionManager(object):
 
         This method does not check if the submission exists. Thie method is
         primarily intended to be called by the submission handle to load runs
-        on-demand. Existence of the submission is expected to have been verified
-        when the submission handle was created.
+        on-demand. Existence of the submission is expected to have been
+        verified when the submission handle was created.
 
         Parameters
         ----------
@@ -639,13 +644,13 @@ class SubmissionManager(object):
         sql += 's.parameters, s.workflow_spec '
         sql += 'FROM benchmark_submission s'
         para = list()
-        if not user_id is None:
+        if user_id is not None:
             sql += ' WHERE s.submission_id IN ('
             sql += 'SELECT m.submission_id '
             sql += 'FROM submission_member m '
             sql += 'WHERE m.user_id = ?)'
             para.append(user_id)
-        if not benchmark_id is None:
+        if benchmark_id is not None:
             if user_id is None:
                 sql += ' WHERE '
             else:
@@ -699,7 +704,7 @@ class SubmissionManager(object):
         # If name and members are None we simply return the submission handle.
         if name is None and members is None:
             return submission
-        if not name is None and name != submission.name:
+        if name is not None and name is not submission.name:
             # Ensure that the given name is valid and unique for the benchmark
             sql = 'SELECT name FROM benchmark_submission '
             sql += 'WHERE benchmark_id = ? AND name = ?'
@@ -709,12 +714,12 @@ class SubmissionManager(object):
             sql += 'WHERE submission_id = ?'
             self.con.execute(sql, (name, submission_id))
             submission.name = name
-        if not members is None:
+        if members is not None:
             # Delete members that are not in the given list
             sql = 'DELETE FROM submission_member '
             sql += 'WHERE submission_id = ? AND user_id = ?'
             for user in submission.get_members():
-                if not user.identifier in members:
+                if user.identifier not in members:
                     self.con.execute(sql, (submission_id, user.identifier))
             # Add users that are not members of the submission
             sql = 'INSERT INTO submission_member(submission_id, user_id) '
@@ -760,9 +765,9 @@ class SubmissionManager(object):
         self.get_submission(submission_id, load_members=False)
         file_dir = util.create_dir(os.path.join(self.directory, submission_id))
         # Get the mime-type of the uploaded file. At this point we assume that
-        # the file_type either contains the mime-type or that it is None. In the
-        # latter case the mime-type is guessed from the name of the uploaded
-        # file (may be None).
+        # the file_type either contains the mime-type or that it is None. In
+        # the latter case the mime-type is guessed from the name of the
+        # uploaded file (may be None).
         if file_type is not None:
             mimetype = file_type
         else:

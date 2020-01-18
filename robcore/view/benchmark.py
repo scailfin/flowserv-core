@@ -138,7 +138,6 @@ class BenchmarkSerializer(object):
                 for r in current_resources:
                     url = self.urls.download_benchmark_resource(
                         benchmark_id=b_id,
-                        result_id=result_id,
                         resource_id=r.identifier
                     )
                     resources.append({
@@ -148,8 +147,7 @@ class BenchmarkSerializer(object):
                         labels.LINKS: hateoas.serialize({hateoas.SELF: url})
                     })
                 archive_url = self.urls.download_benchmark_archive(
-                    benchmark_id=b_id,
-                    result_id=result_id
+                    benchmark_id=b_id
                 )
                 links[hateoas.RESOURCES] = archive_url
         return {

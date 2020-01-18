@@ -119,7 +119,7 @@ paths:
           description: "Invalid sort statement"
         404:
           description: "Unknown benchmark"
-  /benchmarks/{benchmarkId}/downloads/{resultId}/archive:
+  /benchmarks/{benchmarkId}/downloads/archive:
     get:
       tags:
       - "benchmark"
@@ -134,17 +134,12 @@ paths:
         description: "Unique benchmark identifier"
         required: true
         type: string
-      - in: "path"
-        name: "resultId"
-        description: "Unique identifier of the post-processing result set"
-        required: true
-        type: string
       responses:
         200:
           description: "File"
         404:
           description: "Unknown benchmark resource"
-  /benchmarks/{benchmarkId}/downloads/{resultId}/resources/{resourceId}:
+  /benchmarks/{benchmarkId}/downloads/resources/{resourceId}:
     get:
       tags:
       - "benchmark"
@@ -158,11 +153,6 @@ paths:
       - in: "path"
         name: "benchmarkId"
         description: "Unique benchmark identifier"
-        required: true
-        type: string
-      - in: "path"
-        name: "resultId"
-        description: "Unique identifier of the post-processing result set"
         required: true
         type: string
       - in: "path"

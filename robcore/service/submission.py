@@ -14,14 +14,15 @@ from robcore.view.submission import SubmissionSerializer
 from robcore.view.route import UrlFactory
 
 import robcore.core.error as err
-import robcore.model.user.auth as res
 
 
 class SubmissionService(object):
     """API component that provides methods to access benchmark submissions and
     their runs.
     """
-    def __init__(self, engine, manager, auth, repo, urls=None, serializer=None):
+    def __init__(
+        self, engine, manager, auth, repo, urls=None, serializer=None
+    ):
         """Initialize the internal reference to the submission manager and to
         the route factory.
 
@@ -44,7 +45,7 @@ class SubmissionService(object):
         self.manager = manager
         self.auth = auth
         self.repo = repo
-        self.urls = urls if not urls is None else UrlFactory()
+        self.urls = urls if urls is not None else UrlFactory()
         self.serialize = serializer
         if self.serialize is None:
             self.serialize = SubmissionSerializer(self.urls)
@@ -104,15 +105,15 @@ class SubmissionService(object):
         robcore.core.error.ConstraintViolationError
         robcore.core.error.UnknownBenchmarkError
         """
-        # Get the template for the given benchmark. This will raise an exception
-        # if the benchmark is unknown.
+        # Get the template for the given benchmark. This will raise an
+        # exception if the benchmark is unknown.
         benchmark = self.repo.get_benchmark(benchmark_id)
         # If additional parameters are given we need to modify the workflow
         # specification accordingly. This may raise an error if a given
         # parameter identifier is not unique.
         template = benchmark.get_template()
         workflow_spec = template.workflow_spec
-        if not parameters is None:
+        if parameters is not None:
             workflow_spec, parameters = self.engine.backend.modify_template(
                 workflow_spec=workflow_spec,
                 tmpl_parameters=template.parameters,
@@ -292,7 +293,7 @@ class SubmissionService(object):
         -------
         dict
         """
-        if not user is None:
+        if user is not None:
             user_id = user.identifier
         else:
             user_id = None

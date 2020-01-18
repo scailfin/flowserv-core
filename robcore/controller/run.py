@@ -333,7 +333,7 @@ def update_run(con, run_id, state, commit_changes=True):
         # results.
         sql = (
             'SELECT b.benchmark_id, b.result_schema, b.postproc_task, '
-            'b.resources_key, b.static_dir, b.resources_dir '
+            'b.result_key, b.static_dir, b.resources_dir '
             'FROM benchmark b, benchmark_submission s, benchmark_run r '
             'WHERE b.benchmark_id = s.benchmark_id AND '
             's.submission_id = r.submission_id AND r.run_id = ?'
@@ -351,12 +351,12 @@ def update_run(con, run_id, state, commit_changes=True):
             # Use sorted list of run identifier in the ranking as unique key
             # to identify changes to previous post-processing results.
             runs = sorted([r.run_id for r in leaders.entries])
-            resource_key = rs['resources_key']
-            if resource_key is not None:
-                resource_key = json.loads(resource_key)
+            result_key = rs['result_key']
+            if result_key is not None:
+                result_key = json.loads(result_key)
             else:
-                resource_key = list()
-            if runs != resource_key:
+                result_key = list()
+            if runs != result_key:
                 # Run post-processing task if the current post-processing
                 # resources where generated for a different set of runs than
                 # those in the current leader board.
@@ -391,7 +391,7 @@ def update_run(con, run_id, state, commit_changes=True):
                 # Update resource key in the benchmark table
                 sql = (
                     "UPDATE benchmark "
-                    "SET resources_key = ?, resources_id = ? "
+                    "SET result_key = ?, result_id = ? "
                     "WHERE benchmark_id = ?"
                 )
                 con.execute(sql, (json.dumps(runs), res_run_id, benchmark_id))
