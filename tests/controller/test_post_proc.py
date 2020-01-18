@@ -10,11 +10,9 @@
 
 import json
 import os
-import pytest
 
 import robcore.controller.postproc as postproc
 import robcore.tests.api as api
-
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))
@@ -24,9 +22,15 @@ USER_ID = "USER_1"
 
 
 def test_prepare_directories(tmpdir):
-    benchmarks, submissions, user_service, runs, _, backend, con = api.init_api(
-        base_dir=str(tmpdir)
-    )
+    (
+        benchmarks,
+        submissions,
+        user_service,
+        runs,
+        _,
+        backend,
+        con
+    ) = api.init_api(base_dir=str(tmpdir))
     user = user_service.manager.register_user(USER_ID, USER_ID)
     benchmark = benchmarks.repo.add_benchmark(name='A', src_dir=TEMPLATE_DIR)
     # Create three submissions and execute a run for each of them
@@ -48,7 +52,9 @@ def test_prepare_directories(tmpdir):
         identifiers.append(r['id'])
     identifiers = identifiers[::-1]
     names = names[::-1]
-    leaders = benchmarks.repo.get_leaderboard(benchmark_id=benchmark.identifier)
+    leaders = benchmarks.repo.get_leaderboard(
+        benchmark_id=benchmark.identifier
+    )
     in_dir, out_dir = postproc.prepare_post_proc_dir(
         con=con,
         ranking=leaders,
@@ -63,6 +69,7 @@ def test_prepare_directories(tmpdir):
     # order
     identifiers = identifiers[::-1]
     for i in range(3):
-        with open(os.path.join(in_dir, identifiers[i], api.RESULT_FILE), 'r') as f:
+        result_file = os.path.join(in_dir, identifiers[i], api.RESULT_FILE)
+        with open(result_file, 'r') as f:
             result = json.load(f)
             assert result == {'score': i}

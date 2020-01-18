@@ -19,7 +19,6 @@ from robcore.model.template.base import WorkflowTemplate
 from robcore.model.template.schema import SortColumn
 from robcore.controller.engine import BenchmarkEngine
 from robcore.tests.benchmark import StateEngine
-from robcore.tests.repo import DictRepo
 
 import robcore.error as err
 import robcore.model.ranking as ranking
@@ -60,7 +59,10 @@ class TestSubmissionManager(object):
         controller that is used for unit tests).
         """
         con = db.init_db(base_dir).connect()
-        sql = 'INSERT INTO api_user(user_id, name, secret, active) VALUES(?, ?, ?, ?)'
+        sql = (
+            'INSERT INTO api_user(user_id, name, secret, active) '
+            'VALUES(?, ?, ?, ?)'
+        )
         con.execute(sql, (USER_1, USER_1, pbkdf2_sha256.hash(USER_1), 1))
         con.execute(sql, (USER_2, USER_2, pbkdf2_sha256.hash(USER_2), 1))
         con.execute(sql, (USER_3, USER_3, pbkdf2_sha256.hash(USER_3), 1))
@@ -132,7 +134,11 @@ class TestSubmissionManager(object):
             user_id=USER_2,
             parameters=pdutil.create_parameter_index([
                 pd.parameter_declaration('p1'),
-                pd.parameter_declaration('p2', name='A', data_type=pd.DT_INTEGER)
+                pd.parameter_declaration(
+                    identifier='p2',
+                    name='A',
+                    data_type=pd.DT_INTEGER
+                )
             ]),
             workflow_spec=workflow_spec,
             members=[USER_1, USER_3]
@@ -222,10 +228,11 @@ class TestSubmissionManager(object):
         for run in submission.get_runs():
             for res in run.list_resources():
                 assert os.path.isfile(res.filename)
-                assert not res.filename in filenames
+                assert res.filename not in filenames
                 filenames.append(res.filename)
         manager.delete_submission(submission.identifier)
-        assert not os.path.isdir(os.path.join(str(tmpdir), submission.identifier))
+        submission_dir = os.path.join(str(tmpdir), submission.identifier)
+        assert not os.path.isdir(submission_dir)
         for f in filenames:
             assert not os.path.isfile(f)
         with pytest.raises(err.UnknownSubmissionError):
@@ -335,7 +342,6 @@ class TestSubmissionManager(object):
         assert results.size() == 1
         assert len(results.get(0).values) == 0
 
-
     def test_list_submissions(self, tmpdir):
         """Test listing a submissions."""
         # Create database and submission manager
@@ -369,27 +375,40 @@ class TestSubmissionManager(object):
         for n in ['A', 'B', 'C']:
             assert n in names
         # Get listing of all submissions for benchmark 1 and 2
-        names = [s.name for s in manager.list_submissions(benchmark_id=BENCHMARK_1)]
+        submissions = manager.list_submissions(benchmark_id=BENCHMARK_1)
+        names = [s.name for s in submissions]
         assert len(names) == 2
         for n in ['A', 'B']:
             assert n in names
-        names = [s.name for s in manager.list_submissions(benchmark_id=BENCHMARK_2)]
+        submissions = manager.list_submissions(benchmark_id=BENCHMARK_2)
+        names = [s.name for s in submissions]
         assert len(names) == 1
         assert 'C' in names
         # Get listings for users 1, 2, and 3
-        names = [s.name for s in manager.list_submissions(user_id=USER_1)]
+        submissions = manager.list_submissions(user_id=USER_1)
+        names = [s.name for s in submissions]
         assert len(names) == 2
         for n in ['A', 'C']:
             assert n in names
-        names = [s.name for s in manager.list_submissions(user_id=USER_2)]
+        submissions = manager.list_submissions(user_id=USER_2)
+        names = [s.name for s in submissions]
         assert len(names) == 1
         assert 'B' in names
-        names = [s.name for s in manager.list_submissions(user_id=USER_3)]
+        submissions = manager.list_submissions(user_id=USER_3)
+        names = [s.name for s in submissions]
         assert len(names) == 1
         assert 'B' in names
         # List submissions with both optional parameters given
-        names = [s.name for s in manager.list_submissions(benchmark_id=BENCHMARK_2, user_id=USER_1)]
+        submissions = manager.list_submissions(
+            benchmark_id=BENCHMARK_2,
+            user_id=USER_1
+        )
+        names = [s.name for s in submissions]
         assert len(names) == 1
         assert 'C' in names
-        names = [s.name for s in manager.list_submissions(benchmark_id=BENCHMARK_2, user_id=USER_3)]
+        submissions = manager.list_submissions(
+            benchmark_id=BENCHMARK_2,
+            user_id=USER_3
+        )
+        names = [s.name for s in submissions]
         assert len(names) == 0

@@ -18,7 +18,8 @@ import robcore.error as err
 
 
 class TestConfig(object):
-    """Test methods that get configuration values from environment variables."""
+    """Test methods that get configuration values from environment variables.
+    """
     def test_get_variable_value(self):
         """Test internal method to access environment variables."""
         # Set environment variable 'ROB_TEST'

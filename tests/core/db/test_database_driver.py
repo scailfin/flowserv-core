@@ -47,7 +47,8 @@ class TestDatabaseDriver(object):
         connect = 'localhost:5678/mydb:myuser/the/pwd'
         os.environ[config.ROB_DB_ID] = 'POSTGRES'
         db = DB.get_connector(connect_string=connect)
-        assert db.info() == 'postgres {} on {}'.format('mydb', 'localhost:5678')
+        info_str = 'postgres {} on {}'.format('mydb', 'localhost:5678')
+        assert db.info() == info_str
         assert db.user == 'myuser'
         assert db.password == 'the/pwd'
         db = DB.get_connector(connect_string='localhost/db:user/some:pwd')

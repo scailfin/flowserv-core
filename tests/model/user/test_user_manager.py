@@ -8,14 +8,12 @@
 
 """Test functionality of the user manager."""
 
-import os
 import pytest
 import time
 
 from robcore.model.user.auth import OpenAccessAuth
 from robcore.model.user.base import UserManager
 
-import robcore.db.driver as driver
 import robcore.error as err
 import robcore.tests.db as db
 
@@ -44,7 +42,7 @@ class TestUserManager(object):
         assert active_user.api_key is None
         user = users.login_user('nouser@me.com', 'pwd1')
         assert user.name == 'nouser@me.com'
-        assert not user.api_key is None
+        assert user.api_key is not None
         user_id = auth.authenticate(user.api_key).identifier
         assert user.identifier == user_id
         # Activate the same user twice should not raise an error
@@ -108,10 +106,10 @@ class TestUserManager(object):
         user_id = auth.authenticate(user.api_key).identifier
         assert user.identifier == user_id
         request_id_1 = users.request_password_reset('first.user@me.com')
-        assert not request_id_1 is None
+        assert request_id_1 is not None
         # Request reset for unknown user will return a reset request id
         request_id_2 = users.request_password_reset('unknown@me.com')
-        assert not request_id_2 is None
+        assert request_id_2 is not None
         assert request_id_1 != request_id_2
         # Reset password for existing user
         user = users.reset_password(request_id=request_id_1, password='mypwd')
@@ -146,8 +144,8 @@ class TestUserManager(object):
         assert user.identifier == user_id
         # Hack: Manipulate the login_timeout value to similate timeout
         users = UserManager(con=users.con, login_timeout=1)
-        # Request reset and sleep for two seconds. This should allow the request
-        # to timeout
+        # Request reset and sleep for two seconds. This should allow the
+        # request to timeout
         request_id = users.request_password_reset('first.user@me.com')
         time.sleep(2)
         with pytest.raises(err.UnknownRequestError):

@@ -26,8 +26,10 @@ import robcore.tests.db as db
 
 DIR = os.path.dirname(os.path.realpath(__file__))
 TEMPLATE_DIR = os.path.join(DIR, '../../.files/benchmark/helloworld')
-TEMPLATE_WITHOUT_SCHEMA = os.path.join(DIR, '../../.files/template/template.json')
-TOPTAGGER_YAML_FILE = os.path.join(DIR, '../../.files/benchmark/top-tagger.yaml')
+TEMPLATE_JSON = '../../.files/template/template.json'
+TEMPLATE_WITHOUT_SCHEMA = os.path.join(DIR, TEMPLATE_JSON)
+TOP_TAGGER_YAML = '../../.files/benchmark/top-tagger.yaml'
+TOPTAGGER_YAML_FILE = os.path.join(DIR, TOP_TAGGER_YAML)
 
 
 """Fake template for descriptor initialization."""
@@ -62,7 +64,9 @@ class TestBenchmarkRepository(object):
         assert bm_1.get_template().has_schema()
         # Ensure that the result table exists
         with connector.connect() as con:
-            con.execute('SELECT * FROM ' + ranking.RESULT_TABLE(bm_1.identifier))
+            con.execute(
+                'SELECT * FROM ' + ranking.RESULT_TABLE(bm_1.identifier)
+            )
         # Read the result schema
         with connector.connect() as con:
             sql = 'SELECT result_schema FROM benchmark WHERE benchmark_id = ?'
@@ -88,14 +92,16 @@ class TestBenchmarkRepository(object):
         # Result table should not exist
         with pytest.raises(sqlite3.OperationalError):
             with connector.connect() as con:
-                con.execute('SELECT * FROM ' + ranking.RESULT_TABLE(bm_2.identifier))
+                con.execute(
+                    'SELECT * FROM ' + ranking.RESULT_TABLE(bm_2.identifier)
+                )
         # The result schema in the database should be none
         with connector.connect() as con:
             sql = 'SELECT result_schema FROM benchmark WHERE benchmark_id = ?'
             rs = con.execute(sql, (bm_2.identifier,)).fetchone()
             assert rs['result_schema'] is None
         # Template with post-processing step
-        bm_3 = repo.add_benchmark(
+        repo.add_benchmark(
             name='Top Tagger',
             description='desc',
             instructions='instr',
@@ -166,8 +172,10 @@ class TestBenchmarkRepository(object):
         repo, connector = self.init(str(tmpdir))
         bm_1 = repo.add_benchmark(name='A', src_dir=TEMPLATE_DIR)
         bm_2 = repo.add_benchmark(name='B', src_dir=TEMPLATE_DIR)
-        assert repo.get_benchmark(bm_1.identifier).identifier == bm_1.identifier
-        assert repo.get_benchmark(bm_2.identifier).identifier == bm_2.identifier
+        b_id = repo.get_benchmark(bm_1.identifier).identifier
+        assert b_id == bm_1.identifier
+        b_id = repo.get_benchmark(bm_2.identifier).identifier
+        assert b_id == bm_2.identifier
         # Re-connect to the repository
         repo = BenchmarkRepository(
             con=connector.connect(),
@@ -177,12 +185,14 @@ class TestBenchmarkRepository(object):
         benchmark = repo.get_benchmark(bm_1.identifier)
         assert benchmark.identifier == bm_1.identifier
         assert benchmark.get_resources() is None
-        assert repo.get_benchmark(bm_2.identifier).identifier == bm_2.identifier
+        b_id = repo.get_benchmark(bm_2.identifier).identifier
+        assert b_id == bm_2.identifier
         # Delete first benchmark
         repo.delete_benchmark(bm_1.identifier)
         with pytest.raises(err.UnknownBenchmarkError):
             repo.get_benchmark(bm_1.identifier).identifier == bm_1.identifier
-        assert repo.get_benchmark(bm_2.identifier).identifier == bm_2.identifier
+        b_id = repo.get_benchmark(bm_2.identifier).identifier
+        assert b_id == bm_2.identifier
 
     def test_init_handle(self):
         """Ensure all properties are set and errors are raised when initializing
@@ -231,7 +241,7 @@ class TestBenchmarkRepository(object):
         assert b.get_instructions() == 'D'
         assert b.template is None
         assert b.get_template() == TEMPLATE
-        assert not b.template is None
+        assert b.template is not None
         # Error when template and store are missing
         with pytest.raises(ValueError):
             BenchmarkHandle(

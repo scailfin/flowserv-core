@@ -12,7 +12,7 @@ import os
 import json
 import pytest
 
-from robcore.io.files import FileHandle, InputFile
+from robcore.io.files import FileHandle
 from robcore.model.template.parameter.base import TemplateParameter
 from robcore.model.template.schema import ResultColumn, ResultSchema
 from robcore.model.resource import FileResource
@@ -68,8 +68,8 @@ class TestRunStore(object):
         con = db.init_db(base_dir).connect()
         sql = 'INSERT INTO api_user(user_id, name, secret, active) '
         sql += 'VALUES(?, ?, ?, ?)'
-        USER_ID = 'ABC'
-        con.execute(sql, (USER_ID, USER_ID, USER_ID, 1))
+        UID = 'ABC'
+        con.execute(sql, (UID, UID, UID, 1))
         sql = 'INSERT INTO benchmark(benchmark_id, name, result_schema) '
         sql += 'VALUES(?, ?, ?)'
         schema = json.dumps(BENCHMARK_SCHEMA.to_dict())
@@ -81,11 +81,15 @@ class TestRunStore(object):
             commit_changes=False
         )
         con.execute(sql, (BID_NOSCHEMA, BID_NOSCHEMA, None))
-        sql = 'INSERT INTO benchmark_submission('
-        sql += 'submission_id, name, benchmark_id, owner_id, parameters, workflow_spec'
-        sql += ') VALUES(?, ?, ?, ?, ?, ?)'
-        con.execute(sql, (SID_SCHEMA, SID_SCHEMA, BID_SCHEMA, USER_ID, '[]', '{}'))
-        con.execute(sql, (SID_NOSCHEMA, SID_NOSCHEMA, BID_NOSCHEMA, USER_ID, '[]', '{}'))
+        sql = (
+            'INSERT INTO benchmark_submission(submission_id, name, '
+            'benchmark_id, owner_id, parameters, workflow_spec'
+            ') VALUES(?, ?, ?, ?, ?, ?)'
+        )
+        params = (SID_SCHEMA, SID_SCHEMA, BID_SCHEMA, UID, '[]', '{}')
+        con.execute(sql, params)
+        params = (SID_NOSCHEMA, SID_NOSCHEMA, BID_NOSCHEMA, UID, '[]', '{}')
+        con.execute(sql, params)
         con.commit()
         return con
 

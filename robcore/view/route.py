@@ -125,6 +125,24 @@ class UrlFactory(object):
         """
         return self.get_submission(submission_id)
 
+    def download_benchmark_archive(self, benchmark_id, result_id):
+        """Url to GET a benchmark resource archive.
+
+        Parameters
+        ----------
+        benchmark_id: string
+            Unique benchmark identifier
+        resource_id: string
+            Unique resource identifier
+
+        Returns
+        -------
+        string
+        """
+        # /benchmarks/{benchmarkId}/downloads/{resultId}/archive
+        base_url = self.get_benchmark(benchmark_id)
+        return base_url + '/downloads/{}/archive'.format(result_id)
+
     def download_benchmark_resource(self, benchmark_id, result_id, resource_id):
         """Url to GET a benchmark resource.
 
@@ -139,23 +157,10 @@ class UrlFactory(object):
         -------
         string
         """
-        return self.download_benchmark_resources(benchmark_id, result_id) + '/' + resource_id
-
-    def download_benchmark_resources(self, benchmark_id, result_id):
-        """Url to GET a benchmark resource archive.
-
-        Parameters
-        ----------
-        benchmark_id: string
-            Unique benchmark identifier
-        resource_id: string
-            Unique resource identifier
-
-        Returns
-        -------
-        string
-        """
-        return self.get_benchmark(benchmark_id) + '/resources/' + result_id
+        # /benchmarks/{benchmarkId}/downloads/{resultId}/resources/{resourceId}
+        base_url = self.get_benchmark(benchmark_id)
+        url_suffix = '/downloads/{}/resources{}'.format(result_id, resource_id)
+        return base_url + url_suffix
 
     def download_file(self, submission_id, file_id):
         """Url to GET a previously uploaded file.
@@ -173,6 +178,23 @@ class UrlFactory(object):
         """
         return self.list_files(submission_id) + '/' + file_id
 
+    def download_result_archive(self, run_id):
+        """Url to GET a run result file archive.
+
+        Parameters
+        ----------
+        run_ud: string
+            Unique run identifier
+        resource_id: string
+            Unique resource identifier
+
+        Returns
+        -------
+        string
+        """
+        # /runs/{runId}/downloads/archive
+        return self.get_run(run_id) + '/downloads/archive'
+
     def download_result_file(self, run_id, resource_id):
         """Url to GET a run result file.
 
@@ -187,23 +209,9 @@ class UrlFactory(object):
         -------
         string
         """
-        return self.download_result_files(run_id) + '/' + resource_id
-
-    def download_result_files(self, run_id):
-        """Url to GET a run result file archive.
-
-        Parameters
-        ----------
-        run_ud: string
-            Unique run identifier
-        resource_id: string
-            Unique resource identifier
-
-        Returns
-        -------
-        string
-        """
-        return self.get_run(run_id) + '/resources'
+        # /runs/{runId}/downloads/resources/{resourceId}
+        url_suffix = '/downloads/resources/{}'.format(resource_id)
+        return self.get_run(run_id) + url_suffix
 
     def get_benchmark(self, benchmark_id):
         """Url to GET benchmark handle.

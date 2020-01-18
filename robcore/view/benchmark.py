@@ -124,6 +124,11 @@ class BenchmarkSerializer(object):
                 },
                 labels.RESULTS: results
             })
+        # HATEOAS references
+        links = {
+            hateoas.SELF: self.urls.get_leaderboard(b_id),
+            hateoas.BENCHMARK: self.urls.get_benchmark(b_id),
+        }
         # Serialize available benchmark post-processing resources
         resources = list()
         current_resources = benchmark.get_resources()
@@ -142,7 +147,11 @@ class BenchmarkSerializer(object):
                         labels.CAPTION: r.caption,
                         labels.LINKS: hateoas.serialize({hateoas.SELF: url})
                     })
-                resources.sort(key=lambda r: r[labels.ID], reverse=True)
+                archive_url = self.urls.download_benchmark_archive(
+                    benchmark_id=b_id,
+                    result_id=result_id
+                )
+                links[hateoas.RESOURCES] = archive_url
         return {
             labels.SCHEMA: [{
                     labels.ID: c.identifier,
@@ -152,14 +161,7 @@ class BenchmarkSerializer(object):
             ],
             labels.RANKING: entries,
             labels.RESOURCES: resources,
-            labels.LINKS: hateoas.serialize({
-                hateoas.SELF: self.urls.get_leaderboard(b_id),
-                hateoas.BENCHMARK: self.urls.get_benchmark(b_id),
-                hateoas.RESOURCES: self.urls.download_benchmark_resources(
-                    benchmark_id=b_id,
-                    result_id=result_id
-                )
-            })
+            labels.LINKS: hateoas.serialize(links)
         }
 
     def benchmark_listing(self, benchmarks):
@@ -175,7 +177,9 @@ class BenchmarkSerializer(object):
         dict
         """
         return {
-            labels.BENCHMARKS: [self.benchmark_descriptor(b) for b in benchmarks],
+            labels.BENCHMARKS: [
+                self.benchmark_descriptor(b) for b in benchmarks
+            ],
             labels.LINKS: hateoas.serialize({
                 hateoas.SELF: self.urls.list_benchmarks()
             })

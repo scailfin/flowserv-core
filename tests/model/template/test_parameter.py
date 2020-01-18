@@ -18,7 +18,7 @@ import robcore.model.template.parameter.declaration as pd
 import robcore.model.template.parameter.util as putil
 
 
-EXAMPLE ="""parameters:
+EXAMPLE = """parameters:
     - id: outputFormat
       name: Output file format
       description: Format of the generated output file (JSON or YAML)
@@ -178,7 +178,6 @@ class TestParameterValidation(object):
         assert p.get(pd.LABEL_DATATYPE) == pd.DT_STRING
         assert p.get(pd.LABEL_INDEX) == 0
         assert p.get(pd.LABEL_REQUIRED)
-
 
     def test_validate_error(self):
         """Assert that errors are raised if an invalid parameter declaration is

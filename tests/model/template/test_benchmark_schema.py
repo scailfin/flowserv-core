@@ -131,7 +131,10 @@ class TestResultSchema(object):
             schema.SCHEMA_COLUMNS: columns,
             schema.SCHEMA_ORDERBY: [
                 schema.SortColumn(identifier='col_1').to_dict(),
-                schema.SortColumn(identifier='col_2', sort_desc=False).to_dict()
+                schema.SortColumn(
+                    identifier='col_2',
+                    sort_desc=False
+                ).to_dict()
             ]
         })
         self.validate_schema(s)

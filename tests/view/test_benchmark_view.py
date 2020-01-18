@@ -25,7 +25,12 @@ TEMPLATE_DIR = os.path.join(DIR, '../.files/benchmark/helloworld')
 USER_1 = util.get_unique_identifier()
 
 # Mandatory leader board  labels
-RANKING_LABELS = [labels.RANKING, labels.SCHEMA, labels.RESOURCES, labels.LINKS]
+RANKING_LABELS = [
+    labels.RANKING,
+    labels.SCHEMA,
+    labels.RESOURCES,
+    labels.LINKS
+]
 
 # Mandatory HATEOAS relationships in benchmark handles and descriptors
 RELS = [
@@ -181,7 +186,11 @@ class TestBenchmarkView(object):
         for run in ranking:
             util.validate_doc(
                 doc=run,
-                mandatory_labels=[labels.RUN, labels.SUBMISSION, labels.RESULTS]
+                mandatory_labels=[
+                    labels.RUN,
+                    labels.SUBMISSION,
+                    labels.RESULTS
+                ]
             )
             util.validate_doc(
                 doc=run[labels.RUN],

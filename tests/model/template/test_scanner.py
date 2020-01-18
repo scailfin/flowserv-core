@@ -72,14 +72,22 @@ class TestScanner(object):
         sc = Scanner(reader=ListReader(5 * ['']))
         assert sc.next_int(default_value=11) == 11
         assert sc.next_float(default_value=1.23) == 1.23
-        #self.assertFalse(sc.next_bool(default_value=False))
         assert not sc.next_bool(default_value=False)
         assert sc.next_file(default_value='file.txt') == 'file.txt'
         assert sc.next_string(default_value='Default text') == 'Default text'
 
     def test_scan_scalar_values(self):
         """Test parsing of scalar tokens."""
-        sc = Scanner(reader=ListReader(['3', '34.56', 'FALSE', 'y', 'data/names.txt', 'Some text']))
+        sc = Scanner(
+            reader=ListReader([
+                '3',
+                '34.56',
+                'FALSE',
+                'y',
+                'data/names.txt',
+                'Some text'
+            ])
+        )
         assert sc.next_int() == 3
         assert sc.next_float() == 34.56
         assert not sc.next_bool()

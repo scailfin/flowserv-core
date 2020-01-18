@@ -51,7 +51,10 @@ class TestJsonTemplateStore(object):
         files.
         """
         # File store with default file name
-        store = JsonFileStore(base_dir=BASE_DIR, default_file_name=DEFAULT_NAME)
+        store = JsonFileStore(
+            base_dir=BASE_DIR,
+            default_file_name=DEFAULT_NAME
+        )
         doc = store.read(identifier=BENCHMARK)
         columns = [c['id'] for c in doc['results']['schema']]
         assert len(columns) == 4
@@ -81,7 +84,10 @@ class TestJsonTemplateStore(object):
         doc = util.read_object(filename=filename, format=util.FORMAT_JSON)
         assert doc == {'A': 1, 'B': 2}
         # Store objects as files in sub-directories of the base directory
-        store = JsonFileStore(base_dir=base_dir, default_file_name=DEFAULT_NAME)
+        store = JsonFileStore(
+            base_dir=base_dir,
+            default_file_name=DEFAULT_NAME
+        )
         store.write(identifier=BENCHMARK, obj={'A': 1, 'C': 3})
         filename = os.path.join(base_dir, BENCHMARK,  DEFAULT_NAME)
         assert os.path.isfile(filename)

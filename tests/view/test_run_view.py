@@ -11,8 +11,6 @@
 import os
 import pytest
 
-from robcore.model.workflow.state import StatePending
-from robcore.model.resource import FileResource
 from robcore.tests.io import FakeStream
 
 import robcore.error as err
@@ -28,7 +26,13 @@ DIR = os.path.dirname(os.path.realpath(__file__))
 TEMPLATE_DIR = os.path.join(DIR, '../.files/benchmark/helloworld')
 
 # Mandatory labels for run handles
-RUN_LABELS = [labels.ID, labels.STATE, labels.CREATED_AT, labels.ARGUMENTS, labels.LINKS]
+RUN_LABELS = [
+    labels.ID,
+    labels.STATE,
+    labels.CREATED_AT,
+    labels.ARGUMENTS,
+    labels.LINKS
+]
 RUN_HANDLE = RUN_LABELS + [labels.ARGUMENTS, labels.PARAMETERS]
 RUN_PENDING = RUN_HANDLE
 RUN_RUNNING = RUN_PENDING + [labels.STARTED_AT]
@@ -38,7 +42,8 @@ RUN_LISTING = [labels.RUNS, labels.LINKS]
 
 # Mandatory HATEOAS relationships in run descriptors
 RELS_ACTIVE = [hateoas.SELF, hateoas.action(hateoas.CANCEL)]
-RELS_INACTIVE = [hateoas.SELF, hateoas.action(hateoas.DELETE)]
+RELS_ERROR = [hateoas.SELF, hateoas.action(hateoas.DELETE)]
+RELS_SUCCESS = [hateoas.SELF, hateoas.RESULTS, hateoas.action(hateoas.DELETE)]
 RELS_LISTING = [hateoas.SELF, hateoas.SUBMIT]
 
 
@@ -81,7 +86,7 @@ class TestRunView(object):
             file_name='names.txt',
             user=user
         )[labels.ID]
-        # Start a new run. The resulting run is expected to be in pending state.
+        # Start a new run. The resulting run is expected to be in pending state
         r = runs.start_run(
             submission_id,
             [{labels.ID: 'names', labels.VALUE: f_id}],
@@ -91,7 +96,7 @@ class TestRunView(object):
         # Cancel the pending run
         r = runs.cancel_run(run_id=run_id, user=user)
         util.validate_doc(doc=r, mandatory_labels=RUN_ERROR)
-        serialize.validate_links(r, RELS_INACTIVE)
+        serialize.validate_links(r, RELS_ERROR)
         assert r[labels.STATE] == wf.STATE_CANCELED
         # Error when trying to delete a run without being a submission member
         user2 = users[1]
@@ -123,7 +128,7 @@ class TestRunView(object):
             file_name='names.txt',
             user=user
         )[labels.ID]
-        # Start a new run. The resulting run is expected to be in pending state.
+        # Start a new run. The resulting run is expected to be in pending state
         r = runs.start_run(
             submission_id,
             [{labels.ID: 'names', labels.VALUE: f_id}],
@@ -148,7 +153,7 @@ class TestRunView(object):
             user
         )
         util.validate_doc(doc=r, mandatory_labels=RUN_ERROR)
-        serialize.validate_links(r, RELS_INACTIVE)
+        serialize.validate_links(r, RELS_ERROR)
         # Start a new run in running.
         values = {'max_len': 10, 'avg_count': 11.1}
         runs.engine.backend.success(values=values)
@@ -158,11 +163,14 @@ class TestRunView(object):
             user
         )
         util.validate_doc(doc=r, mandatory_labels=RUN_SUCCESS)
-        serialize.validate_links(r, RELS_INACTIVE)
+        serialize.validate_links(r, RELS_SUCCESS)
         resources = r[labels.RESOURCES]
         assert len(resources) == 1
         res = resources[0]
-        util.validate_doc(doc=res, mandatory_labels=[labels.ID, labels.NAME, labels.LINKS])
+        util.validate_doc(
+            doc=res,
+            mandatory_labels=[labels.ID, labels.NAME, labels.LINKS]
+        )
         assert res[labels.NAME] == 'results/analytics.json'
         serialize.validate_links(res, [hateoas.SELF])
         # Error when trying to start a run without being a submission member
@@ -193,7 +201,7 @@ class TestRunView(object):
             file_name='names.txt',
             user=user
         )[labels.ID]
-        # Start a new run. The resulting run is expected to be in pending state.
+        # Start a new run. The resulting run is expected to be in pending state
         r = runs.start_run(
             submission_id,
             [{labels.ID: 'names', labels.VALUE: f_id}],
@@ -229,7 +237,7 @@ class TestRunView(object):
             file_name='names.txt',
             user=user
         )[labels.ID]
-        # Start a new run. The resulting run is expected to be in pending state.
+        # Start a new run. The resulting run is expected to be in pending state
         runs.start_run(
             submission_id,
             [{labels.ID: 'names', labels.VALUE: f_id}],
@@ -286,10 +294,15 @@ class TestRunView(object):
         # Start a run where target path for the file parameter is given
         r = runs.start_run(
             submission_id,
-            [{labels.ID: 'names', labels.VALUE: f_id, labels.AS: 'mynames.txt'}],
+            [{
+                labels.ID: 'names',
+                labels.VALUE: f_id,
+                labels.AS: 'mynames.txt'
+            }],
             user
         )
-        assert r[labels.ARGUMENTS][0][labels.VALUE]['targetPath'] == 'mynames.txt'
+        value = r[labels.ARGUMENTS][0][labels.VALUE]
+        assert value['targetPath'] == 'mynames.txt'
         # Error conditions for lists of serialized run arguments
         # 1. Missing argument
         with pytest.raises(err.MissingArgumentError):

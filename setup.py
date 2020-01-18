@@ -14,7 +14,7 @@ from setuptools import setup, find_packages
 
 """Required packages for install, test, docs, and tests."""
 
-install_requires=[
+install_requires = [
     'docker',
     'future',
     'gitpython',
@@ -49,7 +49,7 @@ extras_require = {
 with open(os.path.join('robcore', 'version.py'), 'rt') as f:
     filecontent = f.read()
 match = re.search(r"^__version__\s*=\s*['\"]([^'\"]*)['\"]", filecontent, re.M)
-if not match is None:
+if match is not None:
     version = match.group(1)
 else:
     raise RuntimeError('unable to find version string in %s.' % (filecontent,))
@@ -59,11 +59,14 @@ else:
 with open('README.rst', 'rt') as f:
     readme = f.read()
 
-
+description = (
+    'Reproducible Open Benchmarks for Data Analysis Platform '
+    '(Core Infrastructure)'
+)
 setup(
     name='rob-core',
     version=version,
-    description='Reproducible Open Benchmarks for Data Analysis Platform (Core Infrastructure)',
+    description=description,
     long_description=readme,
     long_description_content_type='text/x-rst',
     keywords='reproducibility benchmarks data-analysis',
@@ -85,6 +88,7 @@ setup(
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
         'Programming Language :: Python'
     ]
 )

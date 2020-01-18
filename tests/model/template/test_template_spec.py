@@ -101,7 +101,7 @@ class TestWorkflowTemplate(object):
             },
             source_dir='dev/null'
         )
-        assert not template.identifier is None
+        assert template.identifier is not None
         assert len(template.list_parameters()) == 0
         assert not template.has_schema()
         assert template.workflow_spec == {'A': 1, 'B': 2}
@@ -183,7 +183,7 @@ class TestWorkflowTemplate(object):
             workflow_spec={'A': 1, 'B': 2},
             source_dir='dev/null'
         )
-        assert not template.identifier is None
+        assert template.identifier is not None
         assert len(template.list_parameters()) == 0
         assert not template.has_schema()
         assert template.workflow_spec == {'A': 1, 'B': 2}
@@ -196,7 +196,7 @@ class TestWorkflowTemplate(object):
                 'B': TemplateParameter(pd.parameter_declaration('B'))
             }
         )
-        assert not template.identifier is None
+        assert template.identifier is not None
         assert len(template.parameters) == 2
         assert 'A' in template.parameters
         assert 'B' in template.parameters
@@ -209,7 +209,7 @@ class TestWorkflowTemplate(object):
                 TemplateParameter(pd.parameter_declaration('B'))
             ]
         )
-        assert not template.identifier is None
+        assert template.identifier is not None
         assert len(template.parameters) == 2
         assert 'A' in template.parameters
         assert 'B' in template.parameters
@@ -248,8 +248,8 @@ class TestWorkflowTemplate(object):
 
     def test_nested_parameters(self):
         """Test proper nesting of parameters for DT_LIST and DT_RECORD."""
-        # Create a new WorkflowTemplate with an empty workflow specification and
-        # a list of six parameters (one record and one list)
+        # Create a new WorkflowTemplate with an empty workflow specification
+        # and a list of six parameters (one record and one list)
         template = WorkflowTemplate.from_dict({
                 tmpl.LABEL_WORKFLOW: dict(),
                 tmpl.LABEL_PARAMETERS: [
@@ -305,7 +305,10 @@ class TestWorkflowTemplate(object):
             workflow_spec=dict(),
             source_dir='dev/null'
         )
-        parameters = WorkflowTemplate.from_dict(template.to_dict(), 'dev/null').parameters
+        parameters = WorkflowTemplate.from_dict(
+            template.to_dict(),
+            'dev/null'
+        ).parameters
         assert len(parameters) == 0
 
     def test_simple_replace(self):
@@ -341,7 +344,8 @@ class TestWorkflowTemplate(object):
             assert spec['inputs']['parameters']['inputfile'] == 'data/names.txt'
             assert spec['inputs']['parameters']['sleeptime'] == 10
             assert spec['inputs']['parameters']['waittime'] == 5
-            # Error when argument is missing for parameter with no default value
+            # Error when argument is missing for parameter with no default
+            # value
             del arguments['sleeptime']
             with pytest.raises(err.MissingArgumentError):
                 tmplutil.replace_args(
@@ -353,8 +357,8 @@ class TestWorkflowTemplate(object):
     def test_sort(self):
         """Test the sort functionality of the template list_parameters method.
         """
-        # Create a new WorkflowTemplate with an empty workflow specification and
-        # a list of five parameters
+        # Create a new WorkflowTemplate with an empty workflow specification
+        # and a list of five parameters
         template = WorkflowTemplate.from_dict({
                 tmpl.LABEL_WORKFLOW: dict(),
                 tmpl.LABEL_PARAMETERS: [

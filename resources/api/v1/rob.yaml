@@ -119,7 +119,7 @@ paths:
           description: "Invalid sort statement"
         404:
           description: "Unknown benchmark"
-  /benchmarks/{benchmarkId}/resources/{resultId}:
+  /benchmarks/{benchmarkId}/downloads/{resultId}/archive:
     get:
       tags:
       - "benchmark"
@@ -144,7 +144,7 @@ paths:
           description: "File"
         404:
           description: "Unknown benchmark resource"
-  /benchmarks/{benchmarkId}/resources/{resultId}/{resourceId}:
+  /benchmarks/{benchmarkId}/downloads/{resultId}/resources/{resourceId}:
     get:
       tags:
       - "benchmark"
@@ -509,7 +509,7 @@ paths:
           description: "Unknown run"
       security:
         - api_key: []
-  /runs/{runId}/resources:
+  /runs/{runId}/downloads/archive:
     get:
       tags:
       - "run"
@@ -533,7 +533,7 @@ paths:
           description: "Unknown run"
       security:
         - api_key: []
-  /runs/{runId}/resources/{resourceId}:
+  /runs/{runId}/downloads/resources/{resourceId}:
     get:
       tags:
       - "run"

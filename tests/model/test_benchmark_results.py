@@ -49,7 +49,10 @@ class TestBenchmarkResultRanking(object):
         the second benchmark has no schema and one submission.
         """
         con = db.init_db(base_dir).connect()
-        sql = 'INSERT INTO api_user(user_id, name, secret, active) VALUES(?, ?, ?, ?)'
+        sql = (
+            'INSERT INTO api_user(user_id, name, secret, active) '
+            'VALUES(?, ?, ?, ?)'
+        )
         con.execute(sql, (USER_ID, USER_ID, pbkdf2_sha256.hash(USER_ID), 1))
         sql = 'INSERT INTO benchmark(benchmark_id, name, result_schema) '
         sql += 'VALUES(?, ?, ?)'
@@ -57,12 +60,17 @@ class TestBenchmarkResultRanking(object):
         con.execute(sql, (BENCHMARK_1, BENCHMARK_1, schema))
         sql = 'INSERT INTO benchmark(benchmark_id, name) VALUES(?, ?)'
         con.execute(sql, (BENCHMARK_2, BENCHMARK_2))
-        sql = 'INSERT INTO benchmark_submission('
-        sql += 'submission_id, name, benchmark_id, owner_id, parameters, workflow_spec'
-        sql += ') VALUES(?, ?, ?, ?, ?, ?)'
-        con.execute(sql, (SUBMISSION_1, SUBMISSION_1, BENCHMARK_1, USER_ID, '[]', '{}'))
-        con.execute(sql, (SUBMISSION_2, SUBMISSION_2, BENCHMARK_1, USER_ID, '[]', '{}'))
-        con.execute(sql, (SUBMISSION_3, SUBMISSION_3, BENCHMARK_2, USER_ID, '[]', '{}'))
+        sql = (
+            'INSERT INTO benchmark_submission(submission_id, name, '
+            'benchmark_id, owner_id, parameters, workflow_spec'
+            ') VALUES(?, ?, ?, ?, ?, ?)'
+        )
+        params = (SUBMISSION_1, SUBMISSION_1, BENCHMARK_1, USER_ID, '[]', '{}')
+        con.execute(sql, params)
+        params = (SUBMISSION_2, SUBMISSION_2, BENCHMARK_1, USER_ID, '[]', '{}')
+        con.execute(sql, params)
+        params = (SUBMISSION_3, SUBMISSION_3, BENCHMARK_2, USER_ID, '[]', '{}')
+        con.execute(sql, params)
         ranking.create_result_table(
             con=con,
             benchmark_id=BENCHMARK_1,
@@ -87,7 +95,7 @@ class TestBenchmarkResultRanking(object):
             arguments=dict(),
             commit_changes=True
         )
-        if not values is None:
+        if values is not None:
             filename = os.path.join(base_dir, 'results.json')
             util.write_object(obj=values, filename=filename)
             files = [
@@ -111,11 +119,12 @@ class TestBenchmarkResultRanking(object):
         leaderboards.
         """
         con, repo = TestBenchmarkResultRanking.init(str(tmpdir))
-        self.create_run(con, SUBMISSION_1, {'col1': 1, 'col2': 10.7}, str(tmpdir))
-        self.create_run(con, SUBMISSION_1, {'col1': 5, 'col2': 1.3}, str(tmpdir))
-        self.create_run(con, SUBMISSION_1, {'col1': 10, 'col2': 1.3}, str(tmpdir))
-        self.create_run(con, SUBMISSION_2, {'col1': 7, 'col2': 12.7}, str(tmpdir))
-        self.create_run(con, SUBMISSION_2, {'col1': 3, 'col2': 8.3}, str(tmpdir))
+        tmp_dir = str(tmpdir)
+        self.create_run(con, SUBMISSION_1, {'col1': 1, 'col2': 10.7}, tmp_dir)
+        self.create_run(con, SUBMISSION_1, {'col1': 5, 'col2': 1.3}, tmp_dir)
+        self.create_run(con, SUBMISSION_1, {'col1': 10, 'col2': 1.3}, tmp_dir)
+        self.create_run(con, SUBMISSION_2, {'col1': 7, 'col2': 12.7}, tmp_dir)
+        self.create_run(con, SUBMISSION_2, {'col1': 3, 'col2': 8.3}, tmp_dir)
         sql = 'SELECT COUNT(*) FROM ' + ranking.RESULT_TABLE(BENCHMARK_1)
         r = con.execute(sql).fetchone()
         assert r[0] == 5
@@ -190,12 +199,13 @@ class TestBenchmarkResultRanking(object):
     def test_insert_results(self, tmpdir):
         """Test inserting results for submission runs."""
         con, _ = TestBenchmarkResultRanking.init(str(tmpdir))
-        self.create_run(con, SUBMISSION_1, {'col1': 1, 'col2': 10.7}, str(tmpdir))
-        self.create_run(con, SUBMISSION_1, {'col1': 5, 'col2': 5.5}, str(tmpdir))
-        self.create_run(con, SUBMISSION_1, None, str(tmpdir))
-        self.create_run(con, SUBMISSION_2, {'col1': 7, 'col2': 12.7}, str(tmpdir))
-        self.create_run(con, SUBMISSION_2, {'col1': 3, 'col2': 8.3}, str(tmpdir))
-        self.create_run(con, SUBMISSION_3, {'col1': 6, 'col2': 6.3}, str(tmpdir))
+        tmp_dir = str(tmpdir)
+        self.create_run(con, SUBMISSION_1, {'col1': 1, 'col2': 10.7}, tmp_dir)
+        self.create_run(con, SUBMISSION_1, {'col1': 5, 'col2': 5.5}, tmp_dir)
+        self.create_run(con, SUBMISSION_1, None, tmp_dir)
+        self.create_run(con, SUBMISSION_2, {'col1': 7, 'col2': 12.7}, tmp_dir)
+        self.create_run(con, SUBMISSION_2, {'col1': 3, 'col2': 8.3}, tmp_dir)
+        self.create_run(con, SUBMISSION_3, {'col1': 6, 'col2': 6.3}, tmp_dir)
         sql = 'SELECT COUNT(*) FROM ' + ranking.RESULT_TABLE(BENCHMARK_1)
         r = con.execute(sql).fetchone()
         assert r[0] == 4

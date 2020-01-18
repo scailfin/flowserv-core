@@ -9,7 +9,6 @@
 """Test methods for running benchmark submissions."""
 
 import os
-import pytest
 
 from robcore.tests.io import FakeStream
 
@@ -77,7 +76,7 @@ class TestSubmissionsRuns(object):
             file_name='names.txt',
             user=user
         )[labels.ID]
-        # Start a new run. The resulting run is expected to be in pending state.
+        # Start a new run. The resulting run is expected to be in pending state
         r = runs.start_run(
             submission_id,
             [

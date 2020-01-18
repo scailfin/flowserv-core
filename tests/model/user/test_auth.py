@@ -8,7 +8,6 @@
 
 """Test functionality to authenticate a user."""
 
-import os
 import pytest
 import time
 
@@ -19,7 +18,6 @@ from robcore.model.user.base import UserManager
 
 import robcore.error as err
 import robcore.tests.db as db
-import robcore.model.user.base as auth
 import robcore.util as util
 
 
@@ -36,7 +34,10 @@ class TestUserAuthentication(object):
         user manager and the authentication manager.
         """
         con = db.init_db(str(base_dir)).connect()
-        sql = 'INSERT INTO api_user(user_id, name, secret, active) VALUES(?, ?, ?, ?)'
+        sql = (
+            'INSERT INTO api_user(user_id, name, secret, active) '
+            'VALUES(?, ?, ?, ?)'
+        )
         con.execute(sql, (USER_1, USER_1, pbkdf2_sha256.hash(USER_1), 1))
         con.execute(sql, (USER_2, USER_2, pbkdf2_sha256.hash(USER_2), 1))
         con.execute(sql, (USER_3, USER_3, pbkdf2_sha256.hash(USER_3), 0))

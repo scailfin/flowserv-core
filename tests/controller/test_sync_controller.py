@@ -24,8 +24,10 @@ DIR = os.path.dirname(os.path.realpath(__file__))
 TEMPLATE_DIR = os.path.join(DIR, '../.files/template')
 # Workflow templates
 TEMPLATE_HELLOWORLD = os.path.join(TEMPLATE_DIR, './hello-world.yaml')
-TEMPLATE_WITH_INVALID_CMD = os.path.join(TEMPLATE_DIR, './template-invalid-cmd.yaml')
-TEMPLATE_WITH_MISSING_FILE = os.path.join(TEMPLATE_DIR, './template-missing-file.yaml')
+INVALID_TEMPLATE = './template-invalid-cmd.yaml'
+TEMPLATE_WITH_INVALID_CMD = os.path.join(TEMPLATE_DIR, INVALID_TEMPLATE)
+MISSING_FILE_TEMPLATE = './template-missing-file.yaml'
+TEMPLATE_WITH_MISSING_FILE = os.path.join(TEMPLATE_DIR, MISSING_FILE_TEMPLATE)
 # Input files
 NAMES_FILE = os.path.join(TEMPLATE_DIR, './inputs/short-names.txt')
 UNKNOWN_FILE = os.path.join(TEMPLATE_DIR, './tmp/no/file/here')
@@ -103,7 +105,8 @@ class TestSynchronousWorkflowEngine(object):
                 template=template,
                 arguments=arguments
             )
-        # After removing the run we can execute it again with the same identifier
+        # After removing the run we can execute it again with the same
+        # identifier
         engine.remove_run(run_id)
         assert not os.path.isfile(engine.get_run_file(run_id))
         assert not os.path.isdir(engine.get_run_dir(run_id))
@@ -158,7 +161,8 @@ class TestSynchronousWorkflowEngine(object):
         assert len(state.messages) > 0
 
     def test_run_with_missing_file(self, tmpdir):
-        """Execute the helloworld example with a reference to a missing file."""
+        """Execute the helloworld example with a reference to a missing file.
+        """
         # Read the workflow template
         doc = util.read_object(filename=TEMPLATE_WITH_MISSING_FILE)
         template = WorkflowTemplate.from_dict(doc, source_dir=TEMPLATE_DIR)

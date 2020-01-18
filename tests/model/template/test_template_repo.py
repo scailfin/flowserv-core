@@ -11,7 +11,6 @@
 import git
 import os
 import pytest
-import sqlite3
 
 from robcore.model.template.repo.base import TemplateRepository
 from robcore.model.template.repo.fs import TemplateFSRepository
@@ -64,11 +63,11 @@ class TestTemplateFSRepository(object):
         repo = TemplateFSRepository(base_dir=str(tmpdir))
         template = repo.add_template(src_dir=TEMPLATE_DIR)
         # Validate the template handle
-        assert not template.identifier is None
-        assert not template.source_dir is None
+        assert template.identifier is not None
+        assert template.source_dir is not None
         assert template.has_schema()
-        schema = template.get_schema()
-        assert template.workflow_spec['inputs']['files'] == ['$[[code]]', '$[[names]]']
+        f_spec = template.workflow_spec['inputs']['files']
+        assert f_spec == ['$[[code]]', '$[[names]]']
         assert len(template.parameters) == 4
         # Make sure files are being copied
         template_dir = repo.get_static_dir(template.identifier)
@@ -120,7 +119,8 @@ class TestTemplateFSRepository(object):
         assert not repo.delete_template(template1.identifier)
 
     def test_error_for_id_func(self, tmpdir):
-        """Error when the id function cannot return unique folder identifier."""
+        """Error when the id function cannot return unique folder identifier.
+        """
         dummy_func = DummyIDFunc()
         repo = TemplateFSRepository(base_dir=str(tmpdir), id_func=dummy_func)
         repo.add_template(src_dir=TEMPLATE_DIR)
@@ -132,20 +132,23 @@ class TestTemplateFSRepository(object):
         """Test adding and retrieving templates."""
         repo = TemplateFSRepository(base_dir=str(tmpdir))
         template = repo.add_template(src_dir=TEMPLATE_DIR)
-        assert not template.source_dir is None
+        assert  template.source_dir is not None
         assert template.has_schema()
-        assert template.workflow_spec['inputs']['files'] == ['$[[code]]', '$[[names]]']
+        f_spec = template.workflow_spec['inputs']['files']
+        assert f_spec == ['$[[code]]', '$[[names]]']
         assert len(template.parameters) == 4
         # Retrieve template and re-verify
         template = repo.get_template(template.identifier)
         assert template.has_schema()
-        assert template.workflow_spec['inputs']['files'] == ['$[[code]]', '$[[names]]']
+        f_spec = template.workflow_spec['inputs']['files']
+        assert f_spec == ['$[[code]]', '$[[names]]']
         assert len(template.parameters) == 4
         # Re-instantiate repository, retrieve template and re-verify
         repo = TemplateFSRepository(base_dir=str(tmpdir))
         template = repo.get_template(template.identifier)
         assert template.has_schema()
-        assert template.workflow_spec['inputs']['files'] == ['$[[code]]', '$[[names]]']
+        f_spec = template.workflow_spec['inputs']['files']
+        assert f_spec == ['$[[code]]', '$[[names]]']
         assert len(template.parameters) == 4
         # Error for unknown template
         with pytest.raises(err.UnknownTemplateError):

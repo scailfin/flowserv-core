@@ -11,8 +11,6 @@ specification.
 """
 
 from robcore.io.files import FileHandle
-from robcore.model.template.parameter.base import TemplateParameter
-from robcore.model.template.parameter.value import TemplateArgument
 
 import robcore.model.template.parameter.util as pd
 import robcore.model.template.parameter.value as pr

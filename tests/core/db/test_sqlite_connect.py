@@ -9,10 +9,7 @@
 """Unit tests for the SQLite database connector."""
 
 import os
-import pytest
 
-import robcore.config.db as config
-import robcore.db.driver as driver
 import robcore.tests.db as db
 
 

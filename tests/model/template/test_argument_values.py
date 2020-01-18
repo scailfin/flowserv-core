@@ -36,12 +36,32 @@ class TestArgumentValues(object):
             workflow_spec=dict(),
             source_dir='dev/null',
             parameters=[
-                TemplateParameter(pd.parameter_declaration('A', data_type=pd.DT_INTEGER)),
-                TemplateParameter(pd.parameter_declaration('B', data_type=pd.DT_BOOL)),
-                TemplateParameter(pd.parameter_declaration('C', data_type=pd.DT_DECIMAL)),
-                TemplateParameter(pd.parameter_declaration('D', data_type=pd.DT_FILE)),
-                TemplateParameter(pd.parameter_declaration('E', data_type=pd.DT_FILE, required=False)),
-                TemplateParameter(pd.parameter_declaration('F', data_type=pd.DT_STRING, required=False))
+                TemplateParameter(
+                    pd.parameter_declaration('A', data_type=pd.DT_INTEGER)
+                ),
+                TemplateParameter(
+                    pd.parameter_declaration('B', data_type=pd.DT_BOOL)
+                ),
+                TemplateParameter(
+                    pd.parameter_declaration('C', data_type=pd.DT_DECIMAL)
+                ),
+                TemplateParameter(
+                    pd.parameter_declaration('D', data_type=pd.DT_FILE)
+                ),
+                TemplateParameter(
+                    pd.parameter_declaration(
+                        identifier='E',
+                        data_type=pd.DT_FILE,
+                        required=False
+                    )
+                ),
+                TemplateParameter(
+                    pd.parameter_declaration(
+                        identifier='F',
+                        data_type=pd.DT_STRING,
+                        required=False
+                    )
+                )
             ]
         )
         params = template.parameters
@@ -52,7 +72,14 @@ class TestArgumentValues(object):
         fh = FileHandle(filepath=LOCAL_FILE)
         # Valid argument set
         args = values.parse_arguments(
-            arguments={'A': 10, 'B': True, 'C': 12.5, 'D': in_fh, 'E': fh, 'F': 'ABC'},
+            arguments={
+                'A': 10,
+                'B': True,
+                'C': 12.5,
+                'D': in_fh,
+                'E': fh,
+                'F': 'ABC'
+            },
             parameters=params,
             validate=True
         )
@@ -60,36 +87,67 @@ class TestArgumentValues(object):
         for key in params.keys():
             assert key in args
         assert isinstance(args['D'].value, InputFile)
-        assert os.path.abspath(args['D'].value.source()) == os.path.abspath(LOCAL_FILE)
+        filename = os.path.abspath(args['D'].value.source())
+        assert filename == os.path.abspath(LOCAL_FILE)
         assert args['D'].value.target() == '/dev/null'
         assert isinstance(args['E'].value, InputFile)
         # Error cases
         with pytest.raises(ValueError):
-            values.parse_arguments(arguments={'A': 10, 'Z': 0}, parameters=params)
+            values.parse_arguments(
+                arguments={'A': 10, 'Z': 0},
+                parameters=params
+            )
         with pytest.raises(ValueError):
-            values.parse_arguments(arguments={'A': 10, 'B': True}, parameters=params)
+            values.parse_arguments(
+                arguments={'A': 10, 'B': True},
+                parameters=params
+            )
         # Validate data type
         with pytest.raises(ValueError):
             values.parse_arguments(
-                arguments={'A': '10', 'B': True, 'C': 12.3, 'D': in_fh, 'F': 'ABC'},
+                arguments={
+                    'A': '10',
+                    'B': True,
+                    'C': 12.3,
+                    'D': in_fh,
+                    'F': 'ABC'
+                },
                 parameters=params,
                 validate=True
             )
         with pytest.raises(ValueError):
             values.parse_arguments(
-                arguments={'A': 10, 'B': 23, 'C': 12.3, 'D': in_fh, 'F': 'ABC'},
+                arguments={
+                    'A': 10,
+                    'B': 23,
+                    'C': 12.3,
+                    'D': in_fh,
+                    'F': 'ABC'
+                },
                 parameters=params,
                 validate=True
             )
         with pytest.raises(ValueError):
             values.parse_arguments(
-                arguments={'A': 10, 'B': True, 'C': '12.3', 'D': in_fh, 'F': 'ABC'},
+                arguments={
+                    'A': 10,
+                    'B': True,
+                    'C': '12.3',
+                    'D': in_fh,
+                    'F': 'ABC'
+                },
                 parameters=params,
                 validate=True
             )
         with pytest.raises(ValueError):
             values.parse_arguments(
-                arguments={'A': 10, 'B': True, 'C': 12.3, 'D': 'fh', 'F': 'ABC'},
+                arguments={
+                    'A': 10,
+                    'B': True,
+                    'C': 12.3,
+                    'D': 'fh',
+                    'F': 'ABC'
+                },
                 parameters=params,
                 validate=True
             )
@@ -107,11 +165,33 @@ class TestArgumentValues(object):
                 tmpl.LABEL_PARAMETERS: [
                     pd.parameter_declaration('A', data_type=pd.DT_INTEGER),
                     pd.parameter_declaration('B', data_type=pd.DT_RECORD),
-                    pd.parameter_declaration('C', data_type=pd.DT_DECIMAL, parent='B'),
-                    pd.parameter_declaration('D', data_type=pd.DT_STRING, parent='B', required=False),
-                    pd.parameter_declaration('E', data_type=pd.DT_LIST, required=False),
-                    pd.parameter_declaration('F', data_type=pd.DT_INTEGER, parent='E'),
-                    pd.parameter_declaration('G', data_type=pd.DT_DECIMAL,  parent='E', required=False)
+                    pd.parameter_declaration(
+                        identifier='C',
+                        data_type=pd.DT_DECIMAL,
+                        parent='B'
+                    ),
+                    pd.parameter_declaration(
+                        identifier='D',
+                        data_type=pd.DT_STRING,
+                        parent='B',
+                        required=False
+                    ),
+                    pd.parameter_declaration(
+                        identifier='E',
+                        data_type=pd.DT_LIST,
+                        required=False
+                    ),
+                    pd.parameter_declaration(
+                        identifier='F',
+                        data_type=pd.DT_INTEGER,
+                        parent='E'
+                    ),
+                    pd.parameter_declaration(
+                        identifier='G',
+                        data_type=pd.DT_DECIMAL,
+                        parent='E',
+                        required=False
+                    )
                 ]
             },
             source_dir='dev/null',
@@ -163,14 +243,20 @@ class TestArgumentValues(object):
 
     def test_validate(self):
         """Test error cases for argument validation."""
-        para_list = TemplateParameter(pd.parameter_declaration('E', data_type=pd.DT_LIST))
+        para_list = TemplateParameter(
+            pd.parameter_declaration('E', data_type=pd.DT_LIST)
+        )
         with pytest.raises(ValueError):
             values.TemplateArgument(parameter=para_list, value=1)
-        para_record = TemplateParameter(pd.parameter_declaration('E', data_type=pd.DT_RECORD))
+        para_record = TemplateParameter(
+            pd.parameter_declaration('E', data_type=pd.DT_RECORD)
+        )
         with pytest.raises(ValueError):
             values.TemplateArgument(parameter=para_record, value=list())
         arg = values.TemplateArgument(
-            parameter=TemplateParameter(pd.parameter_declaration('E', data_type=pd.DT_INTEGER)),
+            parameter=TemplateParameter(
+                pd.parameter_declaration('E', data_type=pd.DT_INTEGER)
+            ),
             value=1,
             validate=True
         )

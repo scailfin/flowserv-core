@@ -22,7 +22,7 @@ class TestInputFile(object):
         filename = os.path.join(str(tmpdir), 'myfile.json')
         util.write_object(filename=filename, obj={'A': 1})
         fh = FileHandle(filepath=filename)
-        assert not fh.created_at is None
+        assert fh.created_at is not None
         assert fh.size > 0
         assert fh.name == 'myfile.json'
         assert os.path.isfile(fh.filepath)

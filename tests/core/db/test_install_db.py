@@ -10,9 +10,6 @@
 the package.
 """
 
-import os
-import pytest
-
 import robcore.tests.db as db
 
 

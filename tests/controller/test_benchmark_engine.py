@@ -14,7 +14,6 @@ import pytest
 
 from robcore.model.template.base import WorkflowTemplate
 from robcore.controller.engine import BenchmarkEngine
-from robcore.tests.repo import DictRepo
 
 import robcore.error as err
 import robcore.model.ranking as ranking
@@ -42,19 +41,23 @@ class TestBenchmarkEngine(object):
         sql += 'VALUES(?, ?, ?, ?)'
         USER_ID = util.get_unique_identifier()
         con.execute(sql, (USER_ID, USER_ID, USER_ID, 1))
-        BENCHMARK_ID = util.get_unique_identifier()
+        BID = util.get_unique_identifier()
         sql = 'INSERT INTO benchmark(benchmark_id, name, result_schema) '
         sql += 'VALUES(?, ?, ?)'
         schema = json.dumps(bm.BENCHMARK_SCHEMA.to_dict())
-        con.execute(sql, (BENCHMARK_ID, BENCHMARK_ID, schema))
-        sql = 'INSERT INTO benchmark_submission('
-        sql += 'submission_id, name, benchmark_id, owner_id, parameters, workflow_spec'
-        sql += ') VALUES(?, ?, ?, ?, ?, ?)'
-        con.execute(sql, (SUBMISSION_1, SUBMISSION_1, BENCHMARK_ID, USER_ID, '[]', '{}'))
-        con.execute(sql, (SUBMISSION_2, SUBMISSION_2, BENCHMARK_ID, USER_ID, '[]', '{}'))
+        con.execute(sql, (BID, BID, schema))
+        sql = (
+            'INSERT INTO benchmark_submission(submission_id, name, '
+            'benchmark_id, owner_id, parameters, workflow_spec'
+            ') VALUES(?, ?, ?, ?, ?, ?)'
+        )
+        params = (SUBMISSION_1, SUBMISSION_1, BID, USER_ID, '[]', '{}')
+        con.execute(sql, params)
+        params = (SUBMISSION_2, SUBMISSION_2, BID, USER_ID, '[]', '{}')
+        con.execute(sql, params)
         ranking.create_result_table(
             con=con,
-            benchmark_id=BENCHMARK_ID,
+            benchmark_id=BID,
             schema=bm.BENCHMARK_SCHEMA,
             commit_changes=False
         )
@@ -83,7 +86,7 @@ class TestBenchmarkEngine(object):
         assert len(run1.list_resources()) == 0
         assert run1.get_resource(bm.RESULT_FILE_ID) is None
         assert engine.exists_run(run1.identifier)
-        run2 = engine.start_run(
+        engine.start_run(
             submission_id=SUBMISSION_2,
             arguments=dict(),
             template=template

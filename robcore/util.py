@@ -14,14 +14,13 @@ identifiers.
 
 import datetime
 import errno
+import io
 import json
 import os
 import tarfile
 import time
 import uuid
 import yaml
-
-from io import BytesIO
 
 
 """Identifier for supported data formats."""
@@ -90,8 +89,8 @@ def from_utc_datetime(utc_datetime):
     -------
     datetime.datetime
     """
-    now_timestamp = time.time()
-    offset = datetime.datetime.fromtimestamp(now_timestamp) - datetime.datetime.utcfromtimestamp(now_timestamp)
+    now_timestamp = datetime.datetime.utcfromtimestamp(time.time())
+    offset = datetime.datetime.fromtimestamp(now_timestamp) - now_timestamp
     return utc_datetime + offset
 
 
@@ -176,7 +175,7 @@ def tar_gz(directory, filenames=None):
     -------
     io.BytesIO
     """
-    file_out = BytesIO()
+    file_out = io.BytesIO()
     tar_handle = tarfile.open(fileobj=file_out, mode='w:gz')
     for root, dirs, files in os.walk(directory):
         # Add directories (if contained in the filename list)
@@ -244,8 +243,8 @@ def to_localstr(date=None, text=None):
 
 def validate_doc(doc, mandatory_labels=None, optional_labels=None):
     """Raises error if a dictionary contains labels that are not in the given
-    label lists or if there are labels in the mandatory list that are not in the
-    dictionary. Returns the given dictionary (if valid).
+    label lists or if there are labels in the mandatory list that are not in
+    the dictionary. Returns the given dictionary (if valid).
 
     Paramaters
     ----------

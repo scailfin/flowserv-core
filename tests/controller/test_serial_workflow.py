@@ -8,7 +8,6 @@
 
 """Test functionality of the serial workflow module."""
 
-import robcore.error as err
 import robcore.controller.serial as serial
 import robcore.model.template.parameter.declaration as pd
 import robcore.model.template.parameter.util as putil
@@ -63,7 +62,8 @@ class TestSerialWorkflow(object):
         for p in ['inputfile', 'sleeptime', 'message', 'waittime']:
             assert p in mod_spec['inputs']['parameters']
         assert len(mod_para) == 5
-        for key in ['inputfile', 'sleeptime', 'greeting', 'gtfile', 'waittime']:
+        keys = ['inputfile', 'sleeptime', 'greeting', 'gtfile', 'waittime']
+        for key in keys:
             assert key in mod_para
         # - Duplicate parameters get merged. No error is raised.
         add_parameters = putil.create_parameter_index([

@@ -31,7 +31,8 @@ class TestUserView(object):
     """Test API methods that access and manipulate users."""
     def test_authenticate_user(self, tmpdir):
         """Test login and logout via API."""
-        _, _, users, _, auth, _, _ = api.init_api(str(tmpdir), open_access=True)
+        base_dir = str(tmpdir)
+        _, _, users, _, auth, _, _ = api.init_api(base_dir, open_access=True)
         # Register a new user that is automatically activated
         users.register_user(username='myuser', password='mypwd', verify=False)
         # Login
@@ -94,7 +95,11 @@ class TestUserView(object):
         """Test new user registration via API."""
         _, _, users, _, _, _, _ = api.init_api(str(tmpdir), open_access=True)
         # Register a new user without activating the user
-        r = users.register_user(username='myuser', password='mypwd', verify=True)
+        r = users.register_user(
+            username='myuser',
+            password='mypwd',
+            verify=True
+        )
         util.validate_doc(doc=r, mandatory_labels=USER_LOGOUT)
         links = hateoas.deserialize(r[labels.LINKS])
         util.validate_doc(
@@ -115,7 +120,11 @@ class TestUserView(object):
             ]
         )
         # Register a new user that is automatically activated
-        r = users.register_user(username='myuser2', password='mypwd', verify=False)
+        r = users.register_user(
+            username='myuser2',
+            password='mypwd',
+            verify=False
+        )
         util.validate_doc(doc=r, mandatory_labels=USER_LOGOUT)
         links = hateoas.deserialize(r[labels.LINKS])
         util.validate_doc(

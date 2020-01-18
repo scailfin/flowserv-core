@@ -14,14 +14,19 @@ from robcore.controller.backend.base import WorkflowController
 
 
 class TestWorkflowEngine(object):
-    """Test abstract workflow engine interface (added for test completeness)."""
+    """Test abstract workflow engine interface (added for test completeness).
+    """
     def test_interface(self):
         """Ensure that interface methods raise NotImplementedError."""
         controller = WorkflowController()
         with pytest.raises(NotImplementedError):
             controller.cancel_run(run_id='ABC')
         with pytest.raises(NotImplementedError):
-            controller.exec_workflow(run_id='ABC', template=None, arguments=None)
+            controller.exec_workflow(
+                run_id='ABC',
+                template=None,
+                arguments=None
+            )
         with pytest.raises(NotImplementedError):
             controller.get_run_state(run_id='ABC')
         with pytest.raises(NotImplementedError):

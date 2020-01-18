@@ -41,7 +41,10 @@ class TestSubmissionManagerFilestore(object):
         of the submission manager and the two submission handles.
         """
         con = db.init_db(base_dir).connect()
-        sql = 'INSERT INTO api_user(user_id, name, secret, active) VALUES(?, ?, ?, ?)'
+        sql = (
+            'INSERT INTO api_user(user_id, name, secret, active) '
+            'VALUES(?, ?, ?, ?)'
+        )
         con.execute(sql, (USER_1, USER_1, pbkdf2_sha256.hash(USER_1), 1))
         sql = 'INSERT INTO benchmark(benchmark_id, name, result_schema) '
         sql += 'VALUES(?, ?, ?)'
