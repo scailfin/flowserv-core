@@ -75,7 +75,7 @@ class BenchmarkService(object):
 
         Returns
         -------
-        robcore.core.io.files.FileHandle
+        robcore.core.files.FileHandle
 
         Raises
         ------

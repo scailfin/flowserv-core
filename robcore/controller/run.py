@@ -16,7 +16,7 @@ import json
 import os
 import shutil
 
-from robcore.core.io.files import InputFile
+from robcore.core.files import InputFile
 from robcore.model.resource import FileResource
 from robcore.model.template.command import PostProcessingStep
 from robcore.model.template.schema import ResultSchema

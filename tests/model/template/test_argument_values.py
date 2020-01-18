@@ -11,7 +11,7 @@
 import os
 import pytest
 
-from robcore.core.io.files import FileHandle, InputFile
+from robcore.core.files import FileHandle, InputFile
 from robcore.model.template.parameter.base import TemplateParameter
 from robcore.model.template.base import WorkflowTemplate
 

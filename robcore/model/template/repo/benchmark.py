@@ -15,7 +15,7 @@ import json
 import mimetypes
 import os
 
-from robcore.core.io.files import FileHandle
+from robcore.core.files import FileHandle
 from robcore.model.template.benchmark import BenchmarkHandle
 from robcore.model.template.schema import ResultSchema
 
@@ -216,7 +216,7 @@ class BenchmarkRepository(object):
 
         Returns
         -------
-        robcore.core.io.files.FileHandle
+        robcore.core.files.FileHandle
 
         Raises
         ------

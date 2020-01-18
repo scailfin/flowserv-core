@@ -16,7 +16,7 @@ from io import BytesIO
 
 from robcore.view.run import RunSerializer
 from robcore.view.route import UrlFactory
-from robcore.core.io.files import InputFile
+from robcore.core.files import InputFile
 from robcore.model.template.parameter.value import TemplateArgument
 
 import robcore.controller.run as store
@@ -173,7 +173,7 @@ class RunService(object):
 
         Returns
         -------
-        robcore.core.io.files.FileHandle
+        robcore.core.files.FileHandle
 
         Raises
         ------

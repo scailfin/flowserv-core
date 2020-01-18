@@ -10,7 +10,7 @@
 
 import os
 
-from robcore.core.io.files import FileHandle, InputFile
+from robcore.core.files import FileHandle, InputFile
 
 import robcore.core.util as util
 

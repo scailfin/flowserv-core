@@ -11,8 +11,8 @@
 import os
 import pytest
 
-from robcore.core.io.files import FileHandle
-from robcore.core.io.store.json import JsonFileStore
+from robcore.core.files import FileHandle
+from robcore.core.objstore.json import JsonFileStore
 from robcore.model.template.parameter.base import TemplateParameter
 from robcore.model.template.parameter.value import TemplateArgument
 from robcore.model.template.base import WorkflowTemplate

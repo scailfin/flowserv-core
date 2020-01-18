@@ -13,8 +13,8 @@ implementation.
 import os
 import pytest
 
-from robcore.core.io.store.base import ObjectStore
-from robcore.core.io.store.json import JsonFileStore
+from robcore.core.objstore.base import ObjectStore
+from robcore.core.objstore.json import JsonFileStore
 
 import robcore.core.error as err
 import robcore.core.util as util

@@ -22,7 +22,7 @@ import os
 import shutil
 
 from robcore.model.user.base import UserHandle
-from robcore.core.io.files import FileHandle
+from robcore.core.files import FileHandle
 from robcore.model.template.base import WorkflowTemplate
 from robcore.model.template.schema import ResultSchema
 
@@ -97,7 +97,7 @@ class SubmissionHandle(object):
 
         Returns
         -------
-        robcore.core.io.files.FileHandle
+        robcore.core.files.FileHandle
 
         Raises
         ------
@@ -179,7 +179,7 @@ class SubmissionHandle(object):
 
         Returns
         -------
-        list(robcore.core.io.files.FileHandle)
+        list(robcore.core.files.FileHandle)
         """
         return self.manager.list_files(self.identifier)
 
@@ -422,7 +422,7 @@ class SubmissionManager(object):
 
         Returns
         -------
-        robcore.core.io.files.FileHandle
+        robcore.core.files.FileHandle
 
         Raises
         ------
@@ -575,7 +575,7 @@ class SubmissionManager(object):
 
         Returns
         -------
-        list(robcore.core.io.files.FileHandle)
+        list(robcore.core.files.FileHandle)
         """
         # Create the result set from a SQL query of the submission file table
         sql = (
@@ -746,7 +746,7 @@ class SubmissionManager(object):
 
         Returns
         -------
-        robcore.core.io.files.FileHandle
+        robcore.core.files.FileHandle
 
         Raises
         ------

@@ -12,7 +12,7 @@ import json
 import os
 import time
 
-from robcore.core.io.files import FileHandle
+from robcore.core.files import FileHandle
 from robcore.model.template.base import WorkflowTemplate
 from robcore.model.template.parameter.value import TemplateArgument
 from robcore.controller.backend.multiproc import MultiProcessWorkflowEngine

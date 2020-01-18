@@ -15,7 +15,7 @@ import mimetypes
 import os
 import shutil
 
-from robcore.core.io.files import FileHandle
+from robcore.core.files import FileHandle
 
 import robcore.core.util as util
 
@@ -156,6 +156,6 @@ class FileResource(object):
 
         Returns
         -------
-        robcore.core.io.files.FileHandle
+        robcore.core.files.FileHandle
         """
         return FileHandle(filepath=self.file_path, mimetype=self.mimetype)

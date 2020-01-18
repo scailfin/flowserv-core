@@ -10,7 +10,7 @@
 
 import os
 
-from robcore.core.io.store.base import ObjectStore
+from robcore.core.objstore.base import ObjectStore
 
 import robcore.core.error as err
 import robcore.core.util as util

@@ -10,8 +10,8 @@
 
 from __future__ import print_function
 
-from robcore.core.io.files import FileHandle
-from robcore.core.io.scanner import Scanner
+from robcore.core.files import FileHandle
+from robcore.core.scanner import Scanner
 from robcore.model.template.parameter.base import TemplateParameter
 
 import robcore.core.error as err
@@ -90,7 +90,7 @@ def read(parameters, scanner=None, files=None):
     ----------
     parameters: list(robcore.model.template.parameter.base.TemplateParameter)
         List of workflow template parameter declarations
-    scanner: robcore.core.io.scanner.Scanner
+    scanner: robcore.core.scanner.Scanner
         Input scanner to read parameter values
     files: list()
         List of idenifier, name pairs
@@ -132,9 +132,9 @@ def read_parameter(para, scanner, prompt_prefix='', files=None):
     ----------
     para: robcore.model.template.parameter.TemplateParameter
         Workflow template parameter declaration
-    scanner: robcore.core.io.scanner.Scanner
+    scanner: robcore.core.scanner.Scanner
     prompt_prefix: string, optional
-    files: list(robcore.core.io.files.FileDescriptor)
+    files: list(robcore.core.files.FileDescriptor)
         List of file descriptors
 
     Returns

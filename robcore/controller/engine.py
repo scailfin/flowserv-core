@@ -11,7 +11,7 @@ runs in the underlying database. Execution of workflows is controlled by a
 given workflow controller implementation.
 """
 
-from robcore.core.io.files import InputFile
+from robcore.core.files import InputFile
 from robcore.model.workflow.run import RunHandle
 from robcore.model.template.schema import ResultSchema
 from robcore.model.workflow.state import StatePending

@@ -8,7 +8,7 @@
 
 """Test read arguments function for REANA templates."""
 
-from robcore.core.io.scanner import Scanner, ListReader
+from robcore.core.scanner import Scanner, ListReader
 from robcore.model.template.parameter.base import TemplateParameter, AS_INPUT
 from robcore.model.template.base import WorkflowTemplate
 

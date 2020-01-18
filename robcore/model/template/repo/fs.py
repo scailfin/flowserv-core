@@ -17,7 +17,7 @@ import shutil
 
 from robcore.model.template.base import WorkflowTemplate
 from robcore.model.template.repo.base import TemplateRepository
-from robcore.core.io.store.json import JsonFileStore
+from robcore.core.objstore.json import JsonFileStore
 
 import robcore.core.error as err
 import robcore.core.util as util
@@ -44,7 +44,7 @@ class TemplateFSRepository(TemplateRepository):
         ----------
         base_dir: string
             Base directory for the repository
-        store: robcore.core.io.store.base.TemplateStore, optional
+        store: robcore.core.objstore.base.TemplateStore, optional
             Store for workflow templates
         default_filenames: list(string), optional
             List of default names for template specification files

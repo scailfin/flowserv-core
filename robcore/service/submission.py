@@ -192,7 +192,7 @@ class SubmissionService(object):
 
         Returns
         -------
-        robcore.core.io.files.FileHandle, dict
+        robcore.core.files.FileHandle, dict
 
         Raises
         ------

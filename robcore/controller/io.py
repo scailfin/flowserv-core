@@ -14,7 +14,7 @@ import errno
 import os
 import shutil
 
-from robcore.core.io.files import FileHandle, InputFile
+from robcore.core.files import FileHandle, InputFile
 from robcore.model.template.parameter.value import TemplateArgument
 
 import robcore.core.error as err

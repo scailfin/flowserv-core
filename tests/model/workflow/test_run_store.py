@@ -12,7 +12,7 @@ import os
 import json
 import pytest
 
-from robcore.core.io.files import FileHandle
+from robcore.core.files import FileHandle
 from robcore.model.template.parameter.base import TemplateParameter
 from robcore.model.template.schema import ResultColumn, ResultSchema
 from robcore.model.resource import FileResource

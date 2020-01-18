@@ -10,7 +10,7 @@
 specification.
 """
 
-from robcore.core.io.files import FileHandle
+from robcore.core.files import FileHandle
 
 import robcore.model.template.parameter.util as pd
 import robcore.model.template.parameter.value as pr

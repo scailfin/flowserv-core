@@ -134,7 +134,7 @@ class InputFile(FileHandle):
 
         Parameters
         ----------
-        f_handle: robcore.core.io.files.FileHandle
+        f_handle: robcore.core.files.FileHandle
         target_path: string, optional
         """
         super(InputFile, self).__init__(

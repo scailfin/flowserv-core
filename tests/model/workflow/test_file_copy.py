@@ -12,7 +12,7 @@ import os
 import pytest
 import shutil
 
-from robcore.core.io.files import FileHandle
+from robcore.core.files import FileHandle
 from robcore.model.template.repo.fs import TemplateFSRepository
 from robcore.model.template.parameter.value import TemplateArgument
 
