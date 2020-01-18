@@ -10,11 +10,11 @@
 
 from __future__ import print_function
 
-from robcore.io.files import FileHandle
-from robcore.io.scanner import Scanner
+from robcore.core.io.files import FileHandle
+from robcore.core.io.scanner import Scanner
 from robcore.model.template.parameter.base import TemplateParameter
 
-import robcore.error as err
+import robcore.core.error as err
 import robcore.model.template.parameter.declaration as pd
 
 
@@ -39,8 +39,8 @@ def create_parameter_index(parameters, validate=True):
 
     Raises
     ------
-    robcore.error.InvalidTemplateError
-    robcore.error.UnknownParameterError
+    robcore.core.error.InvalidTemplateError
+    robcore.core.error.UnknownParameterError
     """
     result = dict()
     for para in parameters:
@@ -90,7 +90,7 @@ def read(parameters, scanner=None, files=None):
     ----------
     parameters: list(robcore.model.template.parameter.base.TemplateParameter)
         List of workflow template parameter declarations
-    scanner: robcore.io.scanner.Scanner
+    scanner: robcore.core.io.scanner.Scanner
         Input scanner to read parameter values
     files: list()
         List of idenifier, name pairs
@@ -132,9 +132,9 @@ def read_parameter(para, scanner, prompt_prefix='', files=None):
     ----------
     para: robcore.model.template.parameter.TemplateParameter
         Workflow template parameter declaration
-    scanner: robcore.io.scanner.Scanner
+    scanner: robcore.core.io.scanner.Scanner
     prompt_prefix: string, optional
-    files: list(robcore.io.files.FileDescriptor)
+    files: list(robcore.core.io.files.FileDescriptor)
         List of file descriptors
 
     Returns

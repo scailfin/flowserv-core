@@ -12,11 +12,11 @@ import os
 import pytest
 import shutil
 
-from robcore.io.files import FileHandle
+from robcore.core.io.files import FileHandle
 from robcore.model.template.repo.fs import TemplateFSRepository
 from robcore.model.template.parameter.value import TemplateArgument
 
-import robcore.error as err
+import robcore.core.error as err
 import robcore.controller.io as backend
 
 

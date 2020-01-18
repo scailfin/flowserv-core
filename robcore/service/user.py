@@ -107,7 +107,7 @@ class UserService(object):
 
         Raises
         ------
-        robcore.error.UnauthenticatedAccessError
+        robcore.core.error.UnauthenticatedAccessError
         """
         return self.serialize.user(self.manager.logout_user(user))
 
@@ -133,8 +133,8 @@ class UserService(object):
 
         Raises
         ------
-        robcore.error.ConstraintViolationError
-        robcore.error.DuplicateUserError
+        robcore.core.error.ConstraintViolationError
+        robcore.core.error.DuplicateUserError
         """
         user = self.manager.register_user(
             username=username,
@@ -183,8 +183,8 @@ class UserService(object):
 
         Raises
         ------
-        robcore.error.ConstraintViolationError
-        robcore.error.UnknownRequestError
+        robcore.core.error.ConstraintViolationError
+        robcore.core.error.UnknownRequestError
         """
         user = self.manager.reset_password(
             request_id=request_id,

@@ -15,7 +15,7 @@ from abc import abstractmethod
 
 from robcore.model.template.base import WorkflowTemplate
 
-import robcore.util as util
+import robcore.core.util as util
 
 
 """ "Default value for max. attempts parameters."""
@@ -83,8 +83,8 @@ class TemplateRepository(object):
 
         Raises
         ------
-        robcore.error.InvalidParameterError
-        robcore.error.InvalidTemplateError
+        robcore.core.error.InvalidParameterError
+        robcore.core.error.InvalidTemplateError
         ValueError
         """
         raise NotImplementedError()
@@ -130,7 +130,7 @@ class TemplateRepository(object):
 
         Raises
         ------
-        robcore.error.UnknownTemplateError
+        robcore.core.error.UnknownTemplateError
         """
         raise NotImplementedError()
 

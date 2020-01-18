@@ -13,7 +13,7 @@ the value and the meta-data in the parameter declaration.
 
 from past.builtins import basestring
 
-from robcore.io.files import FileHandle, InputFile
+from robcore.core.io.files import FileHandle, InputFile
 from robcore.model.template.parameter.base import ParameterBase
 
 import robcore.model.template.parameter.declaration as pd
@@ -36,7 +36,7 @@ class TemplateArgument(ParameterBase):
         ----------
         parameter: robcore.model.template.parameter.base.TemplateParameter
             Parameter declaration
-        value: list or dict or scalar or robcore.io.files.InputFile
+        value: list or dict or scalar or robcore.core.io.files.InputFile
             Parameter value. the type depends on the parameter data type.
         validate: bool, optional
             Validate the argument value against the parameter declaration if

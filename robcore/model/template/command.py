@@ -13,7 +13,7 @@ statements that are executed in the specified environment.
 
 from robcore.model.resource import ResourceDescriptor
 
-import robcore.error as err
+import robcore.core.error as err
 
 
 """Labels for object serialization."""

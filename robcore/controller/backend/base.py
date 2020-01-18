@@ -30,7 +30,7 @@ from abc import abstractmethod
 
 import robcore.config.engine as config
 import robcore.controller.serial as serial
-import robcore.util as util
+import robcore.core.util as util
 
 
 # -- Controller Interface ------------------------------------------------------
@@ -68,7 +68,7 @@ class WorkflowController(object):
 
         Raises
         ------
-        robcore.error.UnknownRunError
+        robcore.core.error.UnknownRunError
         """
         raise NotImplementedError()
 
@@ -111,7 +111,7 @@ class WorkflowController(object):
 
         Raises
         ------
-        robcore.error.UnknownRunError
+        robcore.core.error.UnknownRunError
         """
         raise NotImplementedError()
 
@@ -142,8 +142,8 @@ class WorkflowController(object):
 
         Raises
         ------
-        robcore.error.DuplicateParameterError
-        robcore.error.InvalidTemplateError
+        robcore.core.error.DuplicateParameterError
+        robcore.core.error.InvalidTemplateError
         """
         raise NotImplementedError()
 
@@ -158,7 +158,7 @@ class WorkflowController(object):
 
         Raises
         ------
-        robcore.error.UnknownRunError
+        robcore.core.error.UnknownRunError
         """
         raise NotImplementedError()
 

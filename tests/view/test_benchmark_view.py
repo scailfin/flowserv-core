@@ -15,7 +15,7 @@ import robcore.view.labels as labels
 import robcore.model.template.parameter.declaration as pd
 import robcore.tests.api as api
 import robcore.tests.serialize as serialize
-import robcore.util as util
+import robcore.core.util as util
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))

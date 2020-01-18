@@ -15,11 +15,11 @@ import pytest
 from robcore.model.template.base import WorkflowTemplate
 from robcore.controller.engine import BenchmarkEngine
 
-import robcore.error as err
+import robcore.core.error as err
 import robcore.model.ranking as ranking
 import robcore.tests.benchmark as bm
 import robcore.tests.db as db
-import robcore.util as util
+import robcore.core.util as util
 
 
 SUBMISSION_1 = util.get_unique_identifier()

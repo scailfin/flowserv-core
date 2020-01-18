@@ -8,9 +8,9 @@
 
 import os
 
-from robcore.db.connector import DatabaseConnector
+from robcore.core.db.connector import DatabaseConnector
 
-import robcore.util as util
+import robcore.core.util as util
 
 
 """Driver-specific environment variables containing connection information for

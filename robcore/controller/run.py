@@ -16,17 +16,17 @@ import json
 import os
 import shutil
 
-from robcore.io.files import InputFile
+from robcore.core.io.files import InputFile
 from robcore.model.resource import FileResource
 from robcore.model.template.command import PostProcessingStep
 from robcore.model.template.schema import ResultSchema
 from robcore.model.workflow.run import RunHandle
 
 import robcore.controller.postproc as postproc
-import robcore.error as err
+import robcore.core.error as err
 import robcore.model.ranking as ranking
 import robcore.model.workflow.state as st
-import robcore.util as util
+import robcore.core.util as util
 
 
 """Labels for file handle serialization."""
@@ -64,7 +64,7 @@ def create_run(con, submission_id, arguments, commit_changes=True):
 
     Raises
     ------
-    robcore.error.MissingArgumentError
+    robcore.core.error.MissingArgumentError
     """
     # Create a unique run identifier
     run_id = util.get_unique_identifier()
@@ -155,7 +155,7 @@ def get_run(con, run_id):
 
     Raises
     ------
-    robcore.error.UnknownRunError
+    robcore.core.error.UnknownRunError
     """
     # Fetch run information from the database. If the result is None the
     # run is unknown and an error is raised.
@@ -254,7 +254,7 @@ def update_run(con, run_id, state, commit_changes=True):
 
     Raises
     ------
-    robcore.error.ConstraintViolationError
+    robcore.core.error.ConstraintViolationError
     """
     # Query template to update the state.
     sqltmpl = (

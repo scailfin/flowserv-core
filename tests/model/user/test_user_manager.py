@@ -14,7 +14,7 @@ import time
 from robcore.model.user.auth import OpenAccessAuth
 from robcore.model.user.base import UserManager
 
-import robcore.error as err
+import robcore.core.error as err
 import robcore.tests.db as db
 
 

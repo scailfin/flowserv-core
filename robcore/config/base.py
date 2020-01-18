@@ -12,7 +12,7 @@ used for application configuration.
 
 import os
 
-import robcore.error as err
+import robcore.core.error as err
 
 
 """Environment variable for test purposes."""
@@ -41,7 +41,7 @@ def get_variable(name, default_value=None, raise_error=None):
 
     Raises
     ------
-    robcore.error.MissingConfigurationError
+    robcore.core.error.MissingConfigurationError
     """
     value = os.environ.get(name)
     if value is None or value == '':

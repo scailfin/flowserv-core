@@ -19,11 +19,11 @@ from robcore.controller.engine import BenchmarkEngine
 from robcore.tests.benchmark import StateEngine
 from robcore.tests.io import FakeStream
 
-import robcore.error as err
+import robcore.core.error as err
 import robcore.model.ranking as ranking
 import robcore.tests.benchmark as bm
 import robcore.tests.db as db
-import robcore.util as util
+import robcore.core.util as util
 
 
 BENCHMARK_1 = util.get_unique_identifier()

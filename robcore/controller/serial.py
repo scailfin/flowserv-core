@@ -23,10 +23,10 @@ from robcore.model.template.command import Step
 from robcore.model.resource import FileResource
 from robcore.model.workflow.state import StateError, StateSuccess
 
-import robcore.error as err
+import robcore.core.error as err
 import robcore.model.template.util as tmpl
 import robcore.controller.io as fileio
-import robcore.util as util
+import robcore.core.util as util
 
 
 def commands(template, arguments):
@@ -49,8 +49,8 @@ def commands(template, arguments):
 
     Raises
     ------
-    robcore.error.InvalidTemplateError
-    robcore.error.MissingArgumentError
+    robcore.core.error.InvalidTemplateError
+    robcore.core.error.MissingArgumentError
     """
     workflow_spec = template.workflow_spec
     # Get the input/parameters dictionary from the workflow specification and
@@ -109,7 +109,7 @@ def modify_spec(workflow_spec, tmpl_parameters, add_parameters):
 
     Raises
     ------
-    robcore.error.InvalidTemplateError
+    robcore.core.error.InvalidTemplateError
     """
     # Get a copy of the files and parameters sections of the inputs declaration
     inputs = workflow_spec.get('inputs', dict())
@@ -228,8 +228,8 @@ def output_files(template, arguments):
 
     Raises
     ------
-    robcore.error.InvalidTemplateError
-    robcore.error.MissingArgumentError
+    robcore.core.error.InvalidTemplateError
+    robcore.core.error.MissingArgumentError
     """
     return tmpl.replace_args(
         spec=template.workflow_spec.get('outputs', {}).get('files', {}),
@@ -264,9 +264,9 @@ def upload_files(template, arguments):
 
     Raises
     ------
-    robcore.error.InvalidTemplateError
-    robcore.error.MissingArgumentError
-    robcore.error.UnknownParameterError
+    robcore.core.error.InvalidTemplateError
+    robcore.core.error.MissingArgumentError
+    robcore.core.error.UnknownParameterError
     """
     return fileio.get_upload_files(
         template=template,

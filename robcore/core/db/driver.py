@@ -64,7 +64,7 @@ class DatabaseDriver(object):
 
         Returns
         -------
-        robcore.db.connector.DatabaseConnector
+        robcore.core.db.connector.DatabaseConnector
 
         Raises
         ------
@@ -79,11 +79,11 @@ class DatabaseDriver(object):
         # Raises ValueError if the given identifier is unknown.
         if dbms_id.upper() in SQLITE:
             # -- SQLite database -----------------------------------------------
-            from robcore.db.sqlite import SQLiteConnector
+            from robcore.core.db.sqlite import SQLiteConnector
             return SQLiteConnector(connect_string=connect_string)
         elif dbms_id.upper() in POSTGRES:
             # -- PostgreSQL database -------------------------------------------
-            from robcore.db.pg import PostgresConnector
+            from robcore.core.db.pg import PostgresConnector
             return PostgresConnector(connect_string=connect_string)
         else:
             raise ValueError('unknown database system \'{}\''.format(dbms_id))

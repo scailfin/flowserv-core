@@ -14,10 +14,10 @@ from robcore.model.user.auth import OpenAccessAuth
 
 import robcore.view.hateoas as hateoas
 import robcore.view.labels as labels
-import robcore.error as err
+import robcore.core.error as err
 import robcore.tests.api as api
 import robcore.tests.serialize as serialize
-import robcore.util as util
+import robcore.core.util as util
 
 
 """Mandatory labels in a user handle for users that are currently logged in or

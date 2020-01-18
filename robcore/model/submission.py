@@ -22,15 +22,15 @@ import os
 import shutil
 
 from robcore.model.user.base import UserHandle
-from robcore.io.files import FileHandle
+from robcore.core.io.files import FileHandle
 from robcore.model.template.base import WorkflowTemplate
 from robcore.model.template.schema import ResultSchema
 
-import robcore.error as err
+import robcore.core.error as err
 import robcore.model.constraint as constraint
 import robcore.model.ranking as ranking
 import robcore.model.template.parameter.util as pd
-import robcore.util as util
+import robcore.core.util as util
 
 
 class SubmissionHandle(object):
@@ -97,11 +97,11 @@ class SubmissionHandle(object):
 
         Returns
         -------
-        robcore.io.files.FileHandle
+        robcore.core.io.files.FileHandle
 
         Raises
         ------
-        robcore.error.UnknownFileError
+        robcore.core.error.UnknownFileError
         """
         return self.manager.get_file(
             submission_id=self.identifier,
@@ -179,7 +179,7 @@ class SubmissionHandle(object):
 
         Returns
         -------
-        list(robcore.io.files.FileHandle)
+        list(robcore.core.io.files.FileHandle)
         """
         return self.manager.list_files(self.identifier)
 
@@ -209,7 +209,7 @@ class SubmissionHandle(object):
 
         Raises
         ------
-        robcore.error.MissingArgumentError
+        robcore.core.error.MissingArgumentError
         """
         return self.engine.start_run(
             submission_id=self.identifier,
@@ -293,9 +293,9 @@ class SubmissionManager(object):
 
         Raises
         ------
-        robcore.error.ConstraintViolationError
-        robcore.error.UnknownBenchmarkError
-        robcore.error.UnknownUserError
+        robcore.core.error.ConstraintViolationError
+        robcore.core.error.UnknownBenchmarkError
+        robcore.core.error.UnknownUserError
         """
         # Ensure that the benchmark exists
         sql = 'SELECT * FROM benchmark WHERE benchmark_id = ?'
@@ -356,7 +356,7 @@ class SubmissionManager(object):
 
         Raises
         ------
-        robcore.error.UnknownFileError
+        robcore.core.error.UnknownFileError
         """
         # Get the file handle which contains the path to the file on disk.
         # This will raise an error if the file does not exist
@@ -385,8 +385,8 @@ class SubmissionManager(object):
 
         Raises
         ------
-        robcore.error.InvalidRunStateError
-        robcore.error.UnknownSubmissionError
+        robcore.core.error.InvalidRunStateError
+        robcore.core.error.UnknownSubmissionError
         """
         # Get submission handle to ensure that the submission exists
         self.get_submission(submission_id, load_members=False)
@@ -422,11 +422,11 @@ class SubmissionManager(object):
 
         Returns
         -------
-        robcore.io.files.FileHandle
+        robcore.core.io.files.FileHandle
 
         Raises
         ------
-        robcore.error.UnknownFileError
+        robcore.core.error.UnknownFileError
         """
         # Retrieve file information from disk. Use both identifier to ensure
         # that the file belongs to the submission. Raise error if the file
@@ -463,7 +463,7 @@ class SubmissionManager(object):
 
         Raises
         ------
-        robcore.error.UnknownSubmissionError
+        robcore.core.error.UnknownSubmissionError
         """
         # Get result schema for the associated benchmark. Raise error if the
         # given submission identifier is invalid.
@@ -524,7 +524,7 @@ class SubmissionManager(object):
 
         Raises
         ------
-        robcore.error.UnknownSubmissionError
+        robcore.core.error.UnknownSubmissionError
         """
         # Get submission information. Raise error if the identifier is unknown.
         sql = 'SELECT name, benchmark_id, owner_id, parameters, workflow_spec '
@@ -575,7 +575,7 @@ class SubmissionManager(object):
 
         Returns
         -------
-        list(robcore.io.files.FileHandle)
+        list(robcore.core.io.files.FileHandle)
         """
         # Create the result set from a SQL query of the submission file table
         sql = (
@@ -690,8 +690,8 @@ class SubmissionManager(object):
 
         Raises
         ------
-        robcore.error.ConstraintViolationError
-        robcore.error.UnknownSubmissionError
+        robcore.core.error.ConstraintViolationError
+        robcore.core.error.UnknownSubmissionError
         """
         # Get submission handle. This will raise an error if the submission is
         # unknown.
@@ -746,12 +746,12 @@ class SubmissionManager(object):
 
         Returns
         -------
-        robcore.io.files.FileHandle
+        robcore.core.io.files.FileHandle
 
         Raises
         ------
-        robcore.error.ConstraintViolationError
-        robcore.error.UnknownSubmissionError
+        robcore.core.error.ConstraintViolationError
+        robcore.core.error.UnknownSubmissionError
         """
         # Ensure that the given file name is valid
         constraint.validate_name(file_name)

@@ -17,10 +17,10 @@ import shutil
 
 from robcore.model.template.base import WorkflowTemplate
 from robcore.model.template.repo.base import TemplateRepository
-from robcore.io.store.json import JsonFileStore
+from robcore.core.io.store.json import JsonFileStore
 
-import robcore.error as err
-import robcore.util as util
+import robcore.core.error as err
+import robcore.core.util as util
 import robcore.model.template.repo.base as base
 
 
@@ -44,7 +44,7 @@ class TemplateFSRepository(TemplateRepository):
         ----------
         base_dir: string
             Base directory for the repository
-        store: robcore.io.store.base.TemplateStore, optional
+        store: robcore.core.io.store.base.TemplateStore, optional
             Store for workflow templates
         default_filenames: list(string), optional
             List of default names for template specification files
@@ -112,7 +112,7 @@ class TemplateFSRepository(TemplateRepository):
 
         Raises
         ------
-        robcore.error.InvalidTemplateError
+        robcore.core.error.InvalidTemplateError
         ValueError
         """
         # Exactly one of src_dir and src_repo_url has to be not None. If both
@@ -226,7 +226,7 @@ class TemplateFSRepository(TemplateRepository):
 
         Raises
         ------
-        robcore.error.UnknownTemplateError
+        robcore.core.error.UnknownTemplateError
         """
         # The underlying object store will raise an UnknownObjectError if the
         # template is unknown.

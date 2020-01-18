@@ -25,8 +25,8 @@ have been replaced by parameter values.
 from robcore.model.template.command import PostProcessingStep
 from robcore.model.template.schema import ResultSchema
 
-import robcore.error as err
-import robcore.util as util
+import robcore.core.error as err
+import robcore.core.util as util
 import robcore.model.template.parameter.util as wfputil
 import robcore.model.template.util as tmplutil
 
@@ -147,7 +147,7 @@ class WorkflowTemplate(object):
 
         Raises
         ------
-        robcore.error.InvalidTemplateError
+        robcore.core.error.InvalidTemplateError
         """
         # Set the unique identifier. If no identifier is given an new one is
         # created.
@@ -211,8 +211,8 @@ class WorkflowTemplate(object):
 
         Raises
         ------
-        robcore.error.InvalidTemplateError
-        robcore.error.UnknownParameterError
+        robcore.core.error.InvalidTemplateError
+        robcore.core.error.UnknownParameterError
         """
         # Ensure that the mandatory elements are present. At this point, only
         # the workflow specification is mandatory.
@@ -352,7 +352,7 @@ class WorkflowTemplate(object):
 
         Raises
         ------
-        robcore.error.MissingArgumentError
+        robcore.core.error.MissingArgumentError
         """
         for para in self.parameters.values():
             if para.is_required and para.default_value is None:

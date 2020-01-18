@@ -10,7 +10,7 @@
 
 from past.builtins import basestring
 
-import robcore.error as err
+import robcore.core.error as err
 
 
 def get_parameter_name(value):
@@ -46,7 +46,7 @@ def get_parameter_references(spec, parameters=None):
 
     Raises
     ------
-    robcore.error.InvalidTemplateError
+    robcore.core.error.InvalidTemplateError
     """
     # The new object will contain the modified workflow specification
     if parameters is None:
@@ -119,8 +119,8 @@ def replace_args(spec, arguments, parameters):
 
     Raises
     ------
-    robcore.error.InvalidTemplateError
-    robcore.error.MissingArgumentError
+    robcore.core.error.InvalidTemplateError
+    robcore.core.error.MissingArgumentError
     """
     if isinstance(spec, dict):
         # The new object will contain the modified workflow specification
@@ -164,7 +164,7 @@ def replace_value(value, arguments, parameters):
 
     Raises
     ------
-    robcore.error.MissingArgumentError
+    robcore.core.error.MissingArgumentError
     """
     # Check if the value matches the template parameter reference pattern
     if is_parameter(value):

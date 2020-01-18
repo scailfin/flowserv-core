@@ -14,7 +14,7 @@ import os
 import pytest
 
 import robcore.config.api as config
-import robcore.error as err
+import robcore.core.error as err
 
 
 class TestConfigAPI(object):

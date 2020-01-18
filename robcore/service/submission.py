@@ -13,7 +13,7 @@ submissions and their results.
 from robcore.view.submission import SubmissionSerializer
 from robcore.view.route import UrlFactory
 
-import robcore.error as err
+import robcore.core.error as err
 import robcore.model.user.auth as res
 
 
@@ -64,8 +64,8 @@ class SubmissionService(object):
 
         Raises
         ------
-        robcore.error.UnauthorizedAccessError
-        robcore.error.UnknownSubmissionError
+        robcore.core.error.UnauthorizedAccessError
+        robcore.core.error.UnknownSubmissionError
         """
         if not self.auth.is_submission_member(submission_id=submission_id, user=user):
             # At this point it is not clear whether the user is not a member of
@@ -101,8 +101,8 @@ class SubmissionService(object):
 
         Raises
         ------
-        robcore.error.ConstraintViolationError
-        robcore.error.UnknownBenchmarkError
+        robcore.core.error.ConstraintViolationError
+        robcore.core.error.UnknownBenchmarkError
         """
         # Get the template for the given benchmark. This will raise an exception
         # if the benchmark is unknown.
@@ -147,8 +147,8 @@ class SubmissionService(object):
 
         Raises
         ------
-        robcore.error.UnauthorizedAccessError
-        robcore.error.UnknownFileError
+        robcore.core.error.UnauthorizedAccessError
+        robcore.core.error.UnknownFileError
         """
         # Raise an error if the user does not have delete rights for the
         # submission or if the submission does not exist.
@@ -169,8 +169,8 @@ class SubmissionService(object):
 
         Raises
         ------
-        robcore.error.UnauthorizedAccessError
-        robcore.error.UnknownSubmissionError
+        robcore.core.error.UnauthorizedAccessError
+        robcore.core.error.UnknownSubmissionError
         """
         # Raise an error if the user is not authorized to delete the submission
         # or if the submission does not exist
@@ -192,13 +192,13 @@ class SubmissionService(object):
 
         Returns
         -------
-        robcore.io.files.FileHandle, dict
+        robcore.core.io.files.FileHandle, dict
 
         Raises
         ------
-        robcore.error.UnauthorizedAccessError
-        robcore.error.UnknownFileError
-        robcore.error.UnknownSubmissionError
+        robcore.core.error.UnauthorizedAccessError
+        robcore.core.error.UnknownFileError
+        robcore.core.error.UnknownSubmissionError
         """
         # Raise an error if the user does not have  access rights for the
         # submission files or if the submission does not exist.
@@ -223,7 +223,7 @@ class SubmissionService(object):
 
         Raises
         ------
-        robcore.error.UnknownBenchmarkError
+        robcore.core.error.UnknownBenchmarkError
         """
         return self.repo.get_benchmark(benchmark_id)
 
@@ -241,7 +241,7 @@ class SubmissionService(object):
 
         Raises
         ------
-        robcore.error.UnknownSubmissionError
+        robcore.core.error.UnknownSubmissionError
         """
         submission = self.manager.get_submission(submission_id)
         return self.serialize.submission_handle(submission=submission)
@@ -263,8 +263,8 @@ class SubmissionService(object):
 
         Raises
         ------
-        robcore.error.UnauthorizedAccessError
-        robcore.error.UnknownSubmissionError
+        robcore.core.error.UnauthorizedAccessError
+        robcore.core.error.UnknownSubmissionError
         """
         # Raise an error if the user does not have  access rights for the
         # submission files or if the submission does not exist.
@@ -326,9 +326,9 @@ class SubmissionService(object):
 
         Raises
         ------
-        robcore.error.ConstraintViolationError
-        robcore.error.UnauthorizedAccessError
-        robcore.error.UnknownSubmissionError
+        robcore.core.error.ConstraintViolationError
+        robcore.core.error.UnauthorizedAccessError
+        robcore.core.error.UnknownSubmissionError
         """
         # Raise an error if the user does not have  access rights for the
         # submission or if the submission does not exist.
@@ -363,9 +363,9 @@ class SubmissionService(object):
 
         Raises
         ------
-        robcore.error.ConstraintViolationError
-        robcore.error.UnauthorizedAccessError
-        robcore.error.UnknownSubmissionError
+        robcore.core.error.ConstraintViolationError
+        robcore.core.error.UnauthorizedAccessError
+        robcore.core.error.UnknownSubmissionError
         """
         # Raise an error if the user does not have  access rights for the
         # submission files or if the submission does not exist.

@@ -15,7 +15,7 @@ import pytest
 from robcore.model.template.repo.base import TemplateRepository
 from robcore.model.template.repo.fs import TemplateFSRepository
 
-import robcore.error as err
+import robcore.core.error as err
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))

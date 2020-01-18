@@ -36,7 +36,7 @@ class ObjectStore(object):
 
         Raises
         ------
-        robcore.error.UnknownObjectError
+        robcore.core.error.UnknownObjectError
         """
         raise NotImplementedError()
 

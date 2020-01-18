@@ -13,7 +13,7 @@ import yaml
 
 from robcore.model.template.parameter.base import TemplateParameter
 
-import robcore.error as err
+import robcore.core.error as err
 import robcore.model.template.parameter.declaration as pd
 import robcore.model.template.parameter.util as putil
 

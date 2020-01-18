@@ -12,7 +12,7 @@ import json
 import os
 import time
 
-from robcore.io.files import FileHandle
+from robcore.core.io.files import FileHandle
 from robcore.model.template.base import WorkflowTemplate
 from robcore.model.template.parameter.value import TemplateArgument
 from robcore.controller.backend.multiproc import MultiProcessWorkflowEngine
@@ -21,7 +21,7 @@ from robcore.controller.engine import BenchmarkEngine
 
 import robcore.model.ranking as ranking
 import robcore.tests.db as db
-import robcore.util as util
+import robcore.core.util as util
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))

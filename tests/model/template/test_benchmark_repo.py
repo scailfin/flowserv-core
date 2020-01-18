@@ -19,7 +19,7 @@ from robcore.model.template.repo.fs import TemplateFSRepository
 from robcore.model.template.schema import ResultSchema
 from robcore.tests.repo import DictRepo
 
-import robcore.error as err
+import robcore.core.error as err
 import robcore.model.ranking as ranking
 import robcore.tests.db as db
 

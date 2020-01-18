@@ -17,7 +17,7 @@ from robcore.controller.backend.sync import SyncWorkflowEngine
 from robcore.tests.benchmark import StateEngine
 
 import robcore.config.engine as config
-import robcore.error as err
+import robcore.core.error as err
 
 
 class TestConfigEngine(object):

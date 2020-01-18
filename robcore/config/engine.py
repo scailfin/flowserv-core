@@ -24,7 +24,7 @@ import tempfile
 
 import robcore.config.api as api
 import robcore.config.base as config
-import robcore.error as err
+import robcore.core.error as err
 
 
 """Environment variables that are used to create an instance of the workflow
@@ -62,7 +62,7 @@ def ROB_ENGINE():
 
     Raises
     ------
-    robcore.error.MissingConfigurationError
+    robcore.core.error.MissingConfigurationError
     """
     module_name = config.get_variable(name=ROB_ENGINE_MODULE)
     class_name = config.get_variable(name=ROB_ENGINE_CLASS)

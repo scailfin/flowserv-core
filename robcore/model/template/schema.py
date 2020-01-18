@@ -11,8 +11,8 @@ is part of the extended workflow template specification that is used to define
 benchmarks.
 """
 
-import robcore.error as err
-import robcore.util as util
+import robcore.core.error as err
+import robcore.core.util as util
 import robcore.model.template.parameter.declaration as pd
 
 
@@ -67,7 +67,7 @@ class ResultColumn(object):
 
         Raises
         ------
-        robcore.error.InvalidTemplateError
+        robcore.core.error.InvalidTemplateError
         """
         # Raise error if the data type value is not in the list of supported
         # data types
@@ -96,7 +96,7 @@ class ResultColumn(object):
 
         Raises
         ------
-        robcore.error.InvalidTemplateError
+        robcore.core.error.InvalidTemplateError
         """
         # Validate the serialization dictionary
         try:
@@ -195,7 +195,7 @@ class ResultSchema(object):
 
         Raises
         ------
-        robcore.error.InvalidTemplateError
+        robcore.core.error.InvalidTemplateError
         """
         # Validate the serialization dictionary
         try:
@@ -339,7 +339,7 @@ class SortColumn(object):
 
         Raises
         ------
-        robcore.error.InvalidTemplateError
+        robcore.core.error.InvalidTemplateError
         """
         # Validate the serialization dictionary
         try:

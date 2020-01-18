@@ -18,7 +18,7 @@ file to provide access to the file.
 import os
 from datetime import datetime
 
-import robcore.util as util
+import robcore.core.util as util
 
 
 class FileDescriptor(object):
@@ -134,7 +134,7 @@ class InputFile(FileHandle):
 
         Parameters
         ----------
-        f_handle: robcore.io.files.FileHandle
+        f_handle: robcore.core.io.files.FileHandle
         target_path: string, optional
         """
         super(InputFile, self).__init__(

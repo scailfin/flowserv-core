@@ -15,9 +15,9 @@ import json
 
 from robcore.model.template.schema import ResultSchema
 
-import robcore.error as err
+import robcore.core.error as err
 import robcore.model.template.parameter.declaration as pd
-import robcore.util as util
+import robcore.core.util as util
 
 
 # -- Result ranking objects ----------------------------------------------------
@@ -230,7 +230,7 @@ def insert_run_results(con, run_id, files, commit_changes=True):
 
     Raises
     ------
-    robcore.error.ConstraintViolationError
+    robcore.core.error.ConstraintViolationError
     """
     # Query the database in order to get the benchmark identifier and the
     # result schema. At this point we assume that the run exists (i.e., the
@@ -304,7 +304,7 @@ def query(
 
     Raises
     ------
-    robcore.error.InvalidSortColumnError
+    robcore.core.error.InvalidSortColumnError
     """
     # Mapping of schema column names to renamed column identifier
     mapping = schema.rename()

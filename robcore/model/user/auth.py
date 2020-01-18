@@ -18,7 +18,7 @@ from abc import abstractmethod
 
 from robcore.model.user.base import UserHandle
 
-import robcore.error as err
+import robcore.core.error as err
 
 
 class Auth(object):
@@ -51,7 +51,7 @@ class Auth(object):
 
         Raises
         ------
-        robcore.error.UnauthenticatedAccessError
+        robcore.core.error.UnauthenticatedAccessError
         """
         # The API key may be None. In this case an error is raised.
         if api_key is None:

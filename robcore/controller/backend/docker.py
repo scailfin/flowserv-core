@@ -20,7 +20,7 @@ from robcore.model.resource import FileResource
 
 import robcore.controller.backend.sync as sync
 import robcore.controller.io as fileio
-import robcore.util as util
+import robcore.core.util as util
 
 
 class DockerWorkflowEngine(MultiProcessWorkflowEngine):

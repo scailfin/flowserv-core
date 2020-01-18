@@ -12,7 +12,7 @@ from standard input.
 
 import pytest
 
-from robcore.io.scanner import Scanner, ListReader
+from robcore.core.io.scanner import Scanner, ListReader
 from robcore.model.template.parameter.base import TemplateParameter
 
 import robcore.model.template.parameter.declaration as pd

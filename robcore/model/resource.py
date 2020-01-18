@@ -15,9 +15,9 @@ import mimetypes
 import os
 import shutil
 
-from robcore.io.files import FileHandle
+from robcore.core.io.files import FileHandle
 
-import robcore.util as util
+import robcore.core.util as util
 
 
 """Labels for descriptor serializations."""
@@ -156,6 +156,6 @@ class FileResource(object):
 
         Returns
         -------
-        robcore.io.files.FileHandle
+        robcore.core.io.files.FileHandle
         """
         return FileHandle(filepath=self.file_path, mimetype=self.mimetype)

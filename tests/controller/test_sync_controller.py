@@ -11,13 +11,13 @@
 import os
 import pytest
 
-from robcore.io.files import FileHandle
+from robcore.core.io.files import FileHandle
 from robcore.model.template.base import WorkflowTemplate
 from robcore.model.template.parameter.value import TemplateArgument
 from robcore.controller.backend.sync import SyncWorkflowEngine
 
-import robcore.error as err
-import robcore.util as util
+import robcore.core.error as err
+import robcore.core.util as util
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))

@@ -16,7 +16,7 @@ import os
 
 from psycopg2.extras import RealDictCursor
 
-from robcore.db.connector import DatabaseConnector
+from robcore.core.db.connector import DatabaseConnector
 
 
 """Driver-specific environment variables containing connection information for
@@ -70,7 +70,7 @@ class PostgresConnection(object):
 
         Returns
         -------
-        robcore.db.pg.PostgresConnection
+        robcore.core.db.pg.PostgresConnection
         """
         return self
 
@@ -203,7 +203,7 @@ class PostgresConnector(DatabaseConnector):
 
         Returns
         -------
-        robcore.db.pg.PostgresConnection
+        robcore.core.db.pg.PostgresConnection
         """
         import psycopg2
         return PostgresConnection(

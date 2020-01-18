@@ -17,7 +17,7 @@ from robcore.model.workflow.state import (
 )
 from robcore.model.resource import FileResource
 
-import robcore.util as util
+import robcore.core.util as util
 
 
 class TestWorkflowStates(object):

@@ -12,7 +12,7 @@ import os
 import pytest
 import tarfile
 
-import robcore.util as util
+import robcore.core.util as util
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))

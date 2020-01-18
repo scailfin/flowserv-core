@@ -13,7 +13,7 @@ and benchmark leader boards.
 from robcore.view.benchmark import BenchmarkSerializer
 from robcore.view.route import UrlFactory
 
-import robcore.error as err
+import robcore.core.error as err
 
 
 class BenchmarkService(object):
@@ -55,7 +55,7 @@ class BenchmarkService(object):
 
         Raises
         ------
-        robcore.error.UnknownBenchmarkError
+        robcore.core.error.UnknownBenchmarkError
         """
         benchmark = self.repo.get_benchmark(benchmark_id)
         return self.serialize.benchmark_handle(benchmark)
@@ -75,12 +75,12 @@ class BenchmarkService(object):
 
         Returns
         -------
-        robcore.io.files.FileHandle
+        robcore.core.io.files.FileHandle
 
         Raises
         ------
-        robcore.error.UnknownBenchmarkError
-        robcore.error.UnknownResourceError
+        robcore.core.error.UnknownBenchmarkError
+        robcore.core.error.UnknownResourceError
         """
         return self.repo.get_benchmark_resource(
             benchmark_id,
@@ -105,8 +105,8 @@ class BenchmarkService(object):
 
         Raises
         ------
-        robcore.error.UnknownBenchmarkError
-        robcore.error.UnknownResourceError
+        robcore.core.error.UnknownBenchmarkError
+        robcore.core.error.UnknownResourceError
         """
         return self.repo.get_benchmark_resources(benchmark_id, result_id)
 
@@ -129,7 +129,7 @@ class BenchmarkService(object):
 
         Raises
         ------
-        robcore.error.UnknownBenchmarkError
+        robcore.core.error.UnknownBenchmarkError
         """
         # Get list with run results. This will raise an unknown benchmark error
         # if the given identifier does not reference an existing benchmark.

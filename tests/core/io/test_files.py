@@ -10,9 +10,9 @@
 
 import os
 
-from robcore.io.files import FileHandle, InputFile
+from robcore.core.io.files import FileHandle, InputFile
 
-import robcore.util as util
+import robcore.core.util as util
 
 
 class TestInputFile(object):

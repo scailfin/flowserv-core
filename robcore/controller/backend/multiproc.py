@@ -19,7 +19,7 @@ import shutil
 from functools import partial
 from multiprocessing import Lock, Pool
 
-from robcore.db.driver import DatabaseDriver
+from robcore.core.db.driver import DatabaseDriver
 from robcore.controller.backend.base import BaseWorkflowController
 from robcore.model.workflow.state import StatePending
 
@@ -27,7 +27,7 @@ import robcore.controller.backend.sync as sync
 import robcore.controller.io as fileio
 import robcore.controller.run as runstore
 import robcore.controller.serial as serial
-import robcore.error as err
+import robcore.core.error as err
 
 
 class MultiProcessWorkflowEngine(BaseWorkflowController):
@@ -115,7 +115,7 @@ class MultiProcessWorkflowEngine(BaseWorkflowController):
 
         Raises
         ------
-        robcore.error.DuplicateRunError
+        robcore.core.error.DuplicateRunError
         """
         # Create run folder. If the folder exists we assume that the given run
         # identifier is not unique and raise an error.

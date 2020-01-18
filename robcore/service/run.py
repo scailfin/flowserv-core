@@ -16,13 +16,13 @@ from io import BytesIO
 
 from robcore.view.run import RunSerializer
 from robcore.view.route import UrlFactory
-from robcore.io.files import InputFile
+from robcore.core.io.files import InputFile
 from robcore.model.template.parameter.value import TemplateArgument
 
 import robcore.controller.run as store
-import robcore.error as err
+import robcore.core.error as err
 import robcore.model.user.auth as res
-import robcore.util as util
+import robcore.core.util as util
 import robcore.view.labels as labels
 
 
@@ -76,8 +76,8 @@ class RunService(object):
 
         Raises
         ------
-        robcore.error.UnauthorizedAccessError
-        robcore.error.UnknownSubmissionError
+        robcore.core.error.UnauthorizedAccessError
+        robcore.core.error.UnknownSubmissionError
         """
         is_member = self.auth.is_submission_member(
             submission_id=submission_id,
@@ -120,9 +120,9 @@ class RunService(object):
 
         Raises
         ------
-        robcore.error.UnauthorizedAccessError
-        robcore.error.UnknownRunError
-        robcore.error.InvalidRunStateError
+        robcore.core.error.UnauthorizedAccessError
+        robcore.core.error.UnknownRunError
+        robcore.core.error.InvalidRunStateError
         """
         # Raise an error if the user does not have rights to cancel the run or
         # if the run does not exist.
@@ -146,9 +146,9 @@ class RunService(object):
 
         Raises
         ------
-        robcore.error.UnauthorizedAccessError
-        robcore.error.UnknownRunError
-        robcore.error.InvalidRunStateError
+        robcore.core.error.UnauthorizedAccessError
+        robcore.core.error.UnknownRunError
+        robcore.core.error.InvalidRunStateError
         """
         # Raise an error if the user does not have rights to delete the run or
         # if the run does not exist.
@@ -173,13 +173,13 @@ class RunService(object):
 
         Returns
         -------
-        robcore.io.files.FileHandle
+        robcore.core.io.files.FileHandle
 
         Raises
         ------
-        robcore.error.UnauthorizedAccessError
-        robcore.error.UnknownRunError
-        robcore.error.UnknownResourceError
+        robcore.core.error.UnauthorizedAccessError
+        robcore.core.error.UnknownRunError
+        robcore.core.error.UnknownResourceError
         """
         # Raise an error if the user does not have rights to access the run or
         # if the run does not exist.
@@ -221,9 +221,9 @@ class RunService(object):
 
         Raises
         ------
-        robcore.error.UnauthorizedAccessError
-        robcore.error.UnknownRunError
-        robcore.error.UnknownResourceError
+        robcore.core.error.UnauthorizedAccessError
+        robcore.core.error.UnknownRunError
+        robcore.core.error.UnknownResourceError
         """
         # Raise an error if the user does not have rights to access the run or
         # if the run does not exist.
@@ -261,8 +261,8 @@ class RunService(object):
 
         Raises
         ------
-        robcore.error.UnauthorizedAccessError
-        robcore.error.UnknownRunError
+        robcore.core.error.UnauthorizedAccessError
+        robcore.core.error.UnknownRunError
         """
         # Raise an error if the user does not have rights to access the run or
         # if the run does not exist.
@@ -292,8 +292,8 @@ class RunService(object):
 
         Raises
         ------
-        robcore.error.UnauthorizedAccessError
-        robcore.error.UnknownSubmissionError
+        robcore.core.error.UnauthorizedAccessError
+        robcore.core.error.UnknownSubmissionError
         """
         # Raise an error if the user does not have rights to access the
         # submission runs or if the submission does not exist.
@@ -329,12 +329,12 @@ class RunService(object):
 
         Raises
         ------
-        robcore.error.InvalidArgumentError
-        robcore.error.MissingArgumentError
-        robcore.error.UnauthorizedAccessError
-        robcore.error.UnknownFileError
-        robcore.error.UnknownParameterError
-        robcore.error.UnknownSubmissionError
+        robcore.core.error.InvalidArgumentError
+        robcore.core.error.MissingArgumentError
+        robcore.core.error.UnauthorizedAccessError
+        robcore.core.error.UnknownFileError
+        robcore.core.error.UnknownParameterError
+        robcore.core.error.UnknownSubmissionError
         """
         # Raise an error if the user does not have rights to start new runs for
         # the submission or if the submission does not exist.

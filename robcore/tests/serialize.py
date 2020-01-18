@@ -10,7 +10,7 @@
 
 import robcore.view.hateoas as hateoas
 import robcore.view.labels as labels
-import robcore.util as util
+import robcore.core.util as util
 
 
 def validate_links(doc, keys):

@@ -11,14 +11,14 @@ runs in the underlying database. Execution of workflows is controlled by a
 given workflow controller implementation.
 """
 
-from robcore.io.files import InputFile
+from robcore.core.io.files import InputFile
 from robcore.model.workflow.run import RunHandle
 from robcore.model.template.schema import ResultSchema
 from robcore.model.workflow.state import StatePending
 
 import robcore.controller.run as store
-import robcore.error as err
-import robcore.util as util
+import robcore.core.error as err
+import robcore.core.util as util
 
 
 class BenchmarkEngine(object):
@@ -59,9 +59,9 @@ class BenchmarkEngine(object):
 
         Raises
         ------
-        robcore.error.ConstraintViolationError
-        robcore.error.UnknownRunError
-        robcore.error.InvalidRunStateError
+        robcore.core.error.ConstraintViolationError
+        robcore.core.error.UnknownRunError
+        robcore.core.error.InvalidRunStateError
         """
         # Get the run handle. This will raise an error if the run is unknown
         run = self.get_run(run_id)
@@ -104,8 +104,8 @@ class BenchmarkEngine(object):
 
         Raises
         ------
-        robcore.error.UnknownRunError
-        robcore.error.InvalidRunStateError
+        robcore.core.error.UnknownRunError
+        robcore.core.error.InvalidRunStateError
         """
         # Get the handle for the runs to get the list of file resources that
         # have been created (if the run was executed successfully). This will
@@ -163,7 +163,7 @@ class BenchmarkEngine(object):
 
         Raises
         ------
-        robcore.error.UnknownRunError
+        robcore.core.error.UnknownRunError
         """
         run = store.get_run(con=self.con, run_id=run_id)
         # If the run is in an active state and the backend does not update the
@@ -217,8 +217,8 @@ class BenchmarkEngine(object):
 
         Raises
         ------
-        robcore.error.MissingArgumentError
-        robcore.error.UnknownSubmissionError
+        robcore.core.error.MissingArgumentError
+        robcore.core.error.UnknownSubmissionError
         """
         # Get the workflow template for the benchmark that is associated with
         # the given submission

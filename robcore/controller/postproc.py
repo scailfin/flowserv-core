@@ -17,7 +17,7 @@ import tempfile
 from docker.errors import ContainerError, ImageNotFound, APIError
 from string import Template
 
-import robcore.util as util
+import robcore.core.util as util
 
 
 def prepare_post_proc_dir(con, ranking, files, current_run=None):

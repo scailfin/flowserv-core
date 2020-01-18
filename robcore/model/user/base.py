@@ -23,8 +23,8 @@ import dateutil.parser
 from passlib.hash import pbkdf2_sha256
 
 import robcore.config.auth as config
-import robcore.error as err
-import robcore.util as util
+import robcore.core.error as err
+import robcore.core.util as util
 
 
 class UserHandle(object):
@@ -100,7 +100,7 @@ class UserManager(object):
 
         Raises
         ------
-        robcore.error.UnknownUserError
+        robcore.core.error.UnknownUserError
         """
         sql = 'SELECT name, active FROM api_user WHERE user_id = ?'
         user = self.con.execute(sql, (user_id,)).fetchone()
@@ -127,7 +127,7 @@ class UserManager(object):
 
         Raises
         ------
-        robcore.error.UnauthenticatedAccessError
+        robcore.core.error.UnauthenticatedAccessError
         """
         # Construct search query based on whether the query argument is given
         # or not
@@ -167,7 +167,7 @@ class UserManager(object):
 
         Raises
         ------
-        robcore.error.UnknownUserError
+        robcore.core.error.UnknownUserError
         """
         # Get the unique user identifier and encrypted password. Raise error
         # if user is unknown
@@ -247,8 +247,8 @@ class UserManager(object):
 
         Raises
         ------
-        robcore.error.ConstraintViolationError
-        robcore.error.DuplicateUserError
+        robcore.core.error.ConstraintViolationError
+        robcore.core.error.DuplicateUserError
         """
         # Ensure that the password has at least one (non-space) character
         validate_password(password)
@@ -330,8 +330,8 @@ class UserManager(object):
 
         Raises
         ------
-        robcore.error.ConstraintViolationError
-        robcore.error.UnknownRequestError
+        robcore.core.error.ConstraintViolationError
+        robcore.core.error.UnknownRequestError
         """
         # Ensure that the given password is valid
         validate_password(password)
@@ -378,7 +378,7 @@ def validate_password(password):
 
     Raises
     ------
-    robcore.error.ConstraintViolationError
+    robcore.core.error.ConstraintViolationError
     """
     # Raise error if password is invalid
     if password is None or password.strip() == '':

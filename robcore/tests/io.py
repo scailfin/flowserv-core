@@ -8,7 +8,7 @@
 
 """helper classes and methods for unit tests that perform I/O operations."""
 
-import robcore.util as util
+import robcore.core.util as util
 
 
 class FakeStream(object):

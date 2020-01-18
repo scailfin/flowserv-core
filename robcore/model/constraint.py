@@ -10,7 +10,7 @@
 defined for the objects that are stored in the database.
 """
 
-import robcore.error as err
+import robcore.core.error as err
 
 
 def validate_name(name, con=None, sql=None, args=None):
@@ -39,7 +39,7 @@ def validate_name(name, con=None, sql=None, args=None):
 
     Raises
     ------
-    robcore.error.ConstraintViolationError
+    robcore.core.error.ConstraintViolationError
     """
     if name is None:
         raise err.ConstraintViolationError('missing name')

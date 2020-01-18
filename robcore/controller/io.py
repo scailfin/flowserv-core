@@ -14,10 +14,10 @@ import errno
 import os
 import shutil
 
-from robcore.io.files import FileHandle, InputFile
+from robcore.core.io.files import FileHandle, InputFile
 from robcore.model.template.parameter.value import TemplateArgument
 
-import robcore.error as err
+import robcore.core.error as err
 import robcore.model.template.util as tmpl
 
 
@@ -52,9 +52,9 @@ def get_upload_files(template, base_dir, files, arguments):
 
     Raises
     ------
-    robcore.error.InvalidTemplateError
-    robcore.error.MissingArgumentError
-    robcore.error.UnknownParameterError
+    robcore.core.error.InvalidTemplateError
+    robcore.core.error.MissingArgumentError
+    robcore.core.error.UnknownParameterError
     """
     result = list()
     for val in files:

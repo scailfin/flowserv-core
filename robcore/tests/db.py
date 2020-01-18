@@ -13,8 +13,8 @@ import os
 from robcore.config.install import DB
 
 import robcore.config.db as config
-import robcore.db.driver as driver
-import robcore.db.sqlite as sqlite
+import robcore.core.db.driver as driver
+import robcore.core.db.sqlite as sqlite
 
 
 def init_db(base_dir):
@@ -23,7 +23,7 @@ def init_db(base_dir):
 
     Returns
     -------
-    robcore.db.connector.DatabaseConnector
+    robcore.core.db.connector.DatabaseConnector
     """
     dbms_id = driver.SQLITE[0]
     connect_string = '{}/{}'.format(base_dir, 'tmp.db')

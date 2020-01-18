@@ -15,7 +15,7 @@ from robcore.tests.io import FakeStream
 import robcore.model.template.parameter.declaration as pd
 import robcore.model.template.parameter.util as pu
 import robcore.tests.api as api
-import robcore.util as util
+import robcore.core.util as util
 import robcore.view.labels as labels
 
 

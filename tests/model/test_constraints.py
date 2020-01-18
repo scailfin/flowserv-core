@@ -10,10 +10,10 @@
 
 import pytest
 
-import robcore.error as err
+import robcore.core.error as err
 import robcore.model.constraint as constraint
 import robcore.tests.db as db
-import robcore.util as util
+import robcore.core.util as util
 
 
 class TestDatabaseConstraints(object):

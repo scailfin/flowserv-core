@@ -10,7 +10,7 @@
 
 import pkg_resources
 
-from robcore.db.driver import DatabaseDriver
+from robcore.core.db.driver import DatabaseDriver
 
 
 class DB(object):

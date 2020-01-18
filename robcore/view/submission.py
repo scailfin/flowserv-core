@@ -33,7 +33,7 @@ class SubmissionSerializer(object):
         ----------
         submission_id: string
             Unique submission identifier
-        fh: robcore.io.files.FileHandle
+        fh: robcore.core.io.files.FileHandle
             File handle
 
         Returns
@@ -61,7 +61,7 @@ class SubmissionSerializer(object):
         ----------
         submission_id: string
             Unique submission identifier
-        files: list(robcore.io.files.FileHandle)
+        files: list(robcore.core.io.files.FileHandle)
             List of file handle
 
         Returns

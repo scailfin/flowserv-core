@@ -16,11 +16,11 @@ import shutil
 from robcore.controller.backend.base import WorkflowController
 from robcore.model.resource import FileResource
 
-import robcore.error as err
+import robcore.core.error as err
 import robcore.controller.io as fileio
 import robcore.controller.serial as serial
 import robcore.model.workflow.state as state
-import robcore.util as util
+import robcore.core.util as util
 
 
 class SyncWorkflowEngine(WorkflowController):
@@ -92,7 +92,7 @@ class SyncWorkflowEngine(WorkflowController):
 
         Raises
         ------
-        robcore.error.DuplicateRunError
+        robcore.core.error.DuplicateRunError
         """
         # Create run folder and run state file. If either of the two exists we
         # assume that the given run identifier is not unique.
@@ -166,7 +166,7 @@ class SyncWorkflowEngine(WorkflowController):
 
         Raises
         ------
-        robcore.error.UnknownRunError
+        robcore.core.error.UnknownRunError
         """
         run_file = self.get_run_file(run_id)
         if os.path.isfile(run_file):
@@ -201,8 +201,8 @@ class SyncWorkflowEngine(WorkflowController):
 
         Raises
         ------
-        robcore.error.DuplicateParameterError
-        robcore.error.InvalidTemplateError
+        robcore.core.error.DuplicateParameterError
+        robcore.core.error.InvalidTemplateError
         """
         return serial.modify_spec(
             workflow_spec=workflow_spec,
@@ -221,7 +221,7 @@ class SyncWorkflowEngine(WorkflowController):
 
         Raises
         ------
-        robcore.error.UnknownRunError
+        robcore.core.error.UnknownRunError
         """
         run_dir = self.get_run_dir(run_id)
         if os.path.isdir(run_dir):

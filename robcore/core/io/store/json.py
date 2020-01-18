@@ -10,10 +10,10 @@
 
 import os
 
-from robcore.io.store.base import ObjectStore
+from robcore.core.io.store.base import ObjectStore
 
-import robcore.error as err
-import robcore.util as util
+import robcore.core.error as err
+import robcore.core.util as util
 
 
 class JsonFileStore(ObjectStore):
@@ -76,7 +76,7 @@ class JsonFileStore(ObjectStore):
 
         Raises
         ------
-        robcore.error.UnknownObjectError
+        robcore.core.error.UnknownObjectError
         """
         filename = self.get_filename(identifier)
         # Raise an error if the file does not exist

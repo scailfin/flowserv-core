@@ -12,7 +12,7 @@ import pytest
 
 from robcore.model.resource import FileResource
 
-import robcore.util as util
+import robcore.core.util as util
 import robcore.model.workflow.state as state
 import robcore.controller.backend.sync as sync
 

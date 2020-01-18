@@ -18,10 +18,10 @@ from robcore.model.resource import FileResource
 
 import robcore.controller.run as runstore
 import robcore.controller.serial as serial
-import robcore.error as err
+import robcore.core.error as err
 import robcore.model.template.parameter.declaration as pd
 import robcore.model.workflow.state as st
-import robcore.util as util
+import robcore.core.util as util
 
 
 """Result schema for the default benchmark."""
@@ -98,7 +98,7 @@ class StateEngine(WorkflowController):
 
         Raises
         ------
-        robcore.error.UnknownRunError
+        robcore.core.error.UnknownRunError
         """
         if run_id in self.runs:
             run = self.runs[run_id]
@@ -182,7 +182,7 @@ class StateEngine(WorkflowController):
 
         Raises
         ------
-        robcore.error.UnknownRunError
+        robcore.core.error.UnknownRunError
         """
         if run_id in self.runs:
             return self.runs[run_id]
@@ -215,8 +215,8 @@ class StateEngine(WorkflowController):
 
         Raises
         ------
-        robcore.error.DuplicateParameterError
-        robcore.error.InvalidTemplateError
+        robcore.core.error.DuplicateParameterError
+        robcore.core.error.InvalidTemplateError
         """
         return serial.modify_spec(
             workflow_spec=workflow_spec,

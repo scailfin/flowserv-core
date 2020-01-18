@@ -44,7 +44,7 @@ def DB_IDENTIFIER(default_value=None, raise_error=False):
 
     Raises
     ------
-    robcore.error.MissingConfigurationError
+    robcore.core.error.MissingConfigurationError
     """
     return config.get_variable(
         name=ROB_DB_ID,

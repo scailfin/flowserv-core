@@ -16,9 +16,9 @@ from passlib.hash import pbkdf2_sha256
 from robcore.model.user.auth import Auth, OpenAccessAuth
 from robcore.model.user.base import UserManager
 
-import robcore.error as err
+import robcore.core.error as err
 import robcore.tests.db as db
-import robcore.util as util
+import robcore.core.util as util
 
 
 """Unique identifier for test users."""

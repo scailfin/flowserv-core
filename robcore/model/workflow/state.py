@@ -18,7 +18,7 @@ Contains default methods to (de-)serialize workflow state.
 
 from datetime import datetime
 
-import robcore.util as util
+import robcore.core.util as util
 
 
 """Definition of state type identifier."""

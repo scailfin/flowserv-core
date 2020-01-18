@@ -15,15 +15,15 @@ import json
 import mimetypes
 import os
 
-from robcore.io.files import FileHandle
+from robcore.core.io.files import FileHandle
 from robcore.model.template.benchmark import BenchmarkHandle
 from robcore.model.template.schema import ResultSchema
 
-import robcore.error as err
+import robcore.core.error as err
 import robcore.model.constraint as constraint
 import robcore.model.ranking as ranking
 import robcore.model.template.parameter.declaration as pd
-import robcore.util as util
+import robcore.core.util as util
 
 
 class BenchmarkRepository(object):
@@ -85,8 +85,8 @@ class BenchmarkRepository(object):
 
         Raises
         ------
-        robcore.error.ConstraintViolationError
-        robcore.error.InvalidTemplateError
+        robcore.core.error.ConstraintViolationError
+        robcore.core.error.InvalidTemplateError
         ValueError
         """
         # Ensure that the benchmark name is not empty, not longer than 512
@@ -177,7 +177,7 @@ class BenchmarkRepository(object):
 
         Raises
         ------
-        robcore.error.UnknownBenchmarkError
+        robcore.core.error.UnknownBenchmarkError
         """
         # Get benchmark information from database. If the result is empty an
         # error is raised
@@ -216,12 +216,12 @@ class BenchmarkRepository(object):
 
         Returns
         -------
-        robcore.io.files.FileHandle
+        robcore.core.io.files.FileHandle
 
         Raises
         ------
-        robcore.error.UnknownBenchmarkError
-        robcore.error.UnknownResourceError
+        robcore.core.error.UnknownBenchmarkError
+        robcore.core.error.UnknownResourceError
         """
         # Get benchmark information from database. If the result is empty an
         # error is raised
@@ -264,8 +264,8 @@ class BenchmarkRepository(object):
 
         Raises
         ------
-        robcore.error.UnknownBenchmarkError
-        robcore.error.UnknownResourceError
+        robcore.core.error.UnknownBenchmarkError
+        robcore.core.error.UnknownResourceError
         """
         # Get benchmark information from database. If the result is empty an
         # error is raised
@@ -302,7 +302,7 @@ class BenchmarkRepository(object):
 
         Raises
         ------
-        robcore.error.UnknownBenchmarkError
+        robcore.core.error.UnknownBenchmarkError
         """
         # Get the result schema for the benchmark. Will raise an error if the
         # benchmark does not exist.
@@ -374,8 +374,8 @@ class BenchmarkRepository(object):
 
         Raises
         ------
-        robcore.error.ConstraintViolationError
-        robcore.error.UnknownBenchmarkError
+        robcore.core.error.ConstraintViolationError
+        robcore.core.error.UnknownBenchmarkError
         """
         # Create the SQL update statement depending on the given arguments
         args = list()

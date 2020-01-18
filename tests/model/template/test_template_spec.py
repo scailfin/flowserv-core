@@ -11,14 +11,14 @@
 import os
 import pytest
 
-from robcore.io.files import FileHandle
-from robcore.io.store.json import JsonFileStore
+from robcore.core.io.files import FileHandle
+from robcore.core.io.store.json import JsonFileStore
 from robcore.model.template.parameter.base import TemplateParameter
 from robcore.model.template.parameter.value import TemplateArgument
 from robcore.model.template.base import WorkflowTemplate
 
-import robcore.error as err
-import robcore.util as util
+import robcore.core.error as err
+import robcore.core.util as util
 import robcore.model.template.command as cmd
 import robcore.model.template.parameter.declaration as pd
 import robcore.model.template.base as tmpl

@@ -20,13 +20,13 @@ from robcore.model.template.schema import SortColumn
 from robcore.controller.engine import BenchmarkEngine
 from robcore.tests.benchmark import StateEngine
 
-import robcore.error as err
+import robcore.core.error as err
 import robcore.model.ranking as ranking
 import robcore.model.template.parameter.declaration as pd
 import robcore.model.template.parameter.util as pdutil
 import robcore.tests.benchmark as bm
 import robcore.tests.db as db
-import robcore.util as util
+import robcore.core.util as util
 
 
 BENCHMARK_1 = util.get_unique_identifier()

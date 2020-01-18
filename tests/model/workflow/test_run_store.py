@@ -12,18 +12,18 @@ import os
 import json
 import pytest
 
-from robcore.io.files import FileHandle
+from robcore.core.io.files import FileHandle
 from robcore.model.template.parameter.base import TemplateParameter
 from robcore.model.template.schema import ResultColumn, ResultSchema
 from robcore.model.resource import FileResource
 
-import robcore.error as err
+import robcore.core.error as err
 import robcore.model.ranking as ranking
 import robcore.model.template.parameter.declaration as pd
 import robcore.model.template.parameter.value as pv
 import robcore.controller.run as store
 import robcore.tests.db as db
-import robcore.util as util
+import robcore.core.util as util
 
 
 """Unique identifier for benchmarks."""
