@@ -10,7 +10,7 @@
 
 import pytest
 
-from robcore.controller.backend.base import WorkflowController
+from flowserv.controller.backend.base import WorkflowController
 
 
 class TestWorkflowEngine(object):

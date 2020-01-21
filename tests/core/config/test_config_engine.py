@@ -13,11 +13,11 @@ workflow controller.
 import os
 import pytest
 
-from robcore.controller.backend.sync import SyncWorkflowEngine
-from robcore.tests.benchmark import StateEngine
+from flowserv.controller.backend.sync import SyncWorkflowEngine
+from flowserv.tests.benchmark import StateEngine
 
-import robcore.config.engine as config
-import robcore.core.error as err
+import flowserv.config.engine as config
+import flowserv.core.error as err
 
 
 class TestConfigEngine(object):
@@ -38,7 +38,7 @@ class TestConfigEngine(object):
         """Test method to get an instance of the test engine using the
         environment variables."""
         # Set environment variables
-        os.environ[config.ROB_ENGINE_MODULE] = 'robcore.tests.benchmark'
+        os.environ[config.ROB_ENGINE_MODULE] = 'flowserv.tests.benchmark'
         os.environ[config.ROB_ENGINE_CLASS] = 'StateEngine'
         controller = config.ROB_ENGINE()
         assert isinstance(controller, StateEngine)

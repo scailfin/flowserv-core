@@ -13,8 +13,8 @@ variables that are used to configure the connection to the underlying database.
 import os
 import pytest
 
-import robcore.config.db as config
-import robcore.core.error as err
+import flowserv.config.db as config
+import flowserv.core.error as err
 
 
 class TestConfigDatabase(object):

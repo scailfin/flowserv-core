@@ -11,13 +11,13 @@
 import os
 import pytest
 
-from robcore.core.files import FileHandle
-from robcore.model.template.base import WorkflowTemplate
-from robcore.model.template.parameter.value import TemplateArgument
-from robcore.controller.backend.sync import SyncWorkflowEngine
+from flowserv.core.files import FileHandle
+from flowserv.model.template.base import WorkflowTemplate
+from flowserv.model.template.parameter.value import TemplateArgument
+from flowserv.controller.backend.sync import SyncWorkflowEngine
 
-import robcore.core.error as err
-import robcore.core.util as util
+import flowserv.core.error as err
+import flowserv.core.util as util
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))

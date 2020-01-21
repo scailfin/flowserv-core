@@ -10,14 +10,14 @@
 
 import pytest
 
-from robcore.model.user.auth import OpenAccessAuth
+from flowserv.model.user.auth import OpenAccessAuth
 
-import robcore.view.hateoas as hateoas
-import robcore.view.labels as labels
-import robcore.core.error as err
-import robcore.tests.api as api
-import robcore.tests.serialize as serialize
-import robcore.core.util as util
+import flowserv.view.hateoas as hateoas
+import flowserv.view.labels as labels
+import flowserv.core.error as err
+import flowserv.tests.api as api
+import flowserv.tests.serialize as serialize
+import flowserv.core.util as util
 
 
 """Mandatory labels in a user handle for users that are currently logged in or

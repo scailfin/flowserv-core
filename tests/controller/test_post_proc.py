@@ -11,8 +11,8 @@
 import json
 import os
 
-import robcore.controller.postproc as postproc
-import robcore.tests.api as api
+import flowserv.controller.postproc as postproc
+import flowserv.tests.api as api
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))

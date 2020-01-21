@@ -11,11 +11,11 @@
 import os
 import pytest
 
-from robcore.core.db.connector import DatabaseConnector
-from robcore.core.db.driver import DatabaseDriver as DB
+from flowserv.core.db.connector import DatabaseConnector
+from flowserv.core.db.driver import DatabaseDriver as DB
 
-import robcore.config.db as config
-import robcore.core.db.sqlite as sqlite
+import flowserv.config.db as config
+import flowserv.core.db.sqlite as sqlite
 
 
 class TestDatabaseDriver(object):

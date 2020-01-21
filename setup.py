@@ -43,10 +43,10 @@ extras_require = {
 }
 
 
-# Get the version string from the version.py file in the robcore package. Based
+# Get the version string from the version.py file in the flowserv package. Based
 # on:
 # https://stackoverflow.com/questions/458550/standard-way-to-embed-version-into-python-package
-with open(os.path.join('robcore', 'version.py'), 'rt') as f:
+with open(os.path.join('flowserv', 'version.py'), 'rt') as f:
     filecontent = f.read()
 match = re.search(r"^__version__\s*=\s*['\"]([^'\"]*)['\"]", filecontent, re.M)
 if match is not None:
@@ -64,7 +64,7 @@ description = (
     '(Core Infrastructure)'
 )
 setup(
-    name='rob-core',
+    name='flowserv',
     version=version,
     description=description,
     long_description=readme,

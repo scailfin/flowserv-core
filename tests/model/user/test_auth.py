@@ -13,12 +13,12 @@ import time
 
 from passlib.hash import pbkdf2_sha256
 
-from robcore.model.user.auth import Auth, OpenAccessAuth
-from robcore.model.user.base import UserManager
+from flowserv.model.user.auth import Auth, OpenAccessAuth
+from flowserv.model.user.base import UserManager
 
-import robcore.core.error as err
-import robcore.tests.db as db
-import robcore.core.util as util
+import flowserv.core.error as err
+import flowserv.tests.db as db
+import flowserv.core.util as util
 
 
 """Unique identifier for test users."""

@@ -8,9 +8,9 @@
 
 """Test functionality of the serial workflow module."""
 
-import robcore.controller.serial as serial
-import robcore.model.template.parameter.declaration as pd
-import robcore.model.template.parameter.util as putil
+import flowserv.controller.serial as serial
+import flowserv.model.template.parameter.declaration as pd
+import flowserv.model.template.parameter.util as putil
 
 
 class TestSerialWorkflow(object):

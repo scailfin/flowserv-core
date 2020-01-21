@@ -13,8 +13,8 @@ variables that are used to configure the user manager.
 import os
 import pytest
 
-import robcore.config.auth as config
-import robcore.core.error as err
+import flowserv.config.auth as config
+import flowserv.core.error as err
 
 
 class TestConfigAuth(object):

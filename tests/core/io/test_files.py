@@ -10,9 +10,9 @@
 
 import os
 
-from robcore.core.files import FileHandle, InputFile
+from flowserv.core.files import FileHandle, InputFile
 
-import robcore.core.util as util
+import flowserv.core.util as util
 
 
 class TestInputFile(object):

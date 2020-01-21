@@ -11,11 +11,11 @@
 import pytest
 import yaml
 
-from robcore.model.template.parameter.base import TemplateParameter
+from flowserv.model.template.parameter.base import TemplateParameter
 
-import robcore.core.error as err
-import robcore.model.template.parameter.declaration as pd
-import robcore.model.template.parameter.util as putil
+import flowserv.core.error as err
+import flowserv.model.template.parameter.declaration as pd
+import flowserv.model.template.parameter.util as putil
 
 
 EXAMPLE = """parameters:

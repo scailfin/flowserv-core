@@ -12,12 +12,12 @@ import datetime as dt
 import os
 import pytest
 
-from robcore.model.workflow.state import (
+from flowserv.model.workflow.state import (
     StateCanceled, StateError, StatePending, StateRunning, StateSuccess
 )
-from robcore.model.resource import FileResource
+from flowserv.model.resource import FileResource
 
-import robcore.core.util as util
+import flowserv.core.util as util
 
 
 class TestWorkflowStates(object):

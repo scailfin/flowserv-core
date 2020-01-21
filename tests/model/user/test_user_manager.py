@@ -11,11 +11,11 @@
 import pytest
 import time
 
-from robcore.model.user.auth import OpenAccessAuth
-from robcore.model.user.base import UserManager
+from flowserv.model.user.auth import OpenAccessAuth
+from flowserv.model.user.base import UserManager
 
-import robcore.core.error as err
-import robcore.tests.db as db
+import flowserv.core.error as err
+import flowserv.tests.db as db
 
 
 class TestUserManager(object):

@@ -10,7 +10,7 @@
 the package.
 """
 
-import robcore.tests.db as db
+import flowserv.tests.db as db
 
 
 class TestInstallDatabase(object):

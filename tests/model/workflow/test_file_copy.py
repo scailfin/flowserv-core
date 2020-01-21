@@ -12,12 +12,12 @@ import os
 import pytest
 import shutil
 
-from robcore.core.files import FileHandle
-from robcore.model.template.repo.fs import TemplateFSRepository
-from robcore.model.template.parameter.value import TemplateArgument
+from flowserv.core.files import FileHandle
+from flowserv.model.template.repo.fs import TemplateFSRepository
+from flowserv.model.template.parameter.value import TemplateArgument
 
-import robcore.core.error as err
-import robcore.controller.io as backend
+import flowserv.core.error as err
+import flowserv.controller.io as backend
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))

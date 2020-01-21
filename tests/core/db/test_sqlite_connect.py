@@ -10,7 +10,7 @@
 
 import os
 
-import robcore.tests.db as db
+import flowserv.tests.db as db
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))

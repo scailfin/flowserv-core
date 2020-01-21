@@ -10,11 +10,11 @@
 specification.
 """
 
-from robcore.core.files import FileHandle
+from flowserv.core.files import FileHandle
 
-import robcore.model.template.parameter.util as pd
-import robcore.model.template.parameter.value as pr
-import robcore.model.template.util as tmplutil
+import flowserv.model.template.parameter.util as pd
+import flowserv.model.template.parameter.value as pr
+import flowserv.model.template.util as tmplutil
 
 
 class TestReplaceSpecificationParameters(object):

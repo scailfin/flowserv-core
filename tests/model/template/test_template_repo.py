@@ -12,10 +12,10 @@ import git
 import os
 import pytest
 
-from robcore.model.template.repo.base import TemplateRepository
-from robcore.model.template.repo.fs import TemplateFSRepository
+from flowserv.model.template.repo.base import TemplateRepository
+from flowserv.model.template.repo.fs import TemplateFSRepository
 
-import robcore.core.error as err
+import flowserv.core.error as err
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))

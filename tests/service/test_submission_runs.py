@@ -10,13 +10,13 @@
 
 import os
 
-from robcore.tests.io import FakeStream
+from flowserv.tests.io import FakeStream
 
-import robcore.model.template.parameter.declaration as pd
-import robcore.model.template.parameter.util as pu
-import robcore.tests.api as api
-import robcore.core.util as util
-import robcore.view.labels as labels
+import flowserv.model.template.parameter.declaration as pd
+import flowserv.model.template.parameter.util as pu
+import flowserv.tests.api as api
+import flowserv.core.util as util
+import flowserv.view.labels as labels
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))

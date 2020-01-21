@@ -16,18 +16,18 @@ import pytest
 
 from passlib.hash import pbkdf2_sha256
 
-from robcore.model.template.repo.benchmark import BenchmarkRepository
-from robcore.model.template.repo.fs import TemplateFSRepository
-from robcore.model.template.schema import SortColumn
-from robcore.model.resource import FileResource
+from flowserv.model.template.repo.benchmark import BenchmarkRepository
+from flowserv.model.template.repo.fs import TemplateFSRepository
+from flowserv.model.template.schema import SortColumn
+from flowserv.model.resource import FileResource
 
-import robcore.controller.run as runstore
-import robcore.core.error as err
-import robcore.model.ranking as ranking
-import robcore.model.workflow.state as wfstate
-import robcore.tests.benchmark as bm
-import robcore.tests.db as db
-import robcore.core.util as util
+import flowserv.controller.run as runstore
+import flowserv.core.error as err
+import flowserv.model.ranking as ranking
+import flowserv.model.workflow.state as wfstate
+import flowserv.tests.benchmark as bm
+import flowserv.tests.db as db
+import flowserv.core.util as util
 
 
 BENCHMARK_1 = util.get_unique_identifier()

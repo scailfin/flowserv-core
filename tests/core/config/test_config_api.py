@@ -13,8 +13,8 @@ variables that are used to configure the API.
 import os
 import pytest
 
-import robcore.config.api as config
-import robcore.core.error as err
+import flowserv.config.api as config
+import flowserv.core.error as err
 
 
 class TestConfigAPI(object):

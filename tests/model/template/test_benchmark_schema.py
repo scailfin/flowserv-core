@@ -10,9 +10,9 @@
 
 import pytest
 
-import robcore.core.error as err
-import robcore.model.template.parameter.declaration as pd
-import robcore.model.template.schema as schema
+import flowserv.core.error as err
+import flowserv.model.template.parameter.declaration as pd
+import flowserv.model.template.schema as schema
 
 
 class TestResultSchema(object):

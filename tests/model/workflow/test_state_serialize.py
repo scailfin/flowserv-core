@@ -10,11 +10,11 @@
 
 import pytest
 
-from robcore.model.resource import FileResource
+from flowserv.model.resource import FileResource
 
-import robcore.core.util as util
-import robcore.model.workflow.state as state
-import robcore.controller.backend.sync as sync
+import flowserv.core.util as util
+import flowserv.model.workflow.state as state
+import flowserv.controller.backend.sync as sync
 
 
 """Default timestamps."""

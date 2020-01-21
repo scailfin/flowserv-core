@@ -14,16 +14,16 @@ import pytest
 
 from passlib.hash import pbkdf2_sha256
 
-from robcore.model.submission import SubmissionManager
-from robcore.controller.engine import BenchmarkEngine
-from robcore.tests.benchmark import StateEngine
-from robcore.tests.io import FakeStream
+from flowserv.model.submission import SubmissionManager
+from flowserv.controller.engine import BenchmarkEngine
+from flowserv.tests.benchmark import StateEngine
+from flowserv.tests.io import FakeStream
 
-import robcore.core.error as err
-import robcore.model.ranking as ranking
-import robcore.tests.benchmark as bm
-import robcore.tests.db as db
-import robcore.core.util as util
+import flowserv.core.error as err
+import flowserv.model.ranking as ranking
+import flowserv.tests.benchmark as bm
+import flowserv.tests.db as db
+import flowserv.core.util as util
 
 
 BENCHMARK_1 = util.get_unique_identifier()

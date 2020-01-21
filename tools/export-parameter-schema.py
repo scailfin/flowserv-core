@@ -15,7 +15,7 @@ import json
 import sys
 import yaml
 
-from robcore.model.template.parameter.declaration import PARAMETER_SCHEMA
+from flowserv.model.template.parameter.declaration import PARAMETER_SCHEMA
 
 
 def main(args):

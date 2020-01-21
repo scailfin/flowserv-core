@@ -13,11 +13,11 @@ implementation.
 import os
 import pytest
 
-from robcore.core.objstore.base import ObjectStore
-from robcore.core.objstore.json import JsonFileStore
+from flowserv.core.objstore.base import ObjectStore
+from flowserv.core.objstore.json import JsonFileStore
 
-import robcore.core.error as err
-import robcore.core.util as util
+import flowserv.core.error as err
+import flowserv.core.util as util
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))

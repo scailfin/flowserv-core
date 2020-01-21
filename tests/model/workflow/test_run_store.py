@@ -12,18 +12,18 @@ import os
 import json
 import pytest
 
-from robcore.core.files import FileHandle
-from robcore.model.template.parameter.base import TemplateParameter
-from robcore.model.template.schema import ResultColumn, ResultSchema
-from robcore.model.resource import FileResource
+from flowserv.core.files import FileHandle
+from flowserv.model.template.parameter.base import TemplateParameter
+from flowserv.model.template.schema import ResultColumn, ResultSchema
+from flowserv.model.resource import FileResource
 
-import robcore.core.error as err
-import robcore.model.ranking as ranking
-import robcore.model.template.parameter.declaration as pd
-import robcore.model.template.parameter.value as pv
-import robcore.controller.run as store
-import robcore.tests.db as db
-import robcore.core.util as util
+import flowserv.core.error as err
+import flowserv.model.ranking as ranking
+import flowserv.model.template.parameter.declaration as pd
+import flowserv.model.template.parameter.value as pv
+import flowserv.controller.run as store
+import flowserv.tests.db as db
+import flowserv.core.util as util
 
 
 """Unique identifier for benchmarks."""

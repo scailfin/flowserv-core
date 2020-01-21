@@ -8,12 +8,12 @@
 
 """Test read arguments function for REANA templates."""
 
-from robcore.core.scanner import Scanner, ListReader
-from robcore.model.template.parameter.base import TemplateParameter, AS_INPUT
-from robcore.model.template.base import WorkflowTemplate
+from flowserv.core.scanner import Scanner, ListReader
+from flowserv.model.template.parameter.base import TemplateParameter, AS_INPUT
+from flowserv.model.template.base import WorkflowTemplate
 
-import robcore.model.template.parameter.declaration as pd
-import robcore.model.template.parameter.util as tmpl
+import flowserv.model.template.parameter.declaration as pd
+import flowserv.model.template.parameter.util as tmpl
 
 
 class TestReadTemplateArguments(object):

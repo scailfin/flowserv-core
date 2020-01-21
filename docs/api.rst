@@ -2,7 +2,7 @@
 API Documentation
 =================
 
-The ``robcore`` package contains a default implementation of the `ROB API for Web applications <https://raw.githubusercontent.com/scailfin/rob-core/master/dev/resources/api/v1/rob.yaml>`_`. The implementation is contained in the modules in ``robcore.service``.
+The ``flowserv`` package contains a default implementation of the `ROB API for Web applications <https://raw.githubusercontent.com/scailfin/rob-core/master/dev/resources/api/v1/rob.yaml>`_`. The implementation is contained in the modules in ``flowserv.service``.
 
 
 

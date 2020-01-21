@@ -10,7 +10,7 @@
 
 import pytest
 
-from robcore.core.db.pg import PostgresConnector
+from flowserv.core.db.pg import PostgresConnector
 
 
 class TestPostgreSQLConnector(object):

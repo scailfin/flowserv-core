@@ -1,7 +1,7 @@
 [run]
 branch = true
 parallel = true
-source = robcore
+source = flowserv
 
 [report]
 show_missing = true

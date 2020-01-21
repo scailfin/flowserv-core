@@ -13,15 +13,15 @@ import os
 import pytest
 import sqlite3
 
-from robcore.model.template.benchmark import BenchmarkHandle
-from robcore.model.template.repo.benchmark import BenchmarkRepository
-from robcore.model.template.repo.fs import TemplateFSRepository
-from robcore.model.template.schema import ResultSchema
-from robcore.tests.repo import DictRepo
+from flowserv.model.template.benchmark import BenchmarkHandle
+from flowserv.model.template.repo.benchmark import BenchmarkRepository
+from flowserv.model.template.repo.fs import TemplateFSRepository
+from flowserv.model.template.schema import ResultSchema
+from flowserv.tests.repo import DictRepo
 
-import robcore.core.error as err
-import robcore.model.ranking as ranking
-import robcore.tests.db as db
+import flowserv.core.error as err
+import flowserv.model.ranking as ranking
+import flowserv.tests.db as db
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))

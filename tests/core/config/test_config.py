@@ -13,8 +13,8 @@ variables.
 import os
 import pytest
 
-import robcore.config.base as config
-import robcore.core.error as err
+import flowserv.config.base as config
+import flowserv.core.error as err
 
 
 class TestConfig(object):

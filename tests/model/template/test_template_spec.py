@@ -11,19 +11,19 @@
 import os
 import pytest
 
-from robcore.core.files import FileHandle
-from robcore.core.objstore.json import JsonFileStore
-from robcore.model.template.parameter.base import TemplateParameter
-from robcore.model.template.parameter.value import TemplateArgument
-from robcore.model.template.base import WorkflowTemplate
+from flowserv.core.files import FileHandle
+from flowserv.core.objstore.json import JsonFileStore
+from flowserv.model.template.parameter.base import TemplateParameter
+from flowserv.model.template.parameter.value import TemplateArgument
+from flowserv.model.template.base import WorkflowTemplate
 
-import robcore.core.error as err
-import robcore.core.util as util
-import robcore.model.template.command as cmd
-import robcore.model.template.parameter.declaration as pd
-import robcore.model.template.base as tmpl
-import robcore.model.template.schema as schema
-import robcore.model.template.util as tmplutil
+import flowserv.core.error as err
+import flowserv.core.util as util
+import flowserv.model.template.command as cmd
+import flowserv.model.template.parameter.declaration as pd
+import flowserv.model.template.base as tmpl
+import flowserv.model.template.schema as schema
+import flowserv.model.template.util as tmplutil
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))

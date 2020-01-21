@@ -11,14 +11,14 @@
 import os
 import pytest
 
-from robcore.core.files import FileHandle, InputFile
-from robcore.model.template.parameter.base import TemplateParameter
-from robcore.model.template.base import WorkflowTemplate
+from flowserv.core.files import FileHandle, InputFile
+from flowserv.model.template.parameter.base import TemplateParameter
+from flowserv.model.template.base import WorkflowTemplate
 
-import robcore.model.template.parameter.base as pbase
-import robcore.model.template.parameter.declaration as pd
-import robcore.model.template.parameter.value as values
-import robcore.model.template.base as tmpl
+import flowserv.model.template.parameter.base as pbase
+import flowserv.model.template.parameter.declaration as pd
+import flowserv.model.template.parameter.value as values
+import flowserv.model.template.base as tmpl
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))

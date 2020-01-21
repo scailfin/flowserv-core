@@ -11,14 +11,14 @@
 import os
 import pytest
 
-from robcore.tests.io import FakeStream
+from flowserv.tests.io import FakeStream
 
-import robcore.core.error as err
-import robcore.view.hateoas as hateoas
-import robcore.view.labels as labels
-import robcore.tests.api as api
-import robcore.tests.serialize as serialize
-import robcore.core.util as util
+import flowserv.core.error as err
+import flowserv.view.hateoas as hateoas
+import flowserv.view.labels as labels
+import flowserv.tests.api as api
+import flowserv.tests.serialize as serialize
+import flowserv.core.util as util
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))

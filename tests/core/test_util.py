@@ -12,7 +12,7 @@ import os
 import pytest
 import tarfile
 
-import robcore.core.util as util
+import flowserv.core.util as util
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))

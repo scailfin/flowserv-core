@@ -10,7 +10,7 @@
 
 import pytest
 
-from robcore.model.resource import ResourceDescriptor, LABEL_NAME
+from flowserv.model.resource import ResourceDescriptor, LABEL_NAME
 
 
 def test_descriptor_serialization():

@@ -12,10 +12,10 @@ from standard input.
 
 import pytest
 
-from robcore.core.scanner import Scanner, ListReader
-from robcore.model.template.parameter.base import TemplateParameter
+from flowserv.core.scanner import Scanner, ListReader
+from flowserv.model.template.parameter.base import TemplateParameter
 
-import robcore.model.template.parameter.declaration as pd
+import flowserv.model.template.parameter.declaration as pd
 
 
 class TestScanner(object):
