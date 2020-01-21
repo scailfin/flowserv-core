@@ -13,8 +13,8 @@ import pytest
 import shutil
 
 from flowserv.core.files import FileHandle
-from flowserv.model.template.repo.fs import TemplateFSRepository
-from flowserv.model.template.parameter.value import TemplateArgument
+from flowserv.model.template.store import TemplateRepository
+from flowserv.model.parameter.value import TemplateArgument
 
 import flowserv.core.error as err
 import flowserv.controller.io as backend
@@ -29,8 +29,8 @@ SCRIPT_TXT = '../../.files/workflows/helloworld/code/script.txt'
 SCRIPT_FILE = os.path.join(DIR, SCRIPT_TXT)
 WORKFLOW_DIR = os.path.join(DIR, '../../.files/template')
 
-SPEC_FILE = os.path.join(WORKFLOW_DIR, 'alt-template.yaml')
-SPEC_FILE_ERR = os.path.join(WORKFLOW_DIR, 'alt-upload-error.yaml')
+specfile = os.path.join(WORKFLOW_DIR, 'alt-template.yaml')
+specfile_ERR = os.path.join(WORKFLOW_DIR, 'alt-upload-error.yaml')
 
 
 class TestFileCopy(object):
@@ -72,11 +72,11 @@ class TestFileCopy(object):
     def test_prepare_inputs_for_local_run(self, tmpdir):
         """Test copying input files for a local workflow run."""
         # Initialize the repository
-        repo = TemplateFSRepository(base_dir=str(tmpdir))
+        repo = TemplateRepository(basedir=str(tmpdir))
         # Load first template
-        template = repo.add_template(
-            src_dir=WORKFLOW_DIR,
-            spec_file=SPEC_FILE
+        _, template = repo.add_template(
+            sourcedir=WORKFLOW_DIR,
+            specfile=specfile
         )
         # Create run directory
         run_dir = os.path.join(str(tmpdir), 'run')
@@ -84,12 +84,12 @@ class TestFileCopy(object):
         # Copy input files to run directory
         files = backend.get_upload_files(
             template=template,
-            base_dir=repo.get_static_dir(template.identifier),
+            basedir=template.sourcedir,
             files=template.workflow_spec.get('inputs', {}).get('files', []),
             arguments={
                 'names': TemplateArgument(
                     template.get_parameter('names'),
-                    value=FileHandle(filepath=DATA_FILE)
+                    value=FileHandle(filename=DATA_FILE)
                 )
             }
         )
@@ -125,14 +125,14 @@ class TestFileCopy(object):
             i_files = template.workflow_spec.get('inputs', {}).get('files', [])
             backend.get_upload_files(
                 template=template,
-                base_dir=repo.get_static_dir(template.identifier),
+                basedir=template.sourcedir,
                 files=i_files,
                 arguments={}
             )
         # - Error when copying non-existing file
-        template = repo.add_template(
-            src_dir=WORKFLOW_DIR,
-            spec_file=SPEC_FILE
+        _, template = repo.add_template(
+            sourcedir=WORKFLOW_DIR,
+            specfile=specfile
         )
         shutil.rmtree(run_dir)
         os.makedirs(run_dir)
@@ -140,13 +140,13 @@ class TestFileCopy(object):
             i_files = template.workflow_spec.get('inputs', {}).get('files', [])
             files = backend.get_upload_files(
                 template=template,
-                base_dir=repo.get_static_dir(template.identifier),
+                basedir=template.sourcedir,
                 files=i_files,
                 arguments={
                     'names': TemplateArgument(
                         template.get_parameter('names'),
                         value=FileHandle(
-                            filepath=os.path.join(str(tmpdir), 'no.file')
+                            filename=os.path.join(str(tmpdir), 'no.file')
                         )
                     )
                 }
@@ -161,12 +161,12 @@ class TestFileCopy(object):
         os.makedirs(run_dir)
         files = backend.get_upload_files(
             template=template,
-            base_dir=repo.get_static_dir(template.identifier),
+            basedir=template.sourcedir,
             files=template.workflow_spec.get('inputs', {}).get('files', []),
             arguments={
                 'names': TemplateArgument(
                     parameter=para,
-                    value=FileHandle(filepath=DATA_FILE)
+                    value=FileHandle(filename=DATA_FILE)
                 )
             }
         )
@@ -180,9 +180,9 @@ class TestFileCopy(object):
         assert not os.path.isfile(os.path.join(run_dir, 'data', 'persons.txt'))
         assert os.path.isfile(os.path.join(run_dir, 'data', 'friends.txt'))
         # Template with input file parameter that is not of type file
-        template = repo.add_template(
-            src_dir=WORKFLOW_DIR,
-            spec_file=SPEC_FILE_ERR
+        _, template = repo.add_template(
+            sourcedir=WORKFLOW_DIR,
+            specfile=specfile_ERR
         )
         shutil.rmtree(run_dir)
         os.makedirs(run_dir)
@@ -191,12 +191,12 @@ class TestFileCopy(object):
             i_files = template.workflow_spec.get('inputs', {}).get('files', [])
             backend.get_upload_files(
                 template=template,
-                base_dir=repo.get_static_dir(template.identifier),
+                basedir=template.sourcedir,
                 files=i_files,
                 arguments={
                     'sleeptime': TemplateArgument(
                         template.get_parameter('names'),
-                        value=FileHandle(filepath=DATA_FILE)
+                        value=FileHandle(filename=DATA_FILE)
                     )
                 }
             )

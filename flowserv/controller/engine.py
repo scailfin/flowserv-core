@@ -205,7 +205,7 @@ class BenchmarkEngine(object):
         ----------
         submission_id: string
             Unique submission identifier
-        arguments: dict(flowserv.model.template.parameter.value.TemplateArgument)
+        arguments: dict(flowserv.model.parameter.value.TemplateArgument)
             Dictionary of argument values for parameters in the template
         template: flowserv.model.template.base.WorkflowTemplate
             Workflow template containing the parameterized specification and the

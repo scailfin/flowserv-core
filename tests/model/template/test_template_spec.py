@@ -13,14 +13,14 @@ import pytest
 
 from flowserv.core.files import FileHandle
 from flowserv.core.objstore.json import JsonFileStore
-from flowserv.model.template.parameter.base import TemplateParameter
-from flowserv.model.template.parameter.value import TemplateArgument
+from flowserv.model.parameter.base import TemplateParameter
+from flowserv.model.parameter.value import TemplateArgument
 from flowserv.model.template.base import WorkflowTemplate
 
 import flowserv.core.error as err
 import flowserv.core.util as util
-import flowserv.model.template.command as cmd
-import flowserv.model.template.parameter.declaration as pd
+import flowserv.model.template.step as cmd
+import flowserv.model.parameter.declaration as pd
 import flowserv.model.template.base as tmpl
 import flowserv.model.template.schema as schema
 import flowserv.model.template.util as tmplutil
@@ -99,7 +99,7 @@ class TestWorkflowTemplate(object):
             doc={
                 tmpl.LABEL_WORKFLOW: {'A': 1, 'B': 2}
             },
-            source_dir='dev/null'
+            sourcedir='dev/null'
         )
         assert template.identifier is not None
         assert len(template.list_parameters()) == 0
@@ -116,7 +116,7 @@ class TestWorkflowTemplate(object):
                         schema.SCHEMA_COLUMNS: [{'A': 1}]
                     }
                 },
-                source_dir='dev/null'
+                sourcedir='dev/null'
             )
         # Error for non-unique parameter names
         with pytest.raises(err.InvalidTemplateError):
@@ -129,10 +129,10 @@ class TestWorkflowTemplate(object):
                         TemplateParameter(pd.parameter_declaration('A')).to_dict()
                     ]
                 },
-                source_dir='dev/null'
+                sourcedir='dev/null'
             )
         # Read erroneous templates from disk
-        loader = JsonFileStore(base_dir=BENCHMARK_DIR)
+        loader = JsonFileStore(basedir=BENCHMARK_DIR)
         with pytest.raises(err.UnknownParameterError):
             WorkflowTemplate.from_dict(loader.read(BENCHMARK_ERR_1), 'dev/null')
         WorkflowTemplate.from_dict(loader.read(BENCHMARK_ERR_1), 'dev/null', validate=False)
@@ -181,7 +181,7 @@ class TestWorkflowTemplate(object):
         # Minimal
         template = WorkflowTemplate(
             workflow_spec={'A': 1, 'B': 2},
-            source_dir='dev/null'
+            sourcedir='dev/null'
         )
         assert template.identifier is not None
         assert len(template.list_parameters()) == 0
@@ -190,7 +190,7 @@ class TestWorkflowTemplate(object):
         # Dictionary
         template = WorkflowTemplate(
             workflow_spec=dict(),
-            source_dir='dev/null',
+            sourcedir='dev/null',
             parameters={
                 'A': TemplateParameter(pd.parameter_declaration('A')),
                 'B': TemplateParameter(pd.parameter_declaration('B'))
@@ -203,7 +203,7 @@ class TestWorkflowTemplate(object):
         # List
         template = WorkflowTemplate(
             workflow_spec=dict(),
-            source_dir='dev/null',
+            sourcedir='dev/null',
             parameters=[
                 TemplateParameter(pd.parameter_declaration('A')),
                 TemplateParameter(pd.parameter_declaration('B'))
@@ -217,7 +217,7 @@ class TestWorkflowTemplate(object):
         template = WorkflowTemplate(
             identifier='ABC',
             workflow_spec=dict(),
-            source_dir='dev/null',
+            sourcedir='dev/null',
             parameters={
                 'A': TemplateParameter(pd.parameter_declaration('A')),
                 'B': TemplateParameter(pd.parameter_declaration('B'))
@@ -228,7 +228,7 @@ class TestWorkflowTemplate(object):
         with pytest.raises(err.InvalidTemplateError):
             WorkflowTemplate(
                 workflow_spec=dict(),
-                source_dir='dev/null',
+                sourcedir='dev/null',
                 parameters={
                     'A': TemplateParameter(pd.parameter_declaration('A')),
                     'B': TemplateParameter(pd.parameter_declaration('B')),
@@ -238,7 +238,7 @@ class TestWorkflowTemplate(object):
         with pytest.raises(err.InvalidTemplateError):
             WorkflowTemplate(
                 workflow_spec=dict(),
-                source_dir='dev/null',
+                sourcedir='dev/null',
                 parameters=[
                     TemplateParameter(pd.parameter_declaration('A')),
                     TemplateParameter(pd.parameter_declaration('B')),
@@ -261,7 +261,7 @@ class TestWorkflowTemplate(object):
                     pd.parameter_declaration('F', parent='E'),
                 ]
             },
-            source_dir='dev/null',
+            sourcedir='dev/null',
             validate=True
         )
         # Parameters 'A', 'C', 'D', and 'F' have no children
@@ -284,7 +284,7 @@ class TestWorkflowTemplate(object):
         template = WorkflowTemplate(
             identifier='ABC',
             workflow_spec=dict(),
-            source_dir='dev/null',
+            sourcedir='dev/null',
             parameters={
                 'A': TemplateParameter(pd.parameter_declaration('A')),
                 'B': TemplateParameter(pd.parameter_declaration('B', data_type=pd.DT_LIST)),
@@ -303,7 +303,7 @@ class TestWorkflowTemplate(object):
         template = WorkflowTemplate(
             identifier='ABC',
             workflow_spec=dict(),
-            source_dir='dev/null'
+            sourcedir='dev/null'
         )
         parameters = WorkflowTemplate.from_dict(
             template.to_dict(),
@@ -369,7 +369,7 @@ class TestWorkflowTemplate(object):
                     pd.parameter_declaration('E', index=1)
                 ]
             },
-            source_dir='dev/null',
+            sourcedir='dev/null',
             validate=True
         )
         # Get list of sorted parameter identifier from listing

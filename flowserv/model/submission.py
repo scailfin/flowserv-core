@@ -29,7 +29,7 @@ from flowserv.model.template.schema import ResultSchema
 import flowserv.core.error as err
 import flowserv.model.constraint as constraint
 import flowserv.model.ranking as ranking
-import flowserv.model.template.parameter.util as pd
+import flowserv.model.parameter.util as pd
 import flowserv.core.util as util
 
 
@@ -65,7 +65,7 @@ class SubmissionHandle(object):
             Unique benchmark identifier
         owner_id: string
             Unique identifier for the user that created the submission
-        parameters: dict(string:flowserv.model.template.parameter.base.TemplateParameter)
+        parameters: dict(string:flowserv.model.parameter.base.TemplateParameter)
             Workflow template parameter declarations
         workflow_spec: dict
             Workflow specification
@@ -197,7 +197,7 @@ class SubmissionHandle(object):
 
         Parameters
         ----------
-        arguments: dict(flowserv.model.template.parameter.value.TemplateArgument)
+        arguments: dict(flowserv.model.parameter.value.TemplateArgument)
             Dictionary of argument values for parameters in the template
         template: flowserv.model.template.base.WorkflowTemplate
             Workflow template containing the parameterized specification and the
@@ -216,7 +216,7 @@ class SubmissionHandle(object):
             arguments=arguments,
             template=WorkflowTemplate(
                 identifier=template.identifier,
-                source_dir=template.source_dir,
+                sourcedir=template.sourcedir,
                 workflow_spec=self.workflow_spec,
                 parameters=self.parameters,
                 result_schema=template.result_schema,
@@ -280,7 +280,7 @@ class SubmissionManager(object):
             Submission name
         user_id: string
             Unique identifier of the user that created the submission
-        parameters: list(flowserv.model.template.parameter.base.TemplateParameter)
+        parameters: list(flowserv.model.parameter.base.TemplateParameter)
             List of workflow template parameter declarations for the submission
         workflow_spec: dict
             Workflow specification

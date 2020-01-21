@@ -24,20 +24,20 @@ class JsonFileStore(ObjectStore):
     For each template the store will either create a file in the base directory
     using the template identifier as name or create a file with a given default
     name in a sub-directory named after the template identifier. This behavior
-    is controlled by the default_file_name attribute. If the attribute is None
+    is controlled by the default_filename attribute. If the attribute is None
     the former case is True, otherwise the latter case.
     """
-    def __init__(self, base_dir, default_file_name=None):
+    def __init__(self, basedir, default_filename=None):
         """Initialize the base directory and the default file name. Templates
         are stored in files under the base directory. Depending on whether the
         default file name is given, templates are either stored as files named
-        using the template identifier (default_file_name is None) or in a sub-
-        directory named after the template identifier (default_file_name is not
+        using the template identifier (default_filename is None) or in a sub-
+        directory named after the template identifier (default_filename is not
         None).
         """
         # Set the directory and ensure that it exists
-        self.base_dir = util.create_dir(base_dir)
-        self.default_file_name = default_file_name
+        self.basedir = util.create_dir(basedir)
+        self.default_filename = default_filename
 
     def get_filename(self, identifier):
         """The name for a template file depends on the value of the default
@@ -52,14 +52,14 @@ class JsonFileStore(ObjectStore):
         -------
         string
         """
-        if self.default_file_name is None:
+        if self.default_filename is None:
             # The file is in the base directory named after the template
             # identifier
-            return os.path.join(self.base_dir, '{}.json'.format(identifier))
+            return os.path.join(self.basedir, '{}.json'.format(identifier))
         else:
             # The file is in a sub-directory named after the identifier
-            sub_dir = util.create_dir(os.path.join(self.base_dir, identifier))
-            return os.path.join(sub_dir, self.default_file_name)
+            sub_dir = util.create_dir(os.path.join(self.basedir, identifier))
+            return os.path.join(sub_dir, self.default_filename)
 
     def read(self, identifier):
         """Read object with the given identifier from the store. Raises an error

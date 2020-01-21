@@ -17,7 +17,7 @@ from flowserv.service.user import UserService
 from flowserv.model.user.auth import DefaultAuthPolicy, OpenAccessAuth
 from flowserv.model.submission import SubmissionManager
 from flowserv.model.template.repo.benchmark import BenchmarkRepository
-from flowserv.model.template.repo.fs import TemplateFSRepository
+from flowserv.model.template.store import TemplateRepository
 from flowserv.controller.engine import BenchmarkEngine
 from flowserv.model.user.base import UserManager
 from flowserv.tests.benchmark import StateEngine
@@ -28,19 +28,19 @@ import flowserv.tests.db as db
 RESULT_FILE = 'results/analytics.json'
 
 
-def init_api(base_dir, open_access=False):
+def init_api(basedir, open_access=False):
     """Initialize the database, benchmark repository, submission, and user
     manager. Returns sercive objects for benchmarks, submissions, users, runs,
     and authentication.
     """
-    con = db.init_db(base_dir).connect()
+    con = db.init_db(basedir).connect()
     if open_access:
         auth = OpenAccessAuth(con=con)
     else:
         auth = DefaultAuthPolicy(con=con)
     controller = StateEngine(
-        base_dir=os.path.join(base_dir, 'runs'),
-        result_file_id=RESULT_FILE
+        basedir=os.path.join(basedir, 'runs'),
+        result_file=RESULT_FILE
     )
     engine = BenchmarkEngine(
         con=con,
@@ -48,13 +48,13 @@ def init_api(base_dir, open_access=False):
     )
     benchmark_repo = BenchmarkRepository(
         con=con,
-        template_repo=TemplateFSRepository(base_dir=base_dir),
-        resource_base_dir=os.path.join(base_dir, 'resources')
+        template_repo=TemplateRepository(basedir=basedir),
+        resource_basedir=os.path.join(basedir, 'resources')
     )
     submission_manager = SubmissionManager(
         con=con,
         engine=engine,
-        directory=base_dir
+        directory=basedir
     )
     user_manager = UserManager(con=con)
     # API Services

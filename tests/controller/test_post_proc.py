@@ -30,9 +30,9 @@ def test_prepare_directories(tmpdir):
         _,
         backend,
         con
-    ) = api.init_api(base_dir=str(tmpdir))
+    ) = api.init_api(basedir=str(tmpdir))
     user = user_service.manager.register_user(USER_ID, USER_ID)
-    benchmark = benchmarks.repo.add_benchmark(name='A', src_dir=TEMPLATE_DIR)
+    benchmark = benchmarks.repo.add_benchmark(name='A', sourcedir=TEMPLATE_DIR)
     # Create three submissions and execute a run for each of them
     identifiers = list()
     names = list()

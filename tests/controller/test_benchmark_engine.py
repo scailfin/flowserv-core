@@ -31,12 +31,12 @@ class TestBenchmarkEngine(object):
     simulate workflow execution.
     """
     @staticmethod
-    def init(base_dir):
+    def init(basedir):
         """Create a fresh database with a single user, single benchmark, and
         two submissions. Returns an instance of the benchmark engine and the
         created template handle.
         """
-        con = db.init_db(base_dir).connect()
+        con = db.init_db(basedir).connect()
         sql = 'INSERT INTO api_user(user_id, name, secret, active) '
         sql += 'VALUES(?, ?, ?, ?)'
         USER_ID = util.get_unique_identifier()
@@ -64,12 +64,12 @@ class TestBenchmarkEngine(object):
         con.commit()
         template = WorkflowTemplate(
             workflow_spec=dict(),
-            source_dir='dev/null',
+            sourcedir='dev/null',
             result_schema=bm.BENCHMARK_SCHEMA
         )
         engine = BenchmarkEngine(
             con=con,
-            backend=bm.StateEngine(base_dir=base_dir)
+            backend=bm.StateEngine(basedir=basedir)
         )
         return engine, template
 

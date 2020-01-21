@@ -87,7 +87,7 @@ class WorkflowController(object):
         template: flowserv.model.template.base.WorkflowTemplate
             Workflow template containing the parameterized specification and the
             parameter declarations
-        arguments: dict(flowserv.model.template.parameter.value.TemplateArgument)
+        arguments: dict(flowserv.model.parameter.value.TemplateArgument)
             Dictionary of argument values for parameters in the template
 
         Returns
@@ -131,14 +131,14 @@ class WorkflowController(object):
         ----------
         workflow_spec: dict
             Workflow specification
-        tmpl_parameters: dict(flowserv.model.template.parameter.base.TemplateParameter)
+        tmpl_parameters: dict(flowserv.model.parameter.base.TemplateParameter)
             Existing template parameters
-        add_parameters: dict(flowserv.model.template.parameter.base.TemplateParameter)
+        add_parameters: dict(flowserv.model.parameter.base.TemplateParameter)
             Additional template parameters
 
         Returns
         -------
-        dict, dict(flowserv.model.template.parameter.base.TemplateParameter)
+        dict, dict(flowserv.model.parameter.base.TemplateParameter)
 
         Raises
         ------
@@ -169,22 +169,22 @@ class BaseWorkflowController(WorkflowController):
     """Abstract class that implements the base methods for a workflow controller
     that maintains run files in separate run folders on the local disk.
     """
-    def __init__(self, base_dir=None, is_async=True):
+    def __init__(self, basedir=None, is_async=True):
         """Initialize the base directory under which all workflow runs are
         maintained. If the directory does not exist it will be created.
 
         Parameters
         ----------
-        base_dir: string
+        basedir: string
             Path to directory on disk
         verbose: bool, optional
             Print command strings to STDOUT during workflow execution
         """
         # Set base directory and ensure that it exists
-        if not base_dir is None:
-            self.base_dir = util.create_dir(base_dir)
+        if not basedir is None:
+            self.basedir = util.create_dir(basedir)
         else:
-             self.base_dir = util.create_dir(config.ENGIN_BASEDIR())
+             self.basedir = util.create_dir(config.ENGIN_BASEDIR())
         self.is_async = is_async
 
     def asynchronous_events(self):
@@ -209,7 +209,7 @@ class BaseWorkflowController(WorkflowController):
         -------
         string
         """
-        return os.path.join(self.base_dir, run_id)
+        return os.path.join(self.basedir, run_id)
 
     def modify_template(self, workflow_spec, tmpl_parameters, add_parameters):
         """Modify a given workflow specification by adding the given parameters
@@ -226,14 +226,14 @@ class BaseWorkflowController(WorkflowController):
         ----------
         workflow_spec: dict
             Workflow specification
-        tmpl_parameters: dict(flowserv.model.template.parameter.base.TemplateParameter)
+        tmpl_parameters: dict(flowserv.model.parameter.base.TemplateParameter)
             Existing template parameters
-        add_parameters: dict(flowserv.model.template.parameter.base.TemplateParameter)
+        add_parameters: dict(flowserv.model.parameter.base.TemplateParameter)
             Additional template parameters
 
         Returns
         -------
-        dict, dict(flowserv.model.template.parameter.base.TemplateParameter)
+        dict, dict(flowserv.model.parameter.base.TemplateParameter)
         """
         return serial.modify_spec(
             workflow_spec=workflow_spec,

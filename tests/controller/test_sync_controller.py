@@ -13,7 +13,7 @@ import pytest
 
 from flowserv.core.files import FileHandle
 from flowserv.model.template.base import WorkflowTemplate
-from flowserv.model.template.parameter.value import TemplateArgument
+from flowserv.model.parameter.value import TemplateArgument
 from flowserv.controller.backend.sync import SyncWorkflowEngine
 
 import flowserv.core.error as err
@@ -39,7 +39,7 @@ class TestSynchronousWorkflowEngine(object):
         """Execute the helloworld example."""
         # Read the workflow template
         doc = util.read_object(filename=TEMPLATE_HELLOWORLD)
-        template = WorkflowTemplate.from_dict(doc, source_dir=TEMPLATE_DIR)
+        template = WorkflowTemplate.from_dict(doc, sourcedir=TEMPLATE_DIR)
         # Set the template argument values
         arguments = {
             'names': TemplateArgument(
@@ -134,7 +134,7 @@ class TestSynchronousWorkflowEngine(object):
         """Execute the helloworld example with an invalid shell command."""
         # Read the workflow template
         doc = util.read_object(filename=TEMPLATE_WITH_INVALID_CMD)
-        template = WorkflowTemplate.from_dict(doc, source_dir=TEMPLATE_DIR)
+        template = WorkflowTemplate.from_dict(doc, sourcedir=TEMPLATE_DIR)
         # Set the template argument values
         arguments = {
             'names': TemplateArgument(
@@ -165,7 +165,7 @@ class TestSynchronousWorkflowEngine(object):
         """
         # Read the workflow template
         doc = util.read_object(filename=TEMPLATE_WITH_MISSING_FILE)
-        template = WorkflowTemplate.from_dict(doc, source_dir=TEMPLATE_DIR)
+        template = WorkflowTemplate.from_dict(doc, sourcedir=TEMPLATE_DIR)
         # Set the template argument values
         arguments = {
             'names': TemplateArgument(

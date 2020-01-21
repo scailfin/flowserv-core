@@ -17,9 +17,9 @@ import pytest
 from passlib.hash import pbkdf2_sha256
 
 from flowserv.model.template.repo.benchmark import BenchmarkRepository
-from flowserv.model.template.repo.fs import TemplateFSRepository
+from flowserv.model.template.store import TemplateRepository
 from flowserv.model.template.schema import SortColumn
-from flowserv.model.resource import FileResource
+from flowserv.model.workflow.resource import FSObject
 
 import flowserv.controller.run as runstore
 import flowserv.core.error as err
@@ -43,12 +43,12 @@ class TestBenchmarkResultRanking(object):
     rankings.
     """
     @staticmethod
-    def init(base_dir):
+    def init(basedir):
         """Create a fresh database with one user, two benchmark, and three
         submissions. The first benchmark has a schema and two submissions while
         the second benchmark has no schema and one submission.
         """
-        con = db.init_db(base_dir).connect()
+        con = db.init_db(basedir).connect()
         sql = (
             'INSERT INTO api_user(user_id, name, secret, active) '
             'VALUES(?, ?, ?, ?)'
@@ -80,12 +80,12 @@ class TestBenchmarkResultRanking(object):
         con.commit()
         repo = BenchmarkRepository(
             con=con,
-            template_repo=TemplateFSRepository(base_dir=base_dir),
-            resource_base_dir=os.path.join(base_dir, 'resources')
+            template_repo=TemplateRepository(basedir=basedir),
+            resource_basedir=os.path.join(basedir, 'resources')
         )
         return con, repo
 
-    def create_run(self, con, submission_id, values, base_dir):
+    def create_run(self, con, submission_id, values, basedir):
         """Create a successful run for the given submission with the given
         result values.
         """
@@ -96,10 +96,10 @@ class TestBenchmarkResultRanking(object):
             commit_changes=True
         )
         if values is not None:
-            filename = os.path.join(base_dir, 'results.json')
+            filename = os.path.join(basedir, 'results.json')
             util.write_object(obj=values, filename=filename)
             files = [
-                FileResource(
+                FSObject(
                     resource_id='0',
                     resource_name=bm.RESULT_FILE_ID,
                     file_path=filename

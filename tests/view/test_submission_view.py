@@ -52,7 +52,7 @@ RELSFH = [hateoas.action(hateoas.DOWNLOAD), hateoas.action(hateoas.DELETE)]
 class TestSubmissionsView(object):
     """Test API methods that access and list submissions and their results."""
     @staticmethod
-    def init(base_dir):
+    def init(basedir):
         """Initialize the database, benchmark repository, and submission
         manager. Loads one benchmark.
 
@@ -60,13 +60,13 @@ class TestSubmissionsView(object):
         benchmark handle.
         """
         repository, submissions, user_service, _, _, _, _ = api.init_api(
-            base_dir
+            basedir
         )
         users = list()
         for i in range(3):
             user_id = util.get_unique_identifier()
             users.append(user_service.manager.register_user(user_id, user_id))
-        bm = repository.repo.add_benchmark(name='A', src_dir=TEMPLATE_DIR)
+        bm = repository.repo.add_benchmark(name='A', sourcedir=TEMPLATE_DIR)
         return submissions, users, bm
 
     def test_create_submission(self, tmpdir):

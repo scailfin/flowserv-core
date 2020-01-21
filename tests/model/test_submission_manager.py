@@ -22,8 +22,8 @@ from flowserv.tests.benchmark import StateEngine
 
 import flowserv.core.error as err
 import flowserv.model.ranking as ranking
-import flowserv.model.template.parameter.declaration as pd
-import flowserv.model.template.parameter.util as pdutil
+import flowserv.model.parameter.declaration as pd
+import flowserv.model.parameter.util as pdutil
 import flowserv.tests.benchmark as bm
 import flowserv.tests.db as db
 import flowserv.core.util as util
@@ -37,7 +37,7 @@ USER_3 = util.get_unique_identifier()
 
 TEMPLATE = WorkflowTemplate(
     workflow_spec=dict(),
-    source_dir='/dev/null',
+    sourcedir='/dev/null',
     result_schema=bm.BENCHMARK_SCHEMA
 )
 
@@ -47,7 +47,7 @@ class TestSubmissionManager(object):
     submission manager.
     """
     @staticmethod
-    def init(base_dir):
+    def init(basedir):
         """Create a fresh database with three users and two benchmarks. The
         first benchmark has a resutl schema and the second benchmark does not
         have a schema.
@@ -58,7 +58,7 @@ class TestSubmissionManager(object):
         Returns the pair of sumbission manager and state engine (the workflow
         controller that is used for unit tests).
         """
-        con = db.init_db(base_dir).connect()
+        con = db.init_db(basedir).connect()
         sql = (
             'INSERT INTO api_user(user_id, name, secret, active) '
             'VALUES(?, ?, ?, ?)'
@@ -80,10 +80,10 @@ class TestSubmissionManager(object):
             commit_changes=False
         )
         con.commit()
-        engine = StateEngine(base_dir=os.path.join(base_dir, 'runs'))
+        engine = StateEngine(basedir=os.path.join(basedir, 'runs'))
         manager = SubmissionManager(
             con=con,
-            directory=base_dir,
+            directory=basedir,
             engine=BenchmarkEngine(
                 con=con,
                 backend=engine

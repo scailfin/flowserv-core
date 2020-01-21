@@ -15,13 +15,13 @@ import os
 import shutil
 
 from flowserv.core.files import FileHandle, InputFile
-from flowserv.model.template.parameter.value import TemplateArgument
+from flowserv.model.parameter.value import TemplateArgument
 
 import flowserv.core.error as err
 import flowserv.model.template.util as tmpl
 
 
-def get_upload_files(template, base_dir, files, arguments):
+def get_upload_files(template, basedir, files, arguments):
     """Get a list of all input files for a workflow template that need to be
     uploaded for a new workflow run. The list of files corresponds, for example,
     to the entries in the 'inputs.files' section of a REANA workflow
@@ -38,12 +38,12 @@ def get_upload_files(template, base_dir, files, arguments):
     template: flowserv.model.template.base.WorkflowTemplate
         Workflow template containing the parameterized specification and the
         parameter declarations
-    base_dir: string
+    basedir: string
         Path to the base directory of the template folder containing static
         template files
     files: list(string)
         List of file references
-    arguments: dict(flowserv.model.template.parameter.value.TemplateArgument)
+    arguments: dict(flowserv.model.parameter.value.TemplateArgument)
         Dictionary of argument values for parameters in the template
 
     Returns
@@ -83,8 +83,8 @@ def get_upload_files(template, base_dir, files, arguments):
                         parameter=para,
                         value=InputFile(
                             f_handle=FileHandle(
-                                filepath=os.path.join(
-                                    base_dir,
+                                filename=os.path.join(
+                                    basedir,
                                     para.default_value
                                 )
                             ),
@@ -96,7 +96,7 @@ def get_upload_files(template, base_dir, files, arguments):
             source = arg.value.source()
             target = arg.value.target()
         else:
-            source = os.path.join(base_dir, val)
+            source = os.path.join(basedir, val)
             target = val
         # Upload source file
         result.append((source, target))

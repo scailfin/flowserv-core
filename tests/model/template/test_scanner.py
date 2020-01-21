@@ -13,9 +13,9 @@ from standard input.
 import pytest
 
 from flowserv.core.scanner import Scanner, ListReader
-from flowserv.model.template.parameter.base import TemplateParameter
+from flowserv.model.parameter.base import TemplateParameter
 
-import flowserv.model.template.parameter.declaration as pd
+import flowserv.model.parameter.declaration as pd
 
 
 class TestScanner(object):

@@ -17,8 +17,8 @@ import os
 import shutil
 
 from flowserv.core.files import InputFile
-from flowserv.model.resource import FileResource
-from flowserv.model.template.command import PostProcessingStep
+from flowserv.model.workflow.resource import FSObject
+from flowserv.model.template.step import PostProcessingStep
 from flowserv.model.template.schema import ResultSchema
 from flowserv.model.workflow.run import RunHandle
 
@@ -210,7 +210,7 @@ def get_run(con, run_id):
         )
         for f in con.execute(sql, (run_id,)).fetchall():
             resource_name = f['resource_name']
-            files[resource_name] = FileResource(
+            files[resource_name] = FSObject(
                 resource_id=f['file_id'],
                 resource_name=resource_name,
                 file_path=f['file_path'],

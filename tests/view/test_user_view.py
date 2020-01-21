@@ -31,8 +31,8 @@ class TestUserView(object):
     """Test API methods that access and manipulate users."""
     def test_authenticate_user(self, tmpdir):
         """Test login and logout via API."""
-        base_dir = str(tmpdir)
-        _, _, users, _, auth, _, _ = api.init_api(base_dir, open_access=True)
+        basedir = str(tmpdir)
+        _, _, users, _, auth, _, _ = api.init_api(basedir, open_access=True)
         # Register a new user that is automatically activated
         users.register_user(username='myuser', password='mypwd', verify=False)
         # Login

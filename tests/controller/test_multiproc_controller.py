@@ -14,7 +14,7 @@ import time
 
 from flowserv.core.files import FileHandle
 from flowserv.model.template.base import WorkflowTemplate
-from flowserv.model.template.parameter.value import TemplateArgument
+from flowserv.model.parameter.value import TemplateArgument
 from flowserv.controller.backend.multiproc import MultiProcessWorkflowEngine
 
 from flowserv.controller.engine import BenchmarkEngine
@@ -40,13 +40,13 @@ SUBMISSION_ID = util.get_unique_identifier()
 class TestMultiProcessWorkflowEngine(object):
     """Unit test for the asynchronous workflow controler."""
     @staticmethod
-    def init(base_dir):
+    def init(basedir):
         """Create a fresh database with a single user, single benchmark, and
         a single submission. The benchmark is the 'Hello World' example.
         Returns an instance of the benchmark engine with a multi-process
         backend controller and the created template handle.
         """
-        con = db.init_db(base_dir).connect()
+        con = db.init_db(basedir).connect()
         sql = 'INSERT INTO api_user(user_id, name, secret, active) '
         sql += 'VALUES(?, ?, ?, ?)'
         USER_ID = util.get_unique_identifier()
@@ -55,7 +55,7 @@ class TestMultiProcessWorkflowEngine(object):
         sql = 'INSERT INTO benchmark(benchmark_id, name, result_schema) '
         sql += 'VALUES(?, ?, ?)'
         doc = util.read_object(filename=TEMPLATE_HELLOWORLD)
-        template = WorkflowTemplate.from_dict(doc, source_dir=TEMPLATE_DIR)
+        template = WorkflowTemplate.from_dict(doc, sourcedir=TEMPLATE_DIR)
         schema = json.dumps(template.get_schema().to_dict())
         con.execute(sql, (BENCHMARK_ID, BENCHMARK_ID, schema))
         sql = (
@@ -84,7 +84,7 @@ class TestMultiProcessWorkflowEngine(object):
         con.commit()
         engine = BenchmarkEngine(
             con=con,
-            backend=MultiProcessWorkflowEngine(base_dir=base_dir, verbose=True)
+            backend=MultiProcessWorkflowEngine(basedir=basedir, verbose=True)
         )
         return engine, template
 

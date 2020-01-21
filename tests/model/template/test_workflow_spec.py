@@ -12,8 +12,8 @@ specification.
 
 from flowserv.core.files import FileHandle
 
-import flowserv.model.template.parameter.util as pd
-import flowserv.model.template.parameter.value as pr
+import flowserv.model.parameter.util as pd
+import flowserv.model.parameter.value as pr
 import flowserv.model.template.util as tmplutil
 
 

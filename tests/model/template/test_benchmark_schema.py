@@ -11,7 +11,7 @@
 import pytest
 
 import flowserv.core.error as err
-import flowserv.model.template.parameter.declaration as pd
+import flowserv.model.parameter.declaration as pd
 import flowserv.model.template.schema as schema
 
 

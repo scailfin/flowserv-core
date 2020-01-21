@@ -12,8 +12,8 @@ import os
 
 from flowserv.tests.io import FakeStream
 
-import flowserv.model.template.parameter.declaration as pd
-import flowserv.model.template.parameter.util as pu
+import flowserv.model.parameter.declaration as pd
+import flowserv.model.parameter.util as pu
 import flowserv.tests.api as api
 import flowserv.core.util as util
 import flowserv.view.labels as labels
@@ -26,7 +26,7 @@ TEMPLATE_DIR = os.path.join(DIR, '../.files/benchmark/helloworld')
 class TestSubmissionsRuns(object):
     """Test API methods that access and list submissions and their results."""
     @staticmethod
-    def init(base_dir):
+    def init(basedir):
         """Initialize the database, benchmark repository, and submission
         manager. Loads one benchmark.
 
@@ -34,13 +34,13 @@ class TestSubmissionsRuns(object):
         benchmark handle.
         """
         repository, submissions, user_service, runs, _, _, _ = api.init_api(
-            base_dir
+            basedir
         )
         users = list()
         for i in range(3):
             user_id = util.get_unique_identifier()
             users.append(user_service.manager.register_user(user_id, user_id))
-        bm = repository.repo.add_benchmark(name='A', src_dir=TEMPLATE_DIR)
+        bm = repository.repo.add_benchmark(name='A', sourcedir=TEMPLATE_DIR)
         return submissions, users, bm, runs
 
     def test_run_submission(self, tmpdir):

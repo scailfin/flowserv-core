@@ -9,8 +9,8 @@
 """Test functionality of the serial workflow module."""
 
 import flowserv.controller.serial as serial
-import flowserv.model.template.parameter.declaration as pd
-import flowserv.model.template.parameter.util as putil
+import flowserv.model.parameter.declaration as pd
+import flowserv.model.parameter.util as putil
 
 
 class TestSerialWorkflow(object):

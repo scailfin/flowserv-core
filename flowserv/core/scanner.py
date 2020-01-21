@@ -12,7 +12,7 @@ methods that are used to convert input values into the different data types
 that are supported for parameter declarations.
 """
 
-from abc import abstractmethod
+from abc import ABCMeta, abstractmethod
 from builtins import input
 
 
@@ -32,7 +32,7 @@ class Scanner(object):
         reader: flowserv.core.scanner.TokenReader
             Reader for input tokens
         """
-        self.reader = reader if not reader is None else InputReader()
+        self.reader = reader if reader is not None else InputReader()
 
     def next_bool(self, default_value=None):
         """Return next token as boolean. If the read token is an empty string
@@ -56,7 +56,7 @@ class Scanner(object):
         bool
         """
         val = self.reader.next_token()
-        if val == '' and not default_value is None:
+        if val == '' and default_value is not None:
             return default_value
         if val.lower() in ['true', 'yes', 'y', 't', 1]:
             return True
@@ -81,7 +81,7 @@ class Scanner(object):
         string
         """
         val = self.reader.next_token().strip()
-        if val == '' and not default_value is None:
+        if val == '' and default_value is not None:
             return default_value
         return val
 
@@ -99,7 +99,7 @@ class Scanner(object):
         float
         """
         val = self.reader.next_token()
-        if val == '' and not default_value is None:
+        if val == '' and default_value is not None:
             return default_value
         return float(val)
 
@@ -117,7 +117,7 @@ class Scanner(object):
         int
         """
         val = self.reader.next_token()
-        if val == '' and not default_value is None:
+        if val == '' and default_value is not None:
             return default_value
         return int(val)
 
@@ -134,7 +134,7 @@ class Scanner(object):
         string
         """
         val = self.reader.next_token()
-        if val == '' and not default_value is None:
+        if val == '' and default_value is not None:
             return default_value
         return val
 
@@ -143,7 +143,7 @@ class Scanner(object):
 # Token Reader
 # ------------------------------------------------------------------------------
 
-class TokenReader(object):
+class TokenReader(metaclass=ABCMeta):
     """Abstract token reader class that is used by the scanner to get the next
     input token.
     """

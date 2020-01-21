@@ -100,7 +100,7 @@ def run_post_processing(task, template_dir, in_dir, out_dir):
 
     Parameters
     ----------
-    task: flowserv.model.template.command.PostProcessingStep
+    task: flowserv.model.template.step.PostProcessingStep
         Post-processing task descriptor
     template_dir: string
         Template source file directory

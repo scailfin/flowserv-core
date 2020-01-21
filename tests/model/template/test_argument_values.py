@@ -12,12 +12,12 @@ import os
 import pytest
 
 from flowserv.core.files import FileHandle, InputFile
-from flowserv.model.template.parameter.base import TemplateParameter
+from flowserv.model.parameter.base import TemplateParameter
 from flowserv.model.template.base import WorkflowTemplate
 
-import flowserv.model.template.parameter.base as pbase
-import flowserv.model.template.parameter.declaration as pd
-import flowserv.model.template.parameter.value as values
+import flowserv.model.parameter.base as pbase
+import flowserv.model.parameter.declaration as pd
+import flowserv.model.parameter.value as values
 import flowserv.model.template.base as tmpl
 
 
@@ -34,7 +34,7 @@ class TestArgumentValues(object):
         """
         template = WorkflowTemplate(
             workflow_spec=dict(),
-            source_dir='dev/null',
+            sourcedir='dev/null',
             parameters=[
                 TemplateParameter(
                     pd.parameter_declaration('A', data_type=pd.DT_INTEGER)
@@ -194,7 +194,7 @@ class TestArgumentValues(object):
                     )
                 ]
             },
-            source_dir='dev/null',
+            sourcedir='dev/null',
             validate=True
         )
         params = template.parameters

@@ -13,7 +13,7 @@ parameter structure, and (iii) render UI forms to collect parameter values.
 
 from flowserv.core.error import InvalidParameterError
 
-import flowserv.model.template.parameter.declaration as pd
+import flowserv.model.parameter.declaration as pd
 
 
 """Special value for as-property that indicates user input for target path of
@@ -124,7 +124,7 @@ class TemplateParameter(ParameterBase):
         ----------
         obj: dict
             Dictionary containing the template parameter declaration properties
-        children: list(flowserv.model.template.parameter.base.TemplateParameter), optional
+        children: list(flowserv.model.parameter.base.TemplateParameter), optional
             Optional list of parameter children for parameter lists or records
         """
         super(TemplateParameter, self).__init__(
@@ -132,15 +132,15 @@ class TemplateParameter(ParameterBase):
             data_type = obj[pd.LABEL_DATATYPE]
         )
         self.obj = obj
-        self.name = obj[pd.LABEL_NAME]
-        self.description = obj[pd.LABEL_DESCRIPTION]
-        self.index = obj[pd.LABEL_INDEX]
-        self.default_value = obj[pd.LABEL_DEFAULT] if pd.LABEL_DEFAULT in obj else None
-        self.is_required = obj[pd.LABEL_REQUIRED]
-        self.values = obj[pd.LABEL_VALUES] if pd.LABEL_VALUES in obj else None
-        self.parent = obj[pd.LABEL_PARENT] if pd.LABEL_PARENT in obj else None
-        self.as_constant = obj[pd.LABEL_AS] if pd.LABEL_AS in obj else None
-        self.module = obj[pd.LABEL_MODULE] if pd.LABEL_MODULE in obj else None
+        self.name = obj.get(pd.LABEL_NAME, self.identifier)
+        self.description = obj.get(pd.LABEL_DESCRIPTION)
+        self.index = obj.get(pd.LABEL_INDEX, 0)
+        self.default_value = obj.get(pd.LABEL_DEFAULT)
+        self.is_required = obj.get(pd.LABEL_REQUIRED, False)
+        self.values = obj.get(pd.LABEL_VALUES)
+        self.parent = obj.get(pd.LABEL_PARENT)
+        self.as_constant = obj.get(pd.LABEL_AS)
+        self.module = obj.get(pd.LABEL_MODULE)
         self.children = children
 
     def add_child(self, para):
@@ -148,7 +148,7 @@ class TemplateParameter(ParameterBase):
 
         Parameters
         ----------
-        para: flowserv.model.template.parameter.base.TemplateParameter
+        para: flowserv.model.parameter.base.TemplateParameter
             Template parameter instance for child parameter
         """
         self.children.append(para)
@@ -193,18 +193,19 @@ class TemplateParameter(ParameterBase):
 
     def merge(self, para):
         """Merge the parameter with the values of a given parameter. This will
-        only affect the following parameter properties: name, description
+        only affect the following parameter properties: name, description,
+        index, required, default value, values, and module.
 
         Returns a modified copy of the parameter.
 
         Parameters
         ----------
-        para: flowserv.model.template.parameter.base.TemplateParameter
+        para: flowserv.model.parameter.base.TemplateParameter
             Declaration of the modified parameter
 
         Returns
         -------
-        flowserv.model.template.parameter.base.TemplateParameter
+        flowserv.model.parameter.base.TemplateParameter
         """
         obj = dict(self.obj)
         obj[pd.LABEL_NAME] = para.obj[pd.LABEL_NAME]

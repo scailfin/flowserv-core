@@ -14,9 +14,9 @@ the value and the meta-data in the parameter declaration.
 from past.builtins import basestring
 
 from flowserv.core.files import FileHandle, InputFile
-from flowserv.model.template.parameter.base import ParameterBase
+from flowserv.model.parameter.base import ParameterBase
 
-import flowserv.model.template.parameter.declaration as pd
+import flowserv.model.parameter.declaration as pd
 
 
 class TemplateArgument(ParameterBase):
@@ -34,7 +34,7 @@ class TemplateArgument(ParameterBase):
 
         Parameters
         ----------
-        parameter: flowserv.model.template.parameter.base.TemplateParameter
+        parameter: flowserv.model.parameter.base.TemplateParameter
             Parameter declaration
         value: list or dict or scalar or flowserv.core.files.InputFile
             Parameter value. the type depends on the parameter data type.
@@ -138,9 +138,9 @@ def mandatory_arguments(parameters, parent=None):
 
     Parameters
     ----------
-    parameters: dict(flowserv.model.template.parameter.base.TemplateParameter)
+    parameters: dict(flowserv.model.parameter.base.TemplateParameter)
         Dictionary of parameter declarations
-    parent: flowserv.model.template.parameter.base.TemplateParameter
+    parent: flowserv.model.parameter.base.TemplateParameter
         Parent paremeter declaration for nested structures
 
     Returns
@@ -164,16 +164,16 @@ def parse_arguments(arguments, parameters, validate=False, parent=None):
     ----------
     arguments: dict()
         Key, value pairs of argument identifier and argument value
-    parameters: dict(flowserv.model.template.parameter.base.TemplateParameter)
+    parameters: dict(flowserv.model.parameter.base.TemplateParameter)
         Dictionary of parameter declarations
     validate: bool, optional
         Validate argument value agains parameter declaration if True
-    parent: flowserv.model.template.parameter.base.TemplateParameter
+    parent: flowserv.model.parameter.base.TemplateParameter
         Parent paremeter declaration for nested structures
 
     Returns
     -------
-    dict(flowserv.model.template.parameter.value.TemplateArgument)
+    dict(flowserv.model.parameter.value.TemplateArgument)
 
     Raises
     ------

@@ -17,7 +17,7 @@ from io import BytesIO
 from flowserv.view.run import RunSerializer
 from flowserv.view.route import UrlFactory
 from flowserv.core.files import InputFile
-from flowserv.model.template.parameter.value import TemplateArgument
+from flowserv.model.parameter.value import TemplateArgument
 
 import flowserv.core.error as err
 import flowserv.core.util as util

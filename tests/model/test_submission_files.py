@@ -35,12 +35,12 @@ class TestSubmissionManagerFilestore(object):
     files that are uploaded by the user.
     """
     @staticmethod
-    def init(base_dir):
+    def init(basedir):
         """Create a fresh database with one user and one benchmark. Creates two
         submissions for the benchmark. Returns a triple containing an instance
         of the submission manager and the two submission handles.
         """
-        con = db.init_db(base_dir).connect()
+        con = db.init_db(basedir).connect()
         sql = (
             'INSERT INTO api_user(user_id, name, secret, active) '
             'VALUES(?, ?, ?, ?)'
@@ -59,7 +59,7 @@ class TestSubmissionManagerFilestore(object):
         con.commit()
         manager = SubmissionManager(
             con=con,
-            directory=base_dir,
+            directory=basedir,
             engine=BenchmarkEngine(
                 con=con,
                 backend=StateEngine()

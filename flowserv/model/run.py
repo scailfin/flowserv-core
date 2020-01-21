@@ -43,7 +43,7 @@ class RunHandle(object):
 
         Returns
         -------
-        flowserv.model.resource.FileResource
+        flowserv.model.workflow.resource.FSObject
         """
         if not self.is_success():
             return None
@@ -109,7 +109,7 @@ class RunHandle(object):
 
         Returns
         -------
-        list(flowserv.model.resource.FileResource)
+        list(flowserv.model.workflow.resource.FSObject)
         """
         if not self.is_success():
             return list()

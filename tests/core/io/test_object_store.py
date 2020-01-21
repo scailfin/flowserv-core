@@ -21,25 +21,10 @@ import flowserv.core.util as util
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))
-BASE_DIR = os.path.join(DIR, '../../.files/benchmark')
+basedir = os.path.join(DIR, '../../.files/benchmark')
 # Valid benchmark template
 BENCHMARK = 'ABCDEFGH'
 DEFAULT_NAME = 'benchmark.json'
-
-
-class TestAbstractObjectStore(object):
-    """Unit test for abstract object store methods (included for code
-    completeness).
-    """
-    def test_interface(self):
-        """Test abstract interface methods to ensure that they raise a
-        NotImplementedError.
-        """
-        store = ObjectStore()
-        with pytest.raises(NotImplementedError):
-            store.read(identifier='ABC')
-        with pytest.raises(NotImplementedError):
-            store.write(identifier='ABC', obj=dict())
 
 
 class TestJsonTemplateStore(object):
@@ -52,8 +37,8 @@ class TestJsonTemplateStore(object):
         """
         # File store with default file name
         store = JsonFileStore(
-            base_dir=BASE_DIR,
-            default_file_name=DEFAULT_NAME
+            basedir=basedir,
+            default_filename=DEFAULT_NAME
         )
         doc = store.read(identifier=BENCHMARK)
         columns = [c['id'] for c in doc['results']['schema']]
@@ -61,7 +46,7 @@ class TestJsonTemplateStore(object):
         for key in ['col1', 'col2', 'col3', 'col4']:
             assert key in columns
         # File store without default file name
-        store = JsonFileStore(base_dir=BASE_DIR)
+        store = JsonFileStore(basedir=basedir)
         doc = store.read(identifier=BENCHMARK)
         columns = [c['id'] for c in doc['results']['schema']]
         assert len(columns) == 3
@@ -73,11 +58,11 @@ class TestJsonTemplateStore(object):
 
     def test_write(self, tmpdir):
         """Test write method of the Json store."""
-        base_dir = str(tmpdir)
+        basedir = str(tmpdir)
         # Store objects as files in the base directory
-        store = JsonFileStore(base_dir=base_dir)
+        store = JsonFileStore(basedir=basedir)
         store.write(identifier=BENCHMARK, obj={'A': 1, 'B': 2})
-        filename = os.path.join(base_dir, BENCHMARK + '.json')
+        filename = os.path.join(basedir, BENCHMARK + '.json')
         assert os.path.isfile(filename)
         doc = store.read(identifier=BENCHMARK)
         assert doc == {'A': 1, 'B': 2}
@@ -85,11 +70,11 @@ class TestJsonTemplateStore(object):
         assert doc == {'A': 1, 'B': 2}
         # Store objects as files in sub-directories of the base directory
         store = JsonFileStore(
-            base_dir=base_dir,
-            default_file_name=DEFAULT_NAME
+            basedir=basedir,
+            default_filename=DEFAULT_NAME
         )
         store.write(identifier=BENCHMARK, obj={'A': 1, 'C': 3})
-        filename = os.path.join(base_dir, BENCHMARK,  DEFAULT_NAME)
+        filename = os.path.join(basedir, BENCHMARK,  DEFAULT_NAME)
         assert os.path.isfile(filename)
         doc = store.read(identifier=BENCHMARK)
         assert doc == {'A': 1, 'C': 3}

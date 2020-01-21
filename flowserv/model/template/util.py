@@ -107,10 +107,10 @@ def replace_args(spec, arguments, parameters):
     ----------
     spec: any
         Parameterized workflow specification
-    arguments: dict(flowserv.model.template.parameter.value.TemplateArgument)
+    arguments: dict(flowserv.model.parameter.value.TemplateArgument)
         Dictionary that associates template parameter identifiers with
         argument values
-    parameters: dict(flowserv.model.template.parameter.base.TemplateParameter)
+    parameters: dict(flowserv.model.parameter.base.TemplateParameter)
         Dictionary of parameter declarations
 
     Returns
@@ -152,10 +152,10 @@ def replace_value(value, arguments, parameters):
     ----------
     value: string
         String value in the workflow specification for a template parameter
-    arguments: dict(flowserv.model.template.parameter.value.TemplateArgument)
+    arguments: dict(flowserv.model.parameter.value.TemplateArgument)
         Dictionary that associates template parameter identifiers with
         argument values
-    parameters: dict(flowserv.model.template.parameter.base.TemplateParameter)
+    parameters: dict(flowserv.model.parameter.base.TemplateParameter)
         Dictionary of parameter declarations
 
     Returns

@@ -17,7 +17,7 @@ import flowserv.core.db.driver as driver
 import flowserv.core.db.sqlite as sqlite
 
 
-def init_db(base_dir):
+def init_db(basedir):
     """Create a fresh database with three users and return an open
     connection to the database. Returns connector to the database.
 
@@ -26,7 +26,7 @@ def init_db(base_dir):
     flowserv.core.db.connector.DatabaseConnector
     """
     dbms_id = driver.SQLITE[0]
-    connect_string = '{}/{}'.format(base_dir, 'tmp.db')
+    connect_string = '{}/{}'.format(basedir, 'tmp.db')
     DB.init(dbms_id=dbms_id, connect_string=connect_string)
     os.environ[config.ROB_DB_ID] = dbms_id
     os.environ[sqlite.SQLITE_ROB_CONNECT] = connect_string

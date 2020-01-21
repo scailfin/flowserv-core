@@ -91,7 +91,7 @@ class SubmissionService(object):
             Unique team name
         user: flowserv.model.user.base.UserHandle
             Handle for the submission owner
-        parameters: dict(string:flowserv.model.template.parameter.base.TemplateParameter), optional
+        parameters: dict(string:flowserv.model.parameter.base.TemplateParameter), optional
             Workflow template parameter declarations
         members: list(string), optional
             List of user identifier for submission members

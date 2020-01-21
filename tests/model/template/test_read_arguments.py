@@ -9,11 +9,11 @@
 """Test read arguments function for REANA templates."""
 
 from flowserv.core.scanner import Scanner, ListReader
-from flowserv.model.template.parameter.base import TemplateParameter, AS_INPUT
+from flowserv.model.parameter.base import TemplateParameter, AS_INPUT
 from flowserv.model.template.base import WorkflowTemplate
 
-import flowserv.model.template.parameter.declaration as pd
-import flowserv.model.template.parameter.util as tmpl
+import flowserv.model.parameter.declaration as pd
+import flowserv.model.parameter.util as tmpl
 
 
 class TestReadTemplateArguments(object):
@@ -23,7 +23,7 @@ class TestReadTemplateArguments(object):
         """
         template = WorkflowTemplate(
             workflow_spec=dict(),
-            source_dir='dev/null',
+            sourcedir='dev/null',
             parameters=[
                 TemplateParameter(
                     pd.parameter_declaration(

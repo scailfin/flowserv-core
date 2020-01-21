@@ -45,8 +45,8 @@ def ENGIN_BASEDIR():
     -------
     string
     """
-    base_dir = api.API_BASEDIR(default_value=str(tempfile.gettempdir()))
-    return os.path.join(base_dir, 'runs')
+    basedir = api.API_BASEDIR(default_value=str(tempfile.gettempdir()))
+    return os.path.join(basedir, 'runs')
 
 
 def ROB_ENGINE():
@@ -72,7 +72,7 @@ def ROB_ENGINE():
     # variables is set.
     if module_name is None and class_name is None:
         from flowserv.controller.backend.sync import SyncWorkflowEngine
-        return SyncWorkflowEngine(base_dir=ENGIN_BASEDIR())
+        return SyncWorkflowEngine(basedir=ENGIN_BASEDIR())
     elif not module_name is None and not class_name is None:
         from importlib import import_module
         module = import_module(module_name)

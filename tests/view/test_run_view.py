@@ -50,7 +50,7 @@ RELS_LISTING = [hateoas.SELF, hateoas.SUBMIT]
 class TestRunView(object):
     """Test API methods that execute, access and manipulate benchmark runs."""
     @staticmethod
-    def init(base_dir):
+    def init(basedir):
         """Initialize the database, benchmark repository, submission manager,
         and the benchmark engine. Load one benchmark.
 
@@ -58,13 +58,13 @@ class TestRunView(object):
         handle for the created benchmark.
         """
         repository, submissions, user_service, runs, _, _, _ = api.init_api(
-            base_dir
+            basedir
         )
         users = list()
         for i in range(2):
             user_id = util.get_unique_identifier()
             users.append(user_service.manager.register_user(user_id, user_id))
-        bm = repository.repo.add_benchmark(name='A', src_dir=TEMPLATE_DIR)
+        bm = repository.repo.add_benchmark(name='A', sourcedir=TEMPLATE_DIR)
         return runs, submissions, users, bm
 
     def test_cancel_and_delete_runs(self, tmpdir):

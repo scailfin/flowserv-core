@@ -8,10 +8,10 @@
 
 """Interface for classes that store dictionary objects."""
 
-from abc import abstractmethod
+from abc import ABCMeta, abstractmethod
 
 
-class ObjectStore(object):
+class ObjectStore(metaclass=ABCMeta):
     """The object store is an abstract interface to read and write dictionary
     objects from and to a simple store. Different implementations of this class
     may maintain object in persistent stores, on the file system, or keep copies

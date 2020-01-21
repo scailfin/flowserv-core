@@ -11,11 +11,11 @@
 import pytest
 import yaml
 
-from flowserv.model.template.parameter.base import TemplateParameter
+from flowserv.model.parameter.base import TemplateParameter
 
 import flowserv.core.error as err
-import flowserv.model.template.parameter.declaration as pd
-import flowserv.model.template.parameter.util as putil
+import flowserv.model.parameter.declaration as pd
+import flowserv.model.parameter.util as putil
 
 
 EXAMPLE = """parameters:

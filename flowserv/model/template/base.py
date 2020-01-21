@@ -10,10 +10,10 @@
 of template parameters. The workflow specification may contain references to
 template parameters.
 
-Template parameters are common to different backends that excute a workflow. The
-syntax and structure of the workflow specification is engine specific. The only
-common part here is that template parameters are referenced using the $[[..]]
-syntax from within the specifications.
+Template parameters are common to different backends that excute a workflow.
+The syntax and structure of the workflow specification is engine specific.
+The only common part here is that template parameters are referenced using
+the $[[..]] syntax from within the specifications.
 
 The template parameters can be used to render front-end forms that gather user
 input for each parameter. Given an association of parameter identifiers to
@@ -22,86 +22,22 @@ the modified workflow specification in which references to template parameters
 have been replaced by parameter values.
 """
 
-from flowserv.model.template.command import PostProcessingStep
+from flowserv.model.parameter.group import ParameterGroup
+from flowserv.model.template.postproc import PostProcessingStep
 from flowserv.model.template.schema import ResultSchema
 
 import flowserv.core.error as err
 import flowserv.core.util as util
-import flowserv.model.template.parameter.util as wfputil
+import flowserv.model.parameter.util as wfputil
 import flowserv.model.template.util as tmplutil
 
 
 """Top-level elements of dictionary serialization for template handles."""
-LABEL_ID = 'id'
 LABEL_MODULES = 'modules'
 LABEL_PARAMETERS = 'parameters'
 LABEL_POSTPROCESSING = 'postproc'
 LABEL_RESULTS = 'results'
 LABEL_WORKFLOW = 'workflow'
-# Additional labels for workflow module handles
-LABEL_INDEX = 'index'
-LABEL_NAME = 'name'
-
-
-class WorkflowModuleHandle(object):
-    """Handle for specifications of workflow modules that are used to group
-    workflow parameters.
-    """
-    def __init__(self, identifier, name, index):
-        """Initialize the object properties.
-
-        Parameters
-        ----------
-        identifier: string
-            Unique module identifier
-        name: string
-            Human-readable module name
-        index: int
-            Module sort order index
-        """
-        self.identifier = identifier
-        self.name = name
-        self.index = index
-
-    @staticmethod
-    def from_dict(doc):
-        """Create object instance from dictionary serializarion.
-
-        Parameters
-        ----------
-        doc: dict
-            Dictionary serialization for workflow module handles
-
-        Returns
-        -------
-        flowserv.module.template.base.WorkflowModuleHandle
-
-        Raises
-        ------
-        ValueError
-        """
-        util.validate_doc(
-            doc,
-            mandatory_labels=[LABEL_ID, LABEL_NAME, LABEL_INDEX]
-        )
-        return WorkflowModuleHandle(
-            identifier=doc[LABEL_ID],
-            name=doc[LABEL_NAME],
-            index=doc[LABEL_INDEX]
-        )
-
-    def to_dict(self):
-        """Get dictionary serialization for workflow module handle.
-
-        Returns
-        -------
-        dict
-        """
-        return {
-            LABEL_ID: self.identifier,
-            LABEL_NAME: self.name,
-            LABEL_INDEX: self.index
-        }
 
 
 class WorkflowTemplate(object):
@@ -120,28 +56,25 @@ class WorkflowTemplate(object):
     generate a benchmark leader board.
     """
     def __init__(
-        self, workflow_spec, source_dir, identifier=None, parameters=None,
-        modules=None, postproc_task=None, result_schema=None
+        self, workflow_spec, sourcedir, parameters=None, modules=None,
+        postproc_spec=None, result_schema=None
     ):
         """Initialize the components of the workflow template. A ValueError is
-        raised if the identifier of template parameters are not unique.
+        raised if the identifiers for template parameters are not unique.
 
         Parameters
         ----------
         workflow_spec: dict
             Workflow specification object
-        source_dir: string
+        sourcedir: string
             Path to the base directory that contains the static workflow files
-        identifier: string, optional
-            Unique template identifier. If no value is given a UUID will be
-            assigned.
-        parameters: dict(string:flowserv.model.template.parameter.base.TemplateParameter), optional
+        parameters: list or dict(flowserv.model.parameter.base.TemplateParameter), optional
             Dictionary of workflow template parameter declarations keyed by
             their unique identifier.
-        modules: list(flowserv.module.template.base.WorkflowModuleHandle), optional
+        modules: list(flowserv.module.template.parameter.group.ParameterGroup), optional
             List of workflow modules that group template parameters
-        postproc_task: flowserv.model.template.command.PostProcessingStep, optional
-            Optional workflow post-processing step
+        postproc_spec: flowserv.model.template.postproc.PostProcessingStep, optional
+            Optional list workflow post-processing steps
         result_schema: flowserv.model.template.schema.ResultSchema
             Schema of the result for extended templates that define benchmarks.
 
@@ -149,17 +82,11 @@ class WorkflowTemplate(object):
         ------
         flowserv.core.error.InvalidTemplateError
         """
-        # Set the unique identifier. If no identifier is given an new one is
-        # created.
-        if not identifier is None:
-            self.identifier = identifier
-        else:
-            self.identifier = util.get_unique_identifier()
         # Workflow specification. Interpretation of the specification is left
         # to the different implementations of the workflow engine.
         self.workflow_spec = workflow_spec
         # Source directory for static workflow files
-        self.source_dir = source_dir
+        self.sourcedir = sourcedir
         # Ensure that the parameters property is not None.
         if not parameters is None:
             if isinstance(parameters, list):
@@ -168,7 +95,7 @@ class WorkflowTemplate(object):
                     # Ensure that the identifier of all parameters are unique
                     p_id = para.identifier
                     if p_id in self.parameters:
-                        msg = 'parameter \'{}\' not unique'.format(p_id)
+                        msg = "parameter '{}' not unique".format(p_id)
                         raise err.InvalidTemplateError(msg)
                     self.parameters[p_id] = para
             else:
@@ -176,17 +103,17 @@ class WorkflowTemplate(object):
                 for key in self.parameters:
                     p_id = self.parameters[key].identifier
                     if key != p_id:
-                        msg ='invalid key \'{}\' for \'{}\''.format(key, p_id)
+                        msg = "invalid key '{}' for '{}'".format(key, p_id)
                         raise err.InvalidTemplateError(msg)
         else:
             self.parameters = dict()
         # Optional components (may be None)
         self.modules = modules
-        self.postproc_task = postproc_task
+        self.postproc_spec = postproc_spec
         self.result_schema = result_schema
 
     @staticmethod
-    def from_dict(doc, source_dir, identifier=None, validate=True):
+    def from_dict(doc, sourcedir, validate=True):
         """Create an instance of the workflow template for a dictionary
         serialization. The structure of the dictionary is expected to be the
         same as generated by the to_dict() method of this class. The only
@@ -196,11 +123,8 @@ class WorkflowTemplate(object):
         ----------
         doc: dict
             Dictionary serialization of a workflow template
-        source_dir: string
+        sourcedir: string
             Path to the base directory that contains the static workflow files
-        identifier: string, optional
-            Unique template identifier. This value will override the value in
-            the document.
         validate: bool, optional
             Validate template parameter declarations against the parameter
             schema if this flag is True.
@@ -219,9 +143,6 @@ class WorkflowTemplate(object):
         if not LABEL_WORKFLOW in doc:
             msg = 'missing element \'{}\''.format(LABEL_WORKFLOW)
             raise err.InvalidTemplateError(msg)
-        # Get identifier if present in document
-        if LABEL_ID in doc:
-            identifier = doc[LABEL_ID]
         # -- Workflow specification -------------------------------------------
         workflow_spec = doc[LABEL_WORKFLOW]
         # -- Parameter declarations -------------------------------------------
@@ -241,16 +162,16 @@ class WorkflowTemplate(object):
                 if not key in parameters:
                     raise err.UnknownParameterError(key)
         # -- Post-processing task ---------------------------------------------
-        postproc_task = None
+        postproc_spec = None
         if LABEL_POSTPROCESSING in doc:
             obj = doc[LABEL_POSTPROCESSING]
-            postproc_task = PostProcessingStep.from_dict(obj)
+            postproc_spec = PostProcessingStep.from_dict(obj)
         # -- Parameter module information -------------------------------------
         modules = None
         if LABEL_MODULES in doc:
             modules = list()
             for m in doc[LABEL_MODULES]:
-                modules.append(WorkflowModuleHandle.from_dict(m))
+                modules.append(ParameterGroup.from_dict(m))
         # -- Result schema ---------------------------------------------------
         schema = None
         if LABEL_RESULTS in doc:
@@ -260,10 +181,9 @@ class WorkflowTemplate(object):
                 raise err.InvalidTemplateError(str(ex))
         # Return template instance
         return WorkflowTemplate(
-            identifier=identifier,
             workflow_spec=workflow_spec,
-            postproc_task=postproc_task,
-            source_dir=source_dir,
+            postproc_spec=postproc_spec,
+            sourcedir=sourcedir,
             parameters=parameters,
             result_schema=schema,
             modules=modules
@@ -280,7 +200,7 @@ class WorkflowTemplate(object):
 
         Returns
         -------
-        flowserv.model.template.parameter.base.TemplateParameter
+        flowserv.model.parameter.base.TemplateParameter
         """
         return self.parameters.get(identifier)
 
@@ -309,7 +229,7 @@ class WorkflowTemplate(object):
 
         Returns
         -------
-        list(flowserv.model.template.parameter.base.TemplateParameter)
+        list(flowserv.model.parameter.base.TemplateParameter)
         """
         return sorted(
             self.parameters.values(),
@@ -324,14 +244,14 @@ class WorkflowTemplate(object):
         dict
         """
         # The workflow specificatiom is the only mandatory element
-        doc = {LABEL_ID:  self.identifier, LABEL_WORKFLOW: self.workflow_spec}
+        doc = {LABEL_WORKFLOW: self.workflow_spec}
         # Add optional elements if present
         if len(self.parameters) > 0:
             doc[LABEL_PARAMETERS] = [
                 p.to_dict() for p in self.parameters.values()
             ]
-        if self.postproc_task is not None:
-            doc[LABEL_POSTPROCESSING] = self.postproc_task.to_dict()
+        if self.postproc_spec is not None:
+            doc[LABEL_POSTPROCESSING] = self.postproc_spec.to_dict()
         if self.modules is not None:
             doc[LABEL_MODULES] = [m.to_dict() for m in self.modules]
         if self.result_schema is not None:
@@ -347,7 +267,7 @@ class WorkflowTemplate(object):
 
         Parameters
         ----------
-        arguments: dict(flowserv.model.template.parameter.value.TemplateArgument)
+        arguments: dict(flowserv.model.parameter.value.TemplateArgument)
             Dictionary of argument values for parameters in the template
 
         Raises

@@ -15,7 +15,7 @@ import json
 import sys
 import yaml
 
-from flowserv.model.template.parameter.declaration import PARAMETER_SCHEMA
+from flowserv.model.parameter.declaration import PARAMETER_SCHEMA
 
 
 def main(args):

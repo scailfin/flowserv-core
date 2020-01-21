@@ -14,12 +14,12 @@ import os
 
 from flowserv.model.template.schema import ResultColumn, ResultSchema
 from flowserv.controller.backend.base import WorkflowController
-from flowserv.model.resource import FileResource
+from flowserv.model.workflow.resource import FSObject
 
 import flowserv.controller.run as runstore
 import flowserv.controller.serial as serial
 import flowserv.core.error as err
-import flowserv.model.template.parameter.declaration as pd
+import flowserv.model.parameter.declaration as pd
 import flowserv.model.workflow.state as st
 import flowserv.core.util as util
 
@@ -27,7 +27,7 @@ import flowserv.core.util as util
 """Result schema for the default benchmark."""
 RESULT_FILE_ID = 'results.json'
 BENCHMARK_SCHEMA = ResultSchema(
-    result_file_id=RESULT_FILE_ID,
+    result_file=RESULT_FILE_ID,
     columns=[
         ResultColumn('col1', 'col1', pd.DT_INTEGER),
         ResultColumn('col2', 'col2', pd.DT_DECIMAL),
@@ -41,14 +41,14 @@ class StateEngine(WorkflowController):
     method is called.
     """
     def __init__(
-        self, state=None, messages=None, values=None, result_file_id=None,
-        base_dir=None, asynchronous_events=None
+        self, state=None, messages=None, values=None, result_file=None,
+        basedir=None, asynchronous_events=None
     ):
         """Initialize the workflow state that the engine is returning for all
         executed workflows. If the state is ERROR or CANCELED the given error
         messages will be part of the state object. If the state is SUCCESS the
         resulting run state will contain a result file that is generated from
-        the values and result_file_id arguments (if given).
+        the values and result_file arguments (if given).
 
         Parameters
         ----------
@@ -58,9 +58,9 @@ class StateEngine(WorkflowController):
             Optional list of error messages
         values: dict, optional
             Optional dictionary with result values
-        result_file_id: string, optional
+        result_file: string, optional
             Identifier for result file resource for successful workfkow runs
-        base_dir: string, optional
+        basedir: string, optional
             Directory where the result file will be stored.
         asynchronous_events: bool, optional
             Flag indicating whether the controller is updating the underlying
@@ -69,11 +69,11 @@ class StateEngine(WorkflowController):
         self.state = state if not state is None else st.STATE_PENDING
         self.messages = messages
         self.values = values if not values is None else {'col1': 1, 'col2': 1.1, 'col3': 'R0'}
-        self.result_file_id = result_file_id if not result_file_id is None else RESULT_FILE_ID
-        if not base_dir is None:
-            self.base_dir = util.create_dir(base_dir)
+        self.result_file = result_file if not result_file is None else RESULT_FILE_ID
+        if not basedir is None:
+            self.basedir = util.create_dir(basedir)
         else:
-            self.base_dir = None
+            self.basedir = None
         self._async_events = asynchronous_events if not asynchronous_events is None else False
         # Index of workflow runs
         self.runs = dict()
@@ -135,7 +135,7 @@ class StateEngine(WorkflowController):
         template: flowserv.model.template.base.WorkflowTemplate
             Workflow template containing the parameterized specification and the
             parameter declarations
-        arguments: dict(flowserv.model.template.parameter.value.TemplateArgument)
+        arguments: dict(flowserv.model.parameter.value.TemplateArgument)
             Dictionary of argument values for parameters in the template
 
         Returns
@@ -153,10 +153,10 @@ class StateEngine(WorkflowController):
         else:
             if not self.values is None:
                 filename = util.get_unique_identifier() + '.json'
-                result_file = os.path.join(self.base_dir, filename)
+                result_file = os.path.join(self.basedir, filename)
                 util.write_object(filename=result_file, obj=self.values)
-                resource_name = self.result_file_id
-                f = FileResource(
+                resource_name = self.result_file
+                f = FSObject(
                     resource_id=util.get_unique_identifier(),
                     resource_name=resource_name,
                     file_path=result_file
@@ -204,14 +204,14 @@ class StateEngine(WorkflowController):
         ----------
         workflow_spec: dict
             Workflow specification
-        tmpl_parameters: dict(flowserv.model.template.parameter.base.TemplateParameter)
+        tmpl_parameters: dict(flowserv.model.parameter.base.TemplateParameter)
             Existing template parameters
-        add_parameters: dict(flowserv.model.template.parameter.base.TemplateParameter)
+        add_parameters: dict(flowserv.model.parameter.base.TemplateParameter)
             Additional template parameters
 
         Returns
         -------
-        dict, dict(flowserv.model.template.parameter.base.TemplateParameter)
+        dict, dict(flowserv.model.parameter.base.TemplateParameter)
 
         Raises
         ------

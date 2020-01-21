@@ -13,14 +13,14 @@ import json
 import pytest
 
 from flowserv.core.files import FileHandle
-from flowserv.model.template.parameter.base import TemplateParameter
+from flowserv.model.parameter.base import TemplateParameter
 from flowserv.model.template.schema import ResultColumn, ResultSchema
-from flowserv.model.resource import FileResource
+from flowserv.model.workflow.resource import FSObject
 
 import flowserv.core.error as err
 import flowserv.model.ranking as ranking
-import flowserv.model.template.parameter.declaration as pd
-import flowserv.model.template.parameter.value as pv
+import flowserv.model.parameter.declaration as pd
+import flowserv.model.parameter.value as pv
 import flowserv.controller.run as store
 import flowserv.tests.db as db
 import flowserv.core.util as util
@@ -51,7 +51,7 @@ ARGS = pv.parse_arguments(
 """Result schema for the default benchmark."""
 RESULT_FILE_ID = 'results.json'
 BENCHMARK_SCHEMA = ResultSchema(
-    result_file_id=RESULT_FILE_ID,
+    result_file=RESULT_FILE_ID,
     columns=[
         ResultColumn('col1', 'col1', pd.DT_INTEGER),
         ResultColumn('col2', 'col2', pd.DT_INTEGER)
@@ -61,11 +61,11 @@ BENCHMARK_SCHEMA = ResultSchema(
 
 class TestRunStore(object):
     """Unit tests for the run store methods and the run handle."""
-    def init(self, base_dir):
+    def init(self, basedir):
         """Create an instance of the database with a single default user, two
         benchmarks and a submission for each benchmark.
         """
-        con = db.init_db(base_dir).connect()
+        con = db.init_db(basedir).connect()
         sql = 'INSERT INTO api_user(user_id, name, secret, active) '
         sql += 'VALUES(?, ?, ?, ?)'
         UID = 'ABC'
@@ -251,8 +251,8 @@ class TestRunStore(object):
         filename = os.path.join(str(tmpdir), 'data.json')
         util.write_object(obj={'col1': 10, 'col2': 20}, filename=filename)
         files = [
-            FileResource('0', RESULT_FILE_ID, filename),
-            FileResource('1', 'X', '/dev/null')
+            FSObject('0', RESULT_FILE_ID, filename),
+            FSObject('1', 'X', '/dev/null')
         ]
         # Test runs for a submission with a result schema
         run = store.create_run(

@@ -15,7 +15,7 @@ import sqlite3
 
 from flowserv.model.template.benchmark import BenchmarkHandle
 from flowserv.model.template.repo.benchmark import BenchmarkRepository
-from flowserv.model.template.repo.fs import TemplateFSRepository
+from flowserv.model.template.store import TemplateRepository
 from flowserv.model.template.schema import ResultSchema
 from flowserv.tests.repo import DictRepo
 
@@ -38,15 +38,15 @@ TEMPLATE = dict({'A': 1})
 
 class TestBenchmarkRepository(object):
     """Test creating and maintaining benchmarks."""
-    def init(self, base_dir):
+    def init(self, basedir):
         """Create empty database. Return a test instance of the benchmark
         repository and a connector to the database.
         """
-        connector = db.init_db(base_dir)
+        connector = db.init_db(basedir)
         repo = BenchmarkRepository(
             con=connector.connect(),
-            template_repo=TemplateFSRepository(base_dir=base_dir),
-            resource_base_dir=os.path.join(base_dir, 'resources')
+            template_repo=TemplateRepository(basedir=basedir),
+            resource_basedir=os.path.join(basedir, 'resources')
         )
         return repo, connector
 
@@ -55,7 +55,7 @@ class TestBenchmarkRepository(object):
         # Initialize the repository
         repo, connector = self.init(str(tmpdir))
         # Add benchmark with minimal information
-        bm_1 = repo.add_benchmark(name='A', src_dir=TEMPLATE_DIR)
+        bm_1 = repo.add_benchmark(name='A', sourcedir=TEMPLATE_DIR)
         assert bm_1.name == 'A'
         assert not bm_1.has_description()
         assert bm_1.get_description() == ''
@@ -72,7 +72,7 @@ class TestBenchmarkRepository(object):
             sql = 'SELECT result_schema FROM benchmark WHERE benchmark_id = ?'
             rs = con.execute(sql, (bm_1.identifier,)).fetchone()
             schema = ResultSchema.from_dict(json.loads(rs['result_schema']))
-            assert schema.result_file_id == 'results/analytics.json'
+            assert schema.result_file == 'results/analytics.json'
             assert len(schema.columns) == 3
             assert len(schema.order_by) == 0
         # Template without schema
@@ -80,8 +80,8 @@ class TestBenchmarkRepository(object):
             name='My benchmark',
             description='desc',
             instructions='instr',
-            src_dir=TEMPLATE_DIR,
-            spec_file=TEMPLATE_WITHOUT_SCHEMA
+            sourcedir=TEMPLATE_DIR,
+            specfile=TEMPLATE_WITHOUT_SCHEMA
         )
         assert bm_2.name == 'My benchmark'
         assert bm_2.has_description()
@@ -105,22 +105,22 @@ class TestBenchmarkRepository(object):
             name='Top Tagger',
             description='desc',
             instructions='instr',
-            src_dir=TEMPLATE_DIR,
-            spec_file=TOPTAGGER_YAML_FILE
+            sourcedir=TEMPLATE_DIR,
+            specfile=TOPTAGGER_YAML_FILE
         )
         # Test error conditions
         # - Missing name
         with pytest.raises(err.ConstraintViolationError):
-            repo.add_benchmark(name=None, src_dir=TEMPLATE_DIR)
+            repo.add_benchmark(name=None, sourcedir=TEMPLATE_DIR)
         with pytest.raises(err.ConstraintViolationError):
-            repo.add_benchmark(name=' ', src_dir=TEMPLATE_DIR)
+            repo.add_benchmark(name=' ', sourcedir=TEMPLATE_DIR)
         # - Invalid name
-        repo.add_benchmark(name='a' * 512, src_dir=TEMPLATE_DIR)
+        repo.add_benchmark(name='a' * 512, sourcedir=TEMPLATE_DIR)
         with pytest.raises(err.ConstraintViolationError):
-            repo.add_benchmark(name='a' * 513, src_dir=TEMPLATE_DIR)
+            repo.add_benchmark(name='a' * 513, sourcedir=TEMPLATE_DIR)
         # - Duplicate name
         with pytest.raises(err.ConstraintViolationError):
-            repo.add_benchmark(name='My benchmark', src_dir=TEMPLATE_DIR)
+            repo.add_benchmark(name='My benchmark', sourcedir=TEMPLATE_DIR)
         # - No source given
         with pytest.raises(ValueError):
             repo.add_benchmark(name='A benchmark')
@@ -129,18 +129,18 @@ class TestBenchmarkRepository(object):
         """Test deleting a benchmarks from the repository."""
         # Initialize the repository
         repo, connector = self.init(str(tmpdir))
-        bm_1 = repo.add_benchmark(name='A', src_dir=TEMPLATE_DIR)
+        bm_1 = repo.add_benchmark(name='A', sourcedir=TEMPLATE_DIR)
         assert len(repo.list_benchmarks()) == 1
         bm_2 = repo.add_benchmark(
             name='My benchmark',
             description='desc',
             instructions='instr',
-            src_dir=TEMPLATE_DIR
+            sourcedir=TEMPLATE_DIR
         )
         assert len(repo.list_benchmarks()) == 2
         bm_3 = repo.add_benchmark(
             name='Another benchmark',
-            src_dir=TEMPLATE_DIR
+            sourcedir=TEMPLATE_DIR
         )
         assert len(repo.list_benchmarks()) == 3
         with pytest.raises(err.ConstraintViolationError):
@@ -148,7 +148,7 @@ class TestBenchmarkRepository(object):
                 name='My benchmark',
                 description='desc',
                 instructions='instr',
-                src_dir=TEMPLATE_DIR
+                sourcedir=TEMPLATE_DIR
             )
         repo.delete_benchmark(bm_2.identifier)
         repo.delete_benchmark(bm_2.identifier)
@@ -159,7 +159,7 @@ class TestBenchmarkRepository(object):
             name='My benchmark',
             description='desc',
             instructions='instr',
-            src_dir=TEMPLATE_DIR
+            sourcedir=TEMPLATE_DIR
         )
         for bm in [bm_1, bm_2, bm_3]:
             repo.delete_benchmark(bm.identifier)
@@ -170,8 +170,8 @@ class TestBenchmarkRepository(object):
         """Test retrieving benchmarks from the repository."""
         # Initialize the repository
         repo, connector = self.init(str(tmpdir))
-        bm_1 = repo.add_benchmark(name='A', src_dir=TEMPLATE_DIR)
-        bm_2 = repo.add_benchmark(name='B', src_dir=TEMPLATE_DIR)
+        bm_1 = repo.add_benchmark(name='A', sourcedir=TEMPLATE_DIR)
+        bm_2 = repo.add_benchmark(name='B', sourcedir=TEMPLATE_DIR)
         b_id = repo.get_benchmark(bm_1.identifier).identifier
         assert b_id == bm_1.identifier
         b_id = repo.get_benchmark(bm_2.identifier).identifier
@@ -179,8 +179,8 @@ class TestBenchmarkRepository(object):
         # Re-connect to the repository
         repo = BenchmarkRepository(
             con=connector.connect(),
-            template_repo=TemplateFSRepository(base_dir=str(tmpdir)),
-            resource_base_dir=os.path.join(str(tmpdir), 'resources')
+            template_repo=TemplateRepository(basedir=str(tmpdir)),
+            resource_basedir=os.path.join(str(tmpdir), 'resources')
         )
         benchmark = repo.get_benchmark(bm_1.identifier)
         assert benchmark.identifier == bm_1.identifier
@@ -255,12 +255,12 @@ class TestBenchmarkRepository(object):
         """Test updating benchmark properties."""
         # Initialize the repository
         repo, connector = self.init(str(tmpdir))
-        bm_1 = repo.add_benchmark(name='A', src_dir=TEMPLATE_DIR)
+        bm_1 = repo.add_benchmark(name='A', sourcedir=TEMPLATE_DIR)
         bm_2 = repo.add_benchmark(
             name='My benchmark',
             description='desc',
             instructions='instr',
-            src_dir=TEMPLATE_DIR
+            sourcedir=TEMPLATE_DIR
         )
         # Update the name of the first benchmark. It is possible to change the
         # name to and existing name only if it is the same benchmark

@@ -12,10 +12,10 @@ from __future__ import print_function
 
 from flowserv.core.files import FileHandle
 from flowserv.core.scanner import Scanner
-from flowserv.model.template.parameter.base import TemplateParameter
+from flowserv.model.parameter.base import TemplateParameter
 
 import flowserv.core.error as err
-import flowserv.model.template.parameter.declaration as pd
+import flowserv.model.parameter.declaration as pd
 
 
 # -- Parameter index -----------------------------------------------------------
@@ -35,7 +35,7 @@ def create_parameter_index(parameters, validate=True):
 
     Returns
     -------
-    dict(string: flowserv.model.template.parameter.base.TemplateParameter)
+    dict(string: flowserv.model.parameter.base.TemplateParameter)
 
     Raises
     ------
@@ -88,7 +88,7 @@ def read(parameters, scanner=None, files=None):
 
     Parameters
     ----------
-    parameters: list(flowserv.model.template.parameter.base.TemplateParameter)
+    parameters: list(flowserv.model.parameter.base.TemplateParameter)
         List of workflow template parameter declarations
     scanner: flowserv.core.scanner.Scanner
         Input scanner to read parameter values
@@ -130,7 +130,7 @@ def read_parameter(para, scanner, prompt_prefix='', files=None):
 
     Parameters
     ----------
-    para: flowserv.model.template.parameter.TemplateParameter
+    para: flowserv.model.parameter.TemplateParameter
         Workflow template parameter declaration
     scanner: flowserv.core.scanner.Scanner
     prompt_prefix: string, optional
@@ -161,7 +161,7 @@ def read_parameter(para, scanner, prompt_prefix='', files=None):
                         print('{}\t{} ({})'.format(
                             fh.identifier,
                             fh.name,
-                            fh.upload_time())
+                            fh.created_at_local_time())
                         )
                     print('\n{}: '.format(para.name), end='')
                 filename = scanner.next_file(default_value=para.default_value)

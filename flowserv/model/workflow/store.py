@@ -22,7 +22,7 @@ from flowserv.model.template.schema import ResultSchema
 import flowserv.core.error as err
 import flowserv.model.constraint as constraint
 import flowserv.model.ranking as ranking
-import flowserv.model.template.parameter.declaration as pd
+import flowserv.model.parameter.declaration as pd
 import flowserv.core.util as util
 
 
@@ -30,7 +30,7 @@ class BenchmarkRepository(object):
     """The repository maintains benchmarks as well as the results of benchmark
     runs.
     """
-    def __init__(self, con, template_repo, resource_base_dir):
+    def __init__(self, con, template_repo, resource_basedir):
         """Initialize the database connection and the template store.
 
         Parameters
@@ -39,18 +39,18 @@ class BenchmarkRepository(object):
             Connection to underlying database
         template_store: flowserv.model.template.repo.base.TemplateRepository, optional
             Repository for workflow templates
-        resource_base_dir: string
+        resource_basedir: string
             Path to the base directory that contains post-processing results
             for all benchmarks
         """
         self.con = con
         self.template_repo = template_repo
         # Create the resource directory if it does not exist
-        self.resource_base_dir = util.create_dir(resource_base_dir, abs=True)
+        self.resource_basedir = util.create_dir(resource_basedir, abs=True)
 
     def add_benchmark(
-        self, name, description=None, instructions=None, src_dir=None,
-        src_repo_url=None, spec_file=None
+        self, name, description=None, instructions=None, sourcedir=None,
+        repourl=None, specfile=None
     ):
         """Add a benchmark to the repository. The associated workflow template
         is created in the template repository from either the given source
@@ -70,12 +70,12 @@ class BenchmarkRepository(object):
             Optional short description for display in benchmark listings
         instructions: string, optional
             Text containing detailed instructions for benchmark participants
-        src_dir: string, optional
+        sourcedir: string, optional
             Directory containing the benchmark components, i.e., the fixed
             files and the template specification (optional).
-        src_repo_url: string, optional
+        repourl: string, optional
             Git repository that contains the the benchmark components
-        spec_file: string, optional
+        specfile: string, optional
             Path to the workflow template specification file (absolute or
             relative to the workflow directory)
 
@@ -95,9 +95,9 @@ class BenchmarkRepository(object):
         constraint.validate_name(name, con=self.con, sql=sql)
         # Create the workflow template in the associated template repository
         template = self.template_repo.add_template(
-            src_dir=src_dir,
-            src_repo_url=src_repo_url,
-            spec_file=spec_file
+            sourcedir=sourcedir,
+            repourl=repourl,
+            specfile=specfile
         )
         t_id = template.identifier
         # Create the result table in the underlying database if the template
@@ -131,8 +131,8 @@ class BenchmarkRepository(object):
             instructions,
             pp_task,
             result_schema,
-            template.source_dir,
-            util.create_dir(os.path.join(self.resource_base_dir, t_id))
+            template.sourcedir,
+            util.create_dir(os.path.join(self.resource_basedir, t_id))
         )
         self.con.execute(sql, values)
         # Commit all changes and return the benchmark descriptor

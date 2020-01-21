@@ -12,7 +12,7 @@ import os
 
 import flowserv.view.hateoas as hateoas
 import flowserv.view.labels as labels
-import flowserv.model.template.parameter.declaration as pd
+import flowserv.model.parameter.declaration as pd
 import flowserv.tests.api as api
 import flowserv.tests.serialize as serialize
 import flowserv.core.util as util
@@ -43,13 +43,13 @@ RELS = [
 class TestBenchmarkView(object):
     """Test API methods that access and list benchmarks and leader boards."""
     @staticmethod
-    def init(base_dir):
+    def init(basedir):
         """Initialize the database and the benchmark repository. Loads three
         copies of the same benchmark. Returns a tripple that contains the
         benchmark reposiroty, the list of the benchmark handles, and the open
         database connection.
         """
-        repo, submissions, users, _, _, _, _ = api.init_api(base_dir)
+        repo, submissions, users, _, _, _, _ = api.init_api(basedir)
         # Create one new user
         users.register_user(USER_1, USER_1)
         # Create three benchmarks
@@ -57,14 +57,14 @@ class TestBenchmarkView(object):
         benchmarks.append(
             repo.repo.add_benchmark(
                 name='A',
-                src_dir=TEMPLATE_DIR
+                sourcedir=TEMPLATE_DIR
             )
         )
         benchmarks.append(
             repo.repo.add_benchmark(
                 name='B',
                 description='desc',
-                src_dir=TEMPLATE_DIR
+                sourcedir=TEMPLATE_DIR
             )
         )
         benchmarks.append(
@@ -72,7 +72,7 @@ class TestBenchmarkView(object):
                 name='C',
                 description='desc',
                 instructions='inst',
-                src_dir=TEMPLATE_DIR
+                sourcedir=TEMPLATE_DIR
             )
         )
         return repo, submissions, benchmarks
