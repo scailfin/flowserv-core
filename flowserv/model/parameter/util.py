@@ -10,7 +10,6 @@
 
 from __future__ import print_function
 
-from flowserv.core.files import FileHandle
 from flowserv.core.scanner import Scanner
 from flowserv.model.parameter.base import TemplateParameter
 
@@ -22,8 +21,8 @@ import flowserv.model.parameter.declaration as pd
 
 def create_parameter_index(parameters, validate=True):
     """Create instances of template parameters from a list of dictionaries
-    containing parameter declarations. The result is a dictionary containing the
-    top-level parameters, indexed by their unique identifier.
+    containing parameter declarations. The result is a dictionary containing
+    the top-level parameters, indexed by their unique identifier.
 
     Parameters
     ----------
@@ -54,8 +53,8 @@ def create_parameter_index(parameters, validate=True):
         p_id = para[pd.LABEL_ID]
         # Ensure that the identifier of all parameters are unique
         if p_id in result:
-            msg = 'parameter \'{}\' not unique'.format(p_id)
-            raise err.InvalidTemplateError(msg)
+            msg = "parameter '{}' not unique"
+            raise err.InvalidTemplateError(msg.format(p_id))
         c = None
         if para[pd.LABEL_DATATYPE] in [pd.DT_LIST, pd.DT_RECORD]:
             c = list()
@@ -68,7 +67,7 @@ def create_parameter_index(parameters, validate=True):
         if pd.LABEL_PARENT in para:
             p_id = para[pd.LABEL_ID]
             parent = para[pd.LABEL_PARENT]
-            if not parent is None:
+            if parent is not None:
                 result[parent].add_child(result[p_id])
     return result
 
@@ -77,7 +76,7 @@ def create_parameter_index(parameters, validate=True):
 
 def read(parameters, scanner=None, files=None):
     """Read values for each of the template parameters using a given input
-    scanner. If no scanner is given values are read from standard input.
+    scanner. If no scanner is given, values are read from standard input.
 
     The optional list of file handles is used for convenience when the user is
     asked to input the identifier of an uploaded file. It allows to display the
@@ -93,17 +92,17 @@ def read(parameters, scanner=None, files=None):
     scanner: flowserv.core.scanner.Scanner
         Input scanner to read parameter values
     files: list()
-        List of idenifier, name pairs
+        List of (idenifier, name ) pairs
 
     Returns
     -------
     dict
     """
-    sc = scanner if not scanner is None else Scanner()
+    sc = scanner if scanner is not None else Scanner()
     arguments = dict()
     for para in parameters:
         # Skip nested parameter
-        if not para.parent is None:
+        if para.parent is not None:
             continue
         if para.is_list():
             raise ValueError('lists are not supported yet')
@@ -113,14 +112,13 @@ def read(parameters, scanner=None, files=None):
             # of the children directly to the arguments dictionary
             for child in para.children:
                 val = read_parameter(child, sc, prompt_prefix='  ')
-                if not val is None:
+                if val is not None:
                     arguments[child.identifier] = val
         else:
             val = read_parameter(para, sc, files=files)
-            if not val is None:
+            if val is not None:
                 arguments[para.identifier] = val
     return arguments
-
 
 
 def read_parameter(para, scanner, prompt_prefix='', files=None):
@@ -154,7 +152,7 @@ def read_parameter(para, scanner, prompt_prefix='', files=None):
                 # defined as 'variable' we also need to read the target path.
                 # Therefore, the result here is a tuple of filename and target
                 # path. The target path may be None.
-                if not files is None:
+                if files is not None:
                     print('\n\nAvailable files')
                     print('---------------')
                     for fh in files:

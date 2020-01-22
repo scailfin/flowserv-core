@@ -123,7 +123,7 @@ def enum_value(value, text=None, is_default=False):
     dict
     """
     obj = {LABEL_VALUE: value, LABEL_IS_DEFAULT: is_default}
-    if not text is None:
+    if text is not None:
         obj[LABEL_NAME] = text
     else:
         obj[LABEL_NAME] = str(value)
@@ -145,7 +145,8 @@ def parameter_declaration(
     identifier: string
         Unique parameter identifier
     name: string, optional
-        Printable parameter name. The default value is the parameter identifier.
+        Printable parameter name. The default value is the parameter
+        identifier.
     data_type: string, optional
         Parameter type. The default value is DT_STRING
     description: string, optional
@@ -154,8 +155,7 @@ def parameter_declaration(
     index: int, optional
         Index position of argument in input form. The default value is 0.
     required: bool, optional
-        Flag indicating whether values for this parameter are required or
-        optional
+        Flag indicating whether values for this parameter are required or not
     values: list, optional
         List of valid parameter values (for selection in a front-end form)
     parent: string, optional
@@ -179,8 +179,9 @@ def parameter_declaration(
     """
     if identifier is None:
         raise InvalidParameterError('missing identifier')
-    if not data_type in DATA_TYPES:
-        raise InvalidParameterError('invalid parameter data type \'{}\''.format(data_type))
+    if data_type not in DATA_TYPES:
+        msg = "invalid parameter data type '{}'"
+        raise InvalidParameterError(msg.format(data_type))
     para = {
         LABEL_ID: identifier,
         LABEL_NAME: name if name is not None else identifier,
@@ -237,9 +238,9 @@ def set_defaults(obj):
 
 
 def set_value(parameter, key, value):
-    """Set the value for the parameter element with given key to the given value
-    if the element is currently not present in the parameter dictionary. If the
-    element with key is present no changes occur.
+    """Set the value for the parameter element with given key to the given
+    value if the element is currently not present in the parameter dictionary.
+    If the element with key is present no changes occur.
 
     Parameters
     ----------
@@ -250,7 +251,7 @@ def set_value(parameter, key, value):
     value: any
         Default element value
     """
-    if not key in parameter:
+    if key not in parameter:
         parameter[key] = value
 
 
@@ -273,8 +274,9 @@ def validate_parameter(param_declaration):
     try:
         validate(param_declaration, PARAMETER_SCHEMA)
     except ValidationError as ex:
-        raise InvalidParameterError('failed to validate parameter declaration. {}'.format(ex.message))
+        msg = 'failed to validate parameter declaration.\n{}'
+        raise InvalidParameterError(msg.format(ex.message))
     # Ensure that the given parameter data type is valid
     dt = param_declaration[LABEL_DATATYPE]
-    if not dt in DATA_TYPES:
-        raise InvalidParameterError('invalid data type \'{}\''.format(dt))
+    if dt not in DATA_TYPES:
+        raise InvalidParameterError("invalid data type '{}'".format(dt))

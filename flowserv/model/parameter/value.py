@@ -16,14 +16,12 @@ from past.builtins import basestring
 from flowserv.core.files import FileHandle, InputFile
 from flowserv.model.parameter.base import ParameterBase
 
-import flowserv.model.parameter.declaration as pd
-
 
 class TemplateArgument(ParameterBase):
     """Template arguments capture user-provided values for workflow template
-    parameters that are used to instantiate and execute a parameterized workflow
-    specification. The argument class captures the actual value and provides
-    access to the parameter meta-data.
+    parameters that are used to instantiate and execute a parameterized
+    workflow specification. The argument class captures the actual value and
+    provides access to the parameter meta-data.
     """
     def __init__(self, parameter, value, validate=True):
         """Initialize the parameter value and meta-data. The type of the value
@@ -75,9 +73,9 @@ class TemplateArgument(ParameterBase):
             self.validate()
 
     def get_value(self):
-        """Get a scalar representation of the value. If the type of the argument
-        vaue is an input file the file's target path is returned. Otherwise, the
-        value is returned as is.
+        """Get a scalar representation of the value. If the type of the
+        argument vaue is an input file the file's target path is returned.
+        Otherwise, the value is returned as is.
 
         Returns
         -------
@@ -99,33 +97,40 @@ class TemplateArgument(ParameterBase):
         """
         if self.is_bool():
             if not isinstance(self.value, bool):
-                raise ValueError('expected bool for \'{}\''.format(self.identifier))
+                msg = "expected bool for '{}'"
+                raise ValueError(msg.format(self.identifier))
         elif self.is_float():
             if not isinstance(self.value, float) and not isinstance(self.value, int):
-                raise ValueError('expected float for \'{}\''.format(self.identifier))
+                msg = "expected float for '{}'"
+                raise ValueError(msg.format(self.identifier))
         elif self.is_int():
             if not isinstance(self.value, int):
-                raise ValueError('expected int for \'{}\''.format(self.identifier))
+                msg = "expected int for '{}'"
+                raise ValueError(msg.format(self.identifier))
         elif self.is_string():
             if not isinstance(self.value, basestring):
-                raise ValueError('expected string for \'{}\''.format(self.identifier))
+                msg = "expected string for '{}'"
+                raise ValueError(msg.format(self.identifier))
         elif self.is_file():
             # Expects a file handle
             if not isinstance(self.value, InputFile):
-                raise ValueError('expected input file for \'{}\''.format(self.identifier))
+                msg = "expected input file for '{}'"
+                raise ValueError(msg.format(self.identifier))
         elif self.is_list():
             if not isinstance(self.value, list):
-                raise ValueError('expected list for \'{}\''.format(self.identifier))
+                msg = "expected list for '{}'"
+                raise ValueError(msg.format(self.identifier))
             for record in self.value:
                 for arg in record.values():
                     arg.validate()
         elif self.is_record():
             if not isinstance(self.value, dict):
-                raise ValueError('expected dictionary for \'{}\''.format(self.identifier))
+                msg = "expected dictionary for '{}'"
+                raise ValueError(msg.format(self.identifier))
             for arg in self.value.values():
                 arg.validate()
         else:
-            raise ValueError('unknown data type \'{}\''.format(self.data_type))
+            raise ValueError("unknown data type '{}'".format(self.data_type))
 
 
 # ------------------------------------------------------------------------------
@@ -157,8 +162,8 @@ def mandatory_arguments(parameters, parent=None):
 
 
 def parse_arguments(arguments, parameters, validate=False, parent=None):
-    """Convert a dictionary of argument identifier and argument value pairs into
-    a dictionary of template argument instances.
+    """Convert a dictionary of argument identifier and argument value pairs
+    into a dictionary of template argument instances.
 
     Parameters
     ----------
@@ -183,7 +188,7 @@ def parse_arguments(arguments, parameters, validate=False, parent=None):
     for arg_id, arg_value in arguments.items():
         # Get the parameter declaration. Raise error if the parameter id is
         # unknown.
-        if not arg_id in parameters:
+        if arg_id not in parameters:
             raise ValueError('unknown argument \'{}\''.format(arg_id))
         para = parameters[arg_id]
         if isinstance(arg_value, list) and para.is_list():
@@ -217,6 +222,6 @@ def parse_arguments(arguments, parameters, validate=False, parent=None):
         )
     # Ensure that all mandatory arguments are given
     for key in mandatory_arguments(parameters, parent=parent):
-        if not key in result:
+        if key not in result:
             raise ValueError('missing value for \'{}\''.format(key))
     return result

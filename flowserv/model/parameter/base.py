@@ -23,13 +23,13 @@ AS_INPUT = '$input'
 
 
 class ParameterBase(object):
-    """Base class for template parameter and parameter argument values. The
+    """Base class for template parameters and parameter argument values. The
     base class maintains the unique parameter identifier and the information
     about the data type.
     """
     def __init__(self, identifier, data_type):
-        """Initialize the unique identifier and data type. Raises value error
-        if the given data type identifier is not valid.
+        """Initialize the unique identifier and data type. Raises an error if
+        the given data type identifier is unknown.
 
         Parameters
         ----------
@@ -42,8 +42,9 @@ class ParameterBase(object):
         ------
         flowserv.core.error.InvalidParameterError
         """
-        if not data_type in pd.DATA_TYPES:
-            raise InvalidParameterError('invalid data type \'{}\''.format(data_type))
+        if data_type not in pd.DATA_TYPES:
+            msg = "invalid data type '{}'"
+            raise InvalidParameterError(msg.format(data_type))
         self.identifier = identifier
         self.data_type = data_type
 
@@ -129,7 +130,7 @@ class TemplateParameter(ParameterBase):
         """
         super(TemplateParameter, self).__init__(
             identifier=obj[pd.LABEL_ID],
-            data_type = obj[pd.LABEL_DATATYPE]
+            data_type=obj[pd.LABEL_DATATYPE]
         )
         self.obj = obj
         self.name = obj.get(pd.LABEL_NAME, self.identifier)
@@ -144,7 +145,8 @@ class TemplateParameter(ParameterBase):
         self.children = children
 
     def add_child(self, para):
-        """Short-cut to add an element to the list of children of the parameter.
+        """Short-cut to add an element to the list of children of the
+        parameter.
 
         Parameters
         ----------
@@ -178,7 +180,7 @@ class TemplateParameter(ParameterBase):
         -------
         bool
         """
-        if not self.children is None:
+        if self.children is not None:
             return len(self.children) > 0
         return False
 
@@ -189,12 +191,12 @@ class TemplateParameter(ParameterBase):
         -------
         bool
         """
-        return not self.as_constant is None
+        return self.as_constant is not None
 
     def merge(self, para):
         """Merge the parameter with the values of a given parameter. This will
-        only affect the following parameter properties: name, description,
-        index, required, default value, values, and module.
+        only affect the following properties: name, description, index,
+        is_required, default value, values, and module.
 
         Returns a modified copy of the parameter.
 
@@ -241,7 +243,7 @@ class TemplateParameter(ParameterBase):
             val += ' (integer)'
         else:
             val += ' (string)'
-        if not self.default_value is None:
+        if self.default_value is not None:
             if self.is_bool() or self.is_float() or self.is_int():
                 val += ' [default ' + str(self.default_value) + ']'
             else:

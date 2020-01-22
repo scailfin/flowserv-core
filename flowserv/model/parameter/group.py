@@ -6,7 +6,9 @@
 # ROB is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
-"""Classes to group template parameter for display purposes."""
+"""Classes to group template parameters for display purposes."""
+
+import flowserv.core.util as util
 
 
 """Labels for serialized parameter group handles."""
