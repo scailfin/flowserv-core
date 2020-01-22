@@ -23,13 +23,11 @@ have been replaced by parameter values.
 """
 
 from flowserv.model.parameter.group import ParameterGroup
-from flowserv.model.template.postproc import PostProcessingStep
 from flowserv.model.template.schema import ResultSchema
 
 import flowserv.core.error as err
-import flowserv.core.util as util
-import flowserv.model.parameter.util as wfputil
-import flowserv.model.template.util as tmplutil
+import flowserv.model.parameter.util as putil
+import flowserv.model.template.util as tutil
 
 
 """Top-level elements of dictionary serialization for template handles."""
@@ -73,8 +71,8 @@ class WorkflowTemplate(object):
             their unique identifier.
         modules: list(flowserv.module.template.parameter.group.ParameterGroup), optional
             List of workflow modules that group template parameters
-        postproc_spec: flowserv.model.template.postproc.PostProcessingStep, optional
-            Optional list workflow post-processing steps
+        postproc_spec: dict, optional
+            Optional post-processing workflow specification
         result_schema: flowserv.model.template.schema.ResultSchema
             Schema of the result for extended templates that define benchmarks.
 
@@ -88,7 +86,7 @@ class WorkflowTemplate(object):
         # Source directory for static workflow files
         self.sourcedir = sourcedir
         # Ensure that the parameters property is not None.
-        if not parameters is None:
+        if parameters is not None:
             if isinstance(parameters, list):
                 self.parameters = dict()
                 for para in parameters:
@@ -140,7 +138,7 @@ class WorkflowTemplate(object):
         """
         # Ensure that the mandatory elements are present. At this point, only
         # the workflow specification is mandatory.
-        if not LABEL_WORKFLOW in doc:
+        if LABEL_WORKFLOW not in doc:
             msg = 'missing element \'{}\''.format(LABEL_WORKFLOW)
             raise err.InvalidTemplateError(msg)
         # -- Workflow specification -------------------------------------------
@@ -149,7 +147,7 @@ class WorkflowTemplate(object):
         # Add given parameter declarations to the parameter list. Ensure that
         # all default values are set
         if LABEL_PARAMETERS in doc:
-            parameters = wfputil.create_parameter_index(
+            parameters = putil.create_parameter_index(
                 doc[LABEL_PARAMETERS],
                 validate=validate
             )
@@ -158,14 +156,13 @@ class WorkflowTemplate(object):
         # Ensure that the workflow specification does not reference undefined
         # parameters if validate flag is True.
         if validate:
-            for key in tmplutil.get_parameter_references(workflow_spec):
-                if not key in parameters:
+            for key in tutil.get_parameter_references(workflow_spec):
+                if key not in parameters:
                     raise err.UnknownParameterError(key)
         # -- Post-processing task ---------------------------------------------
         postproc_spec = None
         if LABEL_POSTPROCESSING in doc:
-            obj = doc[LABEL_POSTPROCESSING]
-            postproc_spec = PostProcessingStep.from_dict(obj)
+            postproc_spec = doc[LABEL_POSTPROCESSING]
         # -- Parameter module information -------------------------------------
         modules = None
         if LABEL_MODULES in doc:
@@ -220,7 +217,7 @@ class WorkflowTemplate(object):
         -------
         bool
         """
-        return not self.result_schema is None
+        return self.result_schema is not None
 
     def list_parameters(self):
         """Get a sorted list of parameter declarations. Elements are sorted by
@@ -251,7 +248,7 @@ class WorkflowTemplate(object):
                 p.to_dict() for p in self.parameters.values()
             ]
         if self.postproc_spec is not None:
-            doc[LABEL_POSTPROCESSING] = self.postproc_spec.to_dict()
+            doc[LABEL_POSTPROCESSING] = self.postproc_spec
         if self.modules is not None:
             doc[LABEL_MODULES] = [m.to_dict() for m in self.modules]
         if self.result_schema is not None:
@@ -276,5 +273,5 @@ class WorkflowTemplate(object):
         """
         for para in self.parameters.values():
             if para.is_required and para.default_value is None:
-                if not para.identifier in arguments:
+                if para.identifier not in arguments:
                     raise err.MissingArgumentError(para.identifier)

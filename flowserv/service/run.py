@@ -41,7 +41,7 @@ class RunService(object):
             Benchmark engine
         submissions: flowserv.model.submission.SubmissionManager
             Manager for benchmark submissions
-        repo: flowserv.model.template.repo.benchmark.BenchmarkRepository
+        repo: flowserv.model.template.store.benchmark.BenchmarkRepository
             Repository to access registered benchmarks
         auth: flowserv.model.user.auth.Auth
             Implementation of the authorization policy for the API

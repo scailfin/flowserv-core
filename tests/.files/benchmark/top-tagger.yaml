@@ -34,9 +34,7 @@ postproc:
     commands:
         - 'python code/plot-roc.py ${in} data/evaluate/labels.pkl ${out}'
     outputs:
-        - id: 'ROC.png'
-          name: 'ROC Curves'
-          caption: 'ROC curves for all algorithms evaluated on the test sample, shown as the AUC ensemble median of  multiple  trainings. '
+        - 'ROC.png'
 modules:
     - id: 'preproc'
       name: 'Pre-Processing Step'

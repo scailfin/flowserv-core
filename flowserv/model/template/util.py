@@ -186,7 +186,7 @@ def replace_value(value, arguments, parameters):
                 return arg.value.target()
             else:
                 return arg.value
-        elif not para.default_value is None:
+        elif para.default_value is not None:
             # Return the parameter default value
             return para.default_value
         else:

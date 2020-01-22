@@ -16,7 +16,7 @@ import pytest
 
 from passlib.hash import pbkdf2_sha256
 
-from flowserv.model.template.repo.benchmark import BenchmarkRepository
+from flowserv.model.template.store.benchmark import BenchmarkRepository
 from flowserv.model.template.store import TemplateRepository
 from flowserv.model.template.schema import SortColumn
 from flowserv.model.workflow.resource import FSObject

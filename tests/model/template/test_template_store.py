@@ -118,7 +118,7 @@ def test_get_template(tmpdir):
     """Test adding and retrieving templates."""
     repo = TemplateRepository(basedir=str(tmpdir))
     t_id, template = repo.add_template(sourcedir=TEMPLATE_DIR)
-    assert  template.sourcedir is not None
+    assert template.sourcedir is not None
     assert template.has_schema()
     f_spec = template.workflow_spec['inputs']['files']
     assert f_spec == ['$[[code]]', '$[[names]]']

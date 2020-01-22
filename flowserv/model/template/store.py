@@ -76,10 +76,7 @@ class TemplateRepository(object):
         # Initialize the template identifier function and the max. number of
         # attempst that are made to generate a unique identifier.
         self.idfunc = idfunc if idfunc is not None else DEFAULT_IDFUNC
-        if max_attempts is not None:
-            self.max_attempts = max_attempts
-        else:
-            self.max_attempts = DEFAULT_ATTEMPTS
+        self.max_attempts = max_attempts if max_attempts is not None else DEFAULT_ATTEMPTS
         # Initialize the list of default template specification file names
         if default_filenames is not None:
             self.default_filenames = default_filenames

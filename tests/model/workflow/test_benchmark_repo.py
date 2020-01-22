@@ -14,7 +14,7 @@ import pytest
 import sqlite3
 
 from flowserv.model.template.benchmark import BenchmarkHandle
-from flowserv.model.template.repo.benchmark import BenchmarkRepository
+from flowserv.model.template.store.benchmark import BenchmarkRepository
 from flowserv.model.template.store import TemplateRepository
 from flowserv.model.template.schema import ResultSchema
 from flowserv.tests.repo import DictRepo

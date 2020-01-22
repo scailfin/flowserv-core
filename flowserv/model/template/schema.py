@@ -71,8 +71,9 @@ class ResultColumn(object):
         """
         # Raise error if the data type value is not in the list of supported
         # data types
-        if not data_type in DATA_TYPES:
-            raise err.InvalidTemplateError('unknown data type \'{}\''.format(data_type))
+        if data_type not in DATA_TYPES:
+            msg = "unknown data type '{}'"
+            raise err.InvalidTemplateError(msg.format(data_type))
         self.identifier = identifier
         self.name = name
         self.data_type = data_type
@@ -174,8 +175,8 @@ class ResultSchema(object):
             the leader board.
         """
         self.result_file = result_file
-        self.columns = columns if not columns is None else list()
-        self.order_by = order_by if not order_by is None else list()
+        self.columns = columns if columns is not None else list()
+        self.order_by = order_by if order_by is not None else list()
 
     @staticmethod
     def from_dict(doc):
@@ -210,7 +211,7 @@ class ResultSchema(object):
         file_id = doc[SCHEMA_RESULTFILE]
         # Get column list. Ensure that all column names and identifier are
         # unique
-        columns=[ResultColumn.from_dict(c) for c in doc[SCHEMA_COLUMNS]]
+        columns = [ResultColumn.from_dict(c) for c in doc[SCHEMA_COLUMNS]]
         ids = set()
         names = set()
         for col in columns:
@@ -228,7 +229,7 @@ class ResultSchema(object):
             # Ensure that the column identifier reference columns in the schema
             for c in doc[SCHEMA_ORDERBY]:
                 col = SortColumn.from_dict(c)
-                if not col.identifier in ids:
+                if col.identifier not in ids:
                     msg = 'unknown column \'{}\''
                     raise err.InvalidTemplateError(msg.format(col.identifier))
                 order_by.append(col)
@@ -280,7 +281,7 @@ class ResultSchema(object):
         dict
         """
         # Use the default prefix if none is given
-        prefix = prefix if not prefix is None else 'col'
+        prefix = prefix if prefix is not None else 'col'
         # Mapping of original column names to their query name.
         mapping = dict()
         for col in self.columns:
@@ -320,7 +321,7 @@ class SortColumn(object):
             otherwise
         """
         self.identifier = identifier
-        self.sort_desc = sort_desc if not sort_desc is None else True
+        self.sort_desc = sort_desc if sort_desc is not None else True
 
     @staticmethod
     def from_dict(doc):

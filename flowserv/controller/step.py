@@ -11,8 +11,6 @@ environment associated with it. The step contains a list of command line
 statements that are executed in the specified environment.
 """
 
-import flowserv.core.error as err
-
 
 """Labels for object serialization."""
 LABEL_COMMANDS = 'commands'
@@ -77,3 +75,7 @@ class Step(object):
         -------
         dict
         """
+        return {
+            LABEL_ENV: self.env,
+            LABEL_COMMANDS: self.commands
+        }
