@@ -97,7 +97,7 @@ def test_pending_state():
     assert state.created_at == created_at
     running = state.start()
     assert state.created_at == running.created_at
-    assert not running.started_at is None
+    assert running.started_at is not None
     # Cancel pending run
     canceled = state.cancel()
     assert canceled.is_canceled()

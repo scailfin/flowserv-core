@@ -46,7 +46,7 @@ def init_api(basedir, open_access=False):
         con=con,
         backend=controller
     )
-    benchmark_repo = BenchmarkRepository(
+    benchmark_repo = WorkflowRepository(
         con=con,
         template_repo=TemplateRepository(basedir=basedir),
         resource_basedir=os.path.join(basedir, 'resources')

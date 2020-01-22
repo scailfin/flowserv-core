@@ -33,7 +33,7 @@ class BenchmarkSerializer(object):
 
         Parameters
         ----------
-        benchmark: flowserv.model.template.benchmark.BenchmarkHandle
+        benchmark: flowserv.model.template.base.WorkflowHandle
             Benchmark handle
 
         Returns
@@ -67,7 +67,7 @@ class BenchmarkSerializer(object):
 
         Parameters
         ----------
-        benchmark: flowserv.model.template.benchmark.BenchmarkHandle
+        benchmark: flowserv.model.template.base.WorkflowHandle
             Benchmark handle
 
         Returns
@@ -95,7 +95,7 @@ class BenchmarkSerializer(object):
 
         Parameters
         ----------
-        benchmark: flowserv.model.template.benchmark.BenchmarkHandle
+        benchmark: flowserv.model.template.base.WorkflowHandle
             Benchmark handle
         leaderboard: flowserv.model.ranking.ResultRanking
             List of entries in the benchmark leaderboard
@@ -167,7 +167,7 @@ class BenchmarkSerializer(object):
 
         Parameters
         ----------
-        benchmarks: list(flowserv.model.template.benchmark.BenchmarkHandle)
+        benchmarks: list(flowserv.model.template.base.WorkflowHandle)
             List of benchmark descriptors
 
         Returns

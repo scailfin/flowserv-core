@@ -46,7 +46,7 @@ class WorkflowState(object):
             Type identifier
         """
         self.type_id = type_id
-        self.created_at = created_at if not created_at is None else datetime.utcnow()
+        self.created_at = created_at if created_at is not None else datetime.utcnow()
 
     def __str__(self):
         """Get printable representation of the state type.
@@ -152,9 +152,9 @@ class StateCanceled(WorkflowState):
             type_id=STATE_CANCELED,
             created_at=created_at
         )
-        self.started_at = started_at if not started_at is None else created_at
-        self.stopped_at = stopped_at if not stopped_at is None else datetime.utcnow()
-        self.messages = messages if not messages is None else ['canceled at user request']
+        self.started_at = started_at if started_at is not None else created_at
+        self.stopped_at = stopped_at if stopped_at is not None else datetime.utcnow()
+        self.messages = messages if messages is not None else ['canceled at user request']
 
 
 class StateError(WorkflowState):
@@ -183,9 +183,9 @@ class StateError(WorkflowState):
             type_id=STATE_ERROR,
             created_at=created_at
         )
-        self.started_at = started_at if not started_at is None else created_at
-        self.stopped_at = stopped_at if not stopped_at is None else datetime.utcnow()
-        self.messages = messages if not messages is None else list()
+        self.started_at = started_at if started_at is not None else created_at
+        self.stopped_at = stopped_at if stopped_at is not None else datetime.utcnow()
+        self.messages = messages if messages is not None else list()
 
 
 class StatePending(WorkflowState):
@@ -284,7 +284,7 @@ class StateRunning(WorkflowState):
             type_id=STATE_RUNNING,
             created_at=created_at
         )
-        self.started_at = started_at if not started_at is None else datetime.utcnow()
+        self.started_at = started_at if started_at is not None else datetime.utcnow()
 
     def cancel(self, messages=None):
         """Get instance of class cancel state for a running wokflow.
@@ -376,7 +376,7 @@ class StateSuccess(WorkflowState):
             created_at=created_at
         )
         self.started_at = started_at
-        self.finished_at = finished_at if not finished_at is None else datetime.utcnow()
+        self.finished_at = finished_at if finished_at is not None else datetime.utcnow()
         self.resources = ResourceSet(resources)
 
     def get_resource(self, identifier=None, name=None):

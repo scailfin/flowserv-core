@@ -11,12 +11,7 @@ includes, for example, files that are created by individual workflow runs or
 by workflow post-processing steps.
 """
 
-import os
-import shutil
-
 from flowserv.core.files import FileHandle
-
-import flowserv.core.util as util
 
 
 """Labels for handle serializations."""
@@ -127,6 +122,7 @@ class FSObject(FileHandle):
             name=name,
             filename=filename
         )
+
     @staticmethod
     def from_dict(doc):
         """Get object instance from serialization.

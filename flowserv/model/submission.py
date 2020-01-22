@@ -294,13 +294,13 @@ class SubmissionManager(object):
         Raises
         ------
         flowserv.core.error.ConstraintViolationError
-        flowserv.core.error.UnknownBenchmarkError
+        flowserv.core.error.UnknownWorkflowError
         flowserv.core.error.UnknownUserError
         """
         # Ensure that the benchmark exists
         sql = 'SELECT * FROM benchmark WHERE benchmark_id = ?'
         if self.con.execute(sql, (benchmark_id,)).fetchone() is None:
-            raise err.UnknownBenchmarkError(benchmark_id)
+            raise err.UnknownWorkflowError(benchmark_id)
         # Ensure that the given name is valid and unique for the benchmark
         sql = 'SELECT name FROM benchmark_submission '
         sql += 'WHERE benchmark_id = ? AND name = ?'

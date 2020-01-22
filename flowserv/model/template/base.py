@@ -139,7 +139,7 @@ class WorkflowTemplate(object):
         # Ensure that the mandatory elements are present. At this point, only
         # the workflow specification is mandatory.
         if LABEL_WORKFLOW not in doc:
-            msg = 'missing element \'{}\''.format(LABEL_WORKFLOW)
+            msg = "missing element '{}'".format(LABEL_WORKFLOW)
             raise err.InvalidTemplateError(msg)
         # -- Workflow specification -------------------------------------------
         workflow_spec = doc[LABEL_WORKFLOW]

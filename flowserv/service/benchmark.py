@@ -53,7 +53,7 @@ class BenchmarkService(object):
 
         Raises
         ------
-        flowserv.core.error.UnknownBenchmarkError
+        flowserv.core.error.UnknownWorkflowError
         """
         benchmark = self.repo.get_benchmark(benchmark_id)
         return self.serialize.benchmark_handle(benchmark)
@@ -76,7 +76,7 @@ class BenchmarkService(object):
 
         Raises
         ------
-        flowserv.core.error.UnknownBenchmarkError
+        flowserv.core.error.UnknownWorkflowError
         flowserv.core.error.UnknownResourceError
         """
         return self.repo.get_benchmark_archive(
@@ -104,7 +104,7 @@ class BenchmarkService(object):
 
         Raises
         ------
-        flowserv.core.error.UnknownBenchmarkError
+        flowserv.core.error.UnknownWorkflowError
         flowserv.core.error.UnknownResourceError
         """
         return self.repo.get_benchmark_resource(
@@ -132,7 +132,7 @@ class BenchmarkService(object):
 
         Raises
         ------
-        flowserv.core.error.UnknownBenchmarkError
+        flowserv.core.error.UnknownWorkflowError
         """
         # Get list with run results. This will raise an unknown benchmark error
         # if the given identifier does not reference an existing benchmark.

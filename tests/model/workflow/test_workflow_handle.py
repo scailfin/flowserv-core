@@ -11,10 +11,8 @@
 
 from flowserv.model.parameter.group import ParameterGroup
 from flowserv.model.template.base import WorkflowTemplate
-from flowserv.model.template.postproc import PostProcessingStep
 from flowserv.model.template.schema import ResultSchema
 from flowserv.model.workflow.base import WorkflowDescriptor, WorkflowHandle
-from flowserv.model.workflow.resource import WorkflowResource
 from flowserv.tests.parameter import StringParameter
 
 
@@ -42,7 +40,7 @@ def test_workflow_descriptor():
     assert wf.description is not None
     assert wf.has_description()
     assert wf.get_description() == 'Some description'
-    assert  wf.has_instructions()
+    assert wf.has_instructions()
     assert wf.instructions is not None
     assert wf.get_instructions() == 'Some instructions'
 
@@ -71,9 +69,7 @@ def test_workflow_handle():
         instructions='Some instructions',
         template=WorkflowTemplate(
             workflow_spec={'a': 1},
-            postproc_spec=[
-                PostProcessingStep(env='bash', commands=['echo $HELLO_WORLD'])
-            ],
+            postproc_spec={'env': 'bash', 'commands': ['echo $HELLO_WORLD']},
             parameters=[
                 StringParameter('para1'),
                 StringParameter('para2')
@@ -92,8 +88,7 @@ def test_workflow_handle():
     # Get unmodified template
     template = wf.get_template()
     assert template.workflow_spec == {'a': 1}
-    assert len(template.postproc_spec) == 1
-    assert template.postproc_spec[0].env == 'bash'
+    assert template.postproc_spec == {'env': 'bash', 'commands': ['echo $HELLO_WORLD']}
     assert len(template.parameters) == 2
     assert len(template.modules) == 1
     assert template.modules[0].name == 'M1'
@@ -102,8 +97,7 @@ def test_workflow_handle():
     # Get template with modified workflow specification
     template = wf.get_template(workflow_spec={'b': 2})
     assert template.workflow_spec == {'b': 2}
-    assert len(template.postproc_spec) == 1
-    assert template.postproc_spec[0].env == 'bash'
+    assert template.postproc_spec == {'env': 'bash', 'commands': ['echo $HELLO_WORLD']}
     assert len(template.parameters) == 2
     assert len(template.modules) == 1
     assert template.modules[0].name == 'M1'
@@ -112,8 +106,7 @@ def test_workflow_handle():
     # Get template with modified parameter list
     template = wf.get_template(parameters=[StringParameter('para1')])
     assert template.workflow_spec == {'a': 1}
-    assert len(template.postproc_spec) == 1
-    assert template.postproc_spec[0].env == 'bash'
+    assert template.postproc_spec == {'env': 'bash', 'commands': ['echo $HELLO_WORLD']}
     assert len(template.parameters) == 1
     assert len(template.modules) == 1
     assert template.modules[0].name == 'M1'
@@ -129,8 +122,7 @@ def test_workflow_handle():
         ]
     )
     assert template.workflow_spec == {'c': 3}
-    assert len(template.postproc_spec) == 1
-    assert template.postproc_spec[0].env == 'bash'
+    assert template.postproc_spec == {'env': 'bash', 'commands': ['echo $HELLO_WORLD']}
     assert len(template.parameters) == 3
     assert len(template.modules) == 1
     assert template.modules[0].name == 'M1'

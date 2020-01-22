@@ -53,6 +53,22 @@ When connecting to a PostgreSQL database server the database connection informat
 - **PG_ROB_PORT**: Connection port of database on host (default ``5432``)
 
 
+The following steps are an example for creating an initial empty database for ROB in PostgreSQL:
+
+.. code-block:: bash
+    # Login as user postgres and connect to the (local) database server
+    sudo su - postgres
+    psql -U postgres
+
+
+.. code-block:: sql
+    -- Create user rob with password rob
+    CREATE USER rob;
+    ALTER USER ds3 WITH PASSWORD 'rob';
+    -- Create an empty database with owner rob
+    CREATE DATABASE rob WITH OWNER rob;
+
+
 ---------------
 Workflow Engine
 ---------------

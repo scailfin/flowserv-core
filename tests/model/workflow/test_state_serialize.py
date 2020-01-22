@@ -77,6 +77,7 @@ def test_pending_state():
     assert s.is_pending()
     validate_date(s.created_at, util.to_datetime(CREATED_AT))
 
+
 def test_running_state():
     """Test serialization/deserialization of running states."""
     s = state.StateRunning(

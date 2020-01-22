@@ -301,7 +301,7 @@ class UnknownObjectError(ROBError):
         )
 
 
-class UnknownBenchmarkError(UnknownObjectError):
+class UnknownWorkflowError(UnknownObjectError):
     """Exception indicating that a given benchmark identifier is unknown."""
     def __init__(self, benchmark_id):
         """Initialize error message.
@@ -311,7 +311,7 @@ class UnknownBenchmarkError(UnknownObjectError):
         benchmark_id : string
             Unique benchmark identifier
         """
-        super(UnknownBenchmarkError, self).__init__(
+        super(UnknownWorkflowError, self).__init__(
             obj_id=benchmark_id,
             type_name='benchmark'
         )

@@ -6,41 +6,43 @@
 -- ROB is free software; you can redistribute it and/or modify it under the
 -- terms of the MIT License; see LICENSE file for more details.
 
--- -----------------------------------------------------------------------------
+-- ----------------------------------------------------------------------------
 -- This file defines the database schema for the benchmark API.
 --
 -- All identifiers are expected to be created using the get_unique_identifier
 -- method which returns string of 32 characters.
--- -----------------------------------------------------------------------------
+-- ----------------------------------------------------------------------------
 
 --
 -- Drop all tables (if they exist)
 --
 DROP TABLE IF EXISTS run_result_file;
 DROP TABLE IF EXISTS run_error_log;
-DROP TABLE IF EXISTS benchmark_run;
-DROP TABLE IF EXISTS submission_file;
-DROP TABLE IF EXISTS submission_member;
-DROP TABLE IF EXISTS benchmark_submission;
-DROP TABLE IF EXISTS benchmark_resources;
-DROP TABLE IF EXISTS benchmark;
+DROP TABLE IF EXISTS workflow_run;
+DROP TABLE IF EXISTS group_upload_file;
+DROP TABLE IF EXISTS group_member;
+DROP TABLE IF EXISTS workflow_group;
+DROP TABLE IF EXISTS postproc_resource;
+DROP TABLE IF EXISTS workflow_postproc;
+DROP TABLE IF EXISTS workflow_template;
 DROP TABLE IF EXISTS password_request;
 DROP TABLE IF EXISTS user_key;
 DROP TABLE IF EXISTS api_user;
 
--- Authentication --------------------------------------------------------------
+-- Authentication -------------------------------------------------------------
 --
 -- The repository schema maintains only the basic information about API users.
 -- Additional information (e.g., email addresses and full names) are expected
 -- to be maintained by a different part of the application.
--- -----------------------------------------------------------------------------
+-- ----------------------------------------------------------------------------
 
 --
 -- Each API user has a unique internal identifier and a password. If the active
 -- flag is 1 the user is active, otherwise the user has registered but not been
 -- activated or the user been deleted. In either case an inactive user is not
 -- permitted to login). Each user has a unique name. This name is the
--- identifier that is visible to the user and that is used for display purposes.
+-- identifier that is visible to the user and that is used for display
+-- purposes.
 --
 CREATE TABLE api_user(
     user_id VARCHAR(32) NOT NULL,
@@ -73,79 +75,109 @@ CREATE TABLE password_request(
     UNIQUE (request_id)
 );
 
--- Benchmarks ------------------------------------------------------------------
+-- Workflow Template ----------------------------------------------------------
 --
--- Individual users (or teams) participate in a benchmark through submissions.
--- Each submission may be assicuated with multiple runs, representing different
--- configurations of the submission.
--- -----------------------------------------------------------------------------
+-- List of executable workflow templates. With each template the results of an
+-- optional post-processing step over a set of workflow run results are
+-- maintained.
 
 --
--- Each benchmark has a unique name, a short descriptor and a set of
--- instructions. We also store the optional post-processing task description
--- and the result schema information from the workflow template.
+-- Each workflow has a unique name, a short descriptor and a set of
+-- instructions. With each workflow an optional set of post-processing results
+-- can be associated. The currnt set of results is referenced by the respective
+-- postproc_id attribute.
 --
-CREATE TABLE benchmark(
-    benchmark_id VARCHAR(32) NOT NULL,
+CREATE TABLE workflow_template(
+    workflow_id VARCHAR(32) NOT NULL,
     name VARCHAR(512) NOT NULL,
     description TEXT,
     instructions TEXT,
-    postproc_task TEXT,
-    result_schema TEXT,
-    result_id VARCHAR(32),
-    result_key TEXT,
-    resources_dir VARCHAR(1024),
-    static_dir VARCHAR(1024),
-    PRIMARY KEY(benchmark_id),
+    postproc_id VARCHAR(32),
+    PRIMARY KEY(workflow_id),
     UNIQUE(name)
 );
 
 --
--- Users participate in a benchmark through submission. Each submission has a
--- name that uniquely identifies it among all submissions for the benchmark.
--- The submission is created by a user (the owner) who can add other users as
--- members to the submission.
+-- Workflow post-processing is executed for sets of workflow runs. The set of
+-- run identifier form a unique key for the post-processing results. The
+-- result key is maintained in this table.
 --
-CREATE TABLE benchmark_submission(
-    submission_id VARCHAR(32) NOT NULL,
-    name VARCHAR(512) NOT NULL,
-    benchmark_id VARCHAR(32) NOT NULL REFERENCES benchmark (benchmark_id),
-    owner_id VARCHAR(32) NOT NULL REFERENCES api_user (user_id),
-    parameters TEXT NOT NULL,
-    workflow_spec TEXT NOT NULL,
-    PRIMARY KEY(submission_id),
-    UNIQUE(benchmark_id, name)
+CREATE TABLE workflow_postproc(
+    postproc_id VARCHAR(32) NOT NULL,
+    workflow_id VARCHAR(32) NOT NULL REFERENCES workflow_template (workflow_id),
+    run_id VARCHAR(32) NOT NULL,
+    PRIMARY KEY(postproc_id, workflow_id, run_id)
 );
 
 --
--- Each file that is uploaded for a submission is assigned a unique identifier
+-- This table maintains a list of resources that were generated by an execution
+-- of the optional post-processing workflow for a registered workflow template.
 --
-CREATE TABLE submission_file(
+CREATE TABLE postproc_resource(
+    postproc_id VARCHAR(32) NOT NULL,
+    resource_id VARCHAR(32) NOT NULL,
+    resource_name TEXT NOT NULL,
+    PRIMARY KEY(postproc_id, resource_id),
+    UNIQUE(postproc_id, resource_name)
+);
+
+
+-- Workflow Groups ------------------------------------------------------------
+--
+-- Groups bring together users and workflow runs. Groups are primarily intended
+-- for benchmarks. In the case of a benchmark each group can be viewes as an
+-- entry (or submission) to the benchmark.
+-- Each group has a name that uniquely identifies it among all groups for a
+-- workflow template. The group is created by a user (the owner) who can invite
+-- other users as group members.
+-- Each group maintains a list of uploaded files that can be used as inputs to
+-- workflow runs. The different workflow runs in a group represent different
+-- configurations of the workflow. When the froup is defined, variations to the
+-- original workflow may be made to the workflow specification and the template
+-- parameter declarations.
+--
+CREATE TABLE workflow_group(
+    group_id VARCHAR(32) NOT NULL,
+    name VARCHAR(512) NOT NULL,
+    workflow_id VARCHAR(32) NOT NULL REFERENCES workflow_template (workflow_id),
+    owner_id VARCHAR(32) NOT NULL REFERENCES api_user (user_id),
+    parameters TEXT NOT NULL,
+    workflow_spec TEXT NOT NULL,
+    PRIMARY KEY(group_id),
+    UNIQUE(workflow_id, name)
+);
+
+--
+-- Uploaded files are assigned to individual workflow groups. Each file is
+-- assigned a unique identifier.
+--
+CREATE TABLE group_upload_file(
     file_id VARCHAR(32) NOT NULL,
-    submission_id VARCHAR(32) NOT NULL REFERENCES benchmark_submission (submission_id),
+    group_id VARCHAR(32) NOT NULL REFERENCES workflow_group (group_id),
     name VARCHAR(512) NOT NULL,
     file_type VARCHAR(255),
-    mimetype VARCHAR(255),
     PRIMARY KEY(file_id)
 );
 
 --
--- Maintain information about submissions that a user participates in. There is
--- a n:m relationship between users and submissions.
+-- Maintain information about user that are members of a workflow grouping.
+-- Each user can be a member of multiple groups, i.e., there is an n:m
+-- relationship between users and workflow groups.
 --
-CREATE TABLE submission_member(
-    submission_id VARCHAR(32) NOT NULL REFERENCES benchmark_submission (submission_id),
+CREATE TABLE group_member(
+    group_id VARCHAR(32) NOT NULL REFERENCES workflow_group (group_id),
     user_id VARCHAR(32) NOT NULL REFERENCES api_user (user_id),
-    PRIMARY KEY(submission_id, user_id)
+    PRIMARY KEY(group_id, user_id)
 );
 
+-- Workflow run ---------------------------------------------------------------
 --
--- Benchmark runs maintain the run status, the provided argument values for
--- workflow parameters, and timestamps
+-- Workflow runs maintain the run status, the provided argument values for
+-- workflow parameters, and timestamps.
 --
-CREATE TABLE benchmark_run(
+CREATE TABLE workflow_run(
     run_id VARCHAR(32) NOT NULL,
-    submission_id VARCHAR(32) NOT NULL REFERENCES benchmark_submission (submission_id),
+    group_id VARCHAR(32) NOT NULL REFERENCES workflow_group (group_id),
     state VARCHAR(8) NOT NULL,
     created_at CHAR(26) NOT NULL,
     started_at CHAR(26),
@@ -158,20 +190,19 @@ CREATE TABLE benchmark_run(
 -- Log for error messages for runs that are in error state.
 --
 CREATE TABLE run_error_log(
-    run_id VARCHAR(32) NOT NULL REFERENCES benchmark_run (run_id),
+    run_id VARCHAR(32) NOT NULL REFERENCES workflow_run (run_id),
     message TEXT NOT NULL,
     pos INTEGER NOT NULL,
     PRIMARY KEY(run_id, pos)
 );
 
 --
--- File resources that are created by successful benchmark runs.
+-- File resources that are created by successful workflow runs.
 --
 CREATE TABLE run_result_file(
-    run_id VARCHAR(32) NOT NULL REFERENCES benchmark_run (run_id),
-    file_id VARCHAR(32) NOT NULL,
+    run_id VARCHAR(32) NOT NULL REFERENCES workflow_run (run_id),
+    resource_id VARCHAR(32) NOT NULL,
     resource_name TEXT NOT NULL,
-    file_path TEXT NOT NULL,
-    mimetype VARCHAR(255),
-    PRIMARY KEY(run_id, file_id)
+    PRIMARY KEY(run_id, resource_id),
+    UNIQUE(run_id, resource_name)
 );

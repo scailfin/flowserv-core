@@ -167,7 +167,7 @@ class TestSubmissionManager(object):
         assert not s.has_member(USER_2)
         # Error conditions
         # - Unknown benchmark
-        with pytest.raises(err.UnknownBenchmarkError):
+        with pytest.raises(err.UnknownWorkflowError):
             manager.create_submission(
                 benchmark_id='UNK',
                 name='C',

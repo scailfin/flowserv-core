@@ -78,7 +78,7 @@ class TestBenchmarkResultRanking(object):
             commit_changes=False
         )
         con.commit()
-        repo = BenchmarkRepository(
+        repo = WorkflowRepository(
             con=con,
             template_repo=TemplateRepository(basedir=basedir),
             resource_basedir=os.path.join(basedir, 'resources')

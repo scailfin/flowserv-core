@@ -103,7 +103,7 @@ class SubmissionService(object):
         Raises
         ------
         flowserv.core.error.ConstraintViolationError
-        flowserv.core.error.UnknownBenchmarkError
+        flowserv.core.error.UnknownWorkflowError
         """
         # Get the template for the given benchmark. This will raise an
         # exception if the benchmark is unknown.
@@ -220,11 +220,11 @@ class SubmissionService(object):
 
         Returns
         -------
-        flowserv.model.template.benchmark.BenchmarkHandle
+        flowserv.model.template.base.WorkflowHandle
 
         Raises
         ------
-        flowserv.core.error.UnknownBenchmarkError
+        flowserv.core.error.UnknownWorkflowError
         """
         return self.repo.get_benchmark(benchmark_id)
 
