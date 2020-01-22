@@ -142,9 +142,9 @@ class DefaultAuthPolicy(Auth):
         """
         if submission_id is None and run_id is None:
             raise ValueError('no identifier given')
-        elif not submission_id is None and not run_id is None:
+        elif submission_id is not None and run_id is not None:
             raise ValueError('two identifier given')
-        elif not submission_id is None:
+        elif submission_id is not None:
             sql = 'SELECT submission_id FROM submission_member '
             sql += 'WHERE submission_id = ? AND user_id = ?'
             params = (submission_id, user.identifier)
@@ -195,6 +195,6 @@ class OpenAccessAuth(Auth):
         """
         if submission_id is None and run_id is None:
             raise ValueError('no identifier given')
-        elif not submission_id is None and not run_id is None:
+        elif submission_id is not None and run_id is not None:
             raise ValueError('two identifier given')
         return True

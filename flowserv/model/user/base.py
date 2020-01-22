@@ -57,7 +57,7 @@ class UserHandle(object):
         -------
         bool
         """
-        return not self.api_key is None
+        return self.api_key is not None
 
 
 class UserManager(object):
@@ -79,7 +79,7 @@ class UserManager(object):
             after login
         """
         self.con = con
-        if not login_timeout is None:
+        if login_timeout is not None:
             self.login_timeout = login_timeout
         else:
             # Get value from the respective environment variable
@@ -132,7 +132,7 @@ class UserManager(object):
         # Construct search query based on whether the query argument is given
         # or not
         sql = 'SELECT user_id, name FROM api_user WHERE active = 1'
-        if not query is None:
+        if query is not None:
             sql += ' AND name LIKE ?'
             para = ('{}%'.format(query),)
         else:
@@ -185,7 +185,7 @@ class UserManager(object):
         # Check if a valid access token is currently associated with the user.
         sql = 'SELECT api_key, expires FROM user_key WHERE user_id = ?'
         rs = self.con.execute(sql, (user_id,)).fetchone()
-        if not rs is None:
+        if rs is not None:
             api_key = rs['api_key']
             expires = dateutil.parser.parse(rs['expires'])
             if expires >= dt.datetime.now():
@@ -355,7 +355,7 @@ class UserManager(object):
         # Invalidate all current API keys for the user after password is updated
         sql = 'DELETE FROM user_key WHERE user_id = ?'
         self.con.execute(sql, (user_id,))
-         # Remove the request
+        # Remove the request
         sql = 'DELETE FROM password_request WHERE request_id = ?'
         self.con.execute(sql, (request_id,))
         self.con.commit()
