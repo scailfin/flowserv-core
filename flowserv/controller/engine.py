@@ -12,7 +12,7 @@ given workflow controller implementation.
 """
 
 from flowserv.core.files import InputFile
-from flowserv.model.workflow.run import RunHandle
+from flowserv.model.run.base import RunHandle
 from flowserv.model.template.schema import ResultSchema
 from flowserv.model.workflow.state import StatePending
 
@@ -55,7 +55,7 @@ class BenchmarkEngine(object):
 
         Returns
         -------
-        flowserv.model.workflow.run.RunHandle
+        flowserv.model.run.base.RunHandle
 
         Raises
         ------
@@ -100,7 +100,7 @@ class BenchmarkEngine(object):
 
         Returns
         -------
-        flowserv.model.workflow.run.RunHandle
+        flowserv.model.run.base.RunHandle
 
         Raises
         ------
@@ -159,7 +159,7 @@ class BenchmarkEngine(object):
 
         Returns
         -------
-        flowserv.model.workflow.run.RunHandle
+        flowserv.model.run.base.RunHandle
 
         Raises
         ------
@@ -187,7 +187,7 @@ class BenchmarkEngine(object):
 
         Returns
         -------
-        list(flowserv.model.workflow.run.RunHandle)
+        list(flowserv.model.run.base.RunHandle)
         """
         # Fetch list of run identifier for the submission from the database.
         # Each run is then loaded separately to ensure that he result has
@@ -213,7 +213,7 @@ class BenchmarkEngine(object):
 
         Returns
         -------
-        flowserv.model.workflow.run.RunHandle
+        flowserv.model.run.base.RunHandle
 
         Raises
         ------

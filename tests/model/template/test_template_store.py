@@ -12,7 +12,7 @@ import git
 import os
 import pytest
 
-from flowserv.model.template.store import TemplateRepository
+from flowserv.model.template.repo import TemplateRepository
 
 import flowserv.core.error as err
 

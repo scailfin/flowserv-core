@@ -13,7 +13,7 @@ import pytest
 import shutil
 
 from flowserv.core.files import FileHandle
-from flowserv.model.template.store import TemplateRepository
+from flowserv.model.template.repo import TemplateRepository
 from flowserv.model.parameter.value import TemplateArgument
 
 import flowserv.core.error as err

@@ -11,7 +11,7 @@
 import os
 import pytest
 
-from flowserv.model.group.store import WorkflowGroupManager
+from flowserv.model.group.manager import WorkflowGroupManager
 from flowserv.model.workflow.fs import WorkflowFileSystem
 
 import flowserv.core.error as err

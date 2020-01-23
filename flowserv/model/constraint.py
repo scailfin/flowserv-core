@@ -49,7 +49,7 @@ def validate_name(name, con=None, sql=None, args=None):
     # Validate uniqueness if a database connection and SQL statement are given
     if con is None or sql is None:
         return
-    if not args is None:
+    if args is not None:
         query_args = args
     else:
         query_args = (name,)

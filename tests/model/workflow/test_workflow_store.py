@@ -14,8 +14,8 @@ in the repository.
 import os
 import pytest
 
-from flowserv.model.template.store import TemplateRepository
-from flowserv.model.workflow.store import WorkflowRepository
+from flowserv.model.template.repo import TemplateRepository
+from flowserv.model.workflow.repo import WorkflowRepository
 
 import flowserv.core.error as err
 import flowserv.tests.db as db
@@ -142,7 +142,7 @@ def test_delete_workflow(tmpdir):
     # Ensure that the tample and workflow folder exists for wf1 prior to
     # deletion and that both folders are deleted correctly
     templatedir = os.path.join(repo.template_repo.basedir, wf1.identifier)
-    workflowdir = repo.workflow_basedir(wf1.identifier)
+    workflowdir = repo.fs.workflow_basedir(wf1.identifier)
     assert os.path.isdir(templatedir)
     assert os.path.isdir(workflowdir)
     repo.delete_workflow(wf1.identifier)

@@ -34,7 +34,7 @@ class SubmissionService(object):
             Manager for benchmark submissions
         auth: flowserv.model.user.auth.Auth
             Implementation of the authorization policy for the API
-        repo: flowserv.model.template.store.benchmark.BenchmarkRepository
+        repo: flowserv.model.template.repo.benchmark.BenchmarkRepository
             Repository to access registered benchmarks
         urls: flowserv.view.route.UrlFactory
             Factory for API resource Urls

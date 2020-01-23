@@ -31,7 +31,7 @@ class RunSerializer(object):
 
         Parameters
         ----------
-        run: flowserv.model.workflow.run.RunHandle
+        run: flowserv.model.run.base.RunHandle
             Submission handle
 
         Returns
@@ -89,7 +89,7 @@ class RunSerializer(object):
 
         Parameters
         ----------
-        run: flowserv.model.workflow.run.RunHandle
+        run: flowserv.model.run.base.RunHandle
             Submission handle
         submission: flowserv.model.submission.SubmissionHandle
             Submission handle
@@ -108,7 +108,7 @@ class RunSerializer(object):
 
         Parameters
         ----------
-        runs: list(flowserv.model.workflow.run.RunHandle)
+        runs: list(flowserv.model.run.base.RunHandle)
             List of run handles
         submission_id: string
             Unique submission identifier

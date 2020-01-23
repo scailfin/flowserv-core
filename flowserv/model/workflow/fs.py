@@ -78,6 +78,26 @@ class WorkflowFileSystem(object):
         groupdir = self.workflow_groupdir(workflow_id, group_id)
         return os.path.join(groupdir, 'files')
 
+    def run_basedir(self, workflow_id, group_id, run_id):
+        """Get path to the base directory for all files that are maintained for
+        workflow runs.
+
+        Parameters
+        ----------
+        workflow_id: string
+            Unique workflow identifier
+        group_id: string
+            Unique workflow group identifier
+        run_id: string
+            Unique run identifier
+
+        Returns
+        -------
+        string
+        """
+        groupdir = self.workflow_groupdir(workflow_id, group_id)
+        return os.path.join(groupdir, 'runs', run_id)
+
     def workflow_basedir(self, workflow_id):
         """Get base directory containing associated files for the workflow with
         the given identifier.

@@ -16,8 +16,8 @@ from flowserv.service.submission import SubmissionService
 from flowserv.service.user import UserService
 from flowserv.model.user.auth import DefaultAuthPolicy, OpenAccessAuth
 from flowserv.model.submission import SubmissionManager
-from flowserv.model.template.store.benchmark import BenchmarkRepository
-from flowserv.model.template.store import TemplateRepository
+from flowserv.model.template.repo.benchmark import BenchmarkRepository
+from flowserv.model.template.repo import TemplateRepository
 from flowserv.controller.engine import BenchmarkEngine
 from flowserv.model.user.base import UserManager
 from flowserv.tests.benchmark import StateEngine

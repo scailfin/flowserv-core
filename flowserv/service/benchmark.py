@@ -26,7 +26,7 @@ class BenchmarkService(object):
         ----------
         con: DB-API 2.0 database connection
             Connection to underlying database
-        repo: flowserv.model.template.store.benchmark.BenchmarkRepository
+        repo: flowserv.model.template.repo.benchmark.BenchmarkRepository
             Repository to access registered benchmarks
         urls: flowserv.view.route.UrlFactory
             Factory for API resource Urls

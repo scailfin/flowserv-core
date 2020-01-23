@@ -35,7 +35,7 @@ class WorkflowRepository(object):
         ----------
         con: DB-API 2.0 database connection
             Connection to underlying database
-        template_store: flowserv.model.template.store.base.TemplateRepository, optional
+        template_store: flowserv.model.template.repo.base.TemplateRepository, optional
             Repository for workflow templates
         basedir: string
             Path to the base directory that contains post-processing results

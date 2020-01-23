@@ -31,6 +31,10 @@ STATE_RUNNING = 'RUNNING'
 STATE_SUCCESS = 'SUCCESS'
 
 
+"""Short-cut to list of active states."""
+ACTIVE_STATES = [STATE_PENDING, STATE_RUNNING]
+
+
 class WorkflowState(object):
     """The base class for workflow states contains the state type identifier
     that is used by the different state type methods. The state also maintains
@@ -79,7 +83,7 @@ class WorkflowState(object):
         --------
         bool
         """
-        return self.type_id in [STATE_PENDING, STATE_RUNNING]
+        return self.type_id in ACTIVE_STATES
 
     def is_canceled(self):
         """Returns True if the workflow state is of type CANCELED.
