@@ -301,22 +301,6 @@ class UnknownObjectError(ROBError):
         )
 
 
-class UnknownWorkflowError(UnknownObjectError):
-    """Exception indicating that a given benchmark identifier is unknown."""
-    def __init__(self, benchmark_id):
-        """Initialize error message.
-
-        Parameters
-        ----------
-        benchmark_id : string
-            Unique benchmark identifier
-        """
-        super(UnknownWorkflowError, self).__init__(
-            obj_id=benchmark_id,
-            type_name='benchmark'
-        )
-
-
 class UnknownFileError(UnknownObjectError):
     """Exception indicating that a given file identifier is unknown."""
     def __init__(self, file_id):
@@ -405,22 +389,6 @@ class UnknownRunError(UnknownObjectError):
         )
 
 
-class UnknownSubmissionError(UnknownObjectError):
-    """Exception indicating that a given submission identifier is unknown."""
-    def __init__(self, user_id):
-        """Initialize error message.
-
-        Parameters
-        ----------
-        user_id : string
-            Unique user identifier
-        """
-        super(UnknownSubmissionError, self).__init__(
-            obj_id=user_id,
-            type_name='submission'
-        )
-
-
 class UnknownTemplateError(UnknownObjectError):
     """Error when referencing a workflow template with an unknown identifier.
     """
@@ -451,4 +419,38 @@ class UnknownUserError(UnknownObjectError):
         super(UnknownUserError, self).__init__(
             obj_id=user_id,
             type_name='user'
+        )
+
+
+class UnknownWorkflowError(UnknownObjectError):
+    """Exception indicating that a given workflow identifier is unknown."""
+    def __init__(self, workflow_id):
+        """Initialize error message.
+
+        Parameters
+        ----------
+        workflow_id : string
+            Unique workflow identifier
+        """
+        super(UnknownWorkflowError, self).__init__(
+            obj_id=workflow_id,
+            type_name='workflow'
+        )
+
+
+class UnknownWorkflowGroupError(UnknownObjectError):
+    """Exception indicating that a given workflow group identifier is
+    unknown.
+    """
+    def __init__(self, group_id):
+        """Initialize error message.
+
+        Parameters
+        ----------
+        group_id : string
+            Unique workflow group identifier
+        """
+        super(UnknownWorkflowGroupError, self).__init__(
+            obj_id=group_id,
+            type_name='group'
         )

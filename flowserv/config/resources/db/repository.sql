@@ -125,14 +125,14 @@ CREATE TABLE postproc_resource(
 -- Workflow Groups ------------------------------------------------------------
 --
 -- Groups bring together users and workflow runs. Groups are primarily intended
--- for benchmarks. In the case of a benchmark each group can be viewes as an
+-- for benchmarks. In the case of a benchmark each group can be viewed as an
 -- entry (or submission) to the benchmark.
 -- Each group has a name that uniquely identifies it among all groups for a
 -- workflow template. The group is created by a user (the owner) who can invite
 -- other users as group members.
 -- Each group maintains a list of uploaded files that can be used as inputs to
 -- workflow runs. The different workflow runs in a group represent different
--- configurations of the workflow. When the froup is defined, variations to the
+-- configurations of the workflow. When the group is defined, variations to the
 -- original workflow may be made to the workflow specification and the template
 -- parameter declarations.
 --

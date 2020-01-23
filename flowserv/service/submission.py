@@ -66,7 +66,7 @@ class SubmissionService(object):
         Raises
         ------
         flowserv.core.error.UnauthorizedAccessError
-        flowserv.core.error.UnknownSubmissionError
+        flowserv.core.error.UnknownWorkflowGroupError
         """
         if not self.auth.is_submission_member(submission_id=submission_id, user=user):
             # At this point it is not clear whether the user is not a member of
@@ -171,7 +171,7 @@ class SubmissionService(object):
         Raises
         ------
         flowserv.core.error.UnauthorizedAccessError
-        flowserv.core.error.UnknownSubmissionError
+        flowserv.core.error.UnknownWorkflowGroupError
         """
         # Raise an error if the user is not authorized to delete the submission
         # or if the submission does not exist
@@ -199,7 +199,7 @@ class SubmissionService(object):
         ------
         flowserv.core.error.UnauthorizedAccessError
         flowserv.core.error.UnknownFileError
-        flowserv.core.error.UnknownSubmissionError
+        flowserv.core.error.UnknownWorkflowGroupError
         """
         # Raise an error if the user does not have  access rights for the
         # submission files or if the submission does not exist.
@@ -242,7 +242,7 @@ class SubmissionService(object):
 
         Raises
         ------
-        flowserv.core.error.UnknownSubmissionError
+        flowserv.core.error.UnknownWorkflowGroupError
         """
         submission = self.manager.get_submission(submission_id)
         return self.serialize.submission_handle(submission=submission)
@@ -265,7 +265,7 @@ class SubmissionService(object):
         Raises
         ------
         flowserv.core.error.UnauthorizedAccessError
-        flowserv.core.error.UnknownSubmissionError
+        flowserv.core.error.UnknownWorkflowGroupError
         """
         # Raise an error if the user does not have  access rights for the
         # submission files or if the submission does not exist.
@@ -329,7 +329,7 @@ class SubmissionService(object):
         ------
         flowserv.core.error.ConstraintViolationError
         flowserv.core.error.UnauthorizedAccessError
-        flowserv.core.error.UnknownSubmissionError
+        flowserv.core.error.UnknownWorkflowGroupError
         """
         # Raise an error if the user does not have  access rights for the
         # submission or if the submission does not exist.
@@ -366,7 +366,7 @@ class SubmissionService(object):
         ------
         flowserv.core.error.ConstraintViolationError
         flowserv.core.error.UnauthorizedAccessError
-        flowserv.core.error.UnknownSubmissionError
+        flowserv.core.error.UnknownWorkflowGroupError
         """
         # Raise an error if the user does not have  access rights for the
         # submission files or if the submission does not exist.

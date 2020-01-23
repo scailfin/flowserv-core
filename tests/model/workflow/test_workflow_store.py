@@ -153,9 +153,10 @@ def test_delete_workflow(tmpdir):
     assert wf_1.identifier not in [w.identifier for w in workflows]
     assert wf_2.identifier in [w.identifier for w in workflows]
     assert wf_3.identifier in [w.identifier for w in workflows]
-    # Deleting the same repository multiple times does not cause an error
+    # Deleting the same repository multiple times raises an error
     repo.delete_workflow(wf_2.identifier)
-    repo.delete_workflow(wf_2.identifier)
+    with pytest.raises(err.UnknownWorkflowError):
+        repo.delete_workflow(wf_2.identifier)
     workflows = repo.list_workflows()
     assert len(workflows) == 1
     assert wf_1.identifier not in [w.identifier for w in workflows]

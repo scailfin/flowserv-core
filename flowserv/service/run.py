@@ -77,7 +77,7 @@ class RunService(object):
         Raises
         ------
         flowserv.core.error.UnauthorizedAccessError
-        flowserv.core.error.UnknownSubmissionError
+        flowserv.core.error.UnknownWorkflowGroupError
         """
         is_member = self.auth.is_submission_member(
             submission_id=submission_id,
@@ -293,7 +293,7 @@ class RunService(object):
         Raises
         ------
         flowserv.core.error.UnauthorizedAccessError
-        flowserv.core.error.UnknownSubmissionError
+        flowserv.core.error.UnknownWorkflowGroupError
         """
         # Raise an error if the user does not have rights to access the
         # submission runs or if the submission does not exist.
@@ -334,7 +334,7 @@ class RunService(object):
         flowserv.core.error.UnauthorizedAccessError
         flowserv.core.error.UnknownFileError
         flowserv.core.error.UnknownParameterError
-        flowserv.core.error.UnknownSubmissionError
+        flowserv.core.error.UnknownWorkflowGroupError
         """
         # Raise an error if the user does not have rights to start new runs for
         # the submission or if the submission does not exist.

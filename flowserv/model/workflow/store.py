@@ -15,6 +15,7 @@ import os
 import shutil
 
 from flowserv.model.workflow.base import WorkflowDescriptor, WorkflowHandle
+from flowserv.model.workflow.fs import WorkflowFileSystem
 from flowserv.model.workflow.resource import FSObject
 
 import flowserv.core.error as err
@@ -43,7 +44,7 @@ class WorkflowRepository(object):
         self.con = con
         self.template_repo = template_repo
         # Create the resource directory if it does not exist
-        self.basedir = util.create_dir(basedir, abs=True)
+        self.fs = WorkflowFileSystem(basedir)
 
     def add_workflow(
         self, name, description=None, instructions=None, sourcedir=None,
@@ -100,7 +101,7 @@ class WorkflowRepository(object):
         )
         # Create the base directory for workflow runs and post-processing
         # results
-        util.create_dir(self.workflow_basedir(workflow_id))
+        util.create_dir(self.fs.workflow_basedir(workflow_id))
         # Insert workflow into database and return descriptor. Database changes
         # are only commited if the respective flag is True.
         sql = (
@@ -122,15 +123,26 @@ class WorkflowRepository(object):
     def delete_workflow(self, workflow_id, commit_changes=True):
         """Delete the workflow with the given identifier.
 
+        The changes to the underlying database are only commited if the
+        commit_changes flag is True. Note that the deletion of files and
+        directories cannot be rolled back.
+
         Parameters
         ----------
         workflow_id: string
             Unique workflow identifier
         commit_changes: bool, optional
             Commit changes to database only if True
+
+        Raises
+        ------
+        flowserv.core.error.UnknownWorkflowError
         """
-        # Delete the workflow template.
-        self.template_repo.delete_template(workflow_id)
+        # Delete the workflow template. If the result is False it is assumed
+        # that the workflow does not exists and an error is raised.
+        wf_exists = self.template_repo.delete_template(workflow_id)
+        if not wf_exists:
+            raise err.UnknownWorkflowError(workflow_id)
         # Create list of SQL statements to delete all records that are
         # associated with the workflow
         stmts = list()
@@ -181,7 +193,7 @@ class WorkflowRepository(object):
         if commit_changes:
             self.con.commit()
         # Delete all files that are associated with the workflow
-        workflowdir = self.workflow_basedir(workflow_id)
+        workflowdir = self.fs.workflow_basedir(workflow_id)
         if os.path.isdir(workflowdir):
             shutil.rmtree(workflowdir)
 
@@ -219,7 +231,10 @@ class WorkflowRepository(object):
         # Get resource handles for current post-processing resources
         resources = list()
         if postproc_id is not None:
-            resourcedir = self.workflow_resourcedir(workflow_id, postproc_id)
+            resourcedir = self.fs.workflow_postprocedir(
+                workflow_id=workflow_id,
+                postproc_id=postproc_id
+            )
             sql = (
                 'SELECT resource_id, resource_name '
                 'FROM postproc_resource '
@@ -329,36 +344,3 @@ class WorkflowRepository(object):
                 self.con.commit()
         # Return the handle for the updated workflow
         return self.get_workflow(workflow_id)
-
-    def workflow_basedir(self, workflow_id):
-        """Get base directory containing associated files for the workflow with
-        the given identifier.
-
-        Parameters
-        ----------
-        workflow_id: string
-            Unique workflow identifier
-
-        Returns
-        -------
-        string
-        """
-        return os.path.join(self.basedir, workflow_id)
-
-    def workflow_resourcedir(self, workflow_id, postproc_id):
-        """Get base directory containing results for a post-processing run for
-        the given workflow.
-
-        Parameters
-        ----------
-        workflow_id: string
-            Unique workflow identifier
-        postproc_id: string
-            Unique post-processing run identifier
-
-        Returns
-        -------
-        string
-        """
-        workflowdir = self.workflow_basedir(workflow_id)
-        return os.path.join(workflowdir, 'resources', postproc_id)

@@ -235,9 +235,9 @@ class TestSubmissionManager(object):
         assert not os.path.isdir(submission_dir)
         for f in filenames:
             assert not os.path.isfile(f)
-        with pytest.raises(err.UnknownSubmissionError):
+        with pytest.raises(err.UnknownWorkflowGroupError):
             manager.get_submission(submission.identifier)
-        with pytest.raises(err.UnknownSubmissionError):
+        with pytest.raises(err.UnknownWorkflowGroupError):
             manager.delete_submission(submission.identifier)
 
     def test_get_results(self, tmpdir):

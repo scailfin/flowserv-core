@@ -217,7 +217,7 @@ class TestSubmissionManagerFilestore(object):
                 file_name=' '
             )
         # - Unknown submission
-        with pytest.raises(err.UnknownSubmissionError):
+        with pytest.raises(err.UnknownWorkflowGroupError):
             manager.upload_file(
                 submission_id='UNK',
                 file=FakeStream(data={'A': 1}),

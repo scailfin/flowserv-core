@@ -218,14 +218,14 @@ class BenchmarkEngine(object):
         Raises
         ------
         flowserv.core.error.MissingArgumentError
-        flowserv.core.error.UnknownSubmissionError
+        flowserv.core.error.UnknownWorkflowGroupError
         """
         # Get the workflow template for the benchmark that is associated with
         # the given submission
         sql = 'SELECT benchmark_id FROM benchmark_submission WHERE submission_id = ?'
         row = self.con.execute(sql, (submission_id,)).fetchone()
         if row is None:
-            raise err.UnknownSubmissionError(submission_id)
+            raise err.UnknownWorkflowGroupError(submission_id)
         # Create a unique run identifier
         run = store.create_run(
             con=self.con,
