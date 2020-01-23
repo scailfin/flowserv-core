@@ -39,7 +39,7 @@ class SQLiteConnector(DatabaseConnector):
         """
         # Set the connect string and ensure that the directory for the database
         # file exists. Create parent directories if necessary.
-        if not connect_string is None:
+        if connect_string is not None:
             self.connect_string = os.path.abspath(connect_string)
         else:
             self.connect_string = os.environ.get(SQLITE_ROB_CONNECT)

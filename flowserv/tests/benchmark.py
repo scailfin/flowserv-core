@@ -16,7 +16,6 @@ from flowserv.model.template.schema import ResultColumn, ResultSchema
 from flowserv.controller.backend.base import WorkflowController
 from flowserv.model.workflow.resource import FSObject
 
-import flowserv.controller.run as runstore
 import flowserv.controller.serial as serial
 import flowserv.core.error as err
 import flowserv.model.parameter.declaration as pd

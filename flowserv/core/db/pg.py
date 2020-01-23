@@ -84,11 +84,11 @@ class PostgresConnection(object):
         bool
         """
         # Make sure to close any open cursors
-        if not self.cur is None:
+        if self.cur is not None:
             self.cur.close()
             self.cur = None
         # Close the database connections
-        if not self.con is None:
+        if self.con is not None:
             self.con.close()
             self.con = None
         return False
@@ -112,7 +112,7 @@ class PostgresConnection(object):
         -------
         psycopg2.cursor
         """
-        if not self.cur is None:
+        if self.cur is not None:
             self.cur.close()
         self.cur = self.con.cursor(cursor_factory=RealDictCursor)
         return self.cur
@@ -139,7 +139,7 @@ class PostgresConnection(object):
         psycopg2.cursor
         """
         self.cur = self.cursor()
-        if not args is None:
+        if args is not None:
             # Replace all query parameters. Note that code assumes that every
             # '?'' character in SQL query represents a parameter. It does not
             # account for cases where , for example, a '?' is part of a query
@@ -176,7 +176,7 @@ class PostgresConnector(DatabaseConnector):
         ------
         ValueError
         """
-        if not connect_string is None:
+        if connect_string is not None:
             # Get host name and port from the first part of the connect string
             # up until the first '/' character
             pos_1 = connect_string.index('/')

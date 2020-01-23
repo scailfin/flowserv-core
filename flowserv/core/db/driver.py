@@ -71,7 +71,7 @@ class DatabaseDriver(object):
         ValueError
         """
         # If missing, set the database system identifier using the value in the
-        #respective environment variable. Raises a ValueError if the result is
+        # respective environment variable. Raises a ValueError if the result is
         # None
         if dbms_id is None:
             dbms_id = config.DB_IDENTIFIER(raise_error=True)

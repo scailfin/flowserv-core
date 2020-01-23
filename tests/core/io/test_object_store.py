@@ -13,7 +13,6 @@ implementation.
 import os
 import pytest
 
-from flowserv.core.objstore.base import ObjectStore
 from flowserv.core.objstore.json import JsonFileStore
 
 import flowserv.core.error as err

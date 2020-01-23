@@ -174,7 +174,7 @@ class InputFile(FileHandle):
         -------
         string
         """
-        if not self.target_path is None:
+        if self.target_path is not None:
             return self.target_path
         else:
             return self.name

@@ -28,14 +28,14 @@ class TestSQLiteConnector(object):
         connector = db.init_db(str(tmpdir))
         connector.execute(DML_FILE)
         with connector.connect() as con:
-            rs = con.execute('SELECT * FROM benchmark').fetchall()
+            rs = con.execute('SELECT * FROM workflow_template').fetchall()
             assert len(rs) == 2
-            assert rs[0]['benchmark_id'] == '1234'
+            assert rs[0]['workflow_id'] == '1234'
             assert rs[0]['name'] == 'Alice'
-            assert rs[1]['benchmark_id'] == '5678'
+            assert rs[1]['workflow_id'] == '5678'
             assert rs[1]['name'] == 'Bob'
             # Ensure that LIKE is case sensitive
-            sql = 'SELECT * FROM benchmark WHERE name LIKE \'a%\''
+            sql = 'SELECT * FROM workflow_template WHERE name LIKE \'a%\''
             assert len(con.execute(sql).fetchall()) == 0
-            sql = 'SELECT * FROM benchmark WHERE name LIKE \'A%\''
+            sql = 'SELECT * FROM workflow_template WHERE name LIKE \'A%\''
             assert len(con.execute(sql).fetchall()) == 1

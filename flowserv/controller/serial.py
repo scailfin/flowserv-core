@@ -19,7 +19,6 @@ import subprocess
 from datetime import datetime
 from string import Template
 
-from flowserv.model.template.step import Step
 from flowserv.model.workflow.resource import FSObject
 from flowserv.model.workflow.state import StateError, StateSuccess
 

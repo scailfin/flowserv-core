@@ -236,9 +236,9 @@ def to_localstr(date=None, text=None):
     -------
     string
     """
-    if not date is None:
+    if date is not None:
         ts = from_utc_datetime(date)
-    elif not text is None:
+    elif text is not None:
         ts = from_utc_datetime(to_datetime(text))
     return str(ts)[:-7]
 
@@ -266,16 +266,16 @@ def validate_doc(doc, mandatory_labels=None, optional_labels=None):
     ValueError
     """
     # Ensure that all mandatory labels are present in the dictionary
-    if not mandatory_labels is None:
+    if mandatory_labels is not None:
         for key in mandatory_labels:
-            if not key in doc:
+            if key not in doc:
                 raise ValueError('missing element \'{}\''.format(key))
     # Raise error if additional elements are present in the dictionary
-    labels = mandatory_labels if not mandatory_labels is None else list()
-    if not optional_labels is None:
+    labels = mandatory_labels if mandatory_labels is not None else list()
+    if optional_labels is not None:
         labels = labels + optional_labels
     for key in doc:
-        if not key in labels:
+        if key not in labels:
             raise ValueError('unknown element \'{}\''.format(key))
     return doc
 

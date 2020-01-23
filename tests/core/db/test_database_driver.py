@@ -40,7 +40,7 @@ class TestDatabaseDriver(object):
         os.environ[sqlite.SQLITE_ROB_CONNECT] = f_name
         db = DB.get_connector()
         assert db.info(indent='..') == '..sqlite3 {}'.format(f_name)
-        f_name ='/tmp/test.sqlite3.db'
+        f_name = '/tmp/test.sqlite3.db'
         db = DB.get_connector(dbms_id='SQLITE3', connect_string=f_name)
         assert db.info(indent='..') == '..sqlite3 {}'.format(f_name)
         # PostgreSQL
