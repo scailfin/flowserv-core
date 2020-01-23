@@ -54,4 +54,4 @@ def validate_name(name, con=None, sql=None, args=None):
     else:
         query_args = (name,)
     if not con.execute(sql, query_args).fetchone() is None:
-        raise err.ConstraintViolationError('name \'{}\' exists'.format(name))
+        raise err.ConstraintViolationError("name '{}' exists".format(name))

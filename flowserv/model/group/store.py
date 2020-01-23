@@ -14,7 +14,7 @@ database.
 import json
 import shutil
 
-from flowsev.model.group.base import WorkflowGroupDescriptor, WorkflowGroupHandle
+from flowserv.model.group.base import WorkflowGroupDescriptor, WorkflowGroupHandle
 from flowserv.model.user.base import UserHandle
 
 import flowserv.core.error as err
@@ -144,12 +144,14 @@ class WorkflowGroupManager(object):
             self.con.commit()
         # Return the created group handle
         return WorkflowGroupHandle(
+            con=self.con,
             identifier=identifier,
             name=name,
             workflow_id=workflow_id,
             owner_id=user_id,
             parameters=parameters,
             workflow_spec=workflow_spec,
+            fs=self.fs,
             members=users
         )
 
@@ -255,12 +257,14 @@ class WorkflowGroupManager(object):
             members.append(user)
         # Return the group handle
         return WorkflowGroupHandle(
+            con=self.con,
             identifier=group_id,
             name=name,
             workflow_id=workflow_id,
             owner_id=owner_id,
             parameters=parameters,
             workflow_spec=workflow_spec,
+            fs=self.fs,
             members=members
         )
 

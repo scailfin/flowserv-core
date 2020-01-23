@@ -17,9 +17,12 @@ The folder structure is currently as follows:
         groups               : Folder for workflow groups
             {group_id}       : Folder for individual group
                 files        : Uploaded files for workflow group
+                    {file_id}: Folder for uploaded file
                 runs         : Workflow runs that are associated with the group
                     {run_id} : Individual run folder
 """
+
+import os
 
 import flowserv.core.util as util
 
@@ -38,6 +41,42 @@ class WorkflowFileSystem(object):
         """
         # Ensure that the base directory exists
         self.basedir = util.create_dir(basedir, abs=True)
+
+    def group_file(self, workflow_id, group_id, file_id):
+        """Get path for a file that was uploaded to a workflow group.
+
+        Parameters
+        ----------
+        workflow_id: string
+            Unique workflow identifier
+        group_id: string
+            Unique workflow group identifier
+        file_id: string
+            Unique file identifier
+
+        Returns
+        -------
+        string
+        """
+        uploaddir = self.group_uploaddir(workflow_id, group_id)
+        return os.path.join(uploaddir, file_id)
+
+    def group_uploaddir(self, workflow_id, group_id):
+        """Get base directory for files that are uploaded to a workflow group.
+
+        Parameters
+        ----------
+        workflow_id: string
+            Unique workflow identifier
+        group_id: string
+            Unique workflow group identifier
+
+        Returns
+        -------
+        string
+        """
+        groupdir = self.workflow_groupdir(workflow_id, group_id)
+        return os.path.join(groupdir, 'files')
 
     def workflow_basedir(self, workflow_id):
         """Get base directory containing associated files for the workflow with

@@ -94,6 +94,8 @@ class FileHandle(FileDescriptor):
         # Guess the mime-type from the file name if not given
         if mimetype is not None:
             self.mimetype = mimetype
+        elif name is not None:
+            self.mimetype, _ = mimetypes.guess_type(url=name)
         elif os.path.isfile(self.path):
             self.mimetype, _ = mimetypes.guess_type(url=self.path)
         else:
@@ -115,7 +117,7 @@ class FileHandle(FileDescriptor):
         string
         """
         return self.path
-        
+
     @property
     def last_modified(self):
         """Last modification timestamp for the file.
