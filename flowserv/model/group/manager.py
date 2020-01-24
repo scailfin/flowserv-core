@@ -19,7 +19,7 @@ from flowserv.model.user.base import UserHandle
 
 import flowserv.core.error as err
 import flowserv.model.constraint as constraint
-import flowserv.model.parameter.util as pd
+import flowserv.model.parameter.base as pb
 import flowserv.core.util as util
 
 
@@ -184,25 +184,17 @@ class WorkflowGroupManager(object):
         # Create list of SQL statements to delete all records that are
         # associated with the workflow group from the underlying database.
         stmts = list()
-        # run_result_file
         stmts.append(
             'DELETE FROM run_result_file WHERE run_id IN ('
-            'SELECT r.run_id FROM workflow_run r '
-            'WHERE r.group_id = ?)'
+            '   SELECT r.run_id FROM workflow_run r WHERE r.group_id = ?)'
         )
-        # run_error_log
         stmts.append(
             'DELETE FROM run_error_log WHERE run_id IN ('
-            'SELECT r.run_id FROM workflow_run r '
-            'WHERE r.group_id = ?)'
+            '   SELECT r.run_id FROM workflow_run r WHERE r.group_id = ?)'
         )
-        # workflow_run
         stmts.append('DELETE FROM workflow_run WHERE group_id = ?')
-        # group_member
         stmts.append('DELETE FROM group_member WHERE group_id  = ?')
-        # group_upload_file
         stmts.append('DELETE FROM group_upload_file WHERE group_id = ?')
-        # workflow_group
         stmts.append('DELETE FROM workflow_group WHERE group_id = ?')
         for sql in stmts:
             self.con.execute(sql, (group_id,))
@@ -240,7 +232,7 @@ class WorkflowGroupManager(object):
         name = row['name']
         workflow_id = row['workflow_id']
         owner_id = row['owner_id']
-        parameters = pd.create_parameter_index(
+        parameters = pb.create_parameter_index(
             json.loads(row['parameters']),
             validate=False
         )

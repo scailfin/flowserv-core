@@ -6,14 +6,14 @@
 # ROB is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
-"""Unit test for reading arguments serial workflow templates."""
+"""Unit test for reading arguments for serial workflow templates."""
 
 from flowserv.core.scanner import Scanner, ListReader
 from flowserv.model.parameter.base import TemplateParameter, AS_INPUT
 from flowserv.model.template.base import WorkflowTemplate
 
+import flowserv.cli.parameter as cli
 import flowserv.model.parameter.declaration as pd
-import flowserv.model.parameter.util as tmpl
 
 
 def test_read_with_record():
@@ -91,7 +91,7 @@ def test_read_with_record():
         'XYZ',
         0.123
     ]))
-    arguments = tmpl.read(template.list_parameters(), scanner=sc)
+    arguments = cli.read(template.list_parameters(), scanner=sc)
     assert arguments['codeFile'] == ('ABC.txt', 'code/abc.py')
     assert arguments['dataFile'] == ('data/names.txt', None)
     assert arguments['resultFile'] == ('result/output.txt', None)

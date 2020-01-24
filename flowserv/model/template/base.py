@@ -26,7 +26,7 @@ from flowserv.model.parameter.base import ParameterGroup
 from flowserv.model.template.schema import ResultSchema
 
 import flowserv.core.error as err
-import flowserv.model.parameter.util as putil
+import flowserv.model.parameter.base as pb
 import flowserv.model.template.util as tutil
 
 
@@ -147,7 +147,7 @@ class WorkflowTemplate(object):
         # Add given parameter declarations to the parameter list. Ensure that
         # all default values are set
         if LABEL_PARAMETERS in doc:
-            parameters = putil.create_parameter_index(
+            parameters = pb.create_parameter_index(
                 doc[LABEL_PARAMETERS],
                 validate=validate
             )
@@ -170,12 +170,10 @@ class WorkflowTemplate(object):
             for m in doc[LABEL_MODULES]:
                 modules.append(ParameterGroup.from_dict(m))
         # -- Result schema ---------------------------------------------------
-        schema = None
-        if LABEL_RESULTS in doc:
-            try:
-                schema = ResultSchema.from_dict(doc[LABEL_RESULTS])
-            except ValueError as ex:
-                raise err.InvalidTemplateError(str(ex))
+        try:
+            schema = ResultSchema.from_dict(doc.get(LABEL_RESULTS))
+        except ValueError as ex:
+            raise err.InvalidTemplateError(str(ex))
         # Return template instance
         return WorkflowTemplate(
             workflow_spec=workflow_spec,

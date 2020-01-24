@@ -49,9 +49,13 @@ class RunManager(object):
         self.con = con
         self.fs = fs
 
-    def create_run(self, workflow_id, group_id, arguments, commit_changes=True):
+    def create_run(
+        self, workflow_id, group_id=None, arguments=None, commit_changes=True
+    ):
         """Create a new entry for a run that is in pending state. Returns a
-        handle for the created run.
+        handle for the created run. The group identifier may be None in which
+        case the run is a post-processing run that is only associated with the
+        workflow but not any particular group.
 
         Parameters
         ----------
@@ -72,31 +76,41 @@ class RunManager(object):
         ------
         flowserv.core.error.MissingArgumentError
         """
-        # Create a unique run identifier and a base directory for run files
+        # Create a unique run identifier
         run_id = util.get_unique_identifier()
-        util.create_dir(self.fs.run_basedir(workflow_id, group_id, run_id))
         # Create an initial entry in the run table for the pending run.
         state = st.StatePending()
         sql = (
             'INSERT INTO workflow_run('
-            'run_id, group_id, state, created_at, arguments'
-            ') VALUES(?, ?, ?, ?, ?)'
+            '   run_id, workflow_id, group_id, state, created_at, arguments'
+            ') VALUES(?, ?, ?, ?, ?, ?)'
         )
-        ts = state.created_at.isoformat()
+        # Serialize the given dictionary of workflow arguments (if not None)
         arg_values = dict()
-        for key in arguments:
-            arg_values[key] = arguments[key].value
-        arg_serilaization = json.dumps(arg_values, cls=ArgumentEncoder)
-        values = (run_id, group_id, state.type_id, ts, arg_serilaization)
-        self.con.execute(sql, values)
+        if arguments is not None:
+            for key in arguments:
+                arg_values[key] = arguments[key].value
+        args_json = json.dumps(arg_values, cls=ArgumentEncoder)
+        args = (
+            run_id,
+            workflow_id,
+            group_id,
+            state.type_id,
+            state.created_at.isoformat(),
+            args_json
+        )
+        self.con.execute(sql, args)
         if commit_changes:
             self.con.commit()
-        # Return handle for the created run
+        # Return handle for the created run. Ensure that the run base directory
+        # is created.
+        rundir = self.fs.run_basedir(workflow_id, group_id, run_id)
         return RunHandle(
             identifier=run_id,
             group_id=group_id,
             state=state,
-            arguments=json.loads(arg_serilaization)
+            arguments=json.loads(args_json),
+            rundir=util.create_dir(rundir)
         )
 
     def delete_run(self, run_id, commit_changes=True):
@@ -117,11 +131,7 @@ class RunManager(object):
         # database in order to be able to generate the path for the run folder.
         # If the result is empty we assume that the run identifier is unknown
         # and raise an error.
-        sql = (
-            'SELECT g.workflow_id, g.group_id '
-            'FROM workflow_group g, workflow_run r '
-            'WHERE g.group_id = r.group_id AND r.run_id = ?'
-        )
+        sql = 'SELECT workflow_id, group_id FROM workflow_run WHERE run_id = ?'
         row = self.con.execute(sql, (run_id,)).fetchone()
         if row is None:
             raise err.UnknownRunError(run_id)
@@ -163,10 +173,10 @@ class RunManager(object):
         # Fetch run information from the database. If the result is None the
         # run is unknown and an error is raised.
         sql = (
-            'SELECT r.run_id, g.workflow_id, g.group_id, r.state, r.arguments, '
-            'r.created_at, r.started_at, r.ended_at '
-            'FROM workflow_group g, workflow_run r '
-            'WHERE g.group_id = r.group_id AND r.run_id = ?'
+            'SELECT workflow_id, group_id, state, arguments, '
+            '   created_at, started_at, ended_at '
+            'FROM workflow_run '
+            'WHERE run_id = ?'
         )
         row = self.con.execute(sql, (run_id,)).fetchone()
         if row is None:
@@ -210,7 +220,8 @@ class RunManager(object):
                 ended_at=util.to_datetime(row['ended_at']),
                 basedir=rundir
             ),
-            arguments=json.loads(row['arguments'])
+            arguments=json.loads(row['arguments']),
+            rundir=rundir
         )
 
     def update_run(self, run_id, state, commit_changes=True):

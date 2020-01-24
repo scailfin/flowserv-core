@@ -58,7 +58,7 @@ class WorkflowEngine(object):
         flowserv.core.error.InvalidRunStateError
         """
         # Get the run handle. This will raise an error if the run is unknown
-        run = self.get_run(run_id)
+        run = self.runstore.get_run(run_id)
         # Raise an error if the run is not in an active state
         if not run.is_active():
             raise err.InvalidRunStateError(run.state)
@@ -73,12 +73,7 @@ class WorkflowEngine(object):
             run_id=run_id,
             state=state
         )
-        return RunHandle(
-            identifier=run_id,
-            group_id=run.group_id,
-            state=state,
-            arguments=run.arguments
-        )
+        return run.update_state(state)
 
     def delete_run(self, run_id):
         """Delete the entry for the given run from the underlying database.
@@ -98,45 +93,12 @@ class WorkflowEngine(object):
         """
         # Get the handle for the run to raise an error if the run is still
         # active. This will also raise an error if the run is unknown.
-        run = self.get_run(run_id)
-        # If the run is active an error is raised. Since we use get_run() the
-        # run state is already up to date.
+        run = self.runstore.get_run(run_id)
         if run.is_active():
             raise err.InvalidRunStateError(run.state)
         # Use the run manager to delete the run from the underlying database
         # and to delete all run files
         self.runstore.delete_run(run_id)
-
-    def get_run(self, run_id):
-        """Get handle for the given run. The run information is read from the
-        underlying database. If the runs state is active and the backend is
-        asynchronous, then the backend is queried to eventually update the
-        state in case it has changed since the last access.
-
-        Parameters
-        ----------
-        run_id: string
-            Unique run identifier
-
-        Returns
-        -------
-        flowserv.model.run.base.RunHandle
-
-        Raises
-        ------
-        flowserv.core.error.UnknownRunError
-        """
-        run = self.runstore.get_run(con=self.con, run_id=run_id)
-        # If the run is in an active state and the backend does not update the
-        # state state asynchronously we have to query the backend to see if
-        # there has been a change to the run state.
-        if not self.backend.asynchronous_events() and run.is_active():
-            state = self.backend.get_run_state(run_id)
-            # If the run state in the backend is different from the run state
-            # in the database we update the database.
-            if run.state.has_changed(state):
-                run = self.runstore.update_run(run_id=run_id, state=state)
-        return run
 
     def start_run(self, workflow_id, group_id, arguments, template):
         """Run benchmark for a given submission with the given set of arguments.

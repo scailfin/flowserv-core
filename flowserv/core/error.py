@@ -389,23 +389,6 @@ class UnknownRunError(UnknownObjectError):
         )
 
 
-class UnknownTemplateError(UnknownObjectError):
-    """Error when referencing a workflow template with an unknown identifier.
-    """
-    def __init__(self, identifier):
-        """Initialize error message.
-
-        Parameters
-        ----------
-        identifier: string
-            Unique template identifier
-        """
-        super(UnknownTemplateError, self).__init__(
-            type_name='template',
-            obj_id=identifier
-        )
-
-
 class UnknownUserError(UnknownObjectError):
     """Exception indicating that a given user identifier is unknown."""
     def __init__(self, user_id):

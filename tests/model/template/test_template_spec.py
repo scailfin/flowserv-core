@@ -12,15 +12,14 @@ import os
 import pytest
 
 from flowserv.core.files import FileHandle
-from flowserv.core.objstore.json import JsonFileStore
 from flowserv.model.parameter.base import TemplateParameter
 from flowserv.model.parameter.value import TemplateArgument
 from flowserv.model.template.base import WorkflowTemplate
 
 import flowserv.core.error as err
 import flowserv.core.util as util
+import flowserv.model.parameter.base as pb
 import flowserv.model.parameter.declaration as pd
-import flowserv.model.parameter.util as putil
 import flowserv.model.parameter.value as pr
 import flowserv.model.template.base as tmpl
 import flowserv.model.template.schema as schema
@@ -36,10 +35,10 @@ CODE_FILE = os.path.join(DIR, '../../.files/template/code/helloworld.py')
 DATA_FILE = os.path.join(DIR, '../../.files/template/inputs/short-names.txt')
 # Benchmark templates with errors
 BENCHMARK_DIR = os.path.join(DIR, '../../.files/benchmark')
-BENCHMARK_ERR_1 = 'ERROR1'
-BENCHMARK_ERR_2 = 'ERROR2'
-BENCHMARK_ERR_3 = 'ERROR3'
-BENCHMARK_ERR_4 = 'ERROR4'
+BENCHMARK_ERR_1 = 'ERROR1.json'
+BENCHMARK_ERR_2 = 'ERROR2.json'
+BENCHMARK_ERR_3 = 'ERROR3.json'
+BENCHMARK_ERR_4 = 'ERROR4.json'
 
 
 def test_benchmark():
@@ -89,7 +88,7 @@ def test_file_args():
             '$[[codeFile]]'
         ]
     }
-    parameters = putil.create_parameter_index([
+    parameters = pb.create_parameter_index([
         {
             'id': 'codeFile',
             'datatype': 'file',
@@ -115,7 +114,7 @@ def test_file_args():
     )
     assert wf['input'] == ['code/helloworld.py']
     # Test file parameters without constant value
-    parameters = putil.create_parameter_index([
+    parameters = pb.create_parameter_index([
         {
             'id': 'codeFile',
             'datatype': 'file',
@@ -147,7 +146,7 @@ def test_scalar_args():
             'sleeptime': '$[[sleeptime]]'
         }
     }
-    parameters = putil.create_parameter_index([
+    parameters = pb.create_parameter_index([
         {
             'id': 'sleeptime',
             'datatype': 'int',
@@ -212,20 +211,23 @@ def test_from_dict():
             sourcedir='dev/null'
         )
     # Read erroneous templates from disk
-    loader = JsonFileStore(basedir=BENCHMARK_DIR)
+    filename = os.path.join(BENCHMARK_DIR, BENCHMARK_ERR_1)
     with pytest.raises(err.UnknownParameterError):
-        WorkflowTemplate.from_dict(loader.read(BENCHMARK_ERR_1), '/dev/null')
+        WorkflowTemplate.from_dict(util.read_object(filename), '/dev/null')
     WorkflowTemplate.from_dict(
-        loader.read(BENCHMARK_ERR_1),
+        util.read_object(filename),
         '/dev/null',
         validate=False
     )
+    filename = os.path.join(BENCHMARK_DIR, BENCHMARK_ERR_2)
     with pytest.raises(err.InvalidTemplateError):
-        WorkflowTemplate.from_dict(loader.read(BENCHMARK_ERR_2), '/dev/null')
+        WorkflowTemplate.from_dict(util.read_object(filename), '/dev/null')
+    filename = os.path.join(BENCHMARK_DIR, BENCHMARK_ERR_3)
     with pytest.raises(err.InvalidTemplateError):
-        WorkflowTemplate.from_dict(loader.read(BENCHMARK_ERR_3), '/dev/null')
+        WorkflowTemplate.from_dict(util.read_object(filename), '/dev/null')
+    filename = os.path.join(BENCHMARK_DIR, BENCHMARK_ERR_4)
     with pytest.raises(err.InvalidTemplateError):
-        WorkflowTemplate.from_dict(loader.read(BENCHMARK_ERR_4), '/dev/null')
+        WorkflowTemplate.from_dict(util.read_object(filename), '/dev/null')
 
 
 def test_get_parameter_references():

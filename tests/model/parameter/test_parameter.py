@@ -14,8 +14,8 @@ import yaml
 from flowserv.model.parameter.base import TemplateParameter
 
 import flowserv.core.error as err
+import flowserv.model.parameter.base as pb
 import flowserv.model.parameter.declaration as pd
-import flowserv.model.parameter.util as putil
 
 
 EXAMPLE = """parameters:
@@ -43,7 +43,7 @@ def test_example_declarations():
     """Ensure that the parameter declarations in the documentation example
     are valid.
     """
-    parameters = putil.create_parameter_index(
+    parameters = pb.create_parameter_index(
         yaml.load(EXAMPLE, Loader=yaml.Loader)['parameters'],
         validate=True
     )

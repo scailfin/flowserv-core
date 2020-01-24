@@ -12,10 +12,17 @@ The **Template Repository** is used to maintain copies of workflow templates in 
 
 .. line-block::
 
-    <base-directory>/
-        <template-id>/
-            static/
-            repository.json
+    /workflows/                  : Base directory
+        {workflow_id}            : Folder for individual workflow
+            groups/              : Folder for workflow groups
+                {group_id}       : Folder for individual group
+                    files/       : Uploaded files for workflow group
+                        {file_id}: Folder for uploaded file
+                    runs/        : Workflow runs that are associated with the group
+                        {run_id} : Individual run folder
+            postruns/            : Folder for runs of post-processing workflow
+                {run_id}         : Result files for individual post-processing runs
+            static/              : Folder for static template files
 
 
 Each template is assigned a unique identifier. The identifier is used as the directory name for all information related to to template. For each workflow template static files are stored in a sub-directory ``static``. The template specification is maintained (in Json format) in a file called ``template.json``.

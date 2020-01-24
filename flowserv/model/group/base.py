@@ -155,7 +155,7 @@ class WorkflowGroupHandle(WorkflowGroupDescriptor):
         return FileHandle(
             identifier=file_id,
             name=row['name'],
-            filename=self.fs.group_file(
+            filename=self.fs.group_uploadfile(
                 workflow_id=self.workflow_id,
                 group_id=self.identifier,
                 file_id=file_id
@@ -178,7 +178,7 @@ class WorkflowGroupHandle(WorkflowGroupDescriptor):
             fh = FileHandle(
                 identifier=file_id,
                 name=row['name'],
-                filename=self.fs.group_file(
+                filename=self.fs.group_uploadfile(
                     workflow_id=self.workflow_id,
                     group_id=self.identifier,
                     file_id=file_id
@@ -219,7 +219,7 @@ class WorkflowGroupHandle(WorkflowGroupDescriptor):
         # Create a new unique identifier for the file and save the file object
         # to the new file path.
         identifier = util.get_unique_identifier()
-        output_file = self.fs.group_file(
+        output_file = self.fs.group_uploadfile(
             workflow_id=self.workflow_id,
             group_id=self.identifier,
             file_id=identifier

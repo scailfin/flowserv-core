@@ -53,7 +53,6 @@ class TestSynchronousWorkflowEngine(object):
         }
         # Run the workflow
         engine = SyncWorkflowEngine(str(tmpdir))
-        assert not engine.asynchronous_events()
         run_id = util.get_short_identifier()
         state = engine.exec_workflow(
             run_id=run_id,

@@ -53,10 +53,7 @@ class MultiProcessWorkflowEngine(BaseWorkflowController):
         verbose: bool, optional
             Print command strings to STDOUT during workflow execution
         """
-        super(MultiProcessWorkflowEngine, self).__init__(
-            basedir=basedir,
-            is_async=True
-        )
+        super(MultiProcessWorkflowEngine, self).__init__(basedir=basedir)
         self.exec_func = exec_func if exec_func is not None else run_workflow
         self.verbose = verbose
         # Dictionary of all running tasks

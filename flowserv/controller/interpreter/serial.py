@@ -19,12 +19,65 @@ import subprocess
 from datetime import datetime
 from string import Template
 
+from flowserv.conroller.interpreter.base import WorkflowLanguageInterpreter
 from flowserv.model.workflow.resource import FSObject
 from flowserv.model.workflow.state import StateError, StateSuccess
 
 import flowserv.model.template.util as tmpl
 import flowserv.core.util as util
 
+
+class SerialWorkflow(WorkflowLanguageInterpreter):
+    """
+    """
+    def modify_spec(self, workflow_spec, tmpl_parameters, add_parameters):
+        """Modify a given workflow specification by adding the given parameters
+        to a given set of template parameters. If a parameter in the add_parameters
+        list already exists the name, index, default value, the value list and the
+        required flag of the existing are overwritten by the values of the new
+        parameter.
+
+        Returns the modified workflow specification and the modified parameter
+        index. Raises an error if the parameter identifier in the resulting
+        parameter index are no longer unique.
+
+        Parameters
+        ----------
+        workflow_spec: dict
+            Workflow specification
+        tmpl_parameters: dict(flowserv.model.parameter.base.TemplateParameter)
+            Existing template parameters
+        add_parameters: dict(flowserv.model.parameter.base.TemplateParameter)
+            Additional template parameters
+
+        Returns
+        -------
+        dict, dict(flowserv.model.parameter.base.TemplateParameter)
+
+        Raises
+        ------
+        flowserv.core.error.InvalidTemplateError
+        """
+        # Get a copy of the files and parameters sections of the inputs declaration
+        inputs = workflow_spec.get('inputs', dict())
+        in_files = list(inputs.get('files', list()))
+        in_params = dict(inputs.get('parameters', dict()))
+        # Ensure that the identifier for all parameters are unique
+        para_merge = dict(tmpl_parameters)
+        for para in add_parameters.values():
+            if para.identifier in para_merge:
+                para = para_merge[para.identifier].merge(para)
+            para_merge[para.identifier] = para
+            # Depending on whether the type of the parameter is a file or not we
+            # add a parameter reference to the respective input section
+            if para.is_file():
+                in_files.append('$[[{}]]'.format(para.identifier))
+            else:
+                if para.identifier not in in_params:
+                    in_params[para.identifier] = '$[[{}]]'.format(para.identifier)
+        spec = dict(workflow_spec)
+        spec['inputs'] = {'files': in_files, 'parameters': in_params}
+        return spec, para_merge
 
 def commands(template, arguments):
     """Get expanded commands from template workflow specification. The
@@ -80,54 +133,6 @@ def commands(template, arguments):
     return result
 
 
-def modify_spec(workflow_spec, tmpl_parameters, add_parameters):
-    """Modify a given workflow specification by adding the given parameters
-    to a given set of template parameters. If a parameter in the add_parameters
-    list already exists the name, index, default value, the value list and the
-    required flag of the existing are overwritten by the values of the new
-    parameter.
-
-    Returns the modified workflow specification and the modified parameter
-    index. Raises an error if the parameter identifier in the resulting
-    parameter index are no longer unique.
-
-    Parameters
-    ----------
-    workflow_spec: dict
-        Workflow specification
-    tmpl_parameters: dict(flowserv.model.parameter.base.TemplateParameter)
-        Existing template parameters
-    add_parameters: dict(flowserv.model.parameter.base.TemplateParameter)
-        Additional template parameters
-
-    Returns
-    -------
-    dict, dict(flowserv.model.parameter.base.TemplateParameter)
-
-    Raises
-    ------
-    flowserv.core.error.InvalidTemplateError
-    """
-    # Get a copy of the files and parameters sections of the inputs declaration
-    inputs = workflow_spec.get('inputs', dict())
-    in_files = list(inputs.get('files', list()))
-    in_params = dict(inputs.get('parameters', dict()))
-    # Ensure that the identifier for all parameters are unique
-    para_merge = dict(tmpl_parameters)
-    for para in add_parameters.values():
-        if para.identifier in para_merge:
-            para = para_merge[para.identifier].merge(para)
-        para_merge[para.identifier] = para
-        # Depending on whether the type of the parameter is a file or not we
-        # add a parameter reference to the respective input section
-        if para.is_file():
-            in_files.append('$[[{}]]'.format(para.identifier))
-        else:
-            if para.identifier not in in_params:
-                in_params[para.identifier] = '$[[{}]]'.format(para.identifier)
-    spec = dict(workflow_spec)
-    spec['inputs'] = {'files': in_files, 'parameters': in_params}
-    return spec, para_merge
 
 
 def run(run_dir, steps, output_files, verbose=False):

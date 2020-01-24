@@ -12,8 +12,8 @@ import os
 
 from flowserv.tests.io import FakeStream
 
+import flowserv.model.parameter.base as pb
 import flowserv.model.parameter.declaration as pd
-import flowserv.model.parameter.util as pu
 import flowserv.tests.api as api
 import flowserv.core.util as util
 import flowserv.view.labels as labels
@@ -53,7 +53,7 @@ class TestSubmissionsRuns(object):
             benchmark_id=bm.identifier,
             name='A',
             user=user,
-            parameters=pu.create_parameter_index([
+            parameters=pb.create_parameter_index([
                 pd.parameter_declaration(
                     identifier='downtime',
                     name="Down Time",

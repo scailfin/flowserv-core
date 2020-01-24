@@ -15,8 +15,8 @@ from flowserv.model.group.manager import WorkflowGroupManager
 from flowserv.model.workflow.fs import WorkflowFileSystem
 
 import flowserv.core.error as err
+import flowserv.model.parameter.base as pb
 import flowserv.model.parameter.declaration as pd
-import flowserv.model.parameter.util as pdutil
 import flowserv.tests.db as db
 
 
@@ -79,7 +79,7 @@ def test_create_workflow_group(tmpdir):
         workflow_id=WORKFLOW_1,
         name='Group 2',
         user_id=USER_2,
-        parameters=pdutil.create_parameter_index([
+        parameters=pb.create_parameter_index([
             pd.parameter_declaration('p1'),
             pd.parameter_declaration(
                 identifier='p2',

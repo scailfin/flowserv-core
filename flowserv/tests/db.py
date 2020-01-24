@@ -55,9 +55,12 @@ def init_db(basedir, workflows=None, users=None):
                 con.execute(sql, (user_id, user_id, pwd, 1))
             con.commit()
     if workflows is not None:
-        sql = 'INSERT INTO workflow_template(workflow_id, name) VALUES(?, ?)'
+        sql = (
+            'INSERT INTO workflow_template(workflow_id, name, workflow_spec) '
+            'VALUES(?, ?, ?)'
+        )
         with connector.connect() as con:
             for workflow_id in workflows:
-                con.execute(sql, (workflow_id, workflow_id))
+                con.execute(sql, (workflow_id, workflow_id, '{}'))
             con.commit()
     return connector

@@ -46,16 +46,6 @@ class SyncWorkflowEngine(WorkflowController):
         self.basedir = util.create_dir(basedir)
         self.verbose = verbose
 
-    def asynchronous_events(self):
-        """All executed workflows will be in an inactive state. The synchronous
-        workflow controller therefore has no need to update the database.
-
-        Returns
-        -------
-        bool
-        """
-        return False
-
     def cancel_run(self, run_id):
         """Request to cancel execution of the given run. Since all runs are
         executed synchronously they cannot be canceled.

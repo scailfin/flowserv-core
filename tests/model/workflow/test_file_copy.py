@@ -15,12 +15,14 @@ import pytest
 import shutil
 
 from flowserv.core.files import FileHandle
-from flowserv.model.template.repo import TemplateRepository
 from flowserv.model.parameter.value import TemplateArgument
+from flowserv.model.workflow.fs import WorkflowFileSystem
+from flowserv.model.workflow.repo import WorkflowRepository
 
 import flowserv.core.error as err
 import flowserv.core.util as util
 import flowserv.model.template.util as tmplutil
+import flowserv.tests.db as db
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))
@@ -75,12 +77,19 @@ def test_input_file_copy(tmpdir):
 def test_prepare_inputs_for_local_run(tmpdir):
     """Test copying input files for a local workflow run."""
     # Initialize the repository
-    repo = TemplateRepository(basedir=str(tmpdir))
+    connector = db.init_db(str(tmpdir))
+    repodir = util.create_dir(os.path.join(str(tmpdir), 'workflows'))
+    repo = WorkflowRepository(
+        con=connector.connect(),
+        fs=WorkflowFileSystem(repodir)
+    )
     # Load first template
-    _, template = repo.add_template(
+    wf = repo.create_workflow(
+        name='A',
         sourcedir=WORKFLOW_DIR,
         specfile=specfile
     )
+    template = wf.get_template()
     # Create run directory
     run_dir = os.path.join(str(tmpdir), 'run')
     os.makedirs(run_dir)
@@ -133,10 +142,12 @@ def test_prepare_inputs_for_local_run(tmpdir):
             arguments={}
         )
     # - Error when copying non-existing file
-    _, template = repo.add_template(
+    wf = repo.create_workflow(
+        name='B',
         sourcedir=WORKFLOW_DIR,
         specfile=specfile
     )
+    template = wf.get_template()
     shutil.rmtree(run_dir)
     os.makedirs(run_dir)
     with pytest.raises(IOError):
@@ -183,10 +194,12 @@ def test_prepare_inputs_for_local_run(tmpdir):
     assert not os.path.isfile(os.path.join(run_dir, 'data', 'persons.txt'))
     assert os.path.isfile(os.path.join(run_dir, 'data', 'friends.txt'))
     # Template with input file parameter that is not of type file
-    _, template = repo.add_template(
+    wf = repo.create_workflow(
+        name='C',
         sourcedir=WORKFLOW_DIR,
         specfile=specfile_ERR
     )
+    template = wf.get_template()
     shutil.rmtree(run_dir)
     os.makedirs(run_dir)
     # Copy input files to run directory

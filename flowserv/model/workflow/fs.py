@@ -10,21 +10,20 @@ workflows and their associated resources.
 
 The folder structure is currently as follows:
 
-/workflows                   : Base directory
+/workflows/                  : Base directory
     {workflow_id}            : Folder for individual workflow
-        resources            : Folder for results of workflow post-processing
-            {postproc_id}    : Result files for individual post-processing runs
-        groups               : Folder for workflow groups
+        groups/              : Folder for workflow groups
             {group_id}       : Folder for individual group
-                files        : Uploaded files for workflow group
+                files/       : Uploaded files for workflow group
                     {file_id}: Folder for uploaded file
-                runs         : Workflow runs that are associated with the group
+                runs/        : Workflow runs that are associated with the group
                     {run_id} : Individual run folder
+        postruns/            : Folder for runs of post-processing workflow
+            {run_id}         : Result files for individual post-processing runs
+        static/              : Folder for static template files
 """
 
 import os
-
-import flowserv.core.util as util
 
 
 class WorkflowFileSystem(object):
@@ -39,27 +38,7 @@ class WorkflowFileSystem(object):
         basedir: string
             Path to directory on the file system
         """
-        # Ensure that the base directory exists
-        self.basedir = util.create_dir(basedir, abs=True)
-
-    def group_file(self, workflow_id, group_id, file_id):
-        """Get path for a file that was uploaded to a workflow group.
-
-        Parameters
-        ----------
-        workflow_id: string
-            Unique workflow identifier
-        group_id: string
-            Unique workflow group identifier
-        file_id: string
-            Unique file identifier
-
-        Returns
-        -------
-        string
-        """
-        uploaddir = self.group_uploaddir(workflow_id, group_id)
-        return os.path.join(uploaddir, file_id)
+        self.basedir = basedir
 
     def group_uploaddir(self, workflow_id, group_id):
         """Get base directory for files that are uploaded to a workflow group.
@@ -78,9 +57,29 @@ class WorkflowFileSystem(object):
         groupdir = self.workflow_groupdir(workflow_id, group_id)
         return os.path.join(groupdir, 'files')
 
+    def group_uploadfile(self, workflow_id, group_id, file_id):
+        """Get path for a file that was uploaded for a workflow group.
+
+        Parameters
+        ----------
+        workflow_id: string
+            Unique workflow identifier
+        group_id: string
+            Unique workflow group identifier
+        file_id: string
+            Unique file identifier
+
+        Returns
+        -------
+        string
+        """
+        uploaddir = self.group_uploaddir(workflow_id, group_id)
+        return os.path.join(uploaddir, file_id)
+
     def run_basedir(self, workflow_id, group_id, run_id):
         """Get path to the base directory for all files that are maintained for
-        workflow runs.
+        a workflow run. The group identifier may be None in which case the run
+        is assumed to be a post-processing run.
 
         Parameters
         ----------
@@ -95,8 +94,12 @@ class WorkflowFileSystem(object):
         -------
         string
         """
-        groupdir = self.workflow_groupdir(workflow_id, group_id)
-        return os.path.join(groupdir, 'runs', run_id)
+        if group_id is not None:
+            groupdir = self.workflow_groupdir(workflow_id, group_id)
+            return os.path.join(groupdir, 'runs', run_id)
+        else:
+            postprocdir = self.workflow_postprocdir(workflow_id, group_id)
+            return os.path.join(postprocdir, run_id)
 
     def workflow_basedir(self, workflow_id):
         """Get base directory containing associated files for the workflow with
@@ -131,7 +134,7 @@ class WorkflowFileSystem(object):
         workflowdir = self.workflow_basedir(workflow_id)
         return os.path.join(workflowdir, 'groups', group_id)
 
-    def workflow_resourcedir(self, workflow_id, postproc_id):
+    def workflow_postprocdir(self, workflow_id, run_id):
         """Get base directory containing results for a post-processing run for
         the given workflow.
 
@@ -139,7 +142,7 @@ class WorkflowFileSystem(object):
         ----------
         workflow_id: string
             Unique workflow identifier
-        postproc_id: string
+        run_id: string
             Unique post-processing run identifier
 
         Returns
@@ -147,4 +150,19 @@ class WorkflowFileSystem(object):
         string
         """
         workflowdir = self.workflow_basedir(workflow_id)
-        return os.path.join(workflowdir, 'resources', postproc_id)
+        return os.path.join(workflowdir, 'postruns', run_id)
+
+    def workflow_staticdir(self, workflow_id):
+        """Get base directory containing static files that are associated with
+        a workflow template.
+
+        Parameters
+        ----------
+        workflow_id: string
+            Unique workflow identifier
+
+        Returns
+        -------
+        string
+        """
+        return os.path.join(self.workflow_basedir(workflow_id), 'static')
