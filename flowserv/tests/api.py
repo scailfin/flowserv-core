@@ -10,7 +10,7 @@
 
 import os
 
-from flowserv.service.benchmark import BenchmarkService
+from flowserv.service.workflow import WorkflowkService
 from flowserv.service.run import RunService
 from flowserv.service.submission import SubmissionService
 from flowserv.service.user import UserService
@@ -18,7 +18,7 @@ from flowserv.model.user.auth import DefaultAuthPolicy, OpenAccessAuth
 from flowserv.model.submission import SubmissionManager
 from flowserv.model.template.repo.benchmark import BenchmarkRepository
 from flowserv.model.template.repo import TemplateRepository
-from flowserv.controller.engine import BenchmarkEngine
+from flowserv.controller.engine import WorkflowEngine
 from flowserv.model.user.base import UserManager
 from flowserv.tests.benchmark import StateEngine
 

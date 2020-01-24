@@ -46,7 +46,8 @@ class DB(object):
         # listing
         files = list()
         for script_file in scripts:
-            files.append(pkg_resources.resource_filename(pkg_name, script_file))
+            filename = pkg_resources.resource_filename(pkg_name, script_file)
+            files.append(filename)
         # Execute the script files
         DatabaseDriver.execute(
             scripts=files,

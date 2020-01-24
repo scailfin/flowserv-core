@@ -26,7 +26,8 @@ ROB_AUTH_LOGINTTL = 'ROB_AUTH_TTL'
 """Default values for environment variables."""
 DEFAULT_LOGINTTL = 24 * 60 * 60
 
-# -- Public helper methods to access configuration values ----------------------
+# -- Public helper methods to access configuration values ---------------------
+
 
 def AUTH_LOGINTTL(default_value=None, raise_error=False):
     """Get the connect string for the database from the respective environment

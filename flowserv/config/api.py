@@ -34,7 +34,8 @@ DEFAULT_NAME = 'Reproducible Open Benchmarks for Data Analysis (API)'
 DEFAULT_PATH = '/rob/api/v1'
 DEFAULT_PORT = 5000
 
-# -- Public helper methods to access configuration values ----------------------
+# -- Public helper methods to access configuration values ---------------------
+
 
 def API_BASEDIR(default_value=None, raise_error=False):
     """Get the base directory that is used by the API to store benchmark

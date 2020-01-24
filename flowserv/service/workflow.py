@@ -6,15 +6,15 @@
 # ROB is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
-"""The benchmark API component provides methods to list and access benchmarks
-and benchmark leader boards.
+"""The workflow API component provides methods to create and access workflows
+and workflow result rankings.
 """
 
 from flowserv.view.benchmark import BenchmarkSerializer
 from flowserv.view.route import UrlFactory
 
 
-class BenchmarkService(object):
+class WorkflowService(object):
     """API component that provides methods to access benchmarks and benchmark
     leader boards.
     """

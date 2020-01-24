@@ -6,40 +6,34 @@
 # ROB is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
-"""The benchmark engine is responsible maintaining information about workflow
+"""The workflow engine is responsible maintaining information about workflow
 runs in the underlying database. Execution of workflows is controlled by a
-given workflow controller implementation.
+given workflow controller.
 """
 
-from flowserv.core.files import InputFile
 from flowserv.model.run.base import RunHandle
-from flowserv.model.template.schema import ResultSchema
-from flowserv.model.workflow.state import StatePending
 
 import flowserv.controller.run as store
 import flowserv.core.error as err
-import flowserv.core.util as util
 
 
-class BenchmarkEngine(object):
-    """The benchmark engine executes benchmark workflows for a given set of
-    argument values. The state of workflow runs in maintained in the underlying
-    relational database. WOrkflow execution is handled by a given workflow
-    controller.
+class WorkflowEngine(object):
+    """The workflow engine is a lightweight wrapper around a workflow
+    controller that is responsible for workflow execution. The state of
+    workflow runs in maintained in the underlying relational database.
     """
-    def __init__(self, con, backend):
-        """Initialize the connection to the databases that contains the
-        benchmark result tables and the workflow controller that is responsible
-        for executing and managing workflow runs.
+    def __init__(self, runstore, backend):
+        """Initialize the workflow run manager and the backend that is
+        responsible for workflow execution.
 
         Parameters
         ----------
-        con: DB-API 2.0 database connection
-            Connection to the underlying database
+        runstore: flowserv.model.run.manager.RunManager
+            Manager that maintains run information in the underlying database
         backend: flowserv.controller.backend.base.WorkflowController
             Workflow controller that is responsible for workflow execution
         """
-        self.con = con
+        self.runstore = runstore
         self.backend = backend
 
     def cancel_run(self, run_id, reason=None):
@@ -72,24 +66,23 @@ class BenchmarkEngine(object):
         self.backend.cancel_run(run_id)
         # Update the run state and return the run handle
         messages = None
-        if not reason is None:
+        if reason is not None:
             messages = list([reason])
         state = run.state.cancel(messages=messages)
-        store.update_run(
-            con=self.con,
+        self.runstore.update_run(
             run_id=run_id,
             state=state
         )
         return RunHandle(
             identifier=run_id,
-            submission_id=run.submission_id,
+            group_id=run.group_id,
             state=state,
             arguments=run.arguments
         )
 
     def delete_run(self, run_id):
-        """Delete the entry for the given run from the underlying database. This
-        will also remove any run results and result file resources.
+        """Delete the entry for the given run from the underlying database.
+        This will also remove any run results and result file resources.
 
         Deleting a run will raise an error if the run is in an active state.
 
@@ -98,59 +91,27 @@ class BenchmarkEngine(object):
         run_id: string
             Unique submission identifier
 
-        Returns
-        -------
-        flowserv.model.run.base.RunHandle
-
         Raises
         ------
         flowserv.core.error.UnknownRunError
         flowserv.core.error.InvalidRunStateError
         """
-        # Get the handle for the runs to get the list of file resources that
-        # have been created (if the run was executed successfully). This will
-        # raise an error if the run is unknown.
+        # Get the handle for the run to raise an error if the run is still
+        # active. This will also raise an error if the run is unknown.
         run = self.get_run(run_id)
         # If the run is active an error is raised. Since we use get_run() the
         # run state is already up to date.
         if run.is_active():
             raise err.InvalidRunStateError(run.state)
-        # Start by deleting all rows in the database that belong to the run.
-        # Delete files after the database changes are committed since there is
-        # no rollback option for file deletes.
-        store.delete_run(con=self.con, run_id=run_id)
-        # Delete all file resources.
-        self.backend.remove_run(run_id)
-        if run.is_success():
-            for res in run.list_resources():
-                # Don't raise an error if the file does not exist or cannot be
-                # removed
-                try:
-                    res.delete()
-                except OSError:
-                    pass
-        return run
-
-    def exists_run(self, run_id):
-        """Test if a run with the given identifier exists in the underlying
-        database.
-
-        Parameters
-        ----------
-        run_id: string
-            Unique run identifier
-
-        Returns
-        -------
-        bool
-        """
-        return store.exists_run(con=self.con, run_id=run_id)
+        # Use the run manager to delete the run from the underlying database
+        # and to delete all run files
+        self.runstore.delete_run(run_id)
 
     def get_run(self, run_id):
-        """Get handle for the given run. The run state and associated submission
-        and benchmark are read from the underlying database. If the runs state
-        is active the backend is queried to eventually update the state in case
-        it has changed since the last access.
+        """Get handle for the given run. The run information is read from the
+        underlying database. If the runs state is active and the backend is
+        asynchronous, then the backend is queried to eventually update the
+        state in case it has changed since the last access.
 
         Parameters
         ----------
@@ -165,7 +126,7 @@ class BenchmarkEngine(object):
         ------
         flowserv.core.error.UnknownRunError
         """
-        run = store.get_run(con=self.con, run_id=run_id)
+        run = self.runstore.get_run(con=self.con, run_id=run_id)
         # If the run is in an active state and the backend does not update the
         # state state asynchronously we have to query the backend to see if
         # there has been a change to the run state.
@@ -174,42 +135,23 @@ class BenchmarkEngine(object):
             # If the run state in the backend is different from the run state
             # in the database we update the database.
             if run.state.has_changed(state):
-                run = store.update_run(con=self.con, run_id=run_id, state=state)
+                run = self.runstore.update_run(run_id=run_id, state=state)
         return run
 
-    def list_runs(self, submission_id):
-        """Get a list of all runs for a given submission.
-
-        Parameters
-        ----------
-        submission_id: string
-            Unique submission identifier
-
-        Returns
-        -------
-        list(flowserv.model.run.base.RunHandle)
-        """
-        # Fetch list of run identifier for the submission from the database.
-        # Each run is then loaded separately to ensure that he result has
-        # updated run state information.
-        sql = 'SELECT run_id FROM benchmark_run r WHERE submission_id = ?'
-        result = list()
-        for row in self.con.execute(sql, (submission_id,)).fetchall():
-            result.append(self.get_run(row['run_id']))
-        return result
-
-    def start_run(self, submission_id, arguments, template):
+    def start_run(self, workflow_id, group_id, arguments, template):
         """Run benchmark for a given submission with the given set of arguments.
 
         Parameters
         ----------
-        submission_id: string
-            Unique submission identifier
+        workflow_id: string
+            Unique workflow identifier
+        group_id: string
+            Unique workflow group identifier
         arguments: dict(flowserv.model.parameter.value.TemplateArgument)
             Dictionary of argument values for parameters in the template
         template: flowserv.model.template.base.WorkflowTemplate
-            Workflow template containing the parameterized specification and the
-            parameter declarations
+            Workflow template containing the parameterized specification and
+            the parameter declarations
 
         Returns
         -------
@@ -220,18 +162,11 @@ class BenchmarkEngine(object):
         flowserv.core.error.MissingArgumentError
         flowserv.core.error.UnknownWorkflowGroupError
         """
-        # Get the workflow template for the benchmark that is associated with
-        # the given submission
-        sql = 'SELECT benchmark_id FROM benchmark_submission WHERE submission_id = ?'
-        row = self.con.execute(sql, (submission_id,)).fetchone()
-        if row is None:
-            raise err.UnknownWorkflowGroupError(submission_id)
         # Create a unique run identifier
-        run = store.create_run(
-            con=self.con,
-            submission_id=submission_id,
-            arguments=arguments,
-            commit_changes=False
+        run = self.runstore.create_run(
+            workflow_id=workflow_id,
+            group_id=group_id,
+            arguments=arguments
         )
         run_id = run.identifier
         # Execute the benchmark workflow for the given set of arguments.
@@ -242,16 +177,13 @@ class BenchmarkEngine(object):
         )
         # Update the run state if it is no longer pending for execution.
         if not state.is_pending():
-            store.update_run(
-                con=self.con,
+            self.runstore.update_run(
                 run_id=run_id,
-                state=state,
-                commit_changes=False
+                state=state
             )
-        self.con.commit()
         return RunHandle(
             identifier=run_id,
-            submission_id=submission_id,
+            group_id=group_id,
             state=state,
             arguments=run.arguments
         )

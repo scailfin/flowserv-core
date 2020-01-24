@@ -22,9 +22,7 @@ from string import Template
 from flowserv.model.workflow.resource import FSObject
 from flowserv.model.workflow.state import StateError, StateSuccess
 
-import flowserv.core.error as err
 import flowserv.model.template.util as tmpl
-import flowserv.controller.io as fileio
 import flowserv.core.util as util
 
 
@@ -63,7 +61,7 @@ def commands(template, arguments):
     # Add any workflow argument that is not contained in the modified parameter
     # list as a workflow parameter that is available for replacement.
     for key in arguments:
-        if not key in workflow_parameters:
+        if key not in workflow_parameters:
             workflow_parameters[key] = arguments[key].get_value()
     # Add all command stings in workflow steps to result after replacing
     # references to parameters
@@ -131,6 +129,7 @@ def modify_spec(workflow_spec, tmpl_parameters, add_parameters):
     spec['inputs'] = {'files': in_files, 'parameters': in_params}
     return spec, para_merge
 
+
 def run(run_dir, steps, output_files, verbose=False):
     """Run serial workflow commands. Expects all workflow files in the given run
     directory. Executes each command in the given order. Returns the list of
@@ -178,7 +177,7 @@ def run(run_dir, steps, output_files, verbose=False):
                 messages = list()
                 messages.append(proc.stderr.decode('utf-8'))
                 return StateError(created_at=ts_start, messages=messages)
-        except (AttributeError, TypeError) as e:
+        except (AttributeError, TypeError):
             try:
                 subprocess.check_output(
                     cmd,
@@ -267,7 +266,7 @@ def upload_files(template, arguments):
     flowserv.core.error.MissingArgumentError
     flowserv.core.error.UnknownParameterError
     """
-    return fileio.get_upload_files(
+    return tmpl.get_upload_files(
         template=template,
         basedir=template.sourcedir,
         files=template.workflow_spec.get('inputs', {}).get('files', []),

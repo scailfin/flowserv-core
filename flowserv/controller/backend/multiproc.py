@@ -23,10 +23,10 @@ from flowserv.core.db.driver import DatabaseDriver
 from flowserv.controller.backend.base import BaseWorkflowController
 from flowserv.model.workflow.state import StatePending
 
-import flowserv.controller.io as fileio
 import flowserv.controller.run as runstore
 import flowserv.controller.serial as serial
 import flowserv.core.error as err
+import flowserv.core.util as util
 import flowserv.model.workflow.state as serialize
 
 
@@ -232,7 +232,7 @@ def run_workflow(run_id, run_dir, state, input_files, output_files, steps, verbo
     (string, dict)
     """
     try:
-        fileio.copy_files(files=input_files, target_dir=run_dir)
+        util.copy_files(files=input_files, target_dir=run_dir)
         result_state = serial.run(
             run_dir=run_dir,
             steps=steps,

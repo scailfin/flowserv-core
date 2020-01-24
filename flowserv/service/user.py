@@ -13,8 +13,6 @@ well as access tokens.
 from flowserv.view.user import UserSerializer
 from flowserv.view.route import UrlFactory
 
-import flowserv.model.user.base as auth
-
 
 class UserService(object):
     """Implement methods that handle user login and logout as well as
@@ -33,7 +31,7 @@ class UserService(object):
             Override the default serializer
         """
         self.manager = manager
-        self.urls = urls if not urls is None else UrlFactory()
+        self.urls = urls if urls is not None else UrlFactory()
         self.serialize = serializer
         if self.serialize is None:
             self.serialize = UserSerializer(self.urls)

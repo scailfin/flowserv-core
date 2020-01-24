@@ -14,10 +14,8 @@ import os
 import shutil
 
 from flowserv.controller.backend.base import WorkflowController
-from flowserv.model.workflow.resource import FSObject
 
 import flowserv.core.error as err
-import flowserv.controller.io as fileio
 import flowserv.controller.serial as serial
 import flowserv.core.util as util
 import flowserv.model.workflow.state as serialize
@@ -26,8 +24,8 @@ import flowserv.model.workflow.state as serialize
 class SyncWorkflowEngine(WorkflowController):
     """Workflow controller that implements a workflow engine that executes each
     workflow run synchronously. The engine maintains workflow files in
-    directories under a given base directory. Information about workflow results
-    are stored in files that are named using the run identifier.
+    directories under a given base directory. Information about workflow
+    results are stored in files that are named using the run identifier.
 
     This implementation of the workflow engine expects a workflow specification
     that follow the syntax of REANA serial workflows.
@@ -81,8 +79,8 @@ class SyncWorkflowEngine(WorkflowController):
         run_id: string
             Unique identifier for the workflow run.
         template: flowserv.model.template.base.WorkflowTemplate
-            Workflow template containing the parameterized specification and the
-            parameter declarations
+            Workflow template containing the parameterized specification and
+            the parameter declarations
         arguments: dict(flowserv.model.parameter.value.TemplateArgument)
             Dictionary of argument values for parameters in the template
 
@@ -110,7 +108,7 @@ class SyncWorkflowEngine(WorkflowController):
         steps = serial.commands(template, arguments)
         output_files = serial.output_files(template, arguments)
         # Copy workflow files and then execute the workflow synchronously.
-        fileio.copy_files(files=files, target_dir=run_dir)
+        util.copy_files(files=files, target_dir=run_dir)
         state = serial.run(
             run_dir=run_dir,
             steps=steps,

@@ -17,6 +17,7 @@ import errno
 import io
 import json
 import os
+import shutil
 import tarfile
 import time
 import uuid
@@ -26,6 +27,39 @@ import yaml
 """Identifier for supported data formats."""
 FORMAT_JSON = 'JSON'
 FORMAT_YAML = 'YAML'
+
+
+def copy_files(files, target_dir):
+    """Copy list of files to a target directory. Expects a list of tuples that
+    contain the path to the source file on local disk and the relative target
+    path for the file in the given target directory.
+
+    Parameters
+    ----------
+    files: list((string, string))
+        List of source,target path pairs for files that are being copied
+    target_dir: string
+        Target directory for copied files (e.g., base directory for a
+        workflow run)
+    """
+    for source, target in files:
+        dst = os.path.join(target_dir, target)
+        # If the source references a directory the whole directory tree is
+        # copied
+        if os.path.isdir(source):
+            shutil.copytree(src=source, dst=dst)
+        else:
+            # Based on https://stackoverflow.com/questions/2793789/create-destination-path-for-shutil-copy-files/3284204
+            try:
+                shutil.copy(src=source, dst=dst)
+            except IOError as e:
+                # ENOENT(2): file does not exist, raised also on missing dest
+                # parent dir
+                if e.errno != errno.ENOENT or not os.path.isfile(source):
+                    raise
+                # try creating parent directories
+                os.makedirs(os.path.dirname(dst))
+                shutil.copy(src=source, dst=dst)
 
 
 def create_dir(directory, abs=False):

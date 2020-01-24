@@ -6,8 +6,8 @@
 # ROB is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
-"""Defines helper methods to access the values of environment variables that are
-used for application configuration.
+"""Defines helper methods to access the values of environment variables that
+are used for application configuration.
 """
 
 import os

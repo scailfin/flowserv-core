@@ -10,6 +10,11 @@
 
 from past.builtins import basestring
 
+import os
+
+from flowserv.core.files import FileHandle, InputFile
+from flowserv.model.parameter.value import TemplateArgument
+
 import flowserv.core.error as err
 
 
@@ -77,6 +82,89 @@ def get_parameter_references(spec, parameters=None):
                     # We currently do not support lists of lists
                     raise err.InvalidTemplateError('nested lists not supported')
     return parameters
+
+
+def get_upload_files(template, basedir, files, arguments):
+    """Get a list of all input files for a workflow template that need to be
+    uploaded for a new workflow run. The list of files corresponds, for
+    example, to the entries in the 'inputs.files' section of a REANA workflow
+    specification.
+
+    Returns a list of tuples containing the full path to the source file on
+    local disk and the relative target path for the uploaded file.
+
+    Raises errors if (i) an unknown parameter is referenced or (ii) if the type
+    of a referenced parameter in the input files section is not of type file.
+
+    Parameters
+    ----------
+    template: flowserv.model.template.base.WorkflowTemplate
+        Workflow template containing the parameterized specification and the
+        parameter declarations
+    basedir: string
+        Path to the base directory of the template folder containing static
+        template files
+    files: list(string)
+        List of file references
+    arguments: dict(flowserv.model.parameter.value.TemplateArgument)
+        Dictionary of argument values for parameters in the template
+
+    Returns
+    -------
+    list((string, string))
+
+    Raises
+    ------
+    flowserv.core.error.InvalidTemplateError
+    flowserv.core.error.MissingArgumentError
+    flowserv.core.error.UnknownParameterError
+    """
+    result = list()
+    for val in files:
+        # Set source and target values depending on whether the list
+        # entry references a template parameter or not
+        if is_parameter(val):
+            var = get_parameter_name(val)
+            # Raise error if the type of the referenced parameter is
+            # not file
+            para = template.get_parameter(var)
+            if not para.is_file():
+                msg = "expected file parameter for '{}'"
+                raise err.InvalidTemplateError(msg.format(var))
+            arg = arguments.get(var)
+            if arg is None:
+                if para.default_value is None:
+                    raise err.MissingArgumentError(var)
+                else:
+                    # Set argument to file handle using the default value
+                    # (assuming that the default points to a file in the
+                    # template base directory).
+                    if para.has_constant() and not para.as_input():
+                        target_path = para.get_constant()
+                    else:
+                        target_path = para.default_value
+                    arg = TemplateArgument(
+                        parameter=para,
+                        value=InputFile(
+                            f_handle=FileHandle(
+                                filename=os.path.join(
+                                    basedir,
+                                    para.default_value
+                                )
+                            ),
+                            target_path=target_path
+                        )
+                    )
+            # Get path to source file and the target path from the input
+            # file handle
+            source = arg.value.source()
+            target = arg.value.target()
+        else:
+            source = os.path.join(basedir, val)
+            target = val
+        # Upload source file
+        result.append((source, target))
+    return result
 
 
 def is_parameter(value):
@@ -177,9 +265,9 @@ def replace_value(value, arguments, parameters):
             return para.get_constant()
         # If arguments contains a value for the variable we return the
         # associated value from the dictionary. Note that there is a special
-        # treatment for file arguments. If case of file arguments the dictionary
-        # value is expected to be a file handle. In this case we return the
-        # file name as the argument value.
+        # treatment for file arguments. If case of file arguments the
+        # dictionary value is expected to be a file handle. In this case we
+        # return the file name as the argument value.
         if var in arguments:
             arg = arguments[var]
             if para.is_file():

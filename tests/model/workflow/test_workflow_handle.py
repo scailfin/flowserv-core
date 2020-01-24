@@ -9,7 +9,7 @@
 """Unit tests for workflow descriptors and handles."""
 
 
-from flowserv.model.parameter.group import ParameterGroup
+from flowserv.model.parameter.base import ParameterGroup
 from flowserv.model.template.base import WorkflowTemplate
 from flowserv.model.template.schema import ResultSchema
 from flowserv.model.workflow.base import WorkflowDescriptor, WorkflowHandle

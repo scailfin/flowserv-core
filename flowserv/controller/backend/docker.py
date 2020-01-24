@@ -19,7 +19,6 @@ from flowserv.controller.backend.multiproc import MultiProcessWorkflowEngine
 from flowserv.model.workflow.resource import FSObject
 
 import flowserv.controller.backend.sync as sync
-import flowserv.controller.io as fileio
 import flowserv.core.util as util
 
 
@@ -77,7 +76,7 @@ def docker_run(run_id, run_dir, state, input_files, output_files, steps, verbose
     # Setup the workflow environment by copying input files and creating the
     # output directpries
     try:
-        fileio.copy_files(files=input_files, target_dir=run_dir)
+        util.copy_files(files=input_files, target_dir=run_dir)
         # Create top-level folder for all expected result files (if it does not
         # exist already)
         for filename in output_files:

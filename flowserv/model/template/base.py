@@ -22,7 +22,7 @@ the modified workflow specification in which references to template parameters
 have been replaced by parameter values.
 """
 
-from flowserv.model.parameter.group import ParameterGroup
+from flowserv.model.parameter.base import ParameterGroup
 from flowserv.model.template.schema import ResultSchema
 
 import flowserv.core.error as err
@@ -69,7 +69,7 @@ class WorkflowTemplate(object):
         parameters: list or dict(flowserv.model.parameter.base.TemplateParameter), optional
             Dictionary of workflow template parameter declarations keyed by
             their unique identifier.
-        modules: list(flowserv.module.template.parameter.group.ParameterGroup), optional
+        modules: list(flowserv.module.parameter.base.ParameterGroup), optional
             List of workflow modules that group template parameters
         postproc_spec: dict, optional
             Optional post-processing workflow specification

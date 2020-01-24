@@ -39,7 +39,8 @@ ROB_ENGINE_MODULE = 'ROB_ENGINE_MODULE'
 def ENGIN_BASEDIR():
     """Get base directory for workflow engine from the environment. At this
     point we store run files in a sub-folder of the API base directory. If the
-    API base directory is not set the local director for temporary files is used.
+    API base directory is not set the local director for temporary files is
+    used.
 
     Returns
     -------
@@ -73,7 +74,7 @@ def ROB_ENGINE():
     if module_name is None and class_name is None:
         from flowserv.controller.backend.sync import SyncWorkflowEngine
         return SyncWorkflowEngine(basedir=ENGIN_BASEDIR())
-    elif not module_name is None and not class_name is None:
+    elif module_name is not None and class_name is not None:
         from importlib import import_module
         module = import_module(module_name)
         return getattr(module, class_name)()
