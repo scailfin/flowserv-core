@@ -82,8 +82,8 @@ class RankingManager(object):
         result_schema: flowserv.model.template.schema.ResultSchema
             Schema definition for workflow results
         order_by: list(flowserv.model.template.schema.SortColumn), optional
-            Use the given attribute to sort run results. If not given the schema
-            default attribute is used
+            Use the given attribute to sort run results. If not given, the
+            schema default sort order is used
         include_all: bool, optional
             Include at most one entry per group in the result if False
 
@@ -199,7 +199,7 @@ class RankingManager(object):
         # Execute insert statement (does not commit changes).
         sql = 'INSERT INTO {}({}) VALUES({})'.format(
              RESULT_TABLE(workflow_id),
-            ','.join(columns),
+             ','.join(columns),
             ','.join(['?'] * len(columns))
         )
         self.con.execute(sql, values)

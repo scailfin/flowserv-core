@@ -21,7 +21,6 @@ from flowserv.model.parameter.base import ParameterGroup
 from flowserv.model.template.base import WorkflowTemplate
 from flowserv.model.template.schema import ResultSchema
 from flowserv.model.workflow.base import WorkflowDescriptor, WorkflowHandle
-from flowserv.model.workflow.fs import WorkflowFileSystem
 from flowserv.model.workflow.resource import FSObject
 
 import flowserv.core.error as err

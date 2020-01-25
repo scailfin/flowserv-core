@@ -17,12 +17,20 @@ import os
 from contextlib import contextmanager
 
 from flowserv.core.db.driver import DatabaseDriver
+from flowserv.model.group.manager import WorkflowGroupManager
+from flowserv.model.ranking.manager import RankingManager
+from flowserv.model.run.manager import RunManager
 from flowserv.model.user.base import UserManager
 from flowserv.model.user.auth import DefaultAuthPolicy
+from flowserv.model.workflow.fs import WorkflowFileSystem
+from flowserv.model.workflow.repo import WorkflowRepository
 from flowserv.service.server import Service
 from flowserv.service.user import UserService
-from flowserv.view.route import UrlFactory, HEADER_TOKEN
+from flowserv.service.workflow import WorkflowService
+from flowserv.view.route import UrlFactory
 
+import flowserv.config.api as config
+import flowserv.core.error as err
 import flowserv.core.util as util
 
 
@@ -30,7 +38,7 @@ import flowserv.core.util as util
 multi-porcess backend to be able to maintain process state in between API
 requests.
 """
-#backend = config.FLOWSERV_ENGINE()
+# backend = config.FLOWSERV_ENGINE()
 
 
 class API(object):
@@ -39,38 +47,43 @@ class API(object):
     components that are not required to handle a user request.
 
     The API contains the following components:
-    - auth
-    - engine
-    - groups
-    - rankings
-    - runs
-    - service
-    - users
-    - workflows
+    - groups()
+    - runs()
+    - service()
+    - users()
+    - workflows()
     """
-    def __init__(self, con, auth=None):
-        """Initialize the database connection and the URL factory. The URL
-        factory is kept as a class property since every API component will
-        have an instance of this class.
+    def __init__(self, con, basedir=None, auth=None):
+        """Initialize the database connection, URL factory, and the file system
+        path generator. All other internal components are created when they are
+        acccessed for the first time
 
         Parameters
         ----------
         con: DB-API 2.0 database connection
             Connection to underlying database
+        basedir: string, optional
+            Path to the base directory for the API
         auth: lowserv.model.user.auth.Auth, optional
             Authentication and authorization policy
         """
         self.con = con
         self.urls = UrlFactory()
-        # Keep a copy of objects that may be used by multiple components of the
-        # API. Use the respective get method for each of them to ensure that
-        # the object is instantiated before access.
+        # Ensure that the API base directory exists
+        fsdir = basedir if basedir is not None else config.API_BASEDIR()
+        self.fs = WorkflowFileSystem(util.create_dir(fsdir))
+        # Keep an instance of objects that may be used by multiple components
+        # of the API. Use the respective property for each of them to ensure
+        # that the object is instantiated before access.
         self._auth = auth if auth is not None else None
         self._engine = None
-        self._repo = None
-        self._submissions = None
+        self._group_manager = None
+        self._ranking_manager = None
+        self._run_manager = None
+        self._workflow_repo = None
         self._users = None
 
+    @property
     def auth(self):
         """Get authentication handler. The object is create only once.
 
@@ -102,9 +115,54 @@ class API(object):
         ------
         flowserv.error.UnauthenticatedAccessError
         """
-        return self.auth().authenticate(access_token)
+        return self.auth.authenticate(access_token)
 
-    def service(self, access_token):
+    @property
+    def group_manager(self):
+        """Get the group manager instance. The object is created when the
+        manager is accessed for the first time.
+
+        Returns
+        --------
+        flowserv.model.group.manager.WorkflowGroupManager
+        """
+        if self._group_manager is None:
+            self._group_manager = WorkflowGroupManager(
+                con=self.con,
+                fs=self.fs
+            )
+        return self._group_manager
+
+    @property
+    def ranking_manager(self):
+        """Get the ranking manager instance. The object is created when the
+        manager is accessed for the first time.
+
+        Returns
+        --------
+        flowserv.model.ranking.manager.RankingManager
+        """
+        if self._ranking_manager is None:
+            self._ranking_manager = RankingManager(con=self.con)
+        return self._ranking_manager
+
+    @property
+    def run_manager(self):
+        """Get the run manager instance. The object is created when the manager
+        is accessed for the first time.
+
+        Returns
+        --------
+        flowserv.model.run.manager.RunManager
+        """
+        if self._run_manager is None:
+            self._run_manager = RunManager(
+                con=self.con,
+                fs=self.fs
+            )
+        return self._run_manager
+
+    def service_descriptor(self, access_token):
         """Get the serialization of the service descriptor. The access token
         is verified to be active and to obtain the user name.
 
@@ -123,21 +181,6 @@ class API(object):
             username = None
         return Service().service_descriptor(username=username)
 
-    def submissions(self):
-        """Get instance of the submission service component.
-
-        Returns
-        -------
-        flowserv.service.submission.SubmissionService
-        """
-        return SubmissionService(
-            engine=self.engine(),
-            manager=self.submission_manager(),
-            auth=self.auth(),
-            repo=self.benchmark_repository(),
-            urls=self.urls
-        )
-
     def users(self):
         """Get instance of the user service component.
 
@@ -152,6 +195,35 @@ class API(object):
             )
         return self._users
 
+    @property
+    def workflow_repository(self):
+        """Get the workflow repository. The object is created when the
+        repository is accessed for the first time.
+
+        Returns
+        --------
+        flowserv.model.workflow.repo.WorkflowRepository
+        """
+        if self._workflow_repo is None:
+            self._workflow_repo = WorkflowRepository(
+                con=self.con,
+                fs=self.fs
+            )
+        return self._workflow_repo
+
+    def workflows(self):
+        """Get API service component that provides functionality to access
+        workflows and workflow leader boards.
+
+        Returns
+        -------
+        flowserv.service.workflow.WorkflowService
+        """
+        return WorkflowService(
+            workflow_repository=self.workflow_repository,
+            ranking_manager=self.ranking_manager,
+            urls=self.urls
+        )
 
 @contextmanager
 def service():

@@ -40,9 +40,9 @@ DEFAULT_PORT = 5000
 def API_BASEDIR(default_value=None, raise_error=False):
     """Get the base directory that is used by the API to store benchmark
     templates and benchmark runs from the respective environment variable
-    'FLOWSERV_API_DIR'. Raises a MissingConfigurationError if the raise_error flag
-    is True and 'FLOWSERV_API_DIR' is not set. If the raise_error flag is False and
-    'FLOWSERV_API_DIR' is not set the default name is returned.
+    'FLOWSERV_API_DIR'. Raises a MissingConfigurationError if the raise_error
+    flag is True and 'FLOWSERV_API_DIR' is not set. If the raise_error flag is
+    False and 'FLOWSERV_API_DIR' is not set the default name is returned.
 
     Parameters
     ----------

@@ -47,7 +47,7 @@ def test_authenticate_user(tmpdir):
         ]
     )
     access_token = r[labels.ACCESS_TOKEN]
-    r = users.whoami_user(api.auth().authenticate(access_token))
+    r = users.whoami_user(api.auth.authenticate(access_token))
     util.validate_doc(doc=r, mandatory_labels=USER_LOGIN)
     links = hateoas.deserialize(r[labels.LINKS])
     util.validate_doc(
@@ -58,7 +58,7 @@ def test_authenticate_user(tmpdir):
         ]
     )
     # Logout
-    r = users.logout_user(api.auth().authenticate(access_token))
+    r = users.logout_user(api.auth.authenticate(access_token))
     util.validate_doc(doc=r, mandatory_labels=USER_LOGOUT)
     links = hateoas.deserialize(r[labels.LINKS])
     util.validate_doc(
