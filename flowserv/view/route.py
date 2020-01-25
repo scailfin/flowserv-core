@@ -1,9 +1,9 @@
-# This file is part of the Reproducible Open Benchmarks for Data Analysis
-# Platform (ROB).
+## This file is part of the Reproducible and Reusable Data Analysis Workflow
+# Server (flowServ).
 #
-# Copyright (C) 2019 NYU.
+# Copyright (C) [2019-2020] NYU.
 #
-# ROB is free software; you can redistribute it and/or modify it under the
+# flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
 """Factory for Urls to access and manipulate API resources."""
@@ -39,9 +39,9 @@ class UrlFactory(object):
         while self.base_url.endswith('/'):
             self.base_url = self.base_url[:-1]
         # Set base Url for resource related requests
-        self.benchmark_base_url = self.base_url + '/benchmarks'
+        self.workflow_base_url = self.base_url + '/workflow'
         self.run_base_url = self.base_url + '/runs'
-        self.submission_base_url = self.base_url + '/submissions'
+        self.group_base_url = self.base_url + '/groups'
         self.user_base_url = self.base_url + '/users'
 
     def activate_user(self):
@@ -54,7 +54,7 @@ class UrlFactory(object):
         return self.user_base_url + '/activate'
 
     def cancel_run(self, run_id):
-        """Url to POST cancel request for benchmark run.
+        """Url to POST cancel request for a workflow run.
 
         Parameters
         ----------
@@ -67,27 +67,27 @@ class UrlFactory(object):
         """
         return self.get_run(run_id)
 
-    def create_submission(self, benchmark_id):
-        """Url to POST a create submission request for the given benchmark.
+    def create_group(self, workflow_id):
+        """Url to POST a create workflow group request for the given workflow.
 
         Parameters
         ----------
-        benchmark_id: string
-            Unique benchmark identifier
+        workflow_id: string
+            Unique workflow identifier
 
         Returns
         -------
         string
         """
-        return self.list_submissions(benchmark_id=benchmark_id)
+        return self.list_groups(workflow_id=workflow_id)
 
-    def delete_file(self, submission_id, file_id):
+    def delete_file(self, group_id, file_id):
         """Url to DELETE a previously uploaded file.
 
         Parameters
         ----------
-        submission_id: string
-            Unique submission identifier
+        group_id: string
+            Unique workflow group identifier
         file_id: string
             Unique file identifier
 
@@ -95,10 +95,10 @@ class UrlFactory(object):
         -------
         string
         """
-        return self.list_files(submission_id) + '/' + file_id
+        return self.list_files(group_id) + '/' + file_id
 
     def delete_run(self, run_id):
-        """Url to DELETE a benchmark run.
+        """Url to DELETE a workflow run.
 
         Parameters
         ----------
@@ -111,42 +111,41 @@ class UrlFactory(object):
         """
         return self.get_run(run_id)
 
-    def delete_submission(self, submission_id):
-        """Url to DELETE a submission.
+    def delete_group(self, group_id):
+        """Url to DELETE a workflow group.
 
         Parameters
         ----------
-        submission_id: string
-            Unique submission identifier
+        group_id: string
+            Unique workflow group identifier
 
         Returns
         -------
         string
         """
-        return self.get_submission(submission_id)
+        return self.get_group(group_id)
 
-    def download_benchmark_archive(self, benchmark_id):
-        """Url to GET a benchmark resource archive.
+    def download_workflow_archive(self, workflow_id):
+        """Url to GET a workflow resource archive.
 
         Parameters
         ----------
-        benchmark_id: string
-            Unique benchmark identifier
+        workflow_id: string
+            Unique workflow identifier
 
         Returns
         -------
         string
         """
-        # /benchmarks/{benchmarkId}/downloads//archive
-        return self.get_benchmark(benchmark_id) + '/downloads/archive'
+        return self.get_workflow(workflow_id) + '/downloads/archive'
 
-    def download_benchmark_resource(self, benchmark_id, resource_id):
-        """Url to GET a benchmark resource.
+    def download_workflow_resource(self, workflow_id, resource_id):
+        """Url to GET a workflow resource.
 
         Parameters
         ----------
-        benchmark_id: string
-            Unique benchmark identifier
+        workflow_id: string
+            Unique workflow identifier
         resource_id: string
             Unique resource identifier
 
@@ -154,18 +153,17 @@ class UrlFactory(object):
         -------
         string
         """
-        # /benchmarks/{benchmarkId}/downloads/resources/{resourceId}
-        base_url = self.get_benchmark(benchmark_id)
+        base_url = self.get_workflow(workflow_id)
         url_suffix = '/downloads/resources/{}'.format(resource_id)
         return base_url + url_suffix
 
-    def download_file(self, submission_id, file_id):
+    def download_file(self, group_id, file_id):
         """Url to GET a previously uploaded file.
 
         Parameters
         ----------
-        submission_id: string
-            Unique submission identifier
+        group_id: string
+            Unique workflow group identifier
         file_id: string
             Unique file identifier
 
@@ -173,7 +171,7 @@ class UrlFactory(object):
         -------
         string
         """
-        return self.list_files(submission_id) + '/' + file_id
+        return self.list_files(group_id) + '/' + file_id
 
     def download_result_archive(self, run_id):
         """Url to GET a run result file archive.
@@ -210,40 +208,41 @@ class UrlFactory(object):
         url_suffix = '/downloads/resources/{}'.format(resource_id)
         return self.get_run(run_id) + url_suffix
 
-    def get_benchmark(self, benchmark_id):
-        """Url to GET benchmark handle.
+    def get_workflow(self, workflow_id):
+        """Url to GET workflow handle.
 
         Parameters
         ----------
-        benchmark_id: string
-            Unique benchmark identifier
+        workflow_id: string
+            Unique workflow identifier
 
         Returns
         -------
         string
         """
-        return self.benchmark_base_url + '/' + benchmark_id
+        return self.workflow_base_url + '/' + workflow_id
 
-    def get_leaderboard(self, benchmark_id, include_all=None):
-        """Url to GET benchmark leaderboard.
+    def get_leaderboard(self, workflow_id, include_all=None):
+        """Url to GET workflow leaderboard.
 
         Parameters
         ----------
-        benchmark_id: string
-            Unique benchmark identifier
+        workflow_id: string
+            Unique workflow identifier
         include_all: bool, optional
-            Flag to return all results and not just one result per submission
+            Flag to return all results and not just one result per workflow
+            group
         Returns
         -------
         string
         """
-        url = self.get_benchmark(benchmark_id) + '/leaderboard'
-        if not include_all is None and include_all:
+        url = self.get_workflow(workflow_id) + '/leaderboard'
+        if include_all is not None and include_all:
             url += '?includeAll'
         return url
 
     def get_run(self, run_id):
-        """Url to GET benchmark run handle.
+        """Url to GET workflow run handle.
 
         Parameters
         ----------
@@ -256,75 +255,66 @@ class UrlFactory(object):
         """
         return self.run_base_url + '/' + run_id
 
-    def get_submission(self, submission_id):
-        """Url to GET submission handle.
+    def get_group(self, group_id):
+        """Url to GET workflow group handle.
 
         Parameters
         ----------
-        submission_id: string
-            Unique submission identifier
+        group_id: string
+            Unique workflow group identifier
 
         Returns
         -------
         string
         """
-        return self.submission_base_url + '/' + submission_id
+        return self.group_base_url + '/' + group_id
 
-    def list_benchmarks(self):
-        """Url to GET a list of all benchmarks.
-
-        Returns
-        -------
-        string
-        """
-        return self.benchmark_base_url
-
-    def list_files(self, submission_id):
-        """Url to GET listing of all uploaded files for a given submission.
+    def list_files(self, group_id):
+        """Url to GET listing of all uploaded files for a given workflow group.
 
         Parameters
         ----------
-        submission_id: string
-            Unique submission identifier
+        group_id: string
+            Unique workflow group identifier
 
         Returns
         -------
         string
         """
-        return self.get_submission(submission_id) + '/files'
+        return self.get_group(group_id) + '/files'
 
-    def list_submissions(self, benchmark_id=None):
-        """Url to GET list of submissions. If the benchmark identifier is given
-        a list of all submissions for the benchmark is requested. Otherwise, the
-        list of all submissions that a user is a memebr of is requested.
+    def list_groups(self, workflow_id=None):
+        """Url to GET list of workflow groups. If theworkflow identifier is
+        given a list of all groups for the workflow is requested. Otherwise,
+        the list of all workflow groups the user is a member of is requested.
 
         Parameters
         ----------
-        benchmark_id: string, optional
-            Unique benchmark identifier
+        workflow_id: string, optional
+            Unique workflow identifier
 
         Returns
         -------
         string
         """
-        if not benchmark_id is None:
-            return self.get_benchmark(benchmark_id) + '/submissions'
+        if workflow_id is not None:
+            return self.get_workflow(workflow_id) + '/groups'
         else:
-            return self.submission_base_url
+            return self.group_base_url
 
-    def list_runs(self, submission_id):
-        """Url to GET listing of benchmark runs for a given submission.
+    def list_runs(self, group_id):
+        """Url to GET listing of workflow runs for a given workflow group.
 
         Parameters
         ----------
-        submission_id: string
-            Unique submission identifier
+        group_id: string
+            Unique workflow group identifier
 
         Returns
         -------
         string
         """
-        return self.get_submission(submission_id) + '/runs'
+        return self.get_group(group_id) + '/runs'
 
     def list_users(self):
         """Url to GET listing of registered users.
@@ -334,6 +324,15 @@ class UrlFactory(object):
         string
         """
         return self.user_base_url
+
+    def list_workflows(self):
+        """Url to GET a list of all workflows.
+
+        Returns
+        -------
+        string
+        """
+        return self.workflow_base_url
 
     def login(self):
         """Url to POST user credentials for login.
@@ -389,49 +388,49 @@ class UrlFactory(object):
         """
         return self.base_url
 
-    def start_run(self, submission_id):
-        """Url to POST arguments to start a new run for a given submission.
+    def start_run(self, group_id):
+        """Url to POST arguments to start a new run for a given workflow group.
 
         Parameters
         ----------
-        submission_id: string
-            Unique submission identifier
+        group_id: string
+            Unique workflow group identifier
 
         Returns
         -------
         string
         """
-        return self.get_submission(submission_id) + '/runs'
+        return self.get_group(group_id) + '/runs'
 
-    def update_submission(self, submission_id):
-        """Url to PUT a submission update request.
+    def update_group(self, group_id):
+        """Url to PUT a workflow group update request.
 
         Parameters
         ----------
-        submission_id: string
-            Unique submission identifier
+        group_id: string
+            Unique workflow group identifier
 
         Returns
         -------
         string
         """
-        return self.get_submission(submission_id)
+        return self.get_group(group_id)
 
-    def upload_file(self, submission_id):
+    def upload_file(self, group_id):
         """Url to POST a new file to upload. The uploaded file is associated
-        with the given submission.
+        with the given workflow group.
 
 
         Parameters
         ----------
-        submission_id: string
-            Unique submission identifier
+        group_id: string
+            Unique workflow group identifier
 
         Returns
         -------
         string
         """
-        return self.list_files(submission_id)
+        return self.list_files(group_id)
 
     def whoami(self):
         """Url to GET information about a user that is logged in.

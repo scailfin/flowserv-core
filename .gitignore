@@ -73,4 +73,5 @@ target/
 # Testing and Development
 .tmp/
 
+.flowserv/
 .rob/

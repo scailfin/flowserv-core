@@ -1,9 +1,9 @@
-# This file is part of the Reproducible Open Benchmarks for Data Analysis
-# Platform (ROB).
+# This file is part of the Reproducible and Reusable Data Analysis Workflow
+# Server (flowServ).
 #
-# Copyright (C) 2019 NYU.
+# Copyright (C) [2019-2020] NYU.
 #
-# ROB is free software; you can redistribute it and/or modify it under the
+# flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
 """Define common labels that are used on resource serializations."""
@@ -22,21 +22,20 @@ CREATED_AT = 'createdAt'
 STARTED_AT = 'startedAt'
 FINISHED_AT = 'finishedAt'
 
-# Benchmark resources
-BENCHMARKS = 'benchmarks'
-CAPTION = 'caption'
+# Workflow resources
+WORKFLOWS = 'workflows'
 DESCRIPTION = 'description'
 INSTRUCTIONS = 'instructions'
 MODULES = 'modules'
 PARAMETERS = 'parameters'
 RESOURCES = 'resources'
 
-# Benchmark leaderboard
+# Workflow leaderboard
 RANKING = 'ranking'
 RESULTS = 'results'
 RUN = 'run'
 SCHEMA = 'schema'
-SUBMISSION = 'submission'
+GROUP = 'group'
 VALUE = 'value'
 
 # Benchmark runs
@@ -56,9 +55,9 @@ REL = 'rel'
 # Runs
 REASON = 'reason'
 
-# Submissions
-BENCHMARK = 'benchmark'
-SUBMISSIONS = 'submissions'
+# Workflow groups
+WORKFLOW = 'workflow'
+GROUPS = 'groups'
 MEMBERS = 'members'
 OWNER_ID = 'ownerId'
 RUNS = 'runs'

@@ -1,23 +1,19 @@
-# This file is part of the Reproducible Open Benchmarks for Data Analysis
-# Platform (ROB).
+# This file is part of the Reproducible and Reusable Data Analysis Workflow
+# Server (flowServ).
 #
-# Copyright (C) 2019 NYU.
+# Copyright (C) [2019-2020] NYU.
 #
-# ROB is free software; you can redistribute it and/or modify it under the
+# flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
-"""Implementation of API methods that execute, access, and manipulate benchmark
-runs.
+"""The workflow run API component provides methods that execute, access, and
+manipulate workflow runs and their results.
 """
 
-import tarfile
-
-from io import BytesIO
-
 from flowserv.view.run import RunSerializer
-from flowserv.view.route import UrlFactory
 from flowserv.core.files import InputFile
 from flowserv.model.parameter.value import TemplateArgument
+from flowserv.model.run.base import RunHandle
 
 import flowserv.core.error as err
 import flowserv.core.util as util
@@ -26,77 +22,41 @@ import flowserv.view.labels as labels
 
 class RunService(object):
     """API component that provides methods to start, access, and manipulate
-    benchmark runs.
+    workflow runs and their resources.
     """
     def __init__(
-        self, engine, submissions, repo, auth, urls=None, serializer=None
+        self, run_manager, group_manager, workflow_repo, backend, auth, urls,
+        serializer=None
     ):
-        """Initialize the internal reference to the benchmark engine, the
-        manager for benchmark submissions, the benchmark repository, and to the
-        route factory.
+        """Initialize the internal reference to the workflow controller, the
+        runa and group managers, and to the route factory.
 
         Parameters
         ----------
-        engine: flowserv.model.benchmark.engine.BenchmarkEngine
-            Benchmark engine
-        submissions: flowserv.model.submission.SubmissionManager
-            Manager for benchmark submissions
-        repo: flowserv.model.template.repo.benchmark.BenchmarkRepository
-            Repository to access registered benchmarks
+        run_manager: flowserv.model.run.manager.RunManager
+            Manager for workflow runs
+        group_manager: flowserv.model.group.manager.GroupManager
+            Manager for workflow groups
+        workflow_repo: flowserv.model.workflow.repo.WorkflowRepository
+            Repository for workflow templates
+        backend: flowserv.controller.base.WorkflowController
+            Workflow engine controller
         auth: flowserv.model.user.auth.Auth
             Implementation of the authorization policy for the API
         urls: flowserv.view.route.UrlFactory
             Factory for API resource Urls
-        serializer: flowserv.view.submission.SubmissionSerializer, optional
+        serializer: flowserv.view.run.RunSerializer, optional
             Override the default serializer
         """
-        self.engine = engine
-        self.submissions = submissions
-        self.repo = repo
+        self.run_manager = run_manager
+        self.group_manager = group_manager
+        self.workflow_repo = workflow_repo
+        self.backend = backend
         self.auth = auth
-        self.urls = urls if urls is not None else UrlFactory()
+        self.urls = urls
         self.serialize = serializer
         if self.serialize is None:
             self.serialize = RunSerializer(self.urls)
-
-    def authorize_member(self, user, submission_id=None, run_id=None):
-        """Ensure that the user is a member of the submission for a run.
-        A unauthorized error is raised if the submission exists and the user is
-        not a member of the submission. A unknown submission error is raised if
-        submission does not exist.
-
-        Parameters
-        ----------
-        submission_id: string, optional
-            Unique submission identifier
-        run_id: string, optional
-            Unique run identifier
-        user: flowserv.model.user.base.UserHandle
-            Handle for user that is requesting access
-
-        Raises
-        ------
-        flowserv.core.error.UnauthorizedAccessError
-        flowserv.core.error.UnknownWorkflowGroupError
-        """
-        is_member = self.auth.is_submission_member(
-            submission_id=submission_id,
-            run_id=run_id,
-            user=user
-        )
-        if not is_member:
-            # At this point it is not clear whether the user is not a member of
-            # an existing submission or if the submission or run does not exist.
-            if not run_id is None and not self.engine.exists_run(run_id=run_id):
-                raise err.UnknownRunError(run_id)
-            elif not submission_id is None:
-                # The attempt to load the submission will fail if the
-                # submission does not exist.
-                self.submissions.get_submission(
-                    submission_id=submission_id,
-                    load_members=False
-                )
-            raise err.UnauthorizedAccessError()
 
     def cancel_run(self, run_id, user, reason=None):
         """Cancel the run with the given identifier. Returns a serialization of
@@ -126,13 +86,27 @@ class RunService(object):
         """
         # Raise an error if the user does not have rights to cancel the run or
         # if the run does not exist.
-        self.authorize_member(run_id=run_id, user=user)
-        self.engine.cancel_run(run_id, reason=reason)
-        return self.get_run(run_id=run_id, user=user)
+        self.auth.is_group_member(run_id=run_id, user=user)
+        # Get the run handle. Raise an error if the run is not in an active
+        # state
+        run = self.run_manager.get_run(run_id)
+        if not run.is_active():
+            raise err.InvalidRunStateError(run.state)
+        # Cancel execution at the backend
+        self.backend.cancel_run(run_id)
+        # Update the run state and return the run handle
+        messages = None
+        if reason is not None:
+            messages = list([reason])
+        state = run.state.cancel(messages=messages)
+        self.run_manager.update_run(
+            run_id=run_id,
+            state=state
+        )
+        return run.update_state(state)
 
     def delete_run(self, run_id, user):
-        """Delete the run with the given identifier. Returns a serialization of
-        the list of remaining runs for the run's submision.
+        """Delete the run with the given identifier.
 
         Raises an unauthorized access error if the user does not have the
         necessary access rights to delete the run.
@@ -152,8 +126,15 @@ class RunService(object):
         """
         # Raise an error if the user does not have rights to delete the run or
         # if the run does not exist.
-        self.authorize_member(run_id=run_id, user=user)
-        self.engine.delete_run(run_id)
+        self.auth.is_group_member(run_id=run_id, user=user)
+        # Get the handle for the run. Raise an error if the run is still
+        # in an active state.
+        run = self.run_manager.get_run(run_id)
+        if run.is_active():
+            raise err.InvalidRunStateError(run.state)
+        # Use the run manager to delete the run from the underlying database
+        # and to delete all run files
+        self.run_manager.delete_run(run_id)
 
     def get_result_archive(self, run_id, user):
         """Get compressed tar-archive containing all result files that were
@@ -182,20 +163,14 @@ class RunService(object):
         """
         # Raise an error if the user does not have rights to access the run or
         # if the run does not exist.
-        self.authorize_member(run_id=run_id, user=user)
+        self.auth.is_group_member(run_id=run_id, user=user)
         # Get the run handle. If the run is not in success state raise an
         # unknown run error. The files in the handle are keyed by their unique
         # name. All files are added to an im-memory tar archive.
-        run = self.engine.get_run(run_id)
+        run = self.run_manager.get_run(run_id)
         if not run.is_success():
             raise err.UnknownRunError(run_id)
-        file_out = BytesIO()
-        tar_handle = tarfile.open(fileobj=file_out, mode='w:gz')
-        for f in run.list_resources():
-            tar_handle.add(name=f.filename, arcname=f.resource_name)
-        tar_handle.close()
-        file_out.seek(0)
-        return file_out
+        return util.targzip(run.resources)
 
     def get_result_file(self, run_id, resource_id, user):
         """Get file handle for a resource file that was generated as the result
@@ -226,21 +201,14 @@ class RunService(object):
         # Raise an error if the user does not have rights to access the run or
         # if the run does not exist.
         self.authorize_member(run_id=run_id, user=user)
-        # Get the run handle. The files in the handle are keyed by their unique
-        # name and not the unique resource identifier that is used in web API
-        # requests. We need to find the resource by iterating over the list of
-        # available resources.
-        run = self.engine.get_run(run_id)
-        resource = None
-        for r in run.list_resources():
-            if r.resource_id == resource_id:
-                resource = r
-                break
-        # Raise error if the resource does not exist
+        # Get the run handle to retrieve the resource. Raise error if the
+        # resource does not exist
+        run = self.run_manager.get_run(run_id)
+        resource = run.resources.get_resource(identifier=resource_id)
         if resource is None:
             raise err.UnknownResourceError(resource_id)
         # Return file handle for resource file
-        return resource.file_handle()
+        return resource
 
     def get_run(self, run_id, user):
         """Get handle for the given run.
@@ -266,23 +234,25 @@ class RunService(object):
         """
         # Raise an error if the user does not have rights to access the run or
         # if the run does not exist.
-        self.authorize_member(run_id=run_id, user=user)
-        run = self.engine.get_run(run_id)
-        # Get the workflow template from the handle of the benchmark that the
-        # run submission belongs to.
-        submission = self.submissions.get_submission(run.submission_id)
-        return self.serialize.run_handle(run, submission)
+        self.auth.is_group_member(run_id=run_id, user=user)
+        # Get the run and the workflow group it belongs to. The group is needed
+        # to serialize the result.
+        run = self.run_manager.get_run(run_id)
+        return self.serialize.run_handle(
+            run=run,
+            group=self.group_manager.get_group(run.group_id)
+        )
 
-    def list_runs(self, submission_id, user):
-        """Get a listing of all run handles for the given submission.
+    def list_runs(self, group_id, user):
+        """Get a listing of all run handles for the given workflow group.
 
         Raises an unauthorized access error if the user does not have read
-        access to the submission.
+        access to the workflow group.
 
         Parameters
         ----------
-        submission_id: string
-            Unique submission identifier
+        group_id: string
+            Unique workflow group identifier
         user: flowserv.model.user.base.UserHandle
             User that requested the operation
 
@@ -296,15 +266,15 @@ class RunService(object):
         flowserv.core.error.UnknownWorkflowGroupError
         """
         # Raise an error if the user does not have rights to access the
-        # submission runs or if the submission does not exist.
-        self.authorize_member(submission_id=submission_id, user=user)
+        # workflow group runs or if the workflow group does not exist.
+        self.auth.is_group_member(group_id=group_id, user=user)
         return self.serialize.run_listing(
-            runs=self.submissions.get_runs(submission_id),
-            submission_id=submission_id
+            runs=self.run_manager.list_runs(group_id=group_id),
+            group_id=group_id
         )
 
-    def start_run(self, submission_id, arguments, user):
-        """Start a new workflow run for the given submission. The user provided
+    def start_run(self, group_id, arguments, user):
+        """Start a new workflow run for the given group. The user provided
         arguments are expected to be a list of (key,value)-pairs. The key value
         identifies the template parameter. The data type of the value depends
         on the type of the parameter.
@@ -312,12 +282,12 @@ class RunService(object):
         Returns a serialization of the handle for the started run.
 
         Raises an unauthorized access error if the user does not have the
-        necessary access to modify the submission.
+        necessary access to modify the workflow group.
 
         Parameters
         ----------
-        submission_id: string
-            Unique run identifier
+        group_id: string
+            Unique workflow group identifier
         arguments: list(dict)
             List of user provided arguments for template parameters
         user: flowserv.model.user.base.UserHandle
@@ -337,19 +307,18 @@ class RunService(object):
         flowserv.core.error.UnknownWorkflowGroupError
         """
         # Raise an error if the user does not have rights to start new runs for
-        # the submission or if the submission does not exist.
-        self.authorize_member(submission_id=submission_id, user=user)
-        # Get the submission handle. This will raise an error if the submission
-        # is unknown.
-        submission = self.submissions.get_submission(submission_id)
-        # Get the workflow template from the handle of the benchmark that the
-        # submission belongs to. Get a modified copy of the template based on
-        # the (potentially) modified workflow specification and parameters of
-        # the submission.
-        benchmark = self.repo.get_benchmark(submission.benchmark_id)
-        template = benchmark.get_template(
-            workflow_spec=submission.workflow_spec,
-            parameters=submission.parameters
+        # the workflow group or if the workflow group does not exist.
+        self.auth.is_group_member(group_id=group_id, user=user)
+        # Get handle for the given user group to enable access to uploaded
+        # files and the identifier of the associated workflow.
+        group = self.group_manager.get_group(group_id)
+        # Get the template from the workflow that the workflow group belongs
+        # to. Get a modified copy of the template based on  the (potentially)
+        # modified workflow specification and parameters of the workflow group.
+        workflow = self.workflow_repo.get_workflow(group.workflow_id)
+        template = workflow.get_template(
+            workflow_spec=group.workflow_spec,
+            parameters=group.parameters
         )
         # Create instances of the template arguments from the given list of
         # values. At this point we only distinguish between scalar values and
@@ -378,14 +347,14 @@ class RunService(object):
                 # The argument value is expected to be the identifier of an
                 # previously uploaded file. This will raise an exception if the
                 # file identifier is unknown
-                fh = submission.get_file(arg_val)
+                fh = group.get_file(arg_val)
                 if labels.AS in arg:
                     # Convert the file handle to an input file handle if a
                     # target path is given
                     fh = InputFile(fh, target_path=arg[labels.AS])
                 val = TemplateArgument(parameter=para, value=fh, validate=True)
             elif para.is_list() or para.is_record():
-                raise err.InvalidArgumentError('nested parameters not supported yet')
+                raise err.InvalidArgumentError('unsupported parameter type')
             else:
                 val = TemplateArgument(
                     parameter=para,
@@ -398,8 +367,28 @@ class RunService(object):
         # dictionary or set as default values)
         template.validate_arguments(run_args)
         # Start the run and return the serialized run handle.
-        run = submission.start_run(
-            template=template,
-            arguments=run_args
+        run = self.run_manager.create_run(
+            workflow_id=group.workflow_id,
+            group_id=group_id,
+            arguments=arguments
         )
-        return self.serialize.run_handle(run, submission)
+        run_id = run.identifier
+        # Execute the benchmark workflow for the given set of arguments.
+        state = self.backend.exec_workflow(
+            run_id=run_id,
+            template=template,
+            arguments=arguments
+        )
+        # Update the run state if it is no longer pending for execution.
+        if not state.is_pending():
+            self.run_manager.update_run(
+                run_id=run_id,
+                state=state
+            )
+        run = RunHandle(
+            identifier=run_id,
+            group_id=group_id,
+            state=state,
+            arguments=run.arguments
+        )
+        return self.serialize.run_handle(run, group)

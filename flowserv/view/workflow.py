@@ -1,21 +1,21 @@
-# This file is part of the Reproducible Open Benchmarks for Data Analysis
-# Platform (ROB).
+# This file is part of the Reproducible and Reusable Data Analysis Workflow
+# Server (flowServ).
 #
-# Copyright (C) 2019 NYU.
+# Copyright (C) [2019-2020] NYU.
 #
-# ROB is free software; you can redistribute it and/or modify it under the
+# flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
-"""Interface to serialize benchmark resource objects."""
+"""Interface to serialize workflow resource objects."""
 
 
 import flowserv.view.hateoas as hateoas
 import flowserv.view.labels as labels
 
 
-class BenchmarkSerializer(object):
-    """Serializer for benchmark resource objects. Defines the methods that are
-    used to serialize benchmark descriptors and handles.
+class WorkflowSerializer(object):
+    """Serializer for workflow resource objects. Defines the methods that are
+    used to serialize workflow descriptors, handles, and listing.
     """
     def __init__(self, urls):
         """Initialize the reference to the Url factory.
@@ -27,59 +27,60 @@ class BenchmarkSerializer(object):
         """
         self.urls = urls
 
-    def benchmark_descriptor(self, benchmark):
+    def workflow_descriptor(self, workflow):
         """Get dictionary serialization containing the descriptor of a
-        benchmark resource.
+        workflow resource.
 
         Parameters
         ----------
-        benchmark: flowserv.model.template.base.WorkflowHandle
-            Benchmark handle
+        workflow: flowserv.model.workflow.base.WorkflowHDescriptor
+            Workflow descriptor
 
         Returns
         -------
         dict
         """
-        b_id = benchmark.identifier
+        b_id = workflow.identifier
         leaderboard_url = self.urls.get_leaderboard(b_id)
-        rel_submission_create = hateoas.action(
+        rel_groups_create = hateoas.action(
             hateoas.CREATE,
-            resource=hateoas.SUBMISSIONS
+            resource=hateoas.GROUPS
         )
         obj = {
             labels.ID: b_id,
-            labels.NAME: benchmark.name,
+            labels.NAME: workflow.name,
             labels.LINKS: hateoas.serialize({
-                hateoas.SELF: self.urls.get_benchmark(b_id),
+                hateoas.SELF: self.urls.get_workflow(b_id),
                 hateoas.LEADERBOARD: leaderboard_url,
-                rel_submission_create: self.urls.create_submission(b_id)
+                rel_groups_create: self.urls.create_group(b_id)
             })
         }
-        if benchmark.has_description():
-            obj[labels.DESCRIPTION] = benchmark.description
-        if benchmark.has_instructions():
-            obj[labels.INSTRUCTIONS] = benchmark.instructions
+        if workflow.has_description():
+            obj[labels.DESCRIPTION] = workflow.description
+        if workflow.has_instructions():
+            obj[labels.INSTRUCTIONS] = workflow.instructions
         return obj
 
-    def benchmark_handle(self, benchmark):
-        """Get dictionary serialization containing the handle of a
-        benchmark resource.
+    def workflow_handle(self, workflow):
+        """Get dictionary serialization containing the handle of a workflow
+        resource.
 
         Parameters
         ----------
-        benchmark: flowserv.model.template.base.WorkflowHandle
-            Benchmark handle
+        workflow: flowserv.model.workflow.base.WorkflowHandle
+            Workflow handle
 
         Returns
         -------
         dict
         """
-        obj = self.benchmark_descriptor(benchmark)
-        # Add parameter declarations to the serialized benchmark descriptor
-        parameters = benchmark.template.parameters.values()
+        obj = self.workflow_descriptor(workflow)
+        template = workflow.get_template()
+        # Add parameter declarations to the serialized workflow descriptor
+        parameters = template.parameters.values()
         obj[labels.PARAMETERS] = [p.to_dict() for p in parameters]
         # Add module definitions if given
-        modules = benchmark.template.modules
+        modules = template.modules
         if modules is not None:
             obj[labels.MODULES] = [
                 {
@@ -90,21 +91,21 @@ class BenchmarkSerializer(object):
         modules
         return obj
 
-    def benchmark_leaderboard(self, benchmark, ranking):
-        """Get dictionary serialization for a benchmark leaderboard.
+    def workflow_leaderboard(self, workflow, ranking):
+        """Get dictionary serialization for a workflow evaluation leaderboard.
 
         Parameters
         ----------
-        benchmark: flowserv.model.template.base.WorkflowHandle
-            Benchmark handle
+        workflow: flowserv.model.workflow.base.WorkflowHandle
+            Workflow handle
         leaderboard: flowserv.model.ranking.ResultRanking
-            List of entries in the benchmark leaderboard
+            List of entries in the workflow evaluation leaderboard
 
         Returns
         -------
         dict
         """
-        b_id = benchmark.identifier
+        w_id = workflow.identifier
         # Serialize ranking entries
         entries = list()
         for run in ranking.entries:
@@ -118,26 +119,26 @@ class BenchmarkSerializer(object):
                     labels.STARTED_AT: run.started_at.isoformat(),
                     labels.FINISHED_AT: run.finished_at.isoformat()
                 },
-                labels.SUBMISSION: {
-                    labels.ID: run.submission_id,
-                    labels.NAME: run.submission_name
+                labels.GROUP: {
+                    labels.ID: run.group_id,
+                    labels.NAME: run.group_name
                 },
                 labels.RESULTS: results
             })
         # HATEOAS references
         links = {
-            hateoas.SELF: self.urls.get_leaderboard(b_id),
-            hateoas.BENCHMARK: self.urls.get_benchmark(b_id),
+            hateoas.SELF: self.urls.get_leaderboard(w_id),
+            hateoas.WORKFLOW: self.urls.get_workflow(w_id),
         }
-        # Serialize available benchmark post-processing resources
+        # Serialize available workflow post-processing resources
         resources = list()
-        current_resources = benchmark.get_resources()
+        current_resources = workflow.resources
         if current_resources is not None:
             result_id = current_resources.result_id
             if result_id is not None:
                 for r in current_resources:
-                    url = self.urls.download_benchmark_resource(
-                        benchmark_id=b_id,
+                    url = self.urls.download_workflow_resource(
+                        workflow_id=w_id,
                         resource_id=r.identifier
                     )
                     resources.append({
@@ -146,9 +147,7 @@ class BenchmarkSerializer(object):
                         labels.CAPTION: r.caption,
                         labels.LINKS: hateoas.serialize({hateoas.SELF: url})
                     })
-                archive_url = self.urls.download_benchmark_archive(
-                    benchmark_id=b_id
-                )
+                archive_url = self.urls.download_workflow_archive(w_id)
                 links[hateoas.RESOURCES] = archive_url
         return {
             labels.SCHEMA: [{
@@ -162,23 +161,23 @@ class BenchmarkSerializer(object):
             labels.LINKS: hateoas.serialize(links)
         }
 
-    def benchmark_listing(self, benchmarks):
-        """Get dictionary serialization of a benchmark listing.
+    def workflow_listing(self, workflows):
+        """Get dictionary serialization of a workflow listing.
 
         Parameters
         ----------
-        benchmarks: list(flowserv.model.template.base.WorkflowHandle)
-            List of benchmark descriptors
+        workflows: list(flowserv.model.workflow.base.WorkflowDescriptor)
+            List of workflow descriptors
 
         Returns
         -------
         dict
         """
         return {
-            labels.BENCHMARKS: [
-                self.benchmark_descriptor(b) for b in benchmarks
+            labels.WORKFLOWS: [
+                self.workflow_descriptor(w) for w in workflows
             ],
             labels.LINKS: hateoas.serialize({
-                hateoas.SELF: self.urls.list_benchmarks()
+                hateoas.SELF: self.urls.list_workflows()
             })
         }

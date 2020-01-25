@@ -73,7 +73,7 @@ The following steps are an example for creating an initial empty database for RO
 Workflow Engine
 ---------------
 
-The benchmark engine uses a workflow controller to handle execution of benchmark workflows. The interface for the controller is defined in ``flowserv.controller.backend.base.WorkflowController``. Different workflow backends will implement their own version of the workflow controller. The specific controller that is to be used by an instance of ROB is specified using the following two environment variables:
+The benchmark engine uses a workflow controller to handle execution of benchmark workflows. The interface for the controller is defined in ``flowserv.controller.base.WorkflowController``. Different workflow backends will implement their own version of the workflow controller. The specific controller that is to be used by an instance of ROB is specified using the following two environment variables:
 
 - **FLOWSERV_ENGINE_CLASS**: The name of the Pyhton class that implements the workflow controller interface
 - **FLOWSERV_ENGINE_MODULE**: The full name of the module that contains the implementation of the workflow controller interface

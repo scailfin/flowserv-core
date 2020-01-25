@@ -1,9 +1,9 @@
-# This file is part of the Reproducible Open Benchmarks for Data Analysis
-# Platform (ROB).
+# This file is part of the Reproducible and Reusable Data Analysis Workflow
+# Server (flowServ).
 #
-# Copyright (C) 2019 NYU.
+# Copyright (C) [2019-2020] NYU.
 #
-# ROB is free software; you can redistribute it and/or modify it under the
+# flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
 """Base serializer interface. Includes implementation of base methods that are
@@ -49,7 +49,7 @@ class ServiceSerializer(object):
         -------
         dict
         """
-        valid_token = not username is None
+        valid_token = username is not None
         obj = {
             labels.NAME: name,
             labels.VERSION: version,
@@ -59,10 +59,10 @@ class ServiceSerializer(object):
                 hateoas.LOGIN: self.urls.login(),
                 hateoas.LOGOUT: self.urls.logout(),
                 hateoas.REGISTER: self.urls.register_user(),
-                hateoas.BENCHMARKS: self.urls.list_benchmarks(),
-                hateoas.SUBMISSIONS: self.urls.list_submissions()
+                hateoas.WORKFLOWS: self.urls.list_workflows(),
+                hateoas.GROUPS: self.urls.list_groups()
             })
         }
-        if not username is None:
+        if username is not None:
             obj[labels.USERNAME] = username
         return obj

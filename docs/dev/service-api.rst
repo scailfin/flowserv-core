@@ -7,24 +7,6 @@ The following is a current list of API class that are provided by the different 
 
 .. code-block:: python
 
-    class FileService(object):
-        @route('/files/{userGroupId}', methods=['GET'])
-        def list_files(self, group_id, user):
-            pass
-
-        @route('/files/{userGroupId}', methods=['POST'])
-        def upload_file(self, group_id, file, file_name, user, file_type=None):
-            pass
-
-        @route('/uploads/{userGroupId}/files/{fileId}', methods=['DELETE'])
-        def delete_file(self, group_id, file_id, user):
-            pass
-
-        @route('/uploads/{userGroupId}/files/{fileId}', methods=['GET'])
-        def get_file(self, group_id, file_id, user):
-            pass
-
-
     class RunService(object):
         @route('/runs/{runId}', methods=['PUT'])
         def cancel_run(self, run_id, user, reason=None):
@@ -61,7 +43,25 @@ The following is a current list of API class that are provided by the different 
             pass
 
 
-    class UserGroupService(object):
+    class UploadFileService(object):
+        @route('/files/{userGroupId}', methods=['GET'])
+        def list_files(self, group_id, user):
+            pass
+
+        @route('/files/{userGroupId}', methods=['POST'])
+        def upload_file(self, group_id, file, file_name, user, file_type=None):
+            pass
+
+        @route('/uploads/{userGroupId}/files/{fileId}', methods=['DELETE'])
+        def delete_file(self, group_id, file_id, user):
+            pass
+
+        @route('/uploads/{userGroupId}/files/{fileId}', methods=['GET'])
+        def get_file(self, group_id, file_id, user):
+            pass
+
+
+    class WorkflowGroupService(object):
         @route('/workflows/{workflowId}/groups', methods=['POST'])
         def create_group(self, workflow_id, name, user, parameters=None, members=None):
             pass

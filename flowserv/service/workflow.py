@@ -1,16 +1,16 @@
-# This file is part of the Reproducible Open Benchmarks for Data Analysis
-# Platform (ROB).
+# This file is part of the Reproducible and Reusable Data Analysis Workflow
+# Server (flowServ).
 #
-# Copyright (C) 2019 NYU.
+# Copyright (C) [2019-2020] NYU.
 #
-# ROB is free software; you can redistribute it and/or modify it under the
+# flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
 """The workflow API component provides methods to create and access workflows
 and workflow result rankings.
 """
 
-from flowserv.view.benchmark import BenchmarkSerializer
+from flowserv.view.workflow import WorkflowSerializer
 
 import floserv.core.error as err
 import flowserv.core.util as util
@@ -35,7 +35,7 @@ class WorkflowService(object):
             Manager for workflow evaluation rankings
         urls: flowserv.view.route.UrlFactory
             Factory for API resource Urls
-        serializer: flowserv.view.benchmark.BenchmarkSerializer, optional
+        serializer: flowserv.view.workflow.WorkflowSerializer, optional
             Override the default serializer
         """
         self.workflow_repo = workflow_repo
@@ -43,7 +43,7 @@ class WorkflowService(object):
         self.urls = urls
         self.serialize = serializer
         if self.serialize is None:
-            self.serialize = BenchmarkSerializer(self.urls)
+            self.serialize = WorkflowSerializer(self.urls)
 
     def create_workflow(
         self, name, description=None, instructions=None, sourcedir=None,
@@ -108,7 +108,7 @@ class WorkflowService(object):
             # repository.
             self.workflow_repo.con.commit()
         # Return serialization og the workflow handle
-        return self.serialize.benchmark_handle(workflow)
+        return self.serialize.workflow_handle(workflow)
 
     def delete_workflow(self, workflow_id):
         """Delete the workflow with the given identifier.
@@ -161,7 +161,7 @@ class WorkflowService(object):
             )
         else:
             ranking = list()
-        return self.serialize.benchmark_leaderboard(
+        return self.serialize.workflow_leaderboard(
             workflow=workflow,
             ranking=ranking
         )
@@ -184,7 +184,7 @@ class WorkflowService(object):
         """
         # Get the workflow handle. This will ensure that the workflow exists.
         workflow = self.workflow_repo.get_workflow(workflow_id)
-        return self.serialize.benchmark_handle(workflow)
+        return self.serialize.workflow_handle(workflow)
 
     def get_workflow_archive(self, workflow_id):
         """Get in-memory compressed tar-file containing all resource files for
@@ -215,14 +215,14 @@ class WorkflowService(object):
         return util.targzip(resources)
 
     def get_workflow_resource_file(self, workflow_id, resource_id):
-        """Get file handle for a benchmark resource that has been generated
+        """Get file handle for a workflow resource that has been generated
         by the post-processing step. If the result identifier is None the
         latest resource results are returned.
 
         Parameters
         ----------
-        benchmark_id: string
-            Unique benchmark identifier
+        workflow_id: string
+            Unique workflow identifier
         resource_id: string
             Unique resource identifier
         result_id: string, optional

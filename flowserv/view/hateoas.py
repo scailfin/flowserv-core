@@ -1,9 +1,9 @@
-# This file is part of the Reproducible Open Benchmarks for Data Analysis
-# Platform (ROB).
+# This file is part of the Reproducible and Reusable Data Analysis Workflow
+# Server (flowServ).
 #
-# Copyright (C) 2019 NYU.
+# Copyright (C) [2019-2020] NYU.
 #
-# ROB is free software; you can redistribute it and/or modify it under the
+# flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
 """Constants and methods to serialize 'Hypermedia As The Engine Of Application
@@ -22,6 +22,8 @@ CANCEL = 'cancel'
 CREATE = 'create'
 DELETE = 'delete'
 DOWNLOAD = 'download'
+GROUP = 'group'
+GROUPS = 'groupss'
 JOIN = 'join'
 LEADERBOARD = 'leaderboard'
 LEAVE = 'leave'
@@ -33,8 +35,6 @@ RESOURCES = 'resources'
 RESULTS = 'results'
 SELF = 'self'
 SERVICE = 'service'
-SUBMISSION = 'submission'
-SUBMISSIONS = 'submissions'
 SUBMIT = 'submit'
 TEAMS = 'teams'
 UPDATE = 'update'

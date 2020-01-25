@@ -1,9 +1,9 @@
-# This file is part of the Reproducible Open Benchmarks for Data Analysis
-# Platform (ROB).
+# This file is part of the Reproducible and Reusable Data Analysis Workflow
+# Server (flowServ).
 #
-# Copyright (C) 2019 NYU.
+# Copyright (C) [2019-2020] NYU.
 #
-# ROB is free software; you can redistribute it and/or modify it under the
+# flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
 """Unit tests for the asynchronous multiprocess workflow controller."""
@@ -15,7 +15,7 @@ import time
 from flowserv.core.files import FileHandle
 from flowserv.model.template.base import WorkflowTemplate
 from flowserv.model.parameter.value import TemplateArgument
-from flowserv.controller.backend.multiproc import MultiProcessWorkflowEngine
+from flowserv.controller.multiproc import MultiProcessWorkflowEngine
 
 from flowserv.controller.engine import BenchmarkEngine
 

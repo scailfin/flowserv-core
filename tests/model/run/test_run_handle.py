@@ -1,8 +1,9 @@
-# This file is part of Flowserv.
+# This file is part of the Reproducible and Reusable Data Analysis Workflow
+# Server (flowServ).
 #
 # Copyright (C) [2019-2020] NYU.
 #
-# ROB is free software; you can redistribute it and/or modify it under the
+# flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
 """Unit tests for run handles."""

@@ -1,9 +1,9 @@
-# This file is part of the Reproducible Open Benchmarks for Data Analysis
-# Platform (ROB).
+# This file is part of the Reproducible and Reusable Data Analysis Workflow
+# Server (flowServ).
 #
-# Copyright (C) 2019 NYU.
+# Copyright (C) [2019-2020] NYU.
 #
-# ROB is free software; you can redistribute it and/or modify it under the
+# flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
 """Helper classes method to create instances of the API components. All
@@ -11,8 +11,6 @@ components use the same underlying database connection. The connection object
 is under the control of of a context manager to ensure that the connection is
 closed properly after every API request has been handled.
 """
-
-import os
 
 from contextlib import contextmanager
 
@@ -24,6 +22,9 @@ from flowserv.model.user.base import UserManager
 from flowserv.model.user.auth import DefaultAuthPolicy
 from flowserv.model.workflow.fs import WorkflowFileSystem
 from flowserv.model.workflow.repo import WorkflowRepository
+from flowserv.service.files import UploadFileService
+from flowserv.service.group import WorkflowGroupService
+from flowserv.service.run import RunService
 from flowserv.service.server import Service
 from flowserv.service.user import UserService
 from flowserv.service.workflow import WorkflowService
@@ -113,7 +114,7 @@ class API(object):
 
         Raises
         ------
-        flowserv.error.UnauthenticatedAccessError
+        flowserv.core.error.UnauthenticatedAccessError
         """
         return self.auth.authenticate(access_token)
 
@@ -132,6 +133,22 @@ class API(object):
                 fs=self.fs
             )
         return self._group_manager
+
+    def groups(self):
+        """Get API service component that provides functionality to access and
+        manipulate workflows groups.
+
+        Returns
+        -------
+        flowserv.service.group.WorkflowGroupService
+        """
+        return WorkflowGroupService(
+            group_manager=self.group_manager,
+            workflow_repo=self.workflow_repo,
+            backend=self.engine,
+            auth=self.auth,
+            urls=self.urls
+        )
 
     @property
     def ranking_manager(self):
@@ -162,6 +179,23 @@ class API(object):
             )
         return self._run_manager
 
+    def runs(self):
+        """Get API service component that provides functionality to access
+        workflows runs.
+
+        Returns
+        -------
+        flowserv.service.run.RunService
+        """
+        return RunService(
+            run_manager=self.run_manager,
+            group_manager=self.group_manager,
+            workflow_repo=self.workflow_repo,
+            backend=self.engine,
+            auth=self.auth,
+            urls=self.urls
+        )
+
     def service_descriptor(self, access_token):
         """Get the serialization of the service descriptor. The access token
         is verified to be active and to obtain the user name.
@@ -180,6 +214,20 @@ class API(object):
         except err.UnauthenticatedAccessError:
             username = None
         return Service().service_descriptor(username=username)
+
+    def uploads(self):
+        """Get API service component that provides functionality to access,
+        delete, and upload files for workflows groups.
+
+        Returns
+        -------
+        flowserv.service.files.UploadFileService
+        """
+        return UploadFileService(
+            group_manager=self.group_manager,
+            auth=self.auth,
+            urls=self.urls
+        )
 
     def users(self):
         """Get instance of the user service component.
@@ -224,6 +272,7 @@ class API(object):
             ranking_manager=self.ranking_manager,
             urls=self.urls
         )
+
 
 @contextmanager
 def service():

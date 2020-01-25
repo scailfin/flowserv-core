@@ -1,9 +1,9 @@
-# This file is part of the Reproducible Open Benchmarks for Data Analysis
-# Platform (ROB).
+# This file is part of the Reproducible and Reusable Data Analysis Workflow
+# Server (flowServ).
 #
-# Copyright (C) 2019 NYU.
+# Copyright (C) [2019-2020] NYU.
 #
-# ROB is free software; you can redistribute it and/or modify it under the
+# flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
 """Workflow access groups are containers for sets of users and sets of workflow
@@ -112,7 +112,7 @@ class WorkflowGroupHandle(WorkflowGroupDescriptor):
 
         Raises
         ------
-        robcore.core.error.UnknownFileError
+        flowserv.core.error.UnknownFileError
         """
         # Get the file handle which contains the path to the file on disk.
         # This will raise an error if the file does not exist
@@ -137,11 +137,11 @@ class WorkflowGroupHandle(WorkflowGroupDescriptor):
 
         Returns
         -------
-        robcore.core.files.FileHandle
+        flowserv.core.files.FileHandle
 
         Raises
         ------
-        robcore.core.error.UnknownFileError
+        flowserv.core.error.UnknownFileError
         """
         # Get name of the file from the underlying database. Raise error if the
         # result is empty.
@@ -168,7 +168,7 @@ class WorkflowGroupHandle(WorkflowGroupDescriptor):
 
         Returns
         -------
-        list(robcore.core.files.FileHandle)
+        list(flowserv.core.files.FileHandle)
         """
         # Get list of uploaded files from the underlying database
         sql = 'SELECT file_id, name FROM group_upload_file WHERE group_id = ?'
@@ -208,11 +208,11 @@ class WorkflowGroupHandle(WorkflowGroupDescriptor):
 
         Returns
         -------
-        robcore.core.files.FileHandle
+        flowserv.core.files.FileHandle
 
         Raises
         ------
-        robcore.core.error.ConstraintViolationError
+        flowserv.core.error.ConstraintViolationError
         """
         # Ensure that the given file name is valid
         constraint.validate_name(name)

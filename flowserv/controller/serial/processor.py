@@ -1,9 +1,9 @@
-# This file is part of the Reproducible Open Benchmarks for Data Analysis
-# Platform (ROB).
+# This file is part of the Reproducible and Reusable Data Analysis Workflow
+# Server (flowServ).
 #
-# Copyright (C) 2019 NYU.
+# Copyright (C) [2019-2020] NYU.
 #
-# ROB is free software; you can redistribute it and/or modify it under the
+# flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
 """Implementation for a workflow controller backend that is capable of running
@@ -18,8 +18,8 @@ from datetime import datetime
 from functools import partial
 from multiprocessing import Lock, Pool
 
-from flowserv.controller.backend.base import WorkflowController
-from flowserv.controller.backend.serial.workflow import SerialWorkflow
+from flowserv.controller.base import WorkflowController
+from flowserv.controller.serial.workflow import SerialWorkflow
 from flowserv.core.db.driver import DatabaseDriver
 from flowserv.model.template.base import WorkflowTemplate
 from flowserv.model.workflow.resource import FSObject

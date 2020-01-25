@@ -10,6 +10,12 @@ Reproducible and Reusable Data Analysis Workflow Server
 
 
 
+.. figure:: https://github.com/scailfin/rob-core/blob/flowserv/docs/figures/logo.png
+    :align: center
+    :alt: flowServ Logo
+
+
+
 About
 =====
 

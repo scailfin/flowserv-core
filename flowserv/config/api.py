@@ -1,9 +1,9 @@
-# This file is part of the Reproducible Open Benchmarks for Data Analysis
-# Platform (ROB).
+# This file is part of the Reproducible and Reusable Data Analysis Workflow
+# Server (flowServ).
 #
-# Copyright (C) 2019 NYU.
+# Copyright (C) [2019-2020] NYU.
 #
-# ROB is free software; you can redistribute it and/or modify it under the
+# flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
 """This module defines environment variables and their default values that are
@@ -28,10 +28,10 @@ FLOWSERV_API_PORT = 'FLOWSERV_API_PORT'
 
 
 """Default values for environment variables."""
-DEFAULT_DIR = '.rob'
+DEFAULT_DIR = '.flowserv'
 DEFAULT_HOST = 'http://localhost'
 DEFAULT_NAME = 'Reproducible Open Benchmarks for Data Analysis (API)'
-DEFAULT_PATH = '/rob/api/v1'
+DEFAULT_PATH = '/flowserv/api/v1'
 DEFAULT_PORT = 5000
 
 # -- Public helper methods to access configuration values ---------------------

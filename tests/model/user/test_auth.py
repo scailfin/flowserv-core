@@ -1,9 +1,9 @@
-# This file is part of the Reproducible Open Benchmarks for Data Analysis
-# Platform (ROB).
+# This file is part of the Reproducible and Reusable Data Analysis Workflow
+# Server (flowServ).
 #
-# Copyright (C) 2019 NYU.
+# Copyright (C) [2019-2020] NYU.
 #
-# ROB is free software; you can redistribute it and/or modify it under the
+# flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
 """Unit tests for login and logout functionality."""
@@ -13,7 +13,7 @@ import time
 
 from passlib.hash import pbkdf2_sha256
 
-from flowserv.model.user.auth import Auth, OpenAccessAuth
+from flowserv.model.user.auth import OpenAccessAuth
 from flowserv.model.user.base import UserManager
 
 import flowserv.core.error as err
@@ -41,12 +41,6 @@ def init_db(basedir):
     con.execute(sql, (USER_3, USER_3, pbkdf2_sha256.hash(USER_3), 0))
     con.commit()
     return UserManager(con), OpenAccessAuth(con)
-
-
-def test_abstract_methods():
-    """Test abstract methods of base class Auth for completeness."""
-    with pytest.raises(NotImplementedError):
-        Auth(con=None).is_submission_member(user=None)
 
 
 def test_authenticate_user(tmpdir):

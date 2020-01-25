@@ -1,9 +1,9 @@
-# This file is part of the Reproducible Open Benchmarks for Data Analysis
-# Platform (ROB).
+# This file is part of the Reproducible and Reusable Data Analysis Workflow
+# Server (flowServ).
 #
-# Copyright (C) 2019 NYU.
+# Copyright (C) [2019-2020] NYU.
 #
-# ROB is free software; you can redistribute it and/or modify it under the
+# flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
 """Abstract interface for the workflow controller. The controller provides
@@ -29,7 +29,7 @@ providing access to these files.
 from abc import ABCMeta, abstractmethod
 
 
-# -- Controller Interface ------------------------------------------------------
+# -- Controller Interface -----------------------------------------------------
 
 class WorkflowController(metaclass=ABCMeta):
     """The workflow controller is used to start execution of workflow templates
@@ -72,8 +72,8 @@ class WorkflowController(metaclass=ABCMeta):
         run: flowserv.model.run.base.RunHandle
             Handle for the run that is being executed
         template: flowserv.model.template.base.WorkflowTemplate
-            Workflow template containing the parameterized specification and the
-            parameter declarations
+            Workflow template containing the parameterized specification and
+            the parameter declarations
         arguments: dict(flowserv.model.parameter.value.TemplateArgument)
             Dictionary of argument values for parameters in the template
         run_async: bool, optional

@@ -1,9 +1,9 @@
-# This file is part of the Reproducible Open Benchmarks for Data Analysis
-# Platform (ROB).
+# This file is part of the Reproducible and Reusable Data Analysis Workflow
+# Server (flowServ).
 #
-# Copyright (C) 2019 NYU.
+# Copyright (C) [2019-2020] NYU.
 #
-# ROB is free software; you can redistribute it and/or modify it under the
+# flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
 """Unit test for the API service descriptor view."""
@@ -52,11 +52,11 @@ def test_service_descriptor():
     for link in r[labels.LINKS]:
         assert link[labels.REF].startswith('http://localhost')
     # Test initialization of the UrlFactory
-    urls = UrlFactory(base_url='http://www.rob.org////')
+    urls = UrlFactory(base_url='http://www.flowserv.org////')
     r = Service(urls=urls).service_descriptor()
     for link in r[labels.LINKS]:
         ref = link[labels.REF]
-        if ref == 'http://www.rob.org':
+        if ref == 'http://www.flowserv.org':
             continue
-        assert ref.startswith('http://www.rob.org/')
-        assert not ref.startswith('http://www.rob.org//')
+        assert ref.startswith('http://www.flowserv.org/')
+        assert not ref.startswith('http://www.flowserv.org//')

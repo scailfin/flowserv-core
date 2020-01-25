@@ -1,9 +1,9 @@
-# This file is part of the Reproducible Open Benchmarks for Data Analysis
-# Platform (ROB).
+# This file is part of the Reproducible and Reusable Data Analysis Workflow
+# Server (flowServ).
 #
-# Copyright (C) 2019 NYU.
+# Copyright (C) [2019-2020] NYU.
 #
-# ROB is free software; you can redistribute it and/or modify it under the
+# flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
 """The database driver is a static class that is used to get an instance of a
@@ -15,8 +15,8 @@ database systems from the application. Instead, the database system and the
 underlying database are specified using a unique database system identifier and
 a system-specific connection string.
 
-The database driver is configured using the environment variable FLOWSERV_DBMS as
-well as additional database system specific variables.
+The database driver is configured using the environment variable FLOWSERV_DBMS
+as well as additional database system specific variables.
 """
 
 import flowserv.config.db as config

@@ -344,7 +344,7 @@ paths:
       - "run"
       summary: "List user group runs"
       description: "Get listing of all runs for the given user group"
-      operationId: "getUserGroupRuns"
+      operationId: "listUserGroupRuns"
       produces:
       - "application/json"
       parameters:
@@ -1128,25 +1128,15 @@ definitions:
     required:
     - id
     - state
-    - arguments
+    - createdAt
     - links
     properties:
       id:
         type: string
       state:
         type: string
-      startedAt:
+      createdAt:
         type: string
-      finishedAt:
-        type: string
-      arguments:
-        type: array
-        items:
-          $ref: "#/definitions/RunArgument"
-      messages:
-        type: array
-        items:
-          type: string
       links:
         $ref: "#/definitions/HATEOASLinks"
   RunHandle:

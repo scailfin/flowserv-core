@@ -1,13 +1,13 @@
-# This file is part of the Reproducible Open Benchmarks for Data Analysis
-# Platform (ROB).
+# This file is part of the Reproducible and Reusable Data Analysis Workflow
+# Server (flowServ).
 #
-# Copyright (C) 2019 NYU.
+# Copyright (C) [2019-2020] NYU.
 #
-# ROB is free software; you can redistribute it and/or modify it under the
+# flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
-"""
-
+"""Implementation of a workflow controller for serial workflows that uses the
+local Docker daemon to execute workflow steps.
 """
 
 import docker
@@ -15,10 +15,10 @@ import os
 
 from docker.errors import ContainerError, ImageNotFound, APIError
 
-from flowserv.controller.backend.multiproc import MultiProcessWorkflowEngine
+from flowserv.controller.multiproc import MultiProcessWorkflowEngine
 from flowserv.model.workflow.resource import FSObject
 
-import flowserv.controller.backend.sync as sync
+import flowserv.controller.sync as sync
 import flowserv.core.util as util
 
 

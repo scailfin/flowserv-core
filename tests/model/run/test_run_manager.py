@@ -1,9 +1,9 @@
-# This file is part of the Reproducible Open Benchmarks for Data Analysis
-# Platform (ROB).
+# This file is part of the Reproducible and Reusable Data Analysis Workflow
+# Server (flowServ).
 #
-# Copyright (C) 2019 NYU.
+# Copyright (C) [2019-2020] NYU.
 #
-# ROB is free software; you can redistribute it and/or modify it under the
+# flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
 """Unit tests for the workflow run manager."""
@@ -143,6 +143,33 @@ def test_invalid_state_transitions(tmpdir):
             started_at=r.state.started_at
         )
         manager.update_run(run_id=r.identifier, state=s)
+
+
+def test_list_runs(tmpdir):
+    """Test retrieving a list of run descriptors."""
+    manager, g = init(tmpdir)
+    # Run 1 in running state
+    r1 = manager.create_run(
+        workflow_id=WORKFLOW_1,
+        group_id=g.identifier,
+        arguments=dict()
+    )
+    manager.update_run(run_id=r1.identifier, state=r1.state.start())
+    # Run 2 in error state
+    r2 = manager.create_run(
+        workflow_id=WORKFLOW_1,
+        group_id=g.identifier,
+        arguments=dict()
+    )
+    manager.update_run(run_id=r2.identifier, state=r2.state.start().error())
+    # Get list of two runs. Transform listing into dictionary keyed by the
+    # run indentifier
+    runs = dict()
+    for run in manager.list_runs(g.identifier):
+        runs[run.identifier] = run
+    assert len(runs) == 2
+    assert runs[r1.identifier].is_running()
+    assert runs[r2.identifier].is_error()
 
 
 def test_run_parameters(tmpdir):

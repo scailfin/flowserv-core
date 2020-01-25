@@ -1,9 +1,9 @@
-# This file is part of the Reproducible Open Benchmarks for Data Analysis
-# Platform (ROB).
+# This file is part of the Reproducible and Reusable Data Analysis Workflow
+# Server (flowServ).
 #
-# Copyright (C) 2019 NYU.
+# Copyright (C) [2019-2020] NYU.
 #
-# ROB is free software; you can redistribute it and/or modify it under the
+# flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
 """This module defines environment variables that are used to configure the
@@ -59,7 +59,7 @@ def FLOWSERV_ENGINE():
 
     Returns
     -------
-    flowserv.controller.backend.base.WorkflowController
+    flowserv.controller.base.WorkflowController
 
     Raises
     ------
@@ -72,7 +72,7 @@ def FLOWSERV_ENGINE():
     # controller class. An error is raised if only one of the two environment
     # variables is set.
     if module_name is None and class_name is None:
-        from flowserv.controller.backend.sync import SyncWorkflowEngine
+        from flowserv.controller.sync import SyncWorkflowEngine
         return SyncWorkflowEngine(basedir=ENGIN_BASEDIR())
     elif module_name is not None and class_name is not None:
         from importlib import import_module

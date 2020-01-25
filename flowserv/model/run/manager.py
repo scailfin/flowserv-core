@@ -1,9 +1,9 @@
-# This file is part of the Reproducible Open Benchmarks for Data Analysis
-# Platform (ROB).
+# This file is part of the Reproducible and Reusable Data Analysis Workflow
+# Server (flowServ).
 #
-# Copyright (C) 2019 NYU.
+# Copyright (C) [2019-2020] NYU.
 #
-# ROB is free software; you can redistribute it and/or modify it under the
+# flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
 """The run manager is used to create, delete, query, and update information
@@ -14,7 +14,7 @@ import json
 import shutil
 
 from flowserv.core.files import InputFile
-from flowserv.model.run.base import RunHandle
+from flowserv.model.run.base import RunDescriptor, RunHandle
 
 import flowserv.core.error as err
 import flowserv.core.util as util
@@ -63,7 +63,7 @@ class RunManager(object):
             Unique workflow identifier
         group_id: string
             Unique workflow group identifier
-        arguments: dict(robench.model.parameter.value.TemplateArgument)
+        arguments: dict(flowserv.model.parameter.value.TemplateArgument)
             Dictionary of argument values for parameters in the template
         commit_changes: bool, optional
             Commit all changes to the database if true
@@ -119,7 +119,7 @@ class RunManager(object):
         Parameters
         ----------
         run_id: string
-            Unique submission identifier
+            Unique run identifier
         commit_changes: bool, optional
             Commit all changes to the database if true
 
@@ -223,6 +223,36 @@ class RunManager(object):
             arguments=json.loads(row['arguments']),
             rundir=rundir
         )
+
+    def list_runs(self, group_id):
+        """Get list of run handles for all runs that are associated with a
+        given workflow group.
+
+        Parameters
+        ----------
+        group_id: string, optional
+            Unique workflow group identifier
+
+        Returns
+        -------
+        list(flowserv.model.run.base.RunDescriptor)
+        """
+        runs = list()
+        sql = (
+            'SELECT run_id, state, created_at '
+            'FROM workflow_run '
+            'WHERE group_id = ?'
+        )
+        rs = self.con.execute(sql, (group_id,)).fetchall()
+        for row in rs:
+            run = RunDescriptor(
+                identifier=row['run_id'],
+                group_id=group_id,
+                state_type_id=row['state'],
+                created_at=util.to_datetime(row['created_at'])
+            )
+            runs.append(run)
+        return runs
 
     def update_run(self, run_id, state, commit_changes=True):
         """Update the state of the given run. This method does check if the

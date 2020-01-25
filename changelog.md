@@ -3,4 +3,4 @@
 ### 0.1.0 - (ongoing)
 
 * Initial Version
-* Merge and modify initial versions of robtmpl and robengine
+* Modify the previous version of rob-core

@@ -1,9 +1,9 @@
-# This file is part of the Reproducible Open Benchmarks for Data Analysis
-# Platform (ROB).
+# This file is part of the Reproducible and Reusable Data Analysis Workflow
+# Server (flowServ).
 #
-# Copyright (C) 2019 NYU.
+# Copyright (C) [2019-2020] NYU.
 #
-# ROB is free software; you can redistribute it and/or modify it under the
+# flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
 """Unit tests for functionality of the template base module."""
@@ -22,7 +22,7 @@ import flowserv.model.parameter.base as pb
 import flowserv.model.parameter.declaration as pd
 import flowserv.model.parameter.value as pr
 import flowserv.model.template.base as tmpl
-import flowserv.model.template.parameter as tmplutil
+import flowserv.model.template.parameter as tp
 import flowserv.model.template.schema as schema
 
 

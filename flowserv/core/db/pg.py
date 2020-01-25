@@ -1,9 +1,9 @@
-# This file is part of the Reproducible Open Benchmarks for Data Analysis
-# Platform (ROB).
+# This file is part of the Reproducible and Reusable Data Analysis Workflow
+# Server (flowServ).
 #
-# Copyright (C) 2019 NYU.
+# Copyright (C) [2019-2020] NYU.
 #
-# ROB is free software; you can redistribute it and/or modify it under the
+# flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
 """Implementation of the database connector for PostgreSQL. Uses the psycopg
@@ -31,22 +31,22 @@ PG_FLOWSERV_PORT = 'PG_FLOWSERV_PORT'
 
 class PostgresConnection(object):
     """Wrapper around a Psycopg2 connection object. This wrapper is implemented
-    to achieve flexibility of ROB with respect to the database system that is
-    being used. The application is tested (and was originally designed) using
-    SQLLite3. Unfortunately, there seem to be some differences in how query
-    processing in ROB was implements using SQLite3 and how the Psycopg2 module
-    operates: in SQLite3 the execute() method is called directly on the database
-    connection object and it returns a cursor. Also, by default the result rows
-    in SQLLite3 are dictionaries. There is also a difference in how the two
-    databases handle SQL query parameters.
+    to achieve flexibility of flowServ with respect to the database system that
+    is being used. The application is tested (and was originally designed)
+    using SQLLite3. Unfortunately, there seem to be some differences in how
+    query processing in flowServ was implements using SQLite3 and how the
+    Psycopg2 module operates: in SQLite3 the execute() method is called
+    directly on the database connection object and it returns a cursor. Also,
+    by default the result rows in SQLLite3 are dictionaries. There is also a
+    difference in how the two databases handle SQL query parameters.
 
     This wrapper object attempts to emulate the SQLite3 behavior in order to be
     able to use the same code to interact with the underlying database
     independently of the database system.
 
     We make a very strong assumption here. We assume that all SQL queries
-    that are used by ROB do not contain any '?' character other than the ones
-    that are used to define query parameters. This assumption allows us to
+    that are used by flowServ do not contain any '?' character other than the
+    ones that are used to define query parameters. This assumption allows us to
     simply replace the '?' with '%s' to achieve compatibility between the
     different database systems that are currently supported.
 
@@ -181,8 +181,8 @@ class PostgresConnector(DatabaseConnector):
             # up until the first '/' character
             pos_1 = connect_string.index('/')
             self.host = connect_string[:pos_1]
-            # The database name comes after the host name up until the first ':'
-            # character
+            # The database name comes after the host name up until the first
+            #  ':' character
             pos_2 = connect_string.index(':', pos_1 + 1)
             self.database = connect_string[pos_1+1:pos_2]
             # The user name is after the database name up until the next '/'
@@ -194,9 +194,9 @@ class PostgresConnector(DatabaseConnector):
         else:
             self.host = os.environ.get(PG_FLOWSERV_HOST, 'localhost')
             self.port = int(os.environ.get(PG_FLOWSERV_PORT, '5432'))
-            self.database = os.environ.get(PG_FLOWSERV_DATABASE, 'rob')
-            self.user = os.environ.get(PG_FLOWSERV_USER, 'rob')
-            self.password = os.environ.get(PG_FLOWSERV_PASSWORD, 'rob')
+            self.database = os.environ.get(PG_FLOWSERV_DATABASE, 'flowserv')
+            self.user = os.environ.get(PG_FLOWSERV_USER, 'flowserv')
+            self.password = os.environ.get(PG_FLOWSERV_PASSWORD, 'flowServ')
 
     def connect(self):
         """Connect to the underlying PostgreSQL database.

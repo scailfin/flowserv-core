@@ -1,9 +1,9 @@
-# This file is part of the Reproducible Open Benchmarks for Data Analysis
-# Platform (ROB).
+# This file is part of the Reproducible and Reusable Data Analysis Workflow
+# Server (flowServ).
 #
-# Copyright (C) 2019 NYU.
+# Copyright (C) [2019-2020] NYU.
 #
-# ROB is free software; you can redistribute it and/or modify it under the
+# flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
 import os
@@ -23,9 +23,10 @@ class SQLiteConnector(DatabaseConnector):
     """Database connector for SQLite3 databases."""
     def __init__(self, connect_string=None):
         """Connect to the given SQLite3 database file. If the connection string
-        is not given the environment variable SQLITE_FLOWSERV_CONNECT is expected to
-        contain the database connection information. If the value is given this
-        will override any value in the variable SQLITE_FLOWSERV_CONNECT.
+        is not given the environment variable SQLITE_FLOWSERV_CONNECT is
+        expected to contain the database connection information. If the value
+        is given this will override any value in the variable
+        SQLITE_FLOWSERV_CONNECT.
 
         Parameters
         ----------
