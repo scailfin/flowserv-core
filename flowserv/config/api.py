@@ -16,15 +16,15 @@ import flowserv.config.base as config
 
 """Names of environment variables that are used to configure the API."""
 # Base directory to store uploaded files and submission results
-ROB_API_BASEDIR = 'ROB_API_DIR'
+FLOWSERV_API_BASEDIR = 'FLOWSERV_API_DIR'
 # Host name for API server
-ROB_API_HOST = 'ROB_API_HOST'
+FLOWSERV_API_HOST = 'FLOWSERV_API_HOST'
 # Name of the API instance
-ROB_API_NAME = 'ROB_API_NAME'
+FLOWSERV_API_NAME = 'FLOWSERV_API_NAME'
 # API application path
-ROB_API_PATH = 'ROB_API_PATH'
+FLOWSERV_API_PATH = 'FLOWSERV_API_PATH'
 # API server port on host
-ROB_API_PORT = 'ROB_API_PORT'
+FLOWSERV_API_PORT = 'FLOWSERV_API_PORT'
 
 
 """Default values for environment variables."""
@@ -40,14 +40,14 @@ DEFAULT_PORT = 5000
 def API_BASEDIR(default_value=None, raise_error=False):
     """Get the base directory that is used by the API to store benchmark
     templates and benchmark runs from the respective environment variable
-    'ROB_API_DIR'. Raises a MissingConfigurationError if the raise_error flag
-    is True and 'ROB_API_DIR' is not set. If the raise_error flag is False and
-    'ROB_API_DIR' is not set the default name is returned.
+    'FLOWSERV_API_DIR'. Raises a MissingConfigurationError if the raise_error flag
+    is True and 'FLOWSERV_API_DIR' is not set. If the raise_error flag is False and
+    'FLOWSERV_API_DIR' is not set the default name is returned.
 
     Parameters
     ----------
     default_value: string, optional
-        Default value if 'ROB_API_DIR' is not set and raise_error flag is
+        Default value if 'FLOWSERV_API_DIR' is not set and raise_error flag is
         False
     raise_error: bool, optional
         Flag indicating whether an error is raised if the environment variable
@@ -62,7 +62,7 @@ def API_BASEDIR(default_value=None, raise_error=False):
     flowserv.core.error.MissingConfigurationError
     """
     val = config.get_variable(
-        name=ROB_API_BASEDIR,
+        name=FLOWSERV_API_BASEDIR,
         default_value=default_value,
         raise_error=raise_error
     )
@@ -75,7 +75,7 @@ def API_BASEDIR(default_value=None, raise_error=False):
 
 def API_HOST():
     """Get the API server host name from the respective environment variable
-    'ROB_API_HOST'. If the variable is not set the default host name is
+    'FLOWSERV_API_HOST'. If the variable is not set the default host name is
     returned.
 
     Returns
@@ -83,7 +83,7 @@ def API_HOST():
     string
     """
     return config.get_variable(
-        name=ROB_API_HOST,
+        name=FLOWSERV_API_HOST,
         default_value=DEFAULT_HOST,
         raise_error=False
     )
@@ -91,14 +91,14 @@ def API_HOST():
 
 def API_NAME():
     """Get the service name for the API from the respective environment variable
-    'ROB_API_NAME'. If the variable is not set the default name is returned.
+    'FLOWSERV_API_NAME'. If the variable is not set the default name is returned.
 
     Returns
     -------
     string
     """
     return config.get_variable(
-        name=ROB_API_NAME,
+        name=FLOWSERV_API_NAME,
         default_value=DEFAULT_NAME,
         raise_error=False
     )
@@ -106,7 +106,7 @@ def API_NAME():
 
 def API_PATH():
     """Get the application path name for the API from the respective environment
-    variable 'ROB_API_PATH'. If the variable is not set the default application
+    variable 'FLOWSERV_API_PATH'. If the variable is not set the default application
     path is returned.
 
     Returns
@@ -114,7 +114,7 @@ def API_PATH():
     string
     """
     return config.get_variable(
-        name=ROB_API_PATH,
+        name=FLOWSERV_API_PATH,
         default_value=DEFAULT_PATH,
         raise_error=False
     )
@@ -122,11 +122,11 @@ def API_PATH():
 
 def API_PORT():
     """Get the API application port number from the respective environment
-    variable 'ROB_API_PORT'. If the variable is not set the default port number
+    variable 'FLOWSERV_API_PORT'. If the variable is not set the default port number
     is returned.
 
     Expects a value that can be cast to integer. Raises ValueError if the value
-    for the environment variable 'ROB_API_PORT' cannot be cast to integer.
+    for the environment variable 'FLOWSERV_API_PORT' cannot be cast to integer.
 
     Returns
     -------
@@ -137,7 +137,7 @@ def API_PORT():
     ValueError
     """
     val = config.get_variable(
-        name=ROB_API_PORT,
+        name=FLOWSERV_API_PORT,
         default_value=DEFAULT_PORT,
         raise_error=False
     )
@@ -146,7 +146,7 @@ def API_PORT():
 
 def API_URL():
     """Get the base URL for the API from the respective environment variables
-    'ROB_API_HOST', 'ROB_API_PATH', and 'ROB_API_PORT'.
+    'FLOWSERV_API_HOST', 'FLOWSERV_API_PATH', and 'FLOWSERV_API_PORT'.
 
     Returns
     -------

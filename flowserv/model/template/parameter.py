@@ -6,7 +6,9 @@
 # ROB is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
-"""Collection of helper methods for workflow templates."""
+"""Collection of helper methods for parameter references in workflow
+specifications within workflow templates.
+"""
 
 from past.builtins import basestring
 
@@ -16,21 +18,6 @@ from flowserv.core.files import FileHandle, InputFile
 from flowserv.model.parameter.value import TemplateArgument
 
 import flowserv.core.error as err
-
-
-def get_parameter_name(value):
-    """Extract the parameter name for a template parameter reference.
-
-    Parameters
-    ----------
-    value: string
-        String value in the workflow specification for a template parameter
-
-    Returns
-    -------
-    string
-    """
-    return value[3:-2]
 
 
 def get_parameter_references(spec, parameters=None):
@@ -63,7 +50,7 @@ def get_parameter_references(spec, parameters=None):
             # reference to a template parameter
             if is_parameter(val):
                 # Extract variable name.
-                parameters.add(get_parameter_name(val))
+                parameters.add(NAME(val))
         elif isinstance(val, dict):
             # Recursive call to get_parameter_references
             get_parameter_references(val, parameters=parameters)
@@ -74,7 +61,7 @@ def get_parameter_references(spec, parameters=None):
                     # list elements of type string.
                     if is_parameter(list_val):
                         # Extract variable name.
-                        parameters.add(get_parameter_name(list_val))
+                        parameters.add(NAME(list_val))
                 elif isinstance(list_val, dict):
                     # Recursive replace for dictionaries
                     get_parameter_references(list_val, parameters=parameters)
@@ -124,7 +111,7 @@ def get_upload_files(template, basedir, files, arguments):
         # Set source and target values depending on whether the list
         # entry references a template parameter or not
         if is_parameter(val):
-            var = get_parameter_name(val)
+            var = NAME(val)
             # Raise error if the type of the referenced parameter is
             # not file
             para = template.get_parameter(var)
@@ -257,7 +244,7 @@ def replace_value(value, arguments, parameters):
     # Check if the value matches the template parameter reference pattern
     if is_parameter(value):
         # Extract variable name.
-        var = get_parameter_name(value)
+        var = NAME(value)
         para = parameters[var]
         # If the parameter has a constant value defined use that value as the
         # replacement
@@ -281,3 +268,37 @@ def replace_value(value, arguments, parameters):
             raise err.MissingArgumentError(para.identifier)
     else:
         return value
+
+
+# -- Helper functions to extract and generate parameter names -----------------
+
+def NAME(value):
+    """Extract the parameter name for a template parameter reference.
+
+    Parameters
+    ----------
+    value: string
+        String value in the workflow specification for a template parameter
+
+    Returns
+    -------
+    string
+    """
+    return value[3:-2]
+
+
+def VARIABLE(name):
+    """Get string representation containing the reference to a variable with
+    given name. This string is intended to be used as a template parameter
+    reference within workflow specifications in workflow templates.
+
+    Parameters
+    ----------
+    name: string
+        Template parameter name
+
+    Returns
+    -------
+    string
+    """
+    return '$[[{}]]'.format(name)

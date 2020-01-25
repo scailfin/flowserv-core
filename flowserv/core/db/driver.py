@@ -15,7 +15,7 @@ database systems from the application. Instead, the database system and the
 underlying database are specified using a unique database system identifier and
 a system-specific connection string.
 
-The database driver is configured using the environment variable ROB_DBMS as
+The database driver is configured using the environment variable FLOWSERV_DBMS as
 well as additional database system specific variables.
 """
 

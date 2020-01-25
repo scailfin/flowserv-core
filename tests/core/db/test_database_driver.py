@@ -36,8 +36,8 @@ class TestDatabaseDriver(object):
         """Test instantiating database connectors."""
         # SQLite
         f_name = '/tmp/test.db'
-        os.environ[config.ROB_DB_ID] = 'SQLITE'
-        os.environ[sqlite.SQLITE_ROB_CONNECT] = f_name
+        os.environ[config.FLOWSERV_DB_ID] = 'SQLITE'
+        os.environ[sqlite.SQLITE_FLOWSERV_CONNECT] = f_name
         db = DB.get_connector()
         assert db.info(indent='..') == '..sqlite3 {}'.format(f_name)
         f_name = '/tmp/test.sqlite3.db'
@@ -45,7 +45,7 @@ class TestDatabaseDriver(object):
         assert db.info(indent='..') == '..sqlite3 {}'.format(f_name)
         # PostgreSQL
         connect = 'localhost:5678/mydb:myuser/the/pwd'
-        os.environ[config.ROB_DB_ID] = 'POSTGRES'
+        os.environ[config.FLOWSERV_DB_ID] = 'POSTGRES'
         db = DB.get_connector(connect_string=connect)
         info_str = 'postgres {} on {}'.format('mydb', 'localhost:5678')
         assert db.info() == info_str

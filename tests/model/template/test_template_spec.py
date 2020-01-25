@@ -22,8 +22,8 @@ import flowserv.model.parameter.base as pb
 import flowserv.model.parameter.declaration as pd
 import flowserv.model.parameter.value as pr
 import flowserv.model.template.base as tmpl
+import flowserv.model.template.parameter as tmplutil
 import flowserv.model.template.schema as schema
-import flowserv.model.template.util as tmplutil
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))
@@ -97,14 +97,14 @@ def test_file_args():
         }
     ])
     # Test default values (no arguments)
-    wf = tmplutil.replace_args(
+    wf = tp.replace_args(
         spec=spec,
         parameters=parameters,
         arguments=dict()
     )
     assert wf['input'] == ['code/helloworld.py']
     # Test default values (with arguments)
-    wf = tmplutil.replace_args(
+    wf = tp.replace_args(
         spec=spec,
         parameters=parameters,
         arguments=pr.parse_arguments(
@@ -122,13 +122,13 @@ def test_file_args():
         }
     ])
     # Test default values (no arguments)
-    wf = tmplutil.replace_args(
+    wf = tp.replace_args(
         spec=spec,
         parameters=parameters,
         arguments=dict()
     )
     assert wf['input'] == ['src/helloworld.py']
-    wf = tmplutil.replace_args(
+    wf = tp.replace_args(
         spec=spec,
         parameters=parameters,
         arguments=pr.parse_arguments(
@@ -154,14 +154,14 @@ def test_scalar_args():
         }
     ])
     # Test default values (no arguments)
-    wf = tmplutil.replace_args(
+    wf = tp.replace_args(
         spec=spec,
         parameters=parameters,
         arguments=dict()
     )
     assert wf['parameters'] == {'sleeptime': 10}
     # Test default values (with arguments)
-    wf = tmplutil.replace_args(
+    wf = tp.replace_args(
         spec=spec,
         parameters=parameters,
         arguments=pr.parse_arguments(
@@ -244,16 +244,16 @@ def test_get_parameter_references():
         'F': '$[[U]]',
         'G': ['$[[V]]', 123]
     }
-    refs = tmplutil.get_parameter_references(spec)
+    refs = tp.get_parameter_references(spec)
     assert refs == set(['U', 'V', 'W', 'X', 'Y', 'Z'])
     # If given parameter set as argument the elements in that set are part
     # of the result
     para = set(['A', 'B', 'X'])
-    refs = tmplutil.get_parameter_references(spec, parameters=para)
+    refs = tp.get_parameter_references(spec, parameters=para)
     assert refs == set(['A', 'B', 'U', 'V', 'W', 'X', 'Y', 'Z'])
     # Error if specification contains nested lists
     with pytest.raises(err.InvalidTemplateError):
-        tmplutil.get_parameter_references({
+        tp.get_parameter_references({
             'input': [
                 'A',
                 ['$[[X]]'],
@@ -419,7 +419,7 @@ def test_simple_replace():
                 value=10
             )
         }
-        spec = tmplutil.replace_args(
+        spec = tp.replace_args(
             spec=template.workflow_spec,
             arguments=arguments,
             parameters=template.parameters
@@ -434,7 +434,7 @@ def test_simple_replace():
         # value
         del arguments['sleeptime']
         with pytest.raises(err.MissingArgumentError):
-            tmplutil.replace_args(
+            tp.replace_args(
                 spec=template.workflow_spec,
                 arguments=arguments,
                 parameters=template.parameters

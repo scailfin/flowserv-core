@@ -16,7 +16,7 @@ import flowserv.core.error as err
 
 
 """Environment variable for test purposes."""
-ROB_TEST = 'ROB_TEST'
+FLOWSERV_TEST = 'FLOWSERV_TEST'
 
 
 def get_variable(name, default_value=None, raise_error=None):

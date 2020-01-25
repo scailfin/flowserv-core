@@ -11,7 +11,7 @@
 import os
 import pytest
 
-from flowserv.tests.io import FakeStream
+from flowserv.tests.files import FakeStream
 
 import flowserv.core.error as err
 import flowserv.view.hateoas as hateoas

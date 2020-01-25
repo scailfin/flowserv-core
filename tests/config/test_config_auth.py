@@ -24,18 +24,18 @@ class TestConfigAuth(object):
     def test_config_auth(self):
         """Test public methods to get login timeout configuration."""
         # Clear environment variable values if set
-        if config.ROB_AUTH_LOGINTTL in os.environ:
-            del os.environ[config.ROB_AUTH_LOGINTTL]
+        if config.FLOWSERV_AUTH_LOGINTTL in os.environ:
+            del os.environ[config.FLOWSERV_AUTH_LOGINTTL]
         assert config.AUTH_LOGINTTL() == config.DEFAULT_LOGINTTL
         auth_loginttl = config.AUTH_LOGINTTL(default_value='XYZ')
         assert auth_loginttl == config.DEFAULT_LOGINTTL
         assert config.AUTH_LOGINTTL(default_value=123) == 123
         with pytest.raises(err.MissingConfigurationError):
             assert config.AUTH_LOGINTTL(raise_error=True)
-        os.environ[config.ROB_AUTH_LOGINTTL] = 'ABC'
+        os.environ[config.FLOWSERV_AUTH_LOGINTTL] = 'ABC'
         assert config.AUTH_LOGINTTL() == config.DEFAULT_LOGINTTL
         auth_loginttl = config.AUTH_LOGINTTL(default_value='XYZ')
         assert auth_loginttl == config.DEFAULT_LOGINTTL
-        os.environ[config.ROB_AUTH_LOGINTTL] = '345'
+        os.environ[config.FLOWSERV_AUTH_LOGINTTL] = '345'
         assert config.AUTH_LOGINTTL() == 345
         assert config.AUTH_LOGINTTL(default_value='XYZ') == 345

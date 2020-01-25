@@ -31,9 +31,9 @@ import flowserv.core.error as err
 controller that is used by the workflow engine to execute workflows.
 """
 # Name of the class that implements the workflow controller interface
-ROB_ENGINE_CLASS = 'ROB_ENGINE_CLASS'
+FLOWSERV_ENGINE_CLASS = 'FLOWSERV_ENGINE_CLASS'
 # Name of the module that contains the workflow controller implementation
-ROB_ENGINE_MODULE = 'ROB_ENGINE_MODULE'
+FLOWSERV_ENGINE_MODULE = 'FLOWSERV_ENGINE_MODULE'
 
 
 def ENGIN_BASEDIR():
@@ -50,9 +50,9 @@ def ENGIN_BASEDIR():
     return os.path.join(basedir, 'runs')
 
 
-def ROB_ENGINE():
+def FLOWSERV_ENGINE():
     """Get an instance of the workflow controller that is specified by the two
-    environment variables 'ROB_ENGINE_MODULE' and 'ROB_ENGINE_CLASS'. It is
+    environment variables 'FLOWSERV_ENGINE_MODULE' and 'FLOWSERV_ENGINE_CLASS'. It is
     expected that either both variables contain a non-emoty value or none of
     then is set. In the latter case, the synchronous workflow controller is
     returned as the default.
@@ -65,8 +65,8 @@ def ROB_ENGINE():
     ------
     flowserv.core.error.MissingConfigurationError
     """
-    module_name = config.get_variable(name=ROB_ENGINE_MODULE)
-    class_name = config.get_variable(name=ROB_ENGINE_CLASS)
+    module_name = config.get_variable(name=FLOWSERV_ENGINE_MODULE)
+    class_name = config.get_variable(name=FLOWSERV_ENGINE_CLASS)
     # If both environment variables are None return the default controller.
     # Otherwise, import the specified module and return an instance of the
     # controller class. An error is raised if only one of the two environment
@@ -79,6 +79,6 @@ def ROB_ENGINE():
         module = import_module(module_name)
         return getattr(module, class_name)()
     elif module_name is None:
-        raise err.MissingConfigurationError(ROB_ENGINE_MODULE)
+        raise err.MissingConfigurationError(FLOWSERV_ENGINE_MODULE)
     else:
-        raise err.MissingConfigurationError(ROB_ENGINE_CLASS)
+        raise err.MissingConfigurationError(FLOWSERV_ENGINE_CLASS)

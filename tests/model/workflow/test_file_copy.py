@@ -21,7 +21,7 @@ from flowserv.model.workflow.repo import WorkflowRepository
 
 import flowserv.core.error as err
 import flowserv.core.util as util
-import flowserv.model.template.util as tmplutil
+import flowserv.model.template.parameter as tp
 import flowserv.tests.db as db
 
 
@@ -94,7 +94,7 @@ def test_prepare_inputs_for_local_run(tmpdir):
     run_dir = os.path.join(str(tmpdir), 'run')
     os.makedirs(run_dir)
     # Copy input files to run directory
-    files = tmplutil.get_upload_files(
+    files = tp.get_upload_files(
         template=template,
         basedir=template.sourcedir,
         files=template.workflow_spec.get('inputs', {}).get('files', []),
@@ -135,7 +135,7 @@ def test_prepare_inputs_for_local_run(tmpdir):
     # - Missing argumen values
     with pytest.raises(err.MissingArgumentError):
         i_files = template.workflow_spec.get('inputs', {}).get('files', [])
-        tmplutil.get_upload_files(
+        tp.get_upload_files(
             template=template,
             basedir=template.sourcedir,
             files=i_files,
@@ -152,7 +152,7 @@ def test_prepare_inputs_for_local_run(tmpdir):
     os.makedirs(run_dir)
     with pytest.raises(IOError):
         i_files = template.workflow_spec.get('inputs', {}).get('files', [])
-        files = tmplutil.get_upload_files(
+        files = tp.get_upload_files(
             template=template,
             basedir=template.sourcedir,
             files=i_files,
@@ -173,7 +173,7 @@ def test_prepare_inputs_for_local_run(tmpdir):
     para.as_constant = None
     shutil.rmtree(run_dir)
     os.makedirs(run_dir)
-    files = tmplutil.get_upload_files(
+    files = tp.get_upload_files(
         template=template,
         basedir=template.sourcedir,
         files=template.workflow_spec.get('inputs', {}).get('files', []),
@@ -205,7 +205,7 @@ def test_prepare_inputs_for_local_run(tmpdir):
     # Copy input files to run directory
     with pytest.raises(err.InvalidTemplateError):
         i_files = template.workflow_spec.get('inputs', {}).get('files', [])
-        tmplutil.get_upload_files(
+        tp.get_upload_files(
             template=template,
             basedir=template.sourcedir,
             files=i_files,

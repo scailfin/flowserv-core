@@ -27,33 +27,33 @@ class TestConfigEngine(object):
     def test_get_default_engine(self):
         """Test method to get the default workflow controller."""
         # Clear environment variable if set
-        if config.ROB_ENGINE_CLASS in os.environ:
-            del os.environ[config.ROB_ENGINE_CLASS]
-        if config.ROB_ENGINE_MODULE in os.environ:
-            del os.environ[config.ROB_ENGINE_MODULE]
-        controller = config.ROB_ENGINE()
+        if config.FLOWSERV_ENGINE_CLASS in os.environ:
+            del os.environ[config.FLOWSERV_ENGINE_CLASS]
+        if config.FLOWSERV_ENGINE_MODULE in os.environ:
+            del os.environ[config.FLOWSERV_ENGINE_MODULE]
+        controller = config.FLOWSERV_ENGINE()
         assert isinstance(controller, SyncWorkflowEngine)
 
     def test_get_state_engine(self):
         """Test method to get an instance of the test engine using the
         environment variables."""
         # Set environment variables
-        os.environ[config.ROB_ENGINE_MODULE] = 'flowserv.tests.benchmark'
-        os.environ[config.ROB_ENGINE_CLASS] = 'StateEngine'
-        controller = config.ROB_ENGINE()
+        os.environ[config.FLOWSERV_ENGINE_MODULE] = 'flowserv.tests.benchmark'
+        os.environ[config.FLOWSERV_ENGINE_CLASS] = 'StateEngine'
+        controller = config.FLOWSERV_ENGINE()
         assert isinstance(controller, StateEngine)
 
     def test_invalid_config(self):
         """Test error cases where only one of the two environment variables
         is set.
         """
-        # Clear environment variable 'ROB_ENGINE_CLASS' if set
-        if config.ROB_ENGINE_CLASS in os.environ:
-            del os.environ[config.ROB_ENGINE_CLASS]
-        os.environ[config.ROB_ENGINE_MODULE] = 'module'
+        # Clear environment variable 'FLOWSERV_ENGINE_CLASS' if set
+        if config.FLOWSERV_ENGINE_CLASS in os.environ:
+            del os.environ[config.FLOWSERV_ENGINE_CLASS]
+        os.environ[config.FLOWSERV_ENGINE_MODULE] = 'module'
         with pytest.raises(err.MissingConfigurationError):
-            config.ROB_ENGINE()
-        del os.environ[config.ROB_ENGINE_MODULE]
-        os.environ[config.ROB_ENGINE_CLASS] = 'class'
+            config.FLOWSERV_ENGINE()
+        del os.environ[config.FLOWSERV_ENGINE_MODULE]
+        os.environ[config.FLOWSERV_ENGINE_CLASS] = 'class'
         with pytest.raises(err.MissingConfigurationError):
-            config.ROB_ENGINE()
+            config.FLOWSERV_ENGINE()

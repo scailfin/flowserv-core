@@ -41,8 +41,8 @@ def init_db(basedir, workflows=None, users=None):
     dbms_id = driver.SQLITE[0]
     connect_string = '{}/{}'.format(basedir, 'tmp.db')
     DB.init(dbms_id=dbms_id, connect_string=connect_string)
-    os.environ[config.ROB_DB_ID] = dbms_id
-    os.environ[sqlite.SQLITE_ROB_CONNECT] = connect_string
+    os.environ[config.FLOWSERV_DB_ID] = dbms_id
+    os.environ[sqlite.SQLITE_FLOWSERV_CONNECT] = connect_string
     connector = driver.DatabaseDriver.get_connector()
     if users is not None:
         sql = (

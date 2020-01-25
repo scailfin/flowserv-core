@@ -49,33 +49,3 @@ class Step(object):
         """
         self.commands.append(cmd)
         return self
-
-    @staticmethod
-    def from_dict(doc):
-        """Create class instance from dictionary serialization.
-
-        Parameters
-        ----------
-        doc: dict
-            Dictionary serialization for workflow step
-
-        Returns
-        -------
-        flowserv.model.template.step.Step
-        """
-        return Step(
-            env=doc[LABEL_ENV],
-            commands=doc[LABEL_COMMANDS] if LABEL_COMMANDS in doc else None
-        )
-
-    def to_dict(self):
-        """Get dictionary serialization for the workflow step object.
-
-        Returns
-        -------
-        dict
-        """
-        return {
-            LABEL_ENV: self.env,
-            LABEL_COMMANDS: self.commands
-        }

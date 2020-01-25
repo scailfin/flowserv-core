@@ -13,7 +13,6 @@ given workflow controller.
 
 from flowserv.model.run.base import RunHandle
 
-import flowserv.controller.run as store
 import flowserv.core.error as err
 
 

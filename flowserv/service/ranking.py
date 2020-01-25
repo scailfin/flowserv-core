@@ -39,7 +39,7 @@ class WorkflowService(object):
         if self.serialize is None:
             self.serialize = BenchmarkSerializer(self.urls)
 
-    def get_workflow(self, benchmark_id):
+    def get_benchmark(self, benchmark_id):
         """Get serialization of the handle for the given benchmark.
 
         Parameters
@@ -113,12 +113,50 @@ class WorkflowService(object):
             result_id=result_id
         )
 
-    def list_workflows(self):
-        """Get serialized listing of descriptors for all workflows in the
-        repository.
+    def get_leaderboard(self, benchmark_id, order_by=None, include_all=False):
+        """Get serialization of the leader board for the given benchmark.
+
+        Parameters
+        ----------
+        benchmark_id: string
+            Unique benchmark identifier
+        order_by: list(flowserv.model.template.schema.SortColumn), optional
+            Use the given attribute to sort run results. If not given the
+            schema default attribute is used
+        include_all: bool, optional
+            Include at most one entry per submission in the result if False
+
+        Returns
+        -------
+        dict
+
+        Raises
+        ------
+        flowserv.core.error.UnknownWorkflowError
+        """
+        # Get list with run results. This will raise an unknown benchmark error
+        # if the given identifier does not reference an existing benchmark.
+        results = self.repo.get_leaderboard(
+            benchmark_id=benchmark_id,
+            order_by=order_by,
+            include_all=include_all
+        )
+        return self.serialize.benchmark_leaderboard(
+            benchmark=self.repo.get_benchmark(benchmark_id),
+            ranking=results
+        )
+
+    def list_benchmarks(self):
+        """Get serialized listing of all benchmarks in the repository.
+
+        Parameters
+        ----------
+        access_token: string, optional
+            User access token
 
         Returns
         -------
         dict
         """
-        return self.serialize.workflow_listing(self.repo.list_workflows())
+        benchmarks = self.repo.list_benchmarks()
+        return self.serialize.benchmark_listing(benchmarks)

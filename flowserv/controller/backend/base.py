@@ -58,22 +58,27 @@ class WorkflowController(metaclass=ABCMeta):
         raise NotImplementedError()
 
     @abstractmethod
-    def exec_workflow(self, run_id, template, arguments):
+    def exec_workflow(self, run_id, template, arguments, run_async=True):
         """Initiate the execution of a given workflow template for a set of
         argument values. Returns the state of the workflow.
 
         The client provides a unique identifier for the workflow run that is
         being used to retrieve the workflow state in future calls.
 
+        If the state of the run handle is not pending, an error is raised.
+
         Parameters
         ----------
-        run_id: string
-            Unique identifier for the workflow run.
+        run: flowserv.model.run.base.RunHandle
+            Handle for the run that is being executed
         template: flowserv.model.template.base.WorkflowTemplate
             Workflow template containing the parameterized specification and the
             parameter declarations
         arguments: dict(flowserv.model.parameter.value.TemplateArgument)
             Dictionary of argument values for parameters in the template
+        run_async: bool, optional
+            Flag to determine whether the worklfow execution will block the
+            workflow controller or run asynchronously.
 
         Returns
         -------
@@ -82,35 +87,27 @@ class WorkflowController(metaclass=ABCMeta):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_run_state(self, run_id):
-        """Get the status of the workflow with the given identifier.
+    def modify_template(self, template, parameters):
+        """Modify the workflow specification in the given template by adding a
+        set of parameters to the existing template parameter set.
+
+        Returns a modified workflow template. Raises an error if the parameter
+        identifier in the resulting template are no longer unique.
 
         Parameters
         ----------
-        run_id: string
-            Unique run identifier
+        template: flowserv.model.template.base.WorkflowTemplate
+            Workflow template handle.
+        parameters: dict(flowserv.model.parameter.base.TemplateParameter)
+            Additional template parameters
 
         Returns
         -------
-        flowserv.model.workflow.state.WorkflowState
+        flowserv.model.template.base.WorkflowTemplate
 
         Raises
         ------
-        flowserv.core.error.UnknownRunError
-        """
-        raise NotImplementedError()
-
-    @abstractmethod
-    def remove_run(self, run_id):
-        """Clear internal resources for the given run.
-
-        Parameters
-        ----------
-        run_id: string
-            Unique run identifier
-
-        Raises
-        ------
-        flowserv.core.error.UnknownRunError
+        flowserv.core.error.DuplicateParameterError
+        flowserv.core.error.InvalidTemplateError
         """
         raise NotImplementedError()

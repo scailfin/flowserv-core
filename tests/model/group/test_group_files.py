@@ -13,7 +13,7 @@ import pytest
 
 from flowserv.model.group.manager import WorkflowGroupManager
 from flowserv.model.workflow.fs import WorkflowFileSystem
-from flowserv.tests.io import FakeStream
+from flowserv.tests.files import FakeStream
 
 import flowserv.core.error as err
 import flowserv.core.util as util

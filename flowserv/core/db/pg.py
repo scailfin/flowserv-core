@@ -22,11 +22,11 @@ from flowserv.core.db.connector import DatabaseConnector
 """Driver-specific environment variables containing connection information for
 the database.
 """
-PG_ROB_HOST = 'PG_ROB_HOST'
-PG_ROB_DATABASE = 'PG_ROB_DATABASE'
-PG_ROB_USER = 'PG_ROB_USER'
-PG_ROB_PASSWORD = 'PG_ROB_PASSWORD'
-PG_ROB_PORT = 'PG_ROB_PORT'
+PG_FLOWSERV_HOST = 'PG_FLOWSERV_HOST'
+PG_FLOWSERV_DATABASE = 'PG_FLOWSERV_DATABASE'
+PG_FLOWSERV_USER = 'PG_FLOWSERV_USER'
+PG_FLOWSERV_PASSWORD = 'PG_FLOWSERV_PASSWORD'
+PG_FLOWSERV_PORT = 'PG_FLOWSERV_PORT'
 
 
 class PostgresConnection(object):
@@ -164,7 +164,7 @@ class PostgresConnector(DatabaseConnector):
 
         If the connection string is not given the necessary information to
         connect to the database is expected to be in the respective environment
-        variables PG_ROB_HOST, PG_ROB_DATABASE, PG_ROB_USER, PG_ROB_PASSWORD.
+        variables PG_FLOWSERV_HOST, PG_FLOWSERV_DATABASE, PG_FLOWSERV_USER, PG_FLOWSERV_PASSWORD.
 
         Parameters
         ----------
@@ -192,11 +192,11 @@ class PostgresConnector(DatabaseConnector):
             self.password = connect_string[pos_3+1:]
             self.port = 5432
         else:
-            self.host = os.environ.get(PG_ROB_HOST, 'localhost')
-            self.port = int(os.environ.get(PG_ROB_PORT, '5432'))
-            self.database = os.environ.get(PG_ROB_DATABASE, 'rob')
-            self.user = os.environ.get(PG_ROB_USER, 'rob')
-            self.password = os.environ.get(PG_ROB_PASSWORD, 'rob')
+            self.host = os.environ.get(PG_FLOWSERV_HOST, 'localhost')
+            self.port = int(os.environ.get(PG_FLOWSERV_PORT, '5432'))
+            self.database = os.environ.get(PG_FLOWSERV_DATABASE, 'rob')
+            self.user = os.environ.get(PG_FLOWSERV_USER, 'rob')
+            self.password = os.environ.get(PG_FLOWSERV_PASSWORD, 'rob')
 
     def connect(self):
         """Connect to the underlying PostgreSQL database.

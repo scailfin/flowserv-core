@@ -22,25 +22,25 @@ class TestConfig(object):
     """
     def test_get_variable_value(self):
         """Test internal method to access environment variables."""
-        # Set environment variable 'ROB_TEST'
-        os.environ[config.ROB_TEST] = 'TestValue'
-        assert config.get_variable(config.ROB_TEST, None, False) == 'TestValue'
-        assert config.get_variable(config.ROB_TEST, 'V', False) == 'TestValue'
-        assert config.get_variable(config.ROB_TEST, None, True) == 'TestValue'
-        assert config.get_variable(config.ROB_TEST, 'V', True) == 'TestValue'
+        # Set environment variable 'FLOWSERV_TEST'
+        os.environ[config.FLOWSERV_TEST] = 'TestValue'
+        assert config.get_variable(config.FLOWSERV_TEST, None, False) == 'TestValue'
+        assert config.get_variable(config.FLOWSERV_TEST, 'V', False) == 'TestValue'
+        assert config.get_variable(config.FLOWSERV_TEST, None, True) == 'TestValue'
+        assert config.get_variable(config.FLOWSERV_TEST, 'V', True) == 'TestValue'
         # Set variable to None
-        del os.environ[config.ROB_TEST]
-        assert config.get_variable(config.ROB_TEST, None, False) is None
-        assert config.get_variable(config.ROB_TEST, 'V', False) == 'V'
+        del os.environ[config.FLOWSERV_TEST]
+        assert config.get_variable(config.FLOWSERV_TEST, None, False) is None
+        assert config.get_variable(config.FLOWSERV_TEST, 'V', False) == 'V'
         with pytest.raises(err.MissingConfigurationError):
-            assert config.get_variable(config.ROB_TEST, None, True)
+            assert config.get_variable(config.FLOWSERV_TEST, None, True)
         with pytest.raises(err.MissingConfigurationError):
-            assert config.get_variable(config.ROB_TEST, 'V', True)
+            assert config.get_variable(config.FLOWSERV_TEST, 'V', True)
         # Set variable to empty string
-        os.environ[config.ROB_TEST] = ''
-        assert config.get_variable(config.ROB_TEST, None, False) is None
-        assert config.get_variable(config.ROB_TEST, 'V', False) == 'V'
+        os.environ[config.FLOWSERV_TEST] = ''
+        assert config.get_variable(config.FLOWSERV_TEST, None, False) is None
+        assert config.get_variable(config.FLOWSERV_TEST, 'V', False) == 'V'
         with pytest.raises(err.MissingConfigurationError):
-            assert config.get_variable(config.ROB_TEST, None, True)
+            assert config.get_variable(config.FLOWSERV_TEST, None, True)
         with pytest.raises(err.MissingConfigurationError):
-            assert config.get_variable(config.ROB_TEST, 'V', True)
+            assert config.get_variable(config.FLOWSERV_TEST, 'V', True)

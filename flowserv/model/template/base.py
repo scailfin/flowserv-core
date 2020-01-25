@@ -27,7 +27,7 @@ from flowserv.model.template.schema import ResultSchema
 
 import flowserv.core.error as err
 import flowserv.model.parameter.base as pb
-import flowserv.model.template.util as tutil
+import flowserv.model.template.parameter as tp
 
 
 """Top-level elements of dictionary serialization for template handles."""
@@ -156,7 +156,7 @@ class WorkflowTemplate(object):
         # Ensure that the workflow specification does not reference undefined
         # parameters if validate flag is True.
         if validate:
-            for key in tutil.get_parameter_references(workflow_spec):
+            for key in tp.get_parameter_references(workflow_spec):
                 if key not in parameters:
                     raise err.UnknownParameterError(key)
         # -- Post-processing task ---------------------------------------------

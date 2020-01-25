@@ -21,7 +21,7 @@ import flowserv.config.base as config
 module.
 """
 # Time period for which an API key is valid
-ROB_AUTH_LOGINTTL = 'ROB_AUTH_TTL'
+FLOWSERV_AUTH_LOGINTTL = 'FLOWSERV_AUTH_TTL'
 
 """Default values for environment variables."""
 DEFAULT_LOGINTTL = 24 * 60 * 60
@@ -31,15 +31,15 @@ DEFAULT_LOGINTTL = 24 * 60 * 60
 
 def AUTH_LOGINTTL(default_value=None, raise_error=False):
     """Get the connect string for the database from the respective environment
-    variable 'ROB_AUTH_LOGINTTL'. Raises a MissingConfigurationError if the
-    raise_error flag is True and 'ROB_AUTH_LOGINTTL' is not set. If the
-    raise_error flag is False and 'ROB_AUTH_LOGINTTL' is not set the default
+    variable 'FLOWSERV_AUTH_LOGINTTL'. Raises a MissingConfigurationError if the
+    raise_error flag is True and 'FLOWSERV_AUTH_LOGINTTL' is not set. If the
+    raise_error flag is False and 'FLOWSERV_AUTH_LOGINTTL' is not set the default
     value is returned.
 
     Parameters
     ----------
     default_value: string, optional
-        Default value if 'ROB_AUTH_LOGINTTL' is not set and raise_error flag is
+        Default value if 'FLOWSERV_AUTH_LOGINTTL' is not set and raise_error flag is
         False
     raise_error: bool, optional
         Flag indicating whether an error is raised if the environment variable
@@ -54,7 +54,7 @@ def AUTH_LOGINTTL(default_value=None, raise_error=False):
     flowserv.core.error.MissingConfigurationError
     """
     val = config.get_variable(
-        name=ROB_AUTH_LOGINTTL,
+        name=FLOWSERV_AUTH_LOGINTTL,
         default_value=default_value,
         raise_error=raise_error
     )

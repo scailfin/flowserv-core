@@ -10,7 +10,7 @@
 
 import os
 
-from flowserv.tests.io import FakeStream
+from flowserv.tests.files import FakeStream
 
 import flowserv.model.parameter.base as pb
 import flowserv.model.parameter.declaration as pd

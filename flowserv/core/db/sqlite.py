@@ -16,16 +16,16 @@ import flowserv.core.util as util
 """Driver-specific environment variables containing connection information for
 the database.
 """
-SQLITE_ROB_CONNECT = 'SQLITE_ROB_CONNECT'
+SQLITE_FLOWSERV_CONNECT = 'SQLITE_FLOWSERV_CONNECT'
 
 
 class SQLiteConnector(DatabaseConnector):
     """Database connector for SQLite3 databases."""
     def __init__(self, connect_string=None):
         """Connect to the given SQLite3 database file. If the connection string
-        is not given the environment variable SQLITE_ROB_CONNECT is expected to
+        is not given the environment variable SQLITE_FLOWSERV_CONNECT is expected to
         contain the database connection information. If the value is given this
-        will override any value in the variable SQLITE_ROB_CONNECT.
+        will override any value in the variable SQLITE_FLOWSERV_CONNECT.
 
         Parameters
         ----------
@@ -42,7 +42,7 @@ class SQLiteConnector(DatabaseConnector):
         if connect_string is not None:
             self.connect_string = os.path.abspath(connect_string)
         else:
-            self.connect_string = os.environ.get(SQLITE_ROB_CONNECT)
+            self.connect_string = os.environ.get(SQLITE_FLOWSERV_CONNECT)
         util.create_dir(os.path.dirname(self.connect_string))
 
     def connect(self):

@@ -31,11 +31,11 @@ RELS = [
 ]
 
 
-def test_descriptor():
+def test_service_descriptor():
     """Test the service descriptor serialization."""
     # Clear environment variable if set
-    if config.ROB_API_NAME in os.environ:
-        del os.environ[config.ROB_API_NAME]
+    if config.FLOWSERV_API_NAME in os.environ:
+        del os.environ[config.FLOWSERV_API_NAME]
     r = Service().service_descriptor()
     util.validate_doc(
         doc=r,

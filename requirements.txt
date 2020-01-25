@@ -6,3 +6,4 @@ passlib
 psycopg2-binary
 python-dateutil
 pyyaml>=5.1
+Click
