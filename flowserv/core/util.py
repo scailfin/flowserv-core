@@ -303,14 +303,14 @@ def validate_doc(doc, mandatory=None, optional=None):
     if mandatory is not None:
         for key in mandatory:
             if key not in doc:
-                raise ValueError('missing element \'{}\''.format(key))
+                raise ValueError("missing element '{}'".format(key))
     # Raise error if additional elements are present in the dictionary
     labels = mandatory if mandatory is not None else list()
     if optional is not None:
         labels = labels + optional
     for key in doc:
         if key not in labels:
-            raise ValueError('unknown element \'{}\''.format(key))
+            raise ValueError("unknown element '{}'".format(key))
     return doc
 
 

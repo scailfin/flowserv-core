@@ -37,10 +37,12 @@ class UserSerializer(object):
         -------
         dict
         """
-        doc = self.user(user)
         link = {hateoas.action(hateoas.ACTIVATE): self.urls.activate_user()}
-        doc[labels.LINKS].append(hateoas.serialize(link)[0])
-        return doc
+        return {
+            labels.ID: user.identifier,
+            labels.USERNAME: user.name,
+            labels.LINKS: hateoas.serialize(link)
+        }
 
     def reset_request(self, request_id):
         """Serialization for requested identifier to rest a user password.

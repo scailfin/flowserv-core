@@ -28,4 +28,8 @@ class FakeStream(object):
 
     def save(self, filename):
         """Write simple text to given file."""
-        util.write_object(filename=filename, obj=self.data)
+        util.write_object(
+            filename=filename,
+            obj=self.data,
+            format=util.FORMAT_JSON
+        )
