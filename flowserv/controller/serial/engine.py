@@ -14,16 +14,13 @@ steps within separate sub-processes.
 import os
 import subprocess
 
-from datetime import datetime
 from functools import partial
 from multiprocessing import Lock, Pool
 
 from flowserv.controller.base import WorkflowController
 from flowserv.controller.serial.workflow import SerialWorkflow
-from flowserv.core.db.driver import DatabaseDriver
 from flowserv.model.template.base import WorkflowTemplate
 from flowserv.model.workflow.resource import FSObject
-from flowserv.model.workflow.state import StateError, StateSuccess
 
 import flowserv.core.util as util
 import flowserv.model.template.parameter as tp
@@ -166,7 +163,7 @@ class SerialWorkflowEngine(WorkflowController):
             dirname = os.path.dirname(filename)
             if dirname:
                 # Create the directory if it does not exist
-                out_dir = os.path.join(run_dir, dirname)
+                out_dir = os.path.join(run.rundir, dirname)
                 if not os.path.isdir(out_dir):
                     os.makedirs(out_dir)
         # Start a new process to run the workflow. Make sure to catch all

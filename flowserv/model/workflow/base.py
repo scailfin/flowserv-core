@@ -132,7 +132,7 @@ class WorkflowHandle(WorkflowDescriptor):
         flowserv.model.template.schema.ResultSchema
         """
         return self.template.get_schema()
-        
+
     def get_template(self, workflow_spec=None, parameters=None):
         """Get associated workflow template. The template is loaded on-demand
         if necessary. If either of the optional parameters are given, a modified
@@ -188,5 +188,5 @@ class WorkflowHandle(WorkflowDescriptor):
         )
         result = list()
         for row in self.con.execute(sql, (self.identifier,)).fetchall():
-            results.append(row['group_run_id'])
+            result.append(row['group_run_id'])
         return sorted(result)

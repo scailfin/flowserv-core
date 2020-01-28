@@ -1,4 +1,4 @@
-## This file is part of the Reproducible and Reusable Data Analysis Workflow
+# This file is part of the Reproducible and Reusable Data Analysis Workflow
 # Server (flowServ).
 #
 # Copyright (C) [2019-2020] NYU.

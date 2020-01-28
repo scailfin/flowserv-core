@@ -10,6 +10,8 @@
 manipulate workflow runs and their results.
 """
 
+import shutil
+
 from flowserv.view.run import RunSerializer
 from flowserv.core.files import FileHandle, InputFile
 from flowserv.model.parameter.value import TemplateArgument
@@ -436,7 +438,7 @@ class RunService(object):
             # run belongs to.
             workflow = self.workflow_repo.get_workflow(run.workflow_id)
             template = workflow.get_template()
-            resultS_schema = template.get_schema()
+            result_schema = template.get_schema()
             # Insert result values into the ranking if the template defines a
             # result schema.
             if result_schema is not None:

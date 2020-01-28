@@ -76,7 +76,7 @@ class API(object):
         self.con = con
         self.urls = urls if urls is not None else UrlFactory()
         # Use the global backend if no engine is specified
-        self.engine = engine if not engine is None else backend
+        self.engine = engine if engine is not None else backend
         # Ensure that the API base directory exists
         fsdir = basedir if basedir is not None else config.API_BASEDIR()
         self.fs = WorkflowFileSystem(util.create_dir(fsdir))

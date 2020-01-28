@@ -65,15 +65,15 @@ class StateEngine(WorkflowController):
             Flag indicating whether the controller is updating the underlying
             database asynchronously or not
         """
-        self.state = state if not state is None else st.STATE_PENDING
+        self.state = state if state is not None else st.STATE_PENDING
         self.messages = messages
-        self.values = values if not values is None else {'col1': 1, 'col2': 1.1, 'col3': 'R0'}
-        self.result_file = result_file if not result_file is None else RESULT_FILE_ID
-        if not basedir is None:
+        self.values = values if values is not None else {'col1': 1, 'col2': 1.1, 'col3': 'R0'}
+        self.result_file = result_file if result_file is not None else RESULT_FILE_ID
+        if basedir is not None:
             self.basedir = util.create_dir(basedir)
         else:
             self.basedir = None
-        self._async_events = asynchronous_events if not asynchronous_events is None else False
+        self._async_events = asynchronous_events if asynchronous_events is not None else False
         # Index of workflow runs
         self.runs = dict()
 
@@ -119,7 +119,7 @@ class StateEngine(WorkflowController):
         flowserv.tests.benchmark.StateEngine
         """
         self.state = st.STATE_ERROR
-        if not messages is None:
+        if messages is not None:
             self.messages = messages
         return self
 
@@ -150,7 +150,7 @@ class StateEngine(WorkflowController):
         elif self.state == st.STATE_CANCELED:
             run = st.StatePending().cancel(messages=self.messages)
         else:
-            if not self.values is None:
+            if self.values is not None:
                 filename = util.get_unique_identifier() + '.json'
                 result_file = os.path.join(self.basedir, filename)
                 util.write_object(filename=result_file, obj=self.values)
@@ -238,6 +238,6 @@ class StateEngine(WorkflowController):
         flowserv.tests.benchmark.StateEngine
         """
         self.state = st.STATE_SUCCESS
-        if not values is None:
+        if values is not None:
             self.values = values
         return self
