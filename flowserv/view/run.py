@@ -95,14 +95,14 @@ class RunSerializer(object):
             doc[labels.FINISHED_AT] = run.state.finished_at.isoformat()
             # Serialize file resources
             resources = list()
-            for res in run.list_resources():
+            for res in run.resources:
                 r_url = self.urls.download_result_file(
                     run_id=run.identifier,
-                    resource_id=res.resource_id
+                    resource_id=res.identifier
                 )
                 resources.append({
-                    labels.ID: res.resource_id,
-                    labels.NAME: res.resource_name,
+                    labels.ID: res.identifier,
+                    labels.NAME: res.name,
                     labels.LINKS: hateoas.serialize({hateoas.SELF: r_url})
                 })
             doc[labels.RESOURCES] = resources

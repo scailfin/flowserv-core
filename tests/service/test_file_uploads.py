@@ -42,13 +42,13 @@ def test_workflow_group_file_upload(tmpdir):
     r = api.workflows().create_workflow(name='W2', sourcedir=TEMPLATE_DIR)
     wf2 = r['id']
     # Create two groups for each workflow
-    r = api.groups().create_group( workflow_id=wf1, name='G1', user_id=USER_1)
+    r = api.groups().create_group(workflow_id=wf1, name='G1', user_id=USER_1)
     w1g1 = r['id']
-    r = api.groups().create_group( workflow_id=wf1, name='G2', user_id=USER_2)
+    r = api.groups().create_group(workflow_id=wf1, name='G2', user_id=USER_2)
     w1g2 = r['id']
-    r = api.groups().create_group( workflow_id=wf2, name='G1', user_id=USER_1)
+    r = api.groups().create_group(workflow_id=wf2, name='G1', user_id=USER_1)
     w2g1 = r['id']
-    r = api.groups().create_group( workflow_id=wf2, name='G2', user_id=USER_2)
+    r = api.groups().create_group(workflow_id=wf2, name='G2', user_id=USER_2)
     w2g2 = r['id']
     # Upload increasing number of files for each of the groups
     groups = [w1g1, w1g2, w2g1, w2g2]
@@ -68,7 +68,15 @@ def test_workflow_group_file_upload(tmpdir):
             )
             serialize.validate_file_handle(r)
             assert r['name'] == name
-            files.append((r['id'], g_id, u_id, stream.data))
+            f_id = r['id']
+            files.append((f_id, g_id, u_id, stream.data))
+            fh, r = api.uploads().get_file(
+                group_id=g_id,
+                file_id=f_id,
+                user_id=u_id
+            )
+            assert r['name'] == name
+            assert fh.name == name
     # Error when trying to upload file as no-member
     with pytest.raises(err.UnauthorizedAccessError):
         api.uploads().upload_file(
@@ -98,7 +106,7 @@ def test_workflow_group_file_upload(tmpdir):
             assert json.load(f) == data
     # Error trying to access file as non-member
     with pytest.raises(err.UnauthorizedAccessError):
-         api.uploads().get_file(
+        api.uploads().get_file(
             group_id=w1g1,
             file_id=files[0][0],
             user_id=USER_2

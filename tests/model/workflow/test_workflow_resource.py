@@ -10,6 +10,7 @@
 
 import os
 import pytest
+import tarfile
 
 import flowserv.model.workflow.resource as wfres
 import flowserv.core.util as util
@@ -82,3 +83,36 @@ def test_resource_set():
             wfres.WorkflowResource(identifier='1', name='MyRes0'),
             wfres.WorkflowResource(identifier='2', name='MyRes2')
         ])
+
+
+def test_targzip(tmpdir):
+    """Test compressing a set of file resources."""
+    DIR = os.path.dirname(os.path.realpath(__file__))
+    TAR_DIR = os.path.join(DIR, '../../.files/')
+    resources = list()
+    resources.append(
+        wfres.FSObject(
+            identifier='0',
+            name='workflow',
+            filename=os.path.join(TAR_DIR, 'benchmark')
+        )
+    )
+    resources.append(
+        wfres.FSObject(
+            identifier='1',
+            name='schema.json',
+            filename=os.path.join(TAR_DIR, 'schema.json')
+        )
+    )
+    out_file = os.path.join(str(tmpdir), 'run.tar.gz')
+    with open(out_file, 'wb') as f:
+        f.write(wfres.ResourceSet(resources).targz().getvalue())
+    tar = tarfile.open(out_file, mode='r:gz')
+    # Validate that there are 5 entries in the tar file
+    names = list()
+    for member in tar.getmembers():
+        names.append(member.name)
+    assert len(names) == 20
+    assert 'workflow/helloworld/code/analyze.py' in names
+    assert 'workflow/helloworld/data/names.txt' in names
+    assert 'schema.json' in names

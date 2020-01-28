@@ -20,7 +20,6 @@ import flowserv.tests.db as db
 import flowserv.core.error as err
 import flowserv.core.util as util
 import flowserv.tests.serialize as serialize
-import flowserv.view.hateoas as hateoas
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))

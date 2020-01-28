@@ -11,13 +11,11 @@
 import os
 import pytest
 
-from flowserv.core.db.connector import DatabaseConnector
 from flowserv.core.db.driver import DatabaseDriver as DB
 
 import flowserv.config.db as config
 import flowserv.core.db.driver as driver
 import flowserv.core.db.sqlite as sqlite
-import flowserv.core.error as err
 
 
 def test_configuration():

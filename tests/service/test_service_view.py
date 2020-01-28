@@ -10,7 +10,6 @@
 
 import os
 
-from flowserv.service.server import Service
 from flowserv.service.api import API
 from flowserv.view.route import UrlFactory
 

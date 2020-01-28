@@ -303,7 +303,7 @@ class WorkflowRepository(object):
         stmts.append(
             'DELETE FROM group_member WHERE group_id IN ('
             '   SELECT g.group_id FROM workflow_group g '
-                'WHERE g.workflow_id = ?)'
+            '   WHERE g.workflow_id = ?)'
         )
         stmts.append(
             'DELETE FROM group_upload_file WHERE group_id IN ('

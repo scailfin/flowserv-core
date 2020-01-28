@@ -22,7 +22,6 @@ import flowserv.core.error as err
 import flowserv.core.util as util
 import flowserv.model.parameter.declaration as pd
 import flowserv.model.parameter.value as pv
-import flowserv.model.run.manager as rm
 import flowserv.model.workflow.state as st
 import flowserv.tests.db as db
 
@@ -209,7 +208,7 @@ def test_run_parameters(tmpdir):
     assert len(arguments) == 3
     assert arguments['A'] == 10
     assert arguments['B']
-    assert arguments['C'][rm.LABEL_TARGETPATH] == '/dev/null'
+    assert arguments['C']['target'] == '/dev/null'
 
 
 def test_successful_run_lifecycle(tmpdir):

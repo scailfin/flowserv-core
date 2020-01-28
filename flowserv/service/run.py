@@ -181,7 +181,7 @@ class RunService(object):
         run = self.run_manager.get_run(run_id)
         if not run.is_success():
             raise err.UnknownRunError(run_id)
-        return util.targzip(run.resources)
+        return run.resources.targz()
 
     def get_result_file(self, run_id, resource_id, user_id):
         """Get file handle for a resource file that was generated as the result
@@ -209,9 +209,10 @@ class RunService(object):
         flowserv.core.error.UnknownRunError
         flowserv.core.error.UnknownResourceError
         """
-        # Raise an error if the user does not have rights to access the run or
-        # if the run does not exist.
-        self.authorize_member(run_id=run_id, user_id=user_id)
+        # Raise an error if the user does not have rights to access the
+        # resource file or if the run does not exist.
+        if not self.auth.is_group_member(run_id=run_id, user_id=user_id):
+            raise err.UnauthorizedAccessError()
         # Get the run handle to retrieve the resource. Raise error if the
         # resource does not exist
         run = self.run_manager.get_run(run_id)
@@ -384,14 +385,14 @@ class RunService(object):
         run = self.run_manager.create_run(
             workflow_id=group.workflow_id,
             group_id=group_id,
-            arguments=arguments
+            arguments=run_args
         )
         run_id = run.identifier
         # Execute the benchmark workflow for the given set of arguments.
         state = self.backend.exec_workflow(
             run_id=run_id,
             template=template,
-            arguments=arguments
+            arguments=run_args
         )
         # Update the run state if it is no longer pending for execution.
         if not state.is_pending():
@@ -404,7 +405,8 @@ class RunService(object):
             workflow_id=workflow.identifier,
             group_id=group_id,
             state=state,
-            arguments=run.arguments
+            arguments=run.arguments,
+            rundir=run.rundir
         )
         return self.serialize.run_handle(run, group)
 
@@ -510,4 +512,4 @@ class RunService(object):
                         )
                         # Remove the temporary input folder
                         shutil.rmtree(datadir)
-        self.run_manager.update_state(run_id=run_id, state=state)
+        self.run_manager.update_run(run_id=run_id, state=state)

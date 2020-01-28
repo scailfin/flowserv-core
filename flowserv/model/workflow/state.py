@@ -333,7 +333,7 @@ class StateRunning(WorkflowState):
 
         Parameters
         ----------
-        resources: dict(flowserv.model.workflow.resource.WorkflowResource), optional
+        resources: list(flowserv.model.workflow.resource.WorkflowResource), optional
             Optional dictionary of created resources
 
         Returns

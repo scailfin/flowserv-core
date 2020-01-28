@@ -14,11 +14,9 @@ identifiers.
 
 import datetime
 import errno
-import io
 import json
 import os
 import shutil
-import tarfile
 import time
 import uuid
 import yaml
@@ -193,43 +191,6 @@ def read_object(filename, format=None):
             return json.load(f)
     else:
         raise ValueError('unknown data format \'' + str(format) + '\'')
-
-
-def tar_gz(directory, filenames=None):
-    """Create a gzipped tar file containing all files in the given list of
-    file names from the base directory.
-
-    Parameters
-    ----------
-    directory: string
-        Base directory
-    filenames: list(string) or set(string)
-        List of relative path names for files to be included in the compressed
-        tar file.
-
-    Returns
-    -------
-    io.BytesIO
-    """
-    file_out = io.BytesIO()
-    tar_handle = tarfile.open(fileobj=file_out, mode='w:gz')
-    for root, dirs, files in os.walk(directory):
-        # Add directories (if contained in the filename list)
-        for dir in dirs:
-            # Get path to file relative to base directory
-            filename = os.path.relpath(os.path.join(root, dir), directory)
-            if filenames is None:
-                tar_handle.add(name=os.path.join(root, dir), arcname=filename)
-            elif filename in filenames or filename + '/' in filenames:
-                tar_handle.add(name=os.path.join(root, dir), arcname=filename)
-        for file in files:
-            # Get path to file relative to base directory
-            filename = os.path.relpath(os.path.join(root, file), directory)
-            if filenames is None or filename in filenames:
-                tar_handle.add(name=os.path.join(root, file), arcname=filename)
-    tar_handle.close()
-    file_out.seek(0)
-    return file_out
 
 
 def to_datetime(timestamp):

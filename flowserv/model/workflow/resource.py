@@ -11,6 +11,9 @@ includes, for example, files that are created by individual workflow runs or
 by workflow post-processing steps.
 """
 
+import io
+import tarfile
+
 from flowserv.core.files import FileHandle
 
 
@@ -234,3 +237,19 @@ class ResourceSet(object):
                 match = r.name == name
             if match:
                 return r
+
+    def targz(self):
+        """Create a gzipped tar file containing all files in the given resource
+        set.
+
+        Returns
+        -------
+        io.BytesIO
+        """
+        file_out = io.BytesIO()
+        tar_handle = tarfile.open(fileobj=file_out, mode='w:gz')
+        for r in self.elements:
+            tar_handle.add(name=r.filename, arcname=r.name)
+        tar_handle.close()
+        file_out.seek(0)
+        return file_out

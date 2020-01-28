@@ -15,12 +15,12 @@ from flowserv.tests.controller import StateEngine
 
 import flowserv.tests.db as db
 
-import flowserv.model.parameter.declaration as pd
 import flowserv.tests.serialize as serialize
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))
 TEMPLATE_DIR = os.path.join(DIR, '../.files/benchmark/helloworld')
+
 
 def test_workflow_view(tmpdir):
     """Test serialization for created workflows and workflow listings."""

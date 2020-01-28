@@ -46,8 +46,8 @@ def init_db(basedir, workflows=None, users=None):
     connector = driver.DatabaseDriver.get_connector()
     if users is not None:
         sql = (
-        'INSERT INTO api_user(user_id, name, secret, active) '
-        'VALUES(?, ?, ?, ?)'
+            'INSERT INTO api_user(user_id, name, secret, active) '
+            'VALUES(?, ?, ?, ?)'
         )
         with connector.connect() as con:
             for user_id in users:

@@ -200,7 +200,7 @@ class RankingManager(object):
         sql = 'INSERT INTO {}({}) VALUES({})'.format(
              RESULT_TABLE(workflow_id),
              ','.join(columns),
-            ','.join(['?'] * len(columns))
+             ','.join(['?'] * len(columns))
         )
         self.con.execute(sql, values)
 

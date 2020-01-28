@@ -13,7 +13,6 @@ and workflow result rankings.
 from flowserv.view.workflow import WorkflowSerializer
 
 import flowserv.core.error as err
-import flowserv.core.util as util
 
 
 class WorkflowService(object):
@@ -212,7 +211,7 @@ class WorkflowService(object):
         resources = workflow.resources
         if resources is None:
             raise err.UnknownResourceError('workflow evaluation archive')
-        return util.targzip(resources)
+        return resources.targz()
 
     def get_workflow_resource_file(self, workflow_id, resource_id):
         """Get file handle for a workflow resource that has been generated

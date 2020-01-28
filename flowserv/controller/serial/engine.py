@@ -362,13 +362,14 @@ def run_workflow(run_id, rundir, state, output_files, steps, verbose):
                 except subprocess.CalledProcessError as ex:
                     return state.error(messages=[str(ex)])
         # Create dictionary of output files
-        files = dict()
+        files = list()
         for resource_name in output_files:
-            files[resource_name] = FSObject(
-                resource_id=util.get_unique_identifier(),
-                resource_name=resource_name,
-                file_path=os.path.join(rundir, resource_name)
+            f = FSObject(
+                identifier=util.get_unique_identifier(),
+                name=resource_name,
+                filename=os.path.join(rundir, resource_name)
             )
+            files.append(f)
         # Workflow executed successfully
         result_state = state.success(resources=files)
     except Exception as ex:

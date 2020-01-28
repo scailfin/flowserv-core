@@ -154,7 +154,9 @@ class InputFile(FileHandle):
         """
         super(InputFile, self).__init__(
             identifier=f_handle.identifier,
-            filename=f_handle.path
+            filename=f_handle.path,
+            name=f_handle.name,
+            mimetype=f_handle.mimetype
         )
         self.target_path = target_path
 

@@ -10,6 +10,7 @@
 
 import flowserv.view.hateoas as hateoas
 import flowserv.core.util as util
+import flowserv.model.workflow.state as st
 
 
 # -- Files --------------------------------------------------------------------
@@ -53,7 +54,7 @@ def validate_file_listing(doc, count):
     validate_links(doc=doc, keys=['self'])
     for fh in doc['files']:
         validate_file_handle(fh)
-        
+
 
 # -- Groups -------------------------------------------------------------------
 
@@ -107,6 +108,63 @@ def validate_group_listing(doc):
             doc=g,
             keys=['self', 'workflow', 'self:upload', 'self:submit']
         )
+
+
+# -- Runs ---------------------------------------------------------------------
+
+def validate_run_handle(doc, state):
+    """Validate serialization of a run handle.
+
+    Parameters
+    ----------
+    doc: dict
+        Run handle serialization
+    state: string
+        Expected run state
+
+    Raises
+    ------
+    ValueError
+    """
+    labels = ['id', 'state', 'createdAt', 'links', 'arguments', 'parameters']
+    if state == st.STATE_RUNNING:
+        labels.append('startedAt')
+    elif state in [st.STATE_ERROR, st.STATE_CANCELED]:
+        labels.append('startedAt')
+        labels.append('finishedAt')
+        labels.append('messages')
+    elif state == st.STATE_SUCCESS:
+        labels.append('startedAt')
+        labels.append('finishedAt')
+        labels.append('resources')
+    util.validate_doc(doc=doc, mandatory=labels)
+    for p in doc['parameters']:
+        validate_parameter(p)
+    assert doc['state'] == state
+    keys = ['self']
+    if state in st.ACTIVE_STATES:
+        keys.append('self:cancel')
+    else:
+        keys.append('self:delete')
+    if state == st.STATE_SUCCESS:
+        keys.append('results')
+        for r in doc['resources']:
+            util.validate_doc(doc=r, mandatory=['id', 'name', 'links'])
+            validate_links(doc=r, keys=['self'])
+    validate_links(doc=doc, keys=keys)
+
+
+def validate_run_listing(doc):
+    """
+    """
+    util.validate_doc(doc=doc, mandatory=['runs', 'links'])
+    validate_links(doc=doc, keys=['self', 'submit'])
+    for r in doc['runs']:
+        util.validate_doc(
+            doc=r,
+            mandatory=['id', 'state', 'createdAt', 'links']
+        )
+
 
 # -- Service descriptor -------------------------------------------------------
 

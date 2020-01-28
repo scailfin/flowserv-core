@@ -22,14 +22,6 @@ import flowserv.model.run.state as shelper
 import flowserv.model.workflow.state as st
 
 
-"""Labels for file handle serialization."""
-LABEL_FILEHANDLE = 'fileHandle'
-LABEL_FILEPATH = 'filepath'
-LABEL_FILENAME = 'filename'
-LABEL_ID = 'identifier'
-LABEL_TARGETPATH = 'targetPath'
-
-
 class RunManager(object):
     """The run manager maintains workflow runs. It provides methods the create,
     delete, and retrieve runs. the manager also provides the functionality to
@@ -351,12 +343,11 @@ class ArgumentEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, InputFile):
             return {
-                LABEL_FILEHANDLE: {
-                    LABEL_FILEPATH: obj.filename,
-                    LABEL_ID: obj.identifier,
-                    LABEL_FILENAME: obj.name,
+                'file': {
+                    'id': obj.identifier,
+                    'name': obj.name,
                 },
-                LABEL_TARGETPATH: obj.target_path
+                'target': obj.target_path
             }
         # Let the base class default method raise the TypeError
         return json.JSONEncoder.default(self, obj)
