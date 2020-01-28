@@ -63,7 +63,7 @@ class SerialWorkflowEngine(WorkflowController):
         verbose: bool, optional
             Print command strings to STDOUT during workflow execution
         """
-        self.exec_func = exec_func
+        self.exec_func = exec_func if not exec_func is None else run_workflow
         # Set the is_async flag. If no value is given the default value is set
         # from the respective environment variable
         if is_async is not None:
@@ -146,7 +146,7 @@ class SerialWorkflowEngine(WorkflowController):
         # Get the run state. Ensure that the run is in pending state
         if not run.is_pending():
             raise RuntimeError("invalid run state '{}'".format(run.state))
-        state = run.state()
+        state = run.state
         # Expand template parameters. Get (i) list of files that need to be
         # copied, (ii) the expanded commands that represent the workflow steps,
         # and (iii) the list of output files.
@@ -179,11 +179,11 @@ class SerialWorkflowEngine(WorkflowController):
                     tasks=self.tasks
                 )
                 with self.lock:
-                    self.tasks[run.run_id] = pool
+                    self.tasks[run.identifier] = pool
                 pool.apply_async(
                     self.exec_func,
                     args=(
-                        run.run_id,
+                        run.identifier,
                         run.rundir,
                         state,
                         output_files,
@@ -196,7 +196,7 @@ class SerialWorkflowEngine(WorkflowController):
             else:
                 # Run steps synchronously and block the controller until done
                 _, state_dict = self.exec_func(
-                    run.run_id,
+                    run.identifier,
                     run.rundir,
                     state,
                     output_files,
@@ -350,7 +350,8 @@ def run_workflow(run_id, rundir, state, output_files, steps, verbose):
                     # Return error state. Include STDERR in result
                     messages = list()
                     messages.append(proc.stderr.decode('utf-8'))
-                    return state.error(messages=messages)
+                    result_state = state.error(messages=messages)
+                    return run_id, serialize.serialize_state(result_state)
             except (AttributeError, TypeError):
                 try:
                     subprocess.check_output(
@@ -360,7 +361,8 @@ def run_workflow(run_id, rundir, state, output_files, steps, verbose):
                         stderr=subprocess.STDOUT
                     )
                 except subprocess.CalledProcessError as ex:
-                    return state.error(messages=[str(ex)])
+                    result_state = state.error(messages=[str(ex)])
+                    return run_id, serialize.serialize_state(result_state)
         # Create dictionary of output files
         files = list()
         for resource_name in output_files:
