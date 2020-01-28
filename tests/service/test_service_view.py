@@ -38,7 +38,7 @@ def test_service_descriptor(tmpdir):
             del os.environ[var]
     os.environ[config.FLOWSERV_API_PORT] = '80'
     con = db.init_db(str(tmpdir)).connect()
-    api = API(con=con)
+    api = API(con=con, basedir=str(tmpdir))
     r = api.service_descriptor()
     serialize.validate_service_descriptor(r)
     assert r['name'] == config.DEFAULT_NAME
@@ -46,7 +46,11 @@ def test_service_descriptor(tmpdir):
     for link in r['links']:
         assert link['href'].startswith('http://localhost/')
     # Test initialization of the UrlFactory
-    api = API(con=con, urls=UrlFactory(base_url='http://www.flowserv.org////'))
+    api = API(
+        con=con,
+        urls=UrlFactory(base_url='http://www.flowserv.org////'),
+        basedir=str(tmpdir)
+    )
     r = api.service_descriptor()
     for link in r['links']:
         ref = link['href']

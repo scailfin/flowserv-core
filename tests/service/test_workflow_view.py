@@ -27,7 +27,7 @@ def test_workflow_view(tmpdir):
     # Get an API instance that uses the StateEngine as the backend
     con = db.init_db(str(tmpdir)).connect()
     engine = StateEngine()
-    api = API(con=con, engine=engine)
+    api = API(con=con, engine=engine, basedir=str(tmpdir))
     # Create two copies of the same workflow
     r = api.workflows().create_workflow(name='W1', sourcedir=TEMPLATE_DIR)
     serialize.validate_workflow_handle(doc=r, has_optional=False)

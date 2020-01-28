@@ -22,7 +22,7 @@ import flowserv.tests.serialize as serialize
 
 def test_authenticate_user(tmpdir):
     """Test login and logout via API."""
-    api = API(con=db.init_db(str(tmpdir)).connect())
+    api = API(con=db.init_db(str(tmpdir)).connect(), basedir=str(tmpdir))
     users = api.users()
     # Register a new user that is automatically activated
     r = users.register_user(username='myuser', password='mypwd', verify=False)
@@ -40,7 +40,8 @@ def test_authenticate_user(tmpdir):
 
 def test_list_users(tmpdir):
     """Test user listings and queries."""
-    users = API(con=db.init_db(str(tmpdir)).connect()).users()
+    api = API(con=db.init_db(str(tmpdir)).connect(), basedir=str(tmpdir))
+    users = api.users()
     # Register three active users
     users.register_user(username='a@user', password='mypwd', verify=False)
     users.register_user(username='me@user', password='mypwd', verify=False)
@@ -58,7 +59,8 @@ def test_list_users(tmpdir):
 
 def test_register_user(tmpdir):
     """Test new user registration via API."""
-    users = API(con=db.init_db(str(tmpdir)).connect()).users()
+    api = API(con=db.init_db(str(tmpdir)).connect(), basedir=str(tmpdir))
+    users = api.users()
     # Register a new user without activating the user
     r = users.register_user(
         username='myuser',
@@ -80,7 +82,8 @@ def test_register_user(tmpdir):
 
 def test_reset_password(tmpdir):
     """Test requesting a reset and resetting the password for a user."""
-    users = API(con=db.init_db(str(tmpdir)).connect()).users()
+    api = API(con=db.init_db(str(tmpdir)).connect(), basedir=str(tmpdir))
+    users = api.users()
     # Register a new user
     users.register_user(username='myuser', password='mypwd', verify=False)
     # Request password reset

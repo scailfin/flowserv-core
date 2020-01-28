@@ -35,7 +35,7 @@ def test_workflow_group_file_upload(tmpdir):
     # Initialize the API
     con = db.init_db(str(tmpdir), users=[USER_1, USER_2]).connect()
     engine = StateEngine()
-    api = API(con=con, engine=engine)
+    api = API(con=con, engine=engine, basedir=str(tmpdir))
     # Create two workflows with two groups each
     r = api.workflows().create_workflow(name='W1', sourcedir=TEMPLATE_DIR)
     wf1 = r['id']

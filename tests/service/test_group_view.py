@@ -36,7 +36,7 @@ def test_group_view(tmpdir):
     # Get an API instance that uses the StateEngine as the backend
     con = db.init_db(str(tmpdir), users=[USER_1, USER_2]).connect()
     engine = StateEngine()
-    api = API(con=con, engine=engine)
+    api = API(con=con, engine=engine, basedir=str(tmpdir))
     # Create a new workflow group
     r = api.workflows().create_workflow(name='W1', sourcedir=TEMPLATE_DIR)
     workflow_id = r['id']
