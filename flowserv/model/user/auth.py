@@ -77,7 +77,7 @@ class Auth(metaclass=ABCMeta):
         )
 
     @abstractmethod
-    def is_group_member(self, user, group_id=None, run_id=None):
+    def is_group_member(self, user_id, group_id=None, run_id=None):
         """Verify that the given user is member of a workflow group. The group
         is identified either by the given group identifier or by the identifier
         for a run that is associated with the group.
@@ -88,8 +88,8 @@ class Auth(metaclass=ABCMeta):
 
         Parameters
         ----------
-        user: flowserv.model.user.base.UserHandle
-            Handle for user that is accessing the resource
+        user_id: string
+            Unique user identifier
         group_id: string, optional
             Unique workflow group identifier
         run_id: string, optional
@@ -153,7 +153,7 @@ class DefaultAuthPolicy(Auth):
         """
         super(DefaultAuthPolicy, self).__init__(con)
 
-    def is_group_member(self, user, group_id=None, run_id=None):
+    def is_group_member(self, user_id, group_id=None, run_id=None):
         """Verify that the given user is member of a workflow group. The group
         is identified either by the given group identifier or by the identifier
         for a run that is associated with the group.
@@ -163,8 +163,8 @@ class DefaultAuthPolicy(Auth):
 
         Parameters
         ----------
-        user: flowserv.model.user.base.UserHandle
-            Handle for user that is accessing the resource
+        user_id: string
+            Unique user identifier
         group_id: string, optional
             Unique workflow group identifier
         run_id: string, optional
@@ -180,7 +180,7 @@ class DefaultAuthPolicy(Auth):
         flowserv.core.error.UnknownRunError
         flowserv.core.error.UnknownWorkflowGroupError
         """
-        super(OpenAccessAuth, self).group_or_run_exists(
+        super(DefaultAuthPolicy, self).group_or_run_exists(
             group_id=group_id,
             run_id=run_id
         )
@@ -189,7 +189,7 @@ class DefaultAuthPolicy(Auth):
                 'SELECT group_id FROM group_member '
                 'WHERE group_id = ? AND user_id = ?'
             )
-            params = (group_id, user.identifier)
+            params = (group_id, user_id)
         else:
             sql = (
                 'SELECT r.run_id '
@@ -197,8 +197,8 @@ class DefaultAuthPolicy(Auth):
                 'WHERE r.group_id = g.group_id AND '
                 'r.run_id = ? AND user_id = ?'
             )
-            params = (run_id, user.identifier)
-        return not self.con.execute(sql, params).fetchone() is None
+            params = (run_id, user_id)
+        return self.con.execute(sql, params).fetchone() is not None
 
 
 class OpenAccessAuth(Auth):
@@ -215,15 +215,15 @@ class OpenAccessAuth(Auth):
         """
         super(OpenAccessAuth, self).__init__(con)
 
-    def is_group_member(self, user, group_id=None, run_id=None):
+    def is_group_member(self, user_id, group_id=None, run_id=None):
         """Anyone has access to a workflow group. This method still ensures
         that the combination of argument values is valid and that the group or
         run exists.
 
         Parameters
         ----------
-        user: flowserv.model.user.base.UserHandle
-            Handle for user that is accessing the resource
+        user_id: string
+            Unique user identifier
         group_id: string, optional
             Unique workflow group identifier
         run_id: string, optional

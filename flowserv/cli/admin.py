@@ -12,11 +12,17 @@ workflows in the repository.
 """
 
 import click
+import os
 
+from flowserv.config.auth import FLOWSERV_AUTH_LOGINTTL, AUTH_LOGINTTL
+from flowserv.config.backend import (
+    FLOWSERV_BACKEND_CLASS, FLOWSERV_BACKEND_MODULE)
 from flowserv.config.install import DB
+from flowserv.core.db.driver import DatabaseDriver
 from flowserv.cli.workflow import workflowcli
+from flowserv.service.backend import init_backend
 
-import flowserv.cli.config as config
+import flowserv.config.api as api
 import flowserv.core.error as err
 import flowserv.core.util as util
 
@@ -27,6 +33,76 @@ def cli():
     instance.
     """
     pass
+
+
+@cli.command(name='config')
+@click.option(
+    '-a', '--all',
+    is_flag=True,
+    default=False,
+    help='Show all configuration variables'
+)
+@click.option(
+    '-d', '--database',
+    is_flag=True,
+    default=False,
+    help='Show database configuration variables'
+)
+@click.option(
+    '-u', '--auth',
+    is_flag=True,
+    default=False,
+    help='Show database configuration variables'
+)
+@click.option(
+    '-b', '--backend',
+    is_flag=True,
+    default=False,
+    help='Show workflow controller configuration variables'
+)
+@click.option(
+    '-s', '--service',
+    is_flag=True,
+    default=False,
+    help='Show Web Service API configuration variables'
+)
+def configuration(all=False, database=False, auth=False, backend=False, service=False):
+    """Print configuration variables for flowServ."""
+    comment = '#\n# {}\n#'
+    envvar = 'export {}={}'
+    # Configuration for the API
+    if service or all:
+        click.echo(comment.format('Web Service API'))
+        conf = list()
+        conf.append((api.FLOWSERV_API_BASEDIR, api.API_BASEDIR()))
+        conf.append((api.FLOWSERV_API_NAME, '"{}"'.format(api.API_NAME())))
+        conf.append((api.FLOWSERV_API_HOST, api.API_HOST()))
+        conf.append((api.FLOWSERV_API_PORT, api.API_PORT()))
+        conf.append((api.FLOWSERV_API_PROTOCOL, api.API_PROTOCOL()))
+        conf.append((api.FLOWSERV_API_PATH, api.API_PATH()))
+        for var, val in conf:
+            click.echo(envvar.format(var, val))
+    # Configuration for user authentication
+    if auth or all:
+        click.echo(comment.format('Authentication'))
+        conf = [(FLOWSERV_AUTH_LOGINTTL, AUTH_LOGINTTL())]
+        for var, val in conf:
+            click.echo(envvar.format(var, val))
+    # Configuration for the underlying database
+    if database or all:
+        click.echo(comment.format('Database'))
+        for var, val in DatabaseDriver.configuration():
+            click.echo(envvar.format(var, val))
+    # Configuration for thw workflow execution backend
+    if backend or all:
+        click.echo(comment.format('Workflow Controller'))
+        conf = list()
+        backend_class = os.environ.get(FLOWSERV_BACKEND_CLASS, '')
+        conf.append((FLOWSERV_BACKEND_CLASS, backend_class))
+        backend_module = os.environ.get(FLOWSERV_BACKEND_MODULE, '')
+        conf.append((FLOWSERV_BACKEND_MODULE, backend_module))
+        for var, val in init_backend(raise_error=False).configuration():
+            click.echo(envvar.format(var, val))
 
 
 @cli.command()
@@ -58,7 +134,7 @@ def init(dir=None, force=False):
     if dir is not None:
         base_dir = dir
     else:
-        base_dir = config.API_BASEDIR()
+        base_dir = api.API_BASEDIR()
     if base_dir is not None:
         util.create_dir(base_dir)
 

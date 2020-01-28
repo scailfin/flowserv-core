@@ -47,7 +47,7 @@ class WorkflowGroupSerializer(object):
             labels.WORKFLOW: w_id,
             labels.LINKS: hateoas.serialize({
                 hateoas.SELF: self.urls.get_group(g_id),
-                hateoas.BENCHMARK: self.urls.get_workflow(w_id),
+                hateoas.WORKFLOW: self.urls.get_workflow(w_id),
                 hateoas.action(hateoas.UPLOAD): self.urls.upload_file(g_id),
                 hateoas.action(hateoas.SUBMIT): self.urls.start_run(g_id)
 

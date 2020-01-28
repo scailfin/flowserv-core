@@ -33,6 +33,43 @@ class DatabaseDriver(object):
     to different database management systems.
     """
     @staticmethod
+    def configuration(dbms_id=None):
+        """Get a list of tuples with the names of additional configuration
+        variables and their current values for the database connector that
+        is specified either by the variable dbms_id or the environment variable
+        FLOWSERV_DBMS.
+
+        A ValueError is raised if an unknown database system identifier is
+        given. The database system may raise additional errors if the connect
+
+        Returns
+        -------
+        list((string, string))
+
+        Raises
+        ------
+        ValueError
+        """
+        # If missing, get the database system identifier from the value of the
+        # respective environment variable. Raises a ValueError if the result is
+        # None
+        if dbms_id is None:
+            dbms_id = config.DB_IDENTIFIER(raise_error=False, default_value='')
+        # Return the connector for the identified database management system.
+        # Raises ValueError if the given identifier is unknown.
+        if dbms_id.upper() in SQLITE:
+            # -- SQLite database ----------------------------------------------
+            from flowserv.core.db.sqlite import SQLiteConnector
+            values = SQLiteConnector.configuration()
+        elif dbms_id.upper() in POSTGRES:
+            # -- PostgreSQL database ------------------------------------------
+            from flowserv.core.db.pg import PostgresConnector
+            values = PostgresConnector.configuration()
+        else:
+            values = list()
+        return [(config.FLOWSERV_DB_ID, dbms_id)] + values
+
+    @staticmethod
     def get_connector(dbms_id=None, connect_string=None):
         """Get a connector object for the database management system that is
         being used by the application. The system and database are specified
@@ -78,15 +115,15 @@ class DatabaseDriver(object):
         # Return the connector for the identified database management system.
         # Raises ValueError if the given identifier is unknown.
         if dbms_id.upper() in SQLITE:
-            # -- SQLite database -----------------------------------------------
+            # -- SQLite database ----------------------------------------------
             from flowserv.core.db.sqlite import SQLiteConnector
             return SQLiteConnector(connect_string=connect_string)
         elif dbms_id.upper() in POSTGRES:
-            # -- PostgreSQL database -------------------------------------------
+            # -- PostgreSQL database ------------------------------------------
             from flowserv.core.db.pg import PostgresConnector
             return PostgresConnector(connect_string=connect_string)
         else:
-            raise ValueError('unknown database system \'{}\''.format(dbms_id))
+            raise ValueError("unknown database system '{}'".format(dbms_id))
 
     @staticmethod
     def execute(scripts, dbms_id=None, connect_string=None):

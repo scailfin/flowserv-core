@@ -198,6 +198,24 @@ class PostgresConnector(DatabaseConnector):
             self.user = os.environ.get(PG_FLOWSERV_USER, 'flowserv')
             self.password = os.environ.get(PG_FLOWSERV_PASSWORD, 'flowServ')
 
+    @staticmethod
+    def configuration():
+        """Get a list of tuples with the names of additional configuration
+        variables and their current values.
+
+        Returns
+        -------
+        list((string, string))
+        """
+        connector = PostgresConnector()
+        return [
+            (PG_FLOWSERV_HOST, connector.host),
+            (PG_FLOWSERV_PORT, str(connector.port)),
+            (PG_FLOWSERV_DATABASE, connector.database),
+            (PG_FLOWSERV_USER, connector.user),
+            (PG_FLOWSERV_PASSWORD, connector.password),
+        ]
+
     def connect(self):
         """Connect to the underlying PostgreSQL database.
 

@@ -65,6 +65,7 @@ def test_create_workflow(tmpdir):
     templatedir = wf1.get_template().sourcedir
     assert os.path.isfile(os.path.join(templatedir, 'code/helloworld.py'))
     assert os.path.isfile(os.path.join(templatedir, 'data/names.txt'))
+    assert len(wf1.get_postproc_key()) == 0
     # Get workflow from repository
     wf1 = repo.get_workflow(wf1.identifier)
     assert wf1.name == 'A'
@@ -79,6 +80,7 @@ def test_create_workflow(tmpdir):
     templatedir = wf1.get_template().sourcedir
     assert os.path.isfile(os.path.join(templatedir, 'code/helloworld.py'))
     assert os.path.isfile(os.path.join(templatedir, 'data/names.txt'))
+    assert len(wf1.get_postproc_key()) == 0
     # Template without schema
     wf2 = repo.create_workflow(
         name='My benchmark',

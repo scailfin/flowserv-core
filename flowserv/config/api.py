@@ -25,14 +25,18 @@ FLOWSERV_API_NAME = 'FLOWSERV_API_NAME'
 FLOWSERV_API_PATH = 'FLOWSERV_API_PATH'
 # API server port on host
 FLOWSERV_API_PORT = 'FLOWSERV_API_PORT'
+# Url protocol prefix
+FLOWSERV_API_PROTOCOL = 'FLOWSERV_API_PROTOCOL'
 
 
 """Default values for environment variables."""
 DEFAULT_DIR = '.flowserv'
-DEFAULT_HOST = 'http://localhost'
-DEFAULT_NAME = 'Reproducible Open Benchmarks for Data Analysis (API)'
+DEFAULT_HOST = 'localhost'
+DEFAULT_NAME = 'Reproducible and Reusable Data Analysis Workflow Server (API)'
 DEFAULT_PATH = '/flowserv/api/v1'
 DEFAULT_PORT = 5000
+DEFAULT_PROTOCOL = 'http'
+
 
 # -- Public helper methods to access configuration values ---------------------
 
@@ -122,15 +126,15 @@ def API_PATH():
 
 def API_PORT():
     """Get the API application port number from the respective environment
-    variable 'FLOWSERV_API_PORT'. If the variable is not set the default port number
-    is returned.
+    variable 'FLOWSERV_API_PORT'. If the variable is not set the default port
+    number is returned.
 
     Expects a value that can be cast to integer. Raises ValueError if the value
     for the environment variable 'FLOWSERV_API_PORT' cannot be cast to integer.
 
     Returns
     -------
-    string
+    int
 
     Raises
     ------
@@ -142,6 +146,26 @@ def API_PORT():
         raise_error=False
     )
     return int(val)
+
+
+def API_PROTOCOL():
+    """Get the HTTP protocol prefix for urls from the respective environment
+    variable 'FLOWSERV_API_PROTOCOL'. If the variable is not set the default
+    protocol is returned.
+
+    Returns
+    -------
+    string
+
+    Raises
+    ------
+    ValueError
+    """
+    return config.get_variable(
+        name=FLOWSERV_API_PROTOCOL,
+        default_value=DEFAULT_PROTOCOL,
+        raise_error=False
+    )
 
 
 def API_URL():
@@ -156,6 +180,7 @@ def API_URL():
     ------
     ValueError
     """
+    protocol = API_PROTOCOL()
     host = API_HOST()
     port = API_PORT()
     if port != 80:
@@ -163,4 +188,4 @@ def API_URL():
     path = API_PATH()
     if not path.startswith('/'):
         path = '/' + path
-    return '{}{}'.format(host, path)
+    return '{}://{}{}'.format(protocol, host, path)

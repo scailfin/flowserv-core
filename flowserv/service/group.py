@@ -12,6 +12,8 @@ and manipulate workflow groups.
 
 from flowserv.view.group import WorkflowGroupSerializer
 
+import flowserv.core.error as err
+
 
 class WorkflowGroupService(object):
     """API component that provides methods to access and manipulate workflow
@@ -49,7 +51,7 @@ class WorkflowGroupService(object):
             self.serialize = WorkflowGroupSerializer(self.urls)
 
     def create_group(
-        self, workflow_id, name, user, parameters=None, members=None
+        self, workflow_id, name, user_id, parameters=None, members=None
     ):
         """Create a new user group for a given workflow. Each group has a
         a unique name for the workflow, a group owner, and a list of additional
@@ -64,8 +66,8 @@ class WorkflowGroupService(object):
             Unique workflow identifier
         name: string
             Unique team name
-        user: flowserv.model.user.base.UserHandle
-            Handle for the group owner
+        user_id: string
+            unique identifier for the user that is the group owner
         parameters: dict(flowserv.model.parameter.base.TemplateParameter), optional
             Workflow template parameter declarations
         members: list(string), optional
@@ -92,14 +94,14 @@ class WorkflowGroupService(object):
         group = self.group_manager.create_group(
             workflow_id=workflow_id,
             name=name,
-            user_id=user.identifier,
+            user_id=user_id,
             parameters=template.parameters,
             workflow_spec=template.workflow_spec,
             members=members
         )
         return self.serialize.group_handle(group)
 
-    def delete_group(self, group_id, user):
+    def delete_group(self, group_id, user_id):
         """Delete a given workflow group and all associated runs and uploaded
         files. If the user is not a member of the group an unauthorized access
         error is raised.
@@ -108,8 +110,8 @@ class WorkflowGroupService(object):
         ----------
         group_id: string
             Unique workflow group identifier
-        user: flowserv.model.user.base.UserHandle
-            Handle for user that is deleting the group
+        user_id: string
+            Unique user identifier
 
         Raises
         ------
@@ -118,7 +120,8 @@ class WorkflowGroupService(object):
         """
         # Raise an error if the user does not have rights to delete the
         # workflow group or if the workflow group does not exist.
-        self.auth.is_group_member(group_id=group_id, user=user)
+        if not self.auth.is_group_member(group_id=group_id, user_id=user_id):
+            raise err.UnauthorizedAccessError()
         self.group_manager.delete_group(group_id)
 
     def get_group(self, group_id):
@@ -140,7 +143,7 @@ class WorkflowGroupService(object):
         group = self.group_manager.get_group(group_id)
         return self.serialize.group_handle(group)
 
-    def list_groups(self, workflow_id=None, user=None):
+    def list_groups(self, workflow_id=None, user_id=None):
         """Get a listing of all workflow groups. If the user handle is given
         the result contains only those groups that the user is a member of.
         If the workflow identifier is given the result contains groups for that
@@ -150,32 +153,28 @@ class WorkflowGroupService(object):
         ----------
         workflow_id: string, optional
             Unique workflow identifier
-        user: flowserv.model.user.base.UserHandle, optional
-            Handle for user that is requesting the group listing
+        user_id: string, optional
+            Unique user identifier
 
         Returns
         -------
         dict
         """
-        if user is not None:
-            user_id = user.identifier
-        else:
-            user_id = None
         groups = self.group_manager.list_groups(
             workflow_id=workflow_id,
             user_id=user_id
         )
         return self.serialize.group_listing(groups)
 
-    def update_group(self, group_id, user, name=None, members=None):
+    def update_group(self, group_id, user_id, name=None, members=None):
         """Update the name for the workflow group with the given identifier.
 
         Parameters
         ----------
         group_id: string
             Unique workflow group identifier
-        user: flowserv.model.user.base.UserHandle
-            Handle for user that is accessing the group
+        user_id: string
+            Unique user identifier
         name: string, optional
             New workflow group name
         members: list(string), optional
@@ -193,7 +192,8 @@ class WorkflowGroupService(object):
         """
         # Raise an error if the user does not have rights to update the
         # workflow group or if the workflow group does not exist.
-        self.auth.is_group_member(group_id=group_id, user=user)
+        if not self.auth.is_group_member(group_id=group_id, user_id=user_id):
+            raise err.UnauthorizedAccessError()
         group = self.group_manager.update_group(
             group_id=group_id,
             name=name,

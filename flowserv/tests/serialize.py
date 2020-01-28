@@ -28,5 +28,5 @@ def validate_links(doc, keys):
     doc = doc[labels.LINKS]
     util.validate_doc(
         doc=hateoas.deserialize(doc),
-        mandatory_labels=keys
+        mandatory=keys
     )

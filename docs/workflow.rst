@@ -3,14 +3,14 @@ Workflow Templates
 ==================
 
 
-**Workflow Templates** are parameterized workflow specifications for the *Reproducible Open Benchmarks for Data Analysis Platform (ROB)*. Workflow templates are motivated by the goal to allow users to run pre-defined data analytics workflows while providing their own input data, parameters, as well as their own code modules. Workflow templates are inspired by, but not limited to, workflow specifications for the `Reproducible Research Data Analysis Platform (REANA)`.
+**Workflow Templates** are parameterized workflow specifications for the *Reproducible and Reusable Data Analysis Workflow Server* (**flowServ**). Workflow templates are motivated by the goal to allow users to run pre-defined data analytics workflows while providing their own input data, parameters, as well as their own code modules. Workflow templates are inspired by, but not limited to, workflow specifications for the `Reproducible Research Data Analysis Platform (REANA) <http://www.reanahub.io/>`_.
 
 
 
 Motivation for Parameterized Workflow Templates
 ===============================================
 
-Consider the `REANA Hello World Demo <https://github.com/reanahub/reana-demo-helloworld>`_. The demo workflow takes as input a file ``data/names.txt`` containing a list of person names and a timeout parameter ``sleeptime``. For each line in ``data/names.txt`` the workflow writes a line "Hello *name*!" to an output file ``results/greetings.txt``. For each line that is written to the output file program execution is delayed by a number of seconds defined by the `sleeptime` parameter.
+Consider the `REANA Hello World Demo <https://github.com/reanahub/reana-demo-helloworld>`_. The demo workflow takes as input a file ``data/names.txt`` containing a list of person names and a timeout parameter ``sleeptime``. For each line in ``data/names.txt`` the workflow writes a line "Hello *name*!" to an output file ``results/greetings.txt``. For each line that is written to the output file, program execution is delayed by a number of seconds defined by the `sleeptime` parameter.
 
 Workflow specifications in REANA are serialized in YAML or JSON format. The names of the input and output files as well as the value for the sleep period are currently hard-coded in the workflow specification file ( e.g.  `reana.yaml <https://raw.githubusercontent.com/reanahub/reana-demo-helloworld/master/reana.yaml>`_ ).
 
@@ -39,18 +39,18 @@ Workflow specifications in REANA are serialized in YAML or JSON format. The name
       files:
        - results/greetings.txt
 
-Assume we want to build a system that allows users to run the Hello world demo via a (web-based) interface where they provide a text file with person names and a sleep period value. There are three main parts to such a system. First, we need to display a form where the user can select (upload) a text file and enter a sleep time value. Second, after the user submits their input data, we need to create an update version of the workflow specification as shown above where we replace the value of ``inputfile`` and ``sleeptime`` with the user-provided values. We then pass the modified workflow specification to a REANA instance for execution. There are several way for implementing such a system. Parameterized workflow templates are part of one possible solution.
+Assume we want to build a system that allows users to run the Hello world demo via a (web-based) interface where they provide a text file with person names and a sleep period value. There are three main parts to such a system. First, we need to display a form where the user can select (upload) a text file and enter a sleep time value. Second, after the user submits their input data, we need to create an updated version of the workflow specification as shown above where we replace the value of ``inputfile`` and ``sleeptime`` with the user-provided values. We then pass the modified workflow specification to a REANA instance for execution. There are several way for implementing such a system. Parameterized workflow templates are part of the solution that is implemented for **flowServ**.
 
 
 
 What are Parameterized Workflow Templates?
 ==========================================
 
-Similar to REANA workflow specifications, parameterized workflow templates are serialized in YAML or JSON format. Each template has two main elements: ``workflow`` and ``parameters``. The ``workflow`` element is mandatory and the ``parameters`` element is optional.
+Similar to REANA workflow specifications, parameterized workflow templates are serialized in YAML or JSON format. Each template has two main elements: ``workflow`` and ``parameters``. Only the ``workflow`` element is mandatory in a workflow template.
 
-The ``workflow`` element contains the workflow specification. The structure and syntax of this specification is dependent on the backend (engine) that is used to execute workflows. If the `REANA Workflow Engine <https://github.com/scailfin/benchmark-reana-backend>`_ is being used, the workflow specification is expected to follow the the common syntax for REANA workflow specifications.
+The ``workflow`` element contains the workflow specification. The structure and syntax of this specification is dependent on the backend (engine) that is used to execute the final workflow. If the `REANA Workflow Engine <https://github.com/scailfin/benchmark-reana-backend>`_ is being used, the workflow specification is expected to follow the the common syntax for REANA workflow specifications.
 
-The ``parameters`` section defines those parts of a workflow that are variable with respect to user inputs. We refer to these are *template parameters*. Template parameters can for example be used to define input and output values for workflow steps or identify Docker container images that contain the code for individual workflow steps. The detailed parameter declarations are intended to be used by front-end tools to render forms that collect user input.
+The ``parameters`` section defines those parts of the workflow that are variable with respect to user inputs. We refer to these are *template parameters*. Template parameters can for example be used to define input and output values for workflow steps or identify Docker container images that contain the code for individual workflow steps. The detailed parameter declarations are intended to be used by front-end tools to render forms that collect user input.
 
 An example template for the **Hello World example** is shown below.
 
@@ -90,16 +90,16 @@ An example template for the **Hello World example** is shown below.
           datatype: int
 
 
-In this example, the workflow section is a REANA workflow specification. The main modification to the workflow specification is a simple addition to the syntax in order to allow references to template parameters. Such references are always enclosed in ``$[[...]]``. The parameters section is a list of template parameter declarations. Each parameter declaration has a unique identifier. The identifier is used to reference the parameter from within the workflow specification (e.g., ``$[[sleeptime]]`` to reference the user-provided value for the sleep period). Other elements of the parameter declaration are a human readable short name, a parameter description, and a specification of the data type. Refer to the `Template Parameter Specification <https://github.com/scailfin/benchmark-templates/blob/master/docs/parameters.rst>`_ for a full description of the template parameter syntax.
+In this example, the workflow section is a REANA workflow specification. The main modification to the workflow specification is a simple addition to the syntax in order to allow references to template parameters. Such references are always enclosed in ``$[[...]]``. The parameters section is a list of template parameter declarations. Each parameter declaration has a unique identifier. The identifier is used to reference the parameter from within the workflow specification (e.g., ``$[[sleeptime]]`` to reference the user-provided value for the sleep period). Other elements of the parameter declaration are a human readable short name, a parameter description, and a specification of the data type. Refer to the `Template Parameter Specification <https://github.com/scailfin/rob-core/blob/master/docs/parameters.rst>`_ for a full description of the template parameter syntax.
 
-Parameter declarations are intended to be used by front-end tools to render forms that collect user input. Given a set of user-provided values for the template parameters, the references to parameters are replaced withing the workflow specification with the given values to generate a valid workflow specification that can be executed by the respective workflow engine.
+Parameter declarations are intended to be used by front-end tools to render forms that collect user input. Given a set of user-provided values for the template parameters, the references to parameters are replaced withing the workflow specification with the given values to generate a valid workflow that can be executed by the respective workflow engine.
 
 
 
 Benchmark Templates
 ===================
 
-The definition of workflow templates is intended to be generic to allow usage in a variety of applications. With respect to *Reproducible Open Benchmarks* we define an extension templates define the benchmark workflow and the variable parts of the benchmark that are provided by the paricipants. To further describe the format of benchmark results that are used to generate the benchmark leader board, we define an extension.
+The definition of workflow templates is intended to be generic to allow usage in a variety of applications. With respect to *Reproducible Open Benchmarks* we define extensions of workflow templates that are used to generate the benchmark leader board and compute benchmark metrics.
 
 
 **Benchmark Templates** extend the base templates with information about the schema of the benchmark results. The idea is that benchmark workflows contain steps towards the end that evaluate the results of a benchmark run. These evaluation results are stored in a simple JSON or YAML file. Result files are usedto create the benchmark leader board.

@@ -205,6 +205,7 @@ class WorkflowRepository(object):
         if commit_changes:
             self.con.commit()
         return WorkflowHandle(
+            con=self.con,
             identifier=workflow_id,
             name=name,
             description=description,
@@ -402,6 +403,7 @@ class WorkflowRepository(object):
         )
         # Return workflow handle
         return WorkflowHandle(
+            con=self.con,
             identifier=workflow_id,
             name=name,
             description=description,

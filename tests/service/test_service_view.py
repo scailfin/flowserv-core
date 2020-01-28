@@ -11,14 +11,25 @@
 import os
 
 from flowserv.service.server import Service
+from flowserv.service.api import API
 from flowserv.view.route import UrlFactory
 
 import flowserv.config.api as config
+import flowserv.core.util as util
+import flowserv.tests.db as db
+import flowserv.tests.serialize as serialize
 import flowserv.view.hateoas as hateoas
 import flowserv.view.labels as labels
-import flowserv.tests.serialize as serialize
 import flowserv.version as version
-import flowserv.core.util as util
+
+
+API_VARS = [
+    config.FLOWSERV_API_NAME,
+    config.FLOWSERV_API_HOST,
+    config.FLOWSERV_API_PORT,
+    config.FLOWSERV_API_PROTOCOL,
+    config.FLOWSERV_API_PATH
+]
 
 
 RELS = [
@@ -26,20 +37,24 @@ RELS = [
     hateoas.LOGIN,
     hateoas.LOGOUT,
     hateoas.REGISTER,
-    hateoas.BENCHMARKS,
-    hateoas.SUBMISSIONS
+    hateoas.WORKFLOWS,
+    hateoas.GROUPS
 ]
 
 
-def test_service_descriptor():
+def test_service_descriptor(tmpdir):
     """Test the service descriptor serialization."""
-    # Clear environment variable if set
-    if config.FLOWSERV_API_NAME in os.environ:
-        del os.environ[config.FLOWSERV_API_NAME]
-    r = Service().service_descriptor()
+    # Clear environment variables if set
+    for var in API_VARS:
+        if var in os.environ:
+            del os.environ[var]
+    os.environ[config.FLOWSERV_API_PORT] = '80'
+    con = db.init_db(str(tmpdir)).connect()
+    api = API(con=con)
+    r = api.service_descriptor()
     util.validate_doc(
         doc=r,
-        mandatory_labels=[
+        mandatory=[
             labels.NAME,
             labels.LINKS,
             labels.VERSION,
@@ -50,10 +65,10 @@ def test_service_descriptor():
     assert r[labels.NAME] == config.DEFAULT_NAME
     assert r[labels.VERSION] == version.__version__
     for link in r[labels.LINKS]:
-        assert link[labels.REF].startswith('http://localhost')
+        assert link[labels.REF].startswith('http://localhost/')
     # Test initialization of the UrlFactory
-    urls = UrlFactory(base_url='http://www.flowserv.org////')
-    r = Service(urls=urls).service_descriptor()
+    api = API(con=con, urls=UrlFactory(base_url='http://www.flowserv.org////'))
+    r = api.service_descriptor()
     for link in r[labels.LINKS]:
         ref = link[labels.REF]
         if ref == 'http://www.flowserv.org':

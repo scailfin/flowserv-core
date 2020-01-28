@@ -277,7 +277,7 @@ def to_localstr(date=None, text=None):
     return str(ts)[:-7]
 
 
-def validate_doc(doc, mandatory_labels=None, optional_labels=None):
+def validate_doc(doc, mandatory=None, optional=None):
     """Raises error if a dictionary contains labels that are not in the given
     label lists or if there are labels in the mandatory list that are not in
     the dictionary. Returns the given dictionary (if valid).
@@ -286,9 +286,9 @@ def validate_doc(doc, mandatory_labels=None, optional_labels=None):
     ----------
     doc: dict
         Dictionary serialization of an object
-    mandatory_labels: list(string)
+    mandatory: list(string)
         List of mandatory labels for the dictionary serialization
-    optional_labels: list(string), optional
+    optional: list(string), optional
         List of optional labels for the dictionary serialization
 
     Returns
@@ -300,14 +300,14 @@ def validate_doc(doc, mandatory_labels=None, optional_labels=None):
     ValueError
     """
     # Ensure that all mandatory labels are present in the dictionary
-    if mandatory_labels is not None:
-        for key in mandatory_labels:
+    if mandatory is not None:
+        for key in mandatory:
             if key not in doc:
                 raise ValueError('missing element \'{}\''.format(key))
     # Raise error if additional elements are present in the dictionary
-    labels = mandatory_labels if mandatory_labels is not None else list()
-    if optional_labels is not None:
-        labels = labels + optional_labels
+    labels = mandatory if mandatory is not None else list()
+    if optional is not None:
+        labels = labels + optional
     for key in doc:
         if key not in labels:
             raise ValueError('unknown element \'{}\''.format(key))

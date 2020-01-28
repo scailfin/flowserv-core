@@ -95,7 +95,7 @@ class TestRunView(object):
         run_id = r[labels.ID]
         # Cancel the pending run
         r = runs.cancel_run(run_id=run_id, user=user)
-        util.validate_doc(doc=r, mandatory_labels=RUN_ERROR)
+        util.validate_doc(doc=r, mandatory=RUN_ERROR)
         serialize.validate_links(r, RELS_ERROR)
         assert r[labels.STATE] == wf.STATE_CANCELED
         # Error when trying to delete a run without being a submission member
@@ -105,7 +105,7 @@ class TestRunView(object):
         # Delete the run
         runs.delete_run(run_id=run_id, user=user)
         r = runs.list_runs(submission_id=submission_id, user=user)
-        util.validate_doc(doc=r, mandatory_labels=RUN_LISTING)
+        util.validate_doc(doc=r, mandatory=RUN_LISTING)
         serialize.validate_links(r, RELS_LISTING)
         assert len(r[labels.RUNS]) == 0
 
@@ -134,7 +134,7 @@ class TestRunView(object):
             [{labels.ID: 'names', labels.VALUE: f_id}],
             user
         )
-        util.validate_doc(doc=r, mandatory_labels=RUN_PENDING)
+        util.validate_doc(doc=r, mandatory=RUN_PENDING)
         serialize.validate_links(r, RELS_ACTIVE)
         # Start a new run in running state.
         runs.engine.backend.start()
@@ -143,7 +143,7 @@ class TestRunView(object):
             [{labels.ID: 'names', labels.VALUE: f_id}],
             user
         )
-        util.validate_doc(doc=r, mandatory_labels=RUN_RUNNING)
+        util.validate_doc(doc=r, mandatory=RUN_RUNNING)
         serialize.validate_links(r, RELS_ACTIVE)
         # Start a new run in error.
         runs.engine.backend.error(['Error'])
@@ -152,7 +152,7 @@ class TestRunView(object):
             [{labels.ID: 'names', labels.VALUE: f_id}],
             user
         )
-        util.validate_doc(doc=r, mandatory_labels=RUN_ERROR)
+        util.validate_doc(doc=r, mandatory=RUN_ERROR)
         serialize.validate_links(r, RELS_ERROR)
         # Start a new run in running.
         values = {'max_len': 10, 'avg_count': 11.1}
@@ -162,14 +162,14 @@ class TestRunView(object):
             [{labels.ID: 'names', labels.VALUE: f_id}],
             user
         )
-        util.validate_doc(doc=r, mandatory_labels=RUN_SUCCESS)
+        util.validate_doc(doc=r, mandatory=RUN_SUCCESS)
         serialize.validate_links(r, RELS_SUCCESS)
         resources = r[labels.RESOURCES]
         assert len(resources) == 1
         res = resources[0]
         util.validate_doc(
             doc=res,
-            mandatory_labels=[labels.ID, labels.NAME, labels.LINKS]
+            mandatory=[labels.ID, labels.NAME, labels.LINKS]
         )
         assert res[labels.NAME] == 'results/analytics.json'
         serialize.validate_links(res, [hateoas.SELF])
@@ -207,11 +207,11 @@ class TestRunView(object):
             [{labels.ID: 'names', labels.VALUE: f_id}],
             user
         )
-        util.validate_doc(doc=r, mandatory_labels=RUN_PENDING)
+        util.validate_doc(doc=r, mandatory=RUN_PENDING)
         serialize.validate_links(r, RELS_ACTIVE)
         run_id = r[labels.ID]
         r = runs.get_run(run_id=run_id, user=user)
-        util.validate_doc(doc=r, mandatory_labels=RUN_PENDING)
+        util.validate_doc(doc=r, mandatory=RUN_PENDING)
         serialize.validate_links(r, RELS_ACTIVE)
         # Error when trying to access a run without being a submission member
         user2 = users[1]
@@ -244,10 +244,10 @@ class TestRunView(object):
             user
         )
         r = runs.list_runs(submission_id=submission_id, user=user)
-        util.validate_doc(doc=r, mandatory_labels=RUN_LISTING)
+        util.validate_doc(doc=r, mandatory=RUN_LISTING)
         serialize.validate_links(r, RELS_LISTING)
         assert len(r[labels.RUNS]) == 1
-        util.validate_doc(doc=r[labels.RUNS][0], mandatory_labels=RUN_LABELS)
+        util.validate_doc(doc=r[labels.RUNS][0], mandatory=RUN_LABELS)
         serialize.validate_links(r[labels.RUNS][0], RELS_ACTIVE)
         # Start a new run in running state.
         runs.engine.backend.start()

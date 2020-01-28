@@ -30,12 +30,18 @@ import flowserv.model.template.parameter as tp
 import flowserv.model.workflow.state as serialize
 
 
+"""Additional environment variables that control the configuration of the
+serial workflow controller.
+"""
+SERIAL_ENGINE_ASYNC = 'SERIAL_ENGINE_ASYNC'
+
+
 class SerialWorkflowEngine(WorkflowController):
     """The workflow engine is used to execute workflow templates for a given
     set of arguments. Each workflow is executed as a serial workflow. The
     individual workflow steps can be executed in a separate process on request.
     """
-    def __init__(self, exec_func=None, is_async=True, verbose=False):
+    def __init__(self, exec_func=None, is_async=None, verbose=False):
         """Initialize the function that is used to execute individual workflow
         steps. The run workflow function in this module executes all steps
         within sub-processes in the same environment as the workflow
@@ -61,7 +67,12 @@ class SerialWorkflowEngine(WorkflowController):
             Print command strings to STDOUT during workflow execution
         """
         self.exec_func = exec_func
-        self.is_async = is_async
+        # Set the is_async flag. If no value is given the default value is set
+        # from the respective environment variable
+        if is_async is not None:
+            self.is_async = is_async
+        else:
+            self.is_async = bool(os.environ.get(SERIAL_ENGINE_ASYNC, 'True'))
         self.verbose = verbose
         # Dictionary of all running tasks
         self.tasks = dict()
@@ -92,6 +103,16 @@ class SerialWorkflowEngine(WorkflowController):
                 # uses this controller for workflow execution
                 del self.tasks[run_id]
 
+    def configuration(self):
+        """Get a list of tuples with the names of additional configuration
+        variables and their current values.
+
+        Returns
+        -------
+        list((string, string))
+        """
+        return [(SERIAL_ENGINE_ASYNC, str(self.is_async))]
+
     def exec_workflow(self, run, template, arguments, run_async=None):
         """Initiate the execution of a given workflow template for a set of
         argument values. This will start a new process that executes a serial
@@ -107,12 +128,12 @@ class SerialWorkflowEngine(WorkflowController):
         Parameters
         ----------
         run: flowserv.model.run.base.RunHandle
-            Handle for the run that is being executed
+            Handle for the run that is being executed.
         template: flowserv.model.template.base.WorkflowTemplate
             Workflow template containing the parameterized specification and the
-            parameter declarations
+            parameter declarations.
         arguments: dict(flowserv.model.parameter.value.TemplateArgument)
-            Dictionary of argument values for parameters in the template
+            Dictionary of argument values for parameters in the template.
         run_async: bool, optional
             Flag to determine whether the worklfow execution will block the
             workflow controller or run asynchronously.
@@ -135,9 +156,19 @@ class SerialWorkflowEngine(WorkflowController):
         wf = SerialWorkflow(template, arguments)
         # Copy all necessary files to the run folder
         try:
-            util.copy_files(files=wf.input_files(), target_dir=run.rundir)
+            util.copy_files(files=wf.upload_files(), target_dir=run.rundir)
         except (OSError, IOError) as ex:
             return state.error(messages=[str(ex)])
+        # Create top-level folder for all expected result files (if it does not
+        # exist already)
+        output_files = wf.output_files()
+        for filename in output_files:
+            dirname = os.path.dirname(filename)
+            if dirname:
+                # Create the directory if it does not exist
+                out_dir = os.path.join(run_dir, dirname)
+                if not os.path.isdir(out_dir):
+                    os.makedirs(out_dir)
         # Start a new process to run the workflow. Make sure to catch all
         # exceptions to set the run state properly
         try:
@@ -158,7 +189,7 @@ class SerialWorkflowEngine(WorkflowController):
                         run.run_id,
                         run.rundir,
                         state,
-                        wf.output_files(),
+                        output_files,
                         wf.commands(),
                         self.verbose
                     ),
@@ -171,7 +202,7 @@ class SerialWorkflowEngine(WorkflowController):
                     run.run_id,
                     run.rundir,
                     state,
-                    wf.output_files(),
+                    output_files,
                     wf.commands(),
                     self.verbose
                 )
@@ -180,7 +211,7 @@ class SerialWorkflowEngine(WorkflowController):
             # Set the workflow runinto an ERROR state
             return state.error(messages=[str(ex)])
 
-    def modify_spec(self, template, parameters):
+    def modify_template(self, template, parameters):
         """Modify a the workflow specification in a given template by adding
         the a set of parameters. If a parameter in the added parameters set
         already exists in the template the name, index, default value, the
@@ -260,14 +291,12 @@ def callback_function(result, lock, tasks):
             pool = tasks[run_id]
             pool.close()
             del tasks[run_id]
-            # Get a connection to the underlying database and update the run
-            # state.
-            with DatabaseDriver.get_connector().connect() as con:
-                runstore.update_run(
-                    con=con,
+            # Get an instance of the API to update the run state.
+            from flowserv.service.api import service
+            with service() as api:
+                api.runs().update_run(
                     run_id=run_id,
-                    state=result_state,
-                    commit_changes=True
+                    state=result_state
                 )
 
 
@@ -305,7 +334,6 @@ def run_workflow(run_id, rundir, state, output_files, steps, verbose):
         for step in steps:
             statements.extend(step.commands)
         # Run workflow step-by-step
-        ts_start = datetime.utcnow()
         for cmd in statements:
             # Print command if verbose
             if verbose:
@@ -325,7 +353,7 @@ def run_workflow(run_id, rundir, state, output_files, steps, verbose):
                     # Return error state. Include STDERR in result
                     messages = list()
                     messages.append(proc.stderr.decode('utf-8'))
-                    return StateError(created_at=ts_start, messages=messages)
+                    return state.error(messages=messages)
             except (AttributeError, TypeError):
                 try:
                     subprocess.check_output(
@@ -335,11 +363,7 @@ def run_workflow(run_id, rundir, state, output_files, steps, verbose):
                         stderr=subprocess.STDOUT
                     )
                 except subprocess.CalledProcessError as ex:
-                    return StateError(
-                        created_at=ts_start,
-                        messages=[str(ex)]
-                    )
-        ts_end = datetime.utcnow()
+                    return state.error(messages=[str(ex)])
         # Create dictionary of output files
         files = dict()
         for resource_name in output_files:
@@ -349,12 +373,7 @@ def run_workflow(run_id, rundir, state, output_files, steps, verbose):
                 file_path=os.path.join(rundir, resource_name)
             )
         # Workflow executed successfully
-        result_state = StateSuccess(
-            created_at=ts_start,
-            started_at=ts_start,
-            finished_at=ts_end,
-            files=files
-        )
+        result_state = state.success(resources=files)
     except Exception as ex:
         result_state = state.error(messages=[str(ex)])
     return run_id, serialize.serialize_state(result_state)

@@ -142,8 +142,8 @@ class ParameterGroup(object):
         self.name = name
         self.index = index
 
-    @staticmethod
-    def from_dict(doc):
+    @classmethod
+    def from_dict(cls, doc):
         """Create object instance from dictionary serialization.
 
         Parameters
@@ -161,9 +161,9 @@ class ParameterGroup(object):
         """
         util.validate_doc(
             doc,
-            mandatory_labels=[LABEL_ID, LABEL_NAME, LABEL_INDEX]
+            mandatory=[LABEL_ID, LABEL_NAME, LABEL_INDEX]
         )
-        return ParameterGroup(
+        return cls(
             identifier=doc[LABEL_ID],
             name=doc[LABEL_NAME],
             index=doc[LABEL_INDEX]

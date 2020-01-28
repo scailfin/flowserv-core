@@ -46,6 +46,18 @@ class SQLiteConnector(DatabaseConnector):
             self.connect_string = os.environ.get(SQLITE_FLOWSERV_CONNECT)
         util.create_dir(os.path.dirname(self.connect_string))
 
+    @staticmethod
+    def configuration():
+        """Get a list of tuples with the names of additional configuration
+        variables and their current values.
+
+        Returns
+        -------
+        list((string, string))
+        """
+        connect_string = os.environ.get(SQLITE_FLOWSERV_CONNECT)
+        return [(SQLITE_FLOWSERV_CONNECT, connect_string)]
+
     def connect(self):
         """Connect to the SQLite3 database file that is specified in the
         internal connection string.

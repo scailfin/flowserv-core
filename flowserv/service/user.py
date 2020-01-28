@@ -11,7 +11,6 @@ well as access tokens.
 """
 
 from flowserv.view.user import UserSerializer
-from flowserv.view.route import UrlFactory
 
 
 class UserService(object):
@@ -23,7 +22,7 @@ class UserService(object):
 
         Parameters
         ----------
-        manager: flowserv.model.user.base.UserManager
+        manager: flowserv.model.user.manager.UserManager
             Manager for registered users
         urls: flowserv.view.route.UrlFactory
             Factory for API resource Urls
@@ -31,7 +30,7 @@ class UserService(object):
             Override the default serializer
         """
         self.manager = manager
-        self.urls = urls if urls is not None else UrlFactory()
+        self.urls = urls
         self.serialize = serializer
         if self.serialize is None:
             self.serialize = UserSerializer(self.urls)

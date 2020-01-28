@@ -12,7 +12,7 @@ and workflow result rankings.
 
 from flowserv.view.workflow import WorkflowSerializer
 
-import floserv.core.error as err
+import flowserv.core.error as err
 import flowserv.core.util as util
 
 

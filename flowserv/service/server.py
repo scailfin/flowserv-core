@@ -9,7 +9,6 @@
 """API component that provides information about the service iteself."""
 
 from flowserv.view.server import ServiceSerializer
-from flowserv.view.route import UrlFactory
 
 import flowserv.config.api as config
 import flowserv.version as version
@@ -19,7 +18,7 @@ class Service(object):
     """API component that provides the API sevice descriptor that contains the
     basic information and URLs for the service.
     """
-    def __init__(self, urls=None, serializer=None):
+    def __init__(self, urls, serializer=None):
         """Initialize the Url route factory and the serializer for the service
         descriptor.
 
@@ -34,7 +33,7 @@ class Service(object):
         ------
         ValueError
         """
-        self.urls = urls if not urls is None else UrlFactory()
+        self.urls = urls
         self.serialize = serializer
         if self.serialize is None:
             self.serialize = ServiceSerializer(self.urls)

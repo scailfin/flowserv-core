@@ -18,10 +18,11 @@ from flowserv.core.db.driver import DatabaseDriver
 from flowserv.model.group.manager import WorkflowGroupManager
 from flowserv.model.ranking.manager import RankingManager
 from flowserv.model.run.manager import RunManager
-from flowserv.model.user.base import UserManager
+from flowserv.model.user.manager import UserManager
 from flowserv.model.user.auth import DefaultAuthPolicy
 from flowserv.model.workflow.fs import WorkflowFileSystem
 from flowserv.model.workflow.repo import WorkflowRepository
+from flowserv.service.backend import init_backend
 from flowserv.service.files import UploadFileService
 from flowserv.service.group import WorkflowGroupService
 from flowserv.service.run import RunService
@@ -39,7 +40,7 @@ import flowserv.core.util as util
 multi-porcess backend to be able to maintain process state in between API
 requests.
 """
-# backend = config.FLOWSERV_ENGINE()
+backend = init_backend()
 
 
 class API(object):
@@ -54,7 +55,7 @@ class API(object):
     - users()
     - workflows()
     """
-    def __init__(self, con, basedir=None, auth=None):
+    def __init__(self, con, urls=None, engine=None, basedir=None, auth=None):
         """Initialize the database connection, URL factory, and the file system
         path generator. All other internal components are created when they are
         acccessed for the first time
@@ -63,13 +64,19 @@ class API(object):
         ----------
         con: DB-API 2.0 database connection
             Connection to underlying database
+        urls: flowserv.view.route.UrlFactory, optional
+            Factory for API resource Urls
+        engine: flowserv.controller.base.WorkflowController, optional
+            Workflow controller used by the API for workflow execution
         basedir: string, optional
             Path to the base directory for the API
         auth: lowserv.model.user.auth.Auth, optional
             Authentication and authorization policy
         """
         self.con = con
-        self.urls = UrlFactory()
+        self.urls = urls if urls is not None else UrlFactory()
+        # Use the global backend if no engine is specified
+        self.engine = engine if not engine is None else backend
         # Ensure that the API base directory exists
         fsdir = basedir if basedir is not None else config.API_BASEDIR()
         self.fs = WorkflowFileSystem(util.create_dir(fsdir))
@@ -144,7 +151,7 @@ class API(object):
         """
         return WorkflowGroupService(
             group_manager=self.group_manager,
-            workflow_repo=self.workflow_repo,
+            workflow_repo=self.workflow_repository,
             backend=self.engine,
             auth=self.auth,
             urls=self.urls
@@ -190,19 +197,20 @@ class API(object):
         return RunService(
             run_manager=self.run_manager,
             group_manager=self.group_manager,
-            workflow_repo=self.workflow_repo,
+            workflow_repo=self.workflow_repository,
+            ranking_manager=self.ranking_manager,
             backend=self.engine,
             auth=self.auth,
             urls=self.urls
         )
 
-    def service_descriptor(self, access_token):
+    def service_descriptor(self, access_token=None):
         """Get the serialization of the service descriptor. The access token
         is verified to be active and to obtain the user name.
 
         Parameters
         ----------
-        access_token: string
+        access_token: string, optional
             API access token to authenticate the user
 
         Returns
@@ -213,7 +221,7 @@ class API(object):
             username = self.authenticate(access_token).name
         except err.UnauthenticatedAccessError:
             username = None
-        return Service().service_descriptor(username=username)
+        return Service(urls=self.urls).service_descriptor(username=username)
 
     def uploads(self):
         """Get API service component that provides functionality to access,
@@ -268,23 +276,28 @@ class API(object):
         flowserv.service.workflow.WorkflowService
         """
         return WorkflowService(
-            workflow_repository=self.workflow_repository,
+            workflow_repo=self.workflow_repository,
             ranking_manager=self.ranking_manager,
             urls=self.urls
         )
 
 
 @contextmanager
-def service():
+def service(engine=None):
     """The local service function is a context manager for an open database
     connection that is used to instantiate the API service class. The context
     manager ensures that the database conneciton in closed after an API request
     has been processed.
+
+    Parameters
+    ----------
+    engine: flowserv.controller.base.WorkflowController, optional
+        Workflow controller used by the API for workflow execution
 
     Returns
     -------
     flowserv.service.api.API
     """
     con = DatabaseDriver.get_connector().connect()
-    yield API(con)
+    yield API(con, engine=engine)
     con.close()

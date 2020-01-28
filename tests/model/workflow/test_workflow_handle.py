@@ -48,10 +48,14 @@ def test_workflow_descriptor():
 def test_workflow_handle():
     """Unit tests for workflow handles."""
     # Minimal workflow handle constructor
-    wf = WorkflowHandle(identifier='ABC', template=WorkflowTemplate(
-        workflow_spec={'a': 1},
-        sourcedir='/dev/null'
-    ))
+    wf = WorkflowHandle(
+        identifier='ABC',
+        template=WorkflowTemplate(
+            workflow_spec={'a': 1},
+            sourcedir='/dev/null'
+        ),
+        con=None
+    )
     assert wf.identifier == 'ABC'
     assert wf.name == 'ABC'
     assert wf.description is None
@@ -79,7 +83,8 @@ def test_workflow_handle():
             ],
             result_schema=ResultSchema(result_file='results/analytics.json'),
             sourcedir='/dev/null'
-        )
+        ),
+        con=None
     )
     assert wf.identifier == 'ABC'
     assert wf.name == 'XYZ'

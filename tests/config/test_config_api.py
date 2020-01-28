@@ -83,7 +83,8 @@ class TestConfigAPI(object):
             del os.environ[config.FLOWSERV_API_PATH]
         if config.FLOWSERV_API_PORT in os.environ:
             del os.environ[config.FLOWSERV_API_PORT]
-        default_url = '{}:{}{}'.format(
+        default_url = '{}://{}:{}{}'.format(
+            config.DEFAULT_PROTOCOL,
             config.DEFAULT_HOST,
             config.DEFAULT_PORT,
             config.DEFAULT_PATH
@@ -91,4 +92,9 @@ class TestConfigAPI(object):
         assert config.API_URL() == default_url
         os.environ[config.FLOWSERV_API_PORT] = '80'
         os.environ[config.FLOWSERV_API_PATH] = 'app-path/v1'
-        assert config.API_URL() == config.DEFAULT_HOST + '/app-path/v1'
+        api_url = '{}://{}/{}'.format(
+            config.DEFAULT_PROTOCOL,
+            config.DEFAULT_HOST,
+            'app-path/v1'
+        )
+        assert config.API_URL() == api_url

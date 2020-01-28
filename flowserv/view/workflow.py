@@ -51,7 +51,7 @@ class WorkflowSerializer(object):
             labels.NAME: workflow.name,
             labels.LINKS: hateoas.serialize({
                 hateoas.SELF: self.urls.get_workflow(b_id),
-                hateoas.LEADERBOARD: leaderboard_url,
+                hateoas.RANKING: leaderboard_url,
                 rel_groups_create: self.urls.create_group(b_id)
             })
         }

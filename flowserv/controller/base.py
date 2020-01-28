@@ -58,6 +58,17 @@ class WorkflowController(metaclass=ABCMeta):
         raise NotImplementedError()
 
     @abstractmethod
+    def configuration(self):
+        """Get a list of tuples with the names of additional configuration
+        variables and their current values.
+
+        Returns
+        -------
+        list((string, string))
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
     def exec_workflow(self, run_id, template, arguments, run_async=True):
         """Initiate the execution of a given workflow template for a set of
         argument values. Returns the state of the workflow.
@@ -70,12 +81,12 @@ class WorkflowController(metaclass=ABCMeta):
         Parameters
         ----------
         run: flowserv.model.run.base.RunHandle
-            Handle for the run that is being executed
+            Handle for the run that is being executed.
         template: flowserv.model.template.base.WorkflowTemplate
             Workflow template containing the parameterized specification and
-            the parameter declarations
+            the parameter declarations.
         arguments: dict(flowserv.model.parameter.value.TemplateArgument)
-            Dictionary of argument values for parameters in the template
+            Dictionary of argument values for parameters in the template.
         run_async: bool, optional
             Flag to determine whether the worklfow execution will block the
             workflow controller or run asynchronously.

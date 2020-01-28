@@ -49,8 +49,8 @@ class WorkflowResource(object):
         self.identifier = identifier
         self.name = name
 
-    @staticmethod
-    def from_dict(doc):
+    @classmethod
+    def from_dict(cls, doc):
         """Get object instance from serialization. The class of the object is
         determined by the value of the 'type' element in the given document.
 
@@ -123,8 +123,8 @@ class FSObject(FileHandle):
             filename=filename
         )
 
-    @staticmethod
-    def from_dict(doc):
+    @classmethod
+    def from_dict(cls, doc):
         """Get object instance from serialization.
 
         Parameters
@@ -135,7 +135,7 @@ class FSObject(FileHandle):
         Returns
         -------
         """
-        return FSObject(
+        return cls(
             identifier=doc[LABEL_ID],
             name=doc[LABEL_NAME],
             filename=doc[LABEL_FILEPATH]

@@ -349,7 +349,7 @@ class WorkflowGroupManager(object):
             # Delete members that are not in the given list
             sql = 'DELETE FROM group_member '
             sql += 'WHERE group_id = ? AND user_id = ?'
-            for user in group.get_members():
+            for user in group.members:
                 if user.identifier not in members:
                     self.con.execute(sql, (group_id, user.identifier))
                 else:
@@ -368,7 +368,7 @@ class WorkflowGroupManager(object):
                         raise err.UnknownUserError(user_id)
                     self.con.execute(sqlInsMember, (group_id, user_id))
                     user = UserHandle(identifier=user_id, name=row['name'])
-                    upd_members.append(user)
+                    upd_members[user_id] = user
             group.members = list(upd_members.values())
         if commit_changes:
             self.con.commit()

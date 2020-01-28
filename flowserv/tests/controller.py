@@ -14,9 +14,9 @@ import os
 
 from flowserv.model.template.schema import ResultColumn, ResultSchema
 from flowserv.controller.base import WorkflowController
+from flowserv.controller.serial.engine import SerialWorkflowEngine
 from flowserv.model.workflow.resource import FSObject
 
-import flowserv.controller.serial as serial
 import flowserv.core.error as err
 import flowserv.model.parameter.declaration as pd
 import flowserv.model.workflow.state as st
@@ -77,16 +77,6 @@ class StateEngine(WorkflowController):
         # Index of workflow runs
         self.runs = dict()
 
-    def asynchronous_events(self):
-        """The value depends on the repsective argument that was given when the
-        object was instantiated.
-
-        Returns
-        -------
-        bool
-        """
-        return self._async_events
-
     def cancel_run(self, run_id):
         """Request to cancel execution of the given run.
 
@@ -105,6 +95,16 @@ class StateEngine(WorkflowController):
                 self.runs[run_id] = run.cancel(messages=self.messages)
         else:
             raise err.UnknownRunError(run_id)
+
+    def configuration(self):
+        """Get a list of tuples with the names of additional configuration
+        variables and their current values.
+
+        Returns
+        -------
+        list((string, string))
+        """
+        return list()
 
     def error(self, messages=None):
         """Set the default state to ERROR.
@@ -188,57 +188,32 @@ class StateEngine(WorkflowController):
         else:
             raise err.UnknownRunError(run_id)
 
-    def modify_template(self, workflow_spec, tmpl_parameters, add_parameters):
-        """Modify a given workflow specification by adding the given parameters
-        to a given set of template parameters.
+    def modify_template(self, template, parameters):
+        """Modify a the workflow specification in a given template by adding
+        the a set of parameters. If a parameter in the added parameters set
+        already exists in the template the name, index, default value, the
+        value list and the required flag of the existing parameter are replaced
+        by the values of the given parameter.
 
-        This function is dependent on the workflow specification syntax that is
-        supported by a workflow engine.
-
-        Returns the modified workflow specification and the modified parameter
-        index. Raises an error if the parameter identifier in the resulting
-        parameter index are no longer unique.
+        Returns a modified workflow template. Raises an error if the parameter
+        identifier in the resulting template are no longer unique.
 
         Parameters
         ----------
-        workflow_spec: dict
-            Workflow specification
-        tmpl_parameters: dict(flowserv.model.parameter.base.TemplateParameter)
-            Existing template parameters
-        add_parameters: dict(flowserv.model.parameter.base.TemplateParameter)
+        template: flowserv.model.template.base.WorkflowTemplate
+            Workflow template handle.
+        parameters: dict(flowserv.model.parameter.base.TemplateParameter)
             Additional template parameters
 
         Returns
         -------
-        dict, dict(flowserv.model.parameter.base.TemplateParameter)
+        flowserv.model.template.base.WorkflowTemplate
 
         Raises
         ------
-        flowserv.core.error.DuplicateParameterError
         flowserv.core.error.InvalidTemplateError
         """
-        return serial.modify_spec(
-            workflow_spec=workflow_spec,
-            tmpl_parameters=tmpl_parameters,
-            add_parameters=add_parameters
-        )
-
-
-    def remove_run(self, run_id):
-        """Remove associated result files if the run is in success state.
-
-        Parameters
-        ----------
-        run_id: string
-            Unique run identifier
-        """
-        if run_id in self.runs:
-            run = self.runs[run_id]
-            if run.is_active():
-                raise err.InvalidRunStateError(run.state)
-            del self.runs[run_id]
-        else:
-            raise err.UnknownRunError(run_id)
+        return SerialWorkflowEngine().modify_template(template, parameters)
 
     def start(self):
         """Set the default state to RUNNING.

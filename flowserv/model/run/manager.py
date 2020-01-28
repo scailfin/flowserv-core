@@ -107,6 +107,7 @@ class RunManager(object):
         rundir = self.fs.run_basedir(workflow_id, group_id, run_id)
         return RunHandle(
             identifier=run_id,
+            workflow_id=workflow_id,
             group_id=group_id,
             state=state,
             arguments=json.loads(args_json),
@@ -210,6 +211,7 @@ class RunManager(object):
         # retrieve the current trun state
         return RunHandle(
             identifier=run_id,
+            workflow_id=workflow_id,
             group_id=group_id,
             state=shelper.get_run_state(
                 con=self.con,
@@ -239,7 +241,7 @@ class RunManager(object):
         """
         runs = list()
         sql = (
-            'SELECT run_id, state, created_at '
+            'SELECT run_id, workflow_id, state, created_at '
             'FROM workflow_run '
             'WHERE group_id = ?'
         )
@@ -247,6 +249,7 @@ class RunManager(object):
         for row in rs:
             run = RunDescriptor(
                 identifier=row['run_id'],
+                workflow_id=row['workflow_id'],
                 group_id=group_id,
                 state_type_id=row['state'],
                 created_at=util.to_datetime(row['created_at'])

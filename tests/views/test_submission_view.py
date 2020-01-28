@@ -44,7 +44,7 @@ RELS = [
     hateoas.SELF,
     hateoas.action(hateoas.UPLOAD),
     hateoas.action(hateoas.SUBMIT),
-    hateoas.BENCHMARK
+    hateoas.WORKFLOW
 ]
 RELSFH = [hateoas.action(hateoas.DOWNLOAD), hateoas.action(hateoas.DELETE)]
 
@@ -80,7 +80,7 @@ class TestSubmissionsView(object):
             name='A',
             user=user
         )
-        util.validate_doc(doc=r, mandatory_labels=HNDL_LBLS)
+        util.validate_doc(doc=r, mandatory=HNDL_LBLS)
         assert len(r[labels.MEMBERS]) == 1
         serialize.validate_links(r, RELS)
         # Create new submission with a three members
@@ -90,12 +90,12 @@ class TestSubmissionsView(object):
             user=user,
             members=[users[1].identifier, users[2].identifier]
         )
-        util.validate_doc(doc=r, mandatory_labels=HNDL_LBLS)
+        util.validate_doc(doc=r, mandatory=HNDL_LBLS)
         assert len(r[labels.MEMBERS]) == 3
         for member in r[labels.MEMBERS]:
             util.validate_doc(
                 doc=member,
-                mandatory_labels=[labels.ID, labels.USERNAME]
+                mandatory=[labels.ID, labels.USERNAME]
             )
         serialize.validate_links(r, RELS)
 
@@ -124,11 +124,11 @@ class TestSubmissionsView(object):
         assert len(r[labels.SUBMISSIONS]) == 2
         service.delete_submission(s1[labels.ID], user_1)
         r = service.list_submissions(user=user_1)
-        util.validate_doc(doc=r, mandatory_labels=LST_LBLS)
+        util.validate_doc(doc=r, mandatory=LST_LBLS)
         serialize.validate_links(r, [hateoas.SELF])
         assert len(r[labels.SUBMISSIONS]) == 1
         for s in r[labels.SUBMISSIONS]:
-            util.validate_doc(doc=s, mandatory_labels=DESC_LBLS)
+            util.validate_doc(doc=s, mandatory=DESC_LBLS)
         with pytest.raises(err.UnauthorizedAccessError):
             service.delete_submission(s2[labels.ID], user_2)
 
@@ -154,7 +154,7 @@ class TestSubmissionsView(object):
             file_name='A.json',
             user=user_1
         )
-        util.validate_doc(doc=r, mandatory_labels=FILE_HANDLE)
+        util.validate_doc(doc=r, mandatory=FILE_HANDLE)
         serialize.validate_links(doc=r, keys=RELSFH)
         # Error when uploading without being a member
         with pytest.raises(err.UnauthorizedAccessError):
@@ -173,11 +173,11 @@ class TestSubmissionsView(object):
         )
         # Get a listing of files for the submission
         r = service.list_files(submission_id=submission_id, user=user_1)
-        util.validate_doc(doc=r, mandatory_labels=[labels.FILES, labels.LINKS])
+        util.validate_doc(doc=r, mandatory=[labels.FILES, labels.LINKS])
         files = r[labels.FILES]
         assert len(files) == 2
         for f in files:
-            util.validate_doc(doc=f, mandatory_labels=FILE_HANDLE)
+            util.validate_doc(doc=f, mandatory=FILE_HANDLE)
             serialize.validate_links(doc=f, keys=RELSFH)
         # Error when attempting to list files for submissions without being
         # a member
@@ -190,7 +190,7 @@ class TestSubmissionsView(object):
             user=user_1
         )
         assert os.path.isfile(fh.filepath)
-        util.validate_doc(doc=r, mandatory_labels=FILE_HANDLE)
+        util.validate_doc(doc=r, mandatory=FILE_HANDLE)
         serialize.validate_links(doc=r, keys=RELSFH)
         # Error when attempting to access files for submissions without being
         # a member
@@ -207,7 +207,7 @@ class TestSubmissionsView(object):
             user=user_1
         )
         r = service.list_files(submission_id=submission_id, user=user_1)
-        util.validate_doc(doc=r, mandatory_labels=[labels.FILES, labels.LINKS])
+        util.validate_doc(doc=r, mandatory=[labels.FILES, labels.LINKS])
         files = r[labels.FILES]
         assert len(files) == 1
         # Error when attempting to delete files for submissions without being
@@ -234,19 +234,19 @@ class TestSubmissionsView(object):
         )
         submission_id = r[labels.ID]
         r = service.get_submission(submission_id)
-        util.validate_doc(doc=r, mandatory_labels=HNDL_LBLS)
+        util.validate_doc(doc=r, mandatory=HNDL_LBLS)
         assert len(r[labels.MEMBERS]) == 2
         for member in r[labels.MEMBERS]:
             util.validate_doc(
                 doc=member,
-                mandatory_labels=[labels.ID, labels.USERNAME]
+                mandatory=[labels.ID, labels.USERNAME]
             )
         serialize.validate_links(r, RELS)
         # USER_2 and USER_3 can also access the submission
         r = service.get_submission(submission_id)
-        util.validate_doc(doc=r, mandatory_labels=HNDL_LBLS)
+        util.validate_doc(doc=r, mandatory=HNDL_LBLS)
         r = service.get_submission(submission_id)
-        util.validate_doc(doc=r, mandatory_labels=HNDL_LBLS)
+        util.validate_doc(doc=r, mandatory=HNDL_LBLS)
 
     def test_list_submissions(self, tmpdir):
         """Test retrieving a submission handle."""
@@ -276,19 +276,19 @@ class TestSubmissionsView(object):
         )
         # USER_1 is member of three submissions
         r = service.list_submissions(user=user_1)
-        util.validate_doc(doc=r, mandatory_labels=LST_LBLS)
+        util.validate_doc(doc=r, mandatory=LST_LBLS)
         serialize.validate_links(r, [hateoas.SELF])
         assert len(r[labels.SUBMISSIONS]) == 3
         for s in r[labels.SUBMISSIONS]:
-            util.validate_doc(doc=s, mandatory_labels=DESC_LBLS)
+            util.validate_doc(doc=s, mandatory=DESC_LBLS)
         # USER_2 is member of one submission
         r = service.list_submissions(user=user_2)
-        util.validate_doc(doc=r, mandatory_labels=LST_LBLS)
+        util.validate_doc(doc=r, mandatory=LST_LBLS)
         serialize.validate_links(r, [hateoas.SELF])
         assert len(r[labels.SUBMISSIONS]) == 1
         # USER_3 is member of two submissions
         r = service.list_submissions(user=user_3)
-        util.validate_doc(doc=r, mandatory_labels=LST_LBLS)
+        util.validate_doc(doc=r, mandatory=LST_LBLS)
         serialize.validate_links(r, [hateoas.SELF])
         assert len(r[labels.SUBMISSIONS]) == 2
 

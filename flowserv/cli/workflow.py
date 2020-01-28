@@ -12,7 +12,7 @@ workflow templates in the repository.
 
 import click
 
-from flowserv.service.base import service
+from flowserv.service.api import service
 
 import flowserv.core.error as err
 

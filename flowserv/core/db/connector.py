@@ -13,10 +13,10 @@ connection string that contains all the information necessary to establish a
 database connection.
 """
 
-from abc import abstractmethod
+from abc import ABCMeta, abstractmethod
 
 
-class DatabaseConnector(object):
+class DatabaseConnector(metaclass=ABCMeta):
     """The database connector defines the interface to open a connection to the
     database system that is used by the application. There should be different
     implementations of this class for different database systems.
@@ -24,6 +24,17 @@ class DatabaseConnector(object):
     The connector also implements the method that is used to initialize
     database tables from a script of SQL statements.
     """
+    @staticmethod
+    def configuration():
+        """Get a list of tuples with the names of additional configuration
+        variables and their current values.
+
+        Returns
+        -------
+        list((string, string))
+        """
+        raise NotImplementedError()
+
     @abstractmethod
     def connect(self):
         """Connect to the underlying database.

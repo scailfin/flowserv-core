@@ -12,6 +12,8 @@ delete, and upload files for workflow groups.
 
 from flowserv.view.files import UploadFileSerializer
 
+import flowserv.core.error as err
+
 
 class UploadFileService(object):
     """API component that provides methods to access, delete and upload files
@@ -39,7 +41,7 @@ class UploadFileService(object):
         if self.serialize is None:
             self.serialize = UploadFileSerializer(self.urls)
 
-    def delete_file(self, group_id, file_id, user):
+    def delete_file(self, group_id, file_id, user_id):
         """Delete file with given identifier that was previously uploaded.
 
         Raises errors if the file or the workflow group does not exist or if
@@ -51,8 +53,8 @@ class UploadFileService(object):
             Unique workflow group identifier
         file_id: string
             Unique file identifier
-        user: flowserv.model.user.base.UserHandle
-            Handle for user that requested the deletion
+        user_id: string
+            Unique user identifier
 
         Raises
         ------
@@ -61,11 +63,12 @@ class UploadFileService(object):
         """
         # Raise an error if the user does not have rights to delete files for
         # the workflow group or if the workflow group does not exist.
-        self.auth.is_group_member(group_id=group_id, user=user)
+        if not self.auth.is_group_member(group_id=group_id, user_id=user_id):
+            raise err.UnauthorizedAccessError()
         # Delete the file using the workflow group handle
         self.group_manager.get_group(group_id).delete_file(file_id)
 
-    def get_file(self, group_id, file_id, user):
+    def get_file(self, group_id, file_id, user_id):
         """Get handle for file with given identifier that was uploaded to the
         workflow group.
 
@@ -77,8 +80,8 @@ class UploadFileService(object):
             Unique workflow group identifier
         file_id: string
             Unique file identifier
-        user: flowserv.model.user.base.UserHandle
-            Handle for user that is accessing the file
+        user_id: string
+            Unique user identifier
 
         Returns
         -------
@@ -92,13 +95,14 @@ class UploadFileService(object):
         """
         # Raise an error if the user does not have rights to access files for
         # the workflow group or if the workflow group does not exist.
-        self.auth.is_group_member(group_id=group_id, user=user)
+        if not self.auth.is_group_member(group_id=group_id, user_id=user_id):
+            raise err.UnauthorizedAccessError()
         # Return the file handle and a serialization of tit
         fh = self.group_manager.get_group(group_id).get_file(file_id)
         doc = self.serialize.file_handle(group_id=group_id, fh=fh)
         return fh, doc
 
-    def list_files(self, group_id, user):
+    def list_files(self, group_id, user_id):
         """Get a listing of all files that have been uploaded for the given
         workflow group.
 
@@ -106,8 +110,8 @@ class UploadFileService(object):
         ----------
         group_id: string
             Unique workflow group identifier
-        user: flowserv.model.user.base.UserHandle
-            Handle for user that requested the deletion
+        user_id: string
+            unique user identifier
 
         Returns
         -------
@@ -120,13 +124,14 @@ class UploadFileService(object):
         """
         # Raise an error if the user does not have rights to access files for
         # the workflow group or if the workflow group does not exist.
-        self.auth.is_group_member(group_id=group_id, user=user)
+        if not self.auth.is_group_member(group_id=group_id, user_id=user_id):
+            raise err.UnauthorizedAccessError()
         return self.serialize.file_listing(
             group_id=group_id,
             files=self.group_manager.get_group(group_id).list_files()
         )
 
-    def upload_file(self, group_id, file, name, user, file_type=None):
+    def upload_file(self, group_id, file, name, user_id, file_type=None):
         """Create a file for a given workflow group.
 
         Parameters
@@ -137,8 +142,8 @@ class UploadFileService(object):
             File object (e.g., uploaded via HTTP request)
         name: string
             Name of the file
-        user: flowserv.model.user.base.UserHandle
-            Handle for user that is uploading the file
+        user_id: string
+            Unique user identifier
         file_type: string, optional
             Identifier for the file type (e.g., the file MimeType). This could
             also by the identifier of a content handler.
@@ -155,7 +160,8 @@ class UploadFileService(object):
         """
         # Raise an error if the user does not have rights to upload files for
         # the workflow group or if the workflow group does not exist.
-        self.auth.is_group_member(group_id=group_id, user=user)
+        if not self.auth.is_group_member(group_id=group_id, user_id=user_id):
+            raise err.UnauthorizedAccessError()
         # Return serialization of the uploaded file
         fh = self.group_manager.get_group(group_id).upload_file(
             file=file,

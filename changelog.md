@@ -1,6 +1,5 @@
-# Reproducible Open Benchmarks for Data Analysis Platform - Changelog
+# Reproducible and Reusable Data Analysis Workflow Server - Changelog
 
 ### 0.1.0 - (ongoing)
 
-* Initial Version
-* Modify the previous version of rob-core
+* Initial Version (from rob-core)
