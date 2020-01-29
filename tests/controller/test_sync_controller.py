@@ -103,7 +103,7 @@ def test_run_with_invalid_cmd(tmpdir):
         )
     }
     # Run workflow syncronously
-    engine = SerialWorkflowEngine(is_async=False)
+    engine = SerialWorkflowEngine(is_async=True)
     run_id = util.get_short_identifier()
     rundir = os.path.join(str(tmpdir), run_id)
     run = RunHandle(
@@ -117,7 +117,8 @@ def test_run_with_invalid_cmd(tmpdir):
     state = engine.exec_workflow(
         run=run,
         template=template,
-        arguments=arguments
+        arguments=arguments,
+        run_async=False
     )
     assert state.is_error()
     assert len(state.messages) > 0
@@ -141,7 +142,7 @@ def test_run_with_missing_file(tmpdir):
         )
     }
     # Run workflow syncronously
-    engine = SerialWorkflowEngine(is_async=False)
+    engine = SerialWorkflowEngine()
     run_id = util.get_short_identifier()
     rundir = os.path.join(str(tmpdir), run_id)
     run = RunHandle(
@@ -155,7 +156,8 @@ def test_run_with_missing_file(tmpdir):
     state = engine.exec_workflow(
         run=run,
         template=template,
-        arguments=arguments
+        arguments=arguments,
+        run_async=False
     )
     assert state.is_error()
     assert len(state.messages) > 0

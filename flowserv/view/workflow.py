@@ -134,21 +134,19 @@ class WorkflowSerializer(object):
         resources = list()
         current_resources = workflow.resources
         if current_resources is not None:
-            result_id = current_resources.result_id
-            if result_id is not None:
-                for r in current_resources:
-                    url = self.urls.download_workflow_resource(
-                        workflow_id=w_id,
-                        resource_id=r.identifier
-                    )
-                    resources.append({
-                        labels.ID: r.identifier,
-                        labels.NAME: r.name,
-                        labels.CAPTION: r.caption,
-                        labels.LINKS: hateoas.serialize({hateoas.SELF: url})
-                    })
-                archive_url = self.urls.download_workflow_archive(w_id)
-                links[hateoas.RESOURCES] = archive_url
+            for r in current_resources:
+                url = self.urls.download_workflow_resource(
+                    workflow_id=w_id,
+                    resource_id=r.identifier
+                )
+                resources.append({
+                    labels.ID: r.identifier,
+                    labels.NAME: r.name,
+                    labels.CAPTION: r.caption,
+                    labels.LINKS: hateoas.serialize({hateoas.SELF: url})
+                })
+            archive_url = self.urls.download_workflow_archive(w_id)
+            links[hateoas.RESOURCES] = archive_url
         return {
             labels.SCHEMA: [{
                     labels.ID: c.identifier,

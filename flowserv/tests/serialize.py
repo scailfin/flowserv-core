@@ -110,6 +110,39 @@ def validate_group_listing(doc):
         )
 
 
+# -- Rankings -----------------------------------------------------------------
+
+def validate_ranking(doc):
+    """Validate serialization of a workflow evaluation ranking.
+
+    Parameters
+    ----------
+    doc: dict
+        Ranking serialization
+
+    Raises
+    ------
+    ValueError
+    """
+    util.validate_doc(
+        doc=doc,
+        mandatory=['schema', 'ranking', 'resources', 'links']
+    )
+    validate_links(doc=doc, keys=['self', 'workflow', 'resources'])
+    # Schema columns
+    for col in doc['schema']:
+        util.validate_doc(doc=col, mandatory=['id', 'name', 'type'])
+    # Run results
+    for entry in doc['ranking']:
+        util.validate_doc(doc=entry, mandatory=['run', 'group', 'results'])
+        util.validate_doc(
+            doc=entry['run'],
+            mandatory=['id', 'createdAt', 'startedAt', 'finishedAt']
+        )
+        util.validate_doc(doc=entry['group'], mandatory=['id', 'name'])
+        for result in entry['results']:
+            util.validate_doc(doc=result, mandatory=['id', 'value'])
+
 # -- Runs ---------------------------------------------------------------------
 
 def validate_run_handle(doc, state):
@@ -155,7 +188,16 @@ def validate_run_handle(doc, state):
 
 
 def validate_run_listing(doc):
-    """
+    """Validate serialization of a workflow run listing.
+
+    Parameters
+    ----------
+    doc: dict
+        Serialization for listing of workflow run descriptors
+
+    Raises
+    ------
+    ValueError
     """
     util.validate_doc(doc=doc, mandatory=['runs', 'links'])
     validate_links(doc=doc, keys=['self', 'submit'])

@@ -69,7 +69,7 @@ class WorkflowController(metaclass=ABCMeta):
         raise NotImplementedError()
 
     @abstractmethod
-    def exec_workflow(self, run_id, template, arguments, run_async=True):
+    def exec_workflow(self, run, template, arguments, run_async=True):
         """Initiate the execution of a given workflow template for a set of
         argument values. Returns the state of the workflow.
 

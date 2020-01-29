@@ -78,18 +78,18 @@ class StateEngine(WorkflowController):
         -------
         flowserv.model.workflow.state.WorkflowState
         """
-        run = self.runs[run_id].error(messages=messages)
-        self.runs[run_id] = run
-        return run
+        state = self.runs[run_id].error(messages=messages)
+        self.runs[run_id] = state
+        return state
 
-    def exec_workflow(self, run_id, template, arguments):
+    def exec_workflow(self, run, template, arguments):
         """Fake execute method that returns the workflow state that the was
         provided when the object was instantiated. Ignores all given arguments.
 
         Parameters
         ----------
-        run_id: string
-            Unique identifier for the workflow run.
+        run: flowserv.model.run.base.RunHandle
+            Handle for the run that is being executed.
         template: flowserv.model.template.base.WorkflowTemplate
             Workflow template containing the parameterized specification and the
             parameter declarations
@@ -100,9 +100,9 @@ class StateEngine(WorkflowController):
         -------
         flowserv.model.workflow.state.WorkflowState
         """
-        run = st.StatePending()
-        self.runs[run_id] = run
-        return run
+        state = st.StatePending()
+        self.runs[run.identifier] = state
+        return state
 
     def get_run(self, run_id):
         """Get the status of the workflow with the given identifier.
@@ -165,9 +165,9 @@ class StateEngine(WorkflowController):
         -------
         flowserv.model.workflow.state.WorkflowState
         """
-        run = self.runs[run_id].start()
-        self.runs[run_id] = run
-        return run
+        state = self.runs[run_id].start()
+        self.runs[run_id] = state
+        return state
 
     def success(self, run_id, resources=None):
         """Set the default state to SUCCESS.
@@ -183,6 +183,6 @@ class StateEngine(WorkflowController):
         -------
         flowserv.model.workflow.state.WorkflowState
         """
-        run = self.runs[run_id].success(resources=resources)
-        self.runs[run_id] = run
-        return run
+        state = self.runs[run_id].success(resources=resources)
+        self.runs[run_id] = state
+        return state

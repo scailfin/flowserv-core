@@ -8,183 +8,117 @@
 
 """Unit tests for the asynchronous multiprocess workflow controller."""
 
-import json
 import os
+import pytest
 import time
 
+from flowserv.controller.serial.engine import SerialWorkflowEngine
 from flowserv.core.files import FileHandle
-from flowserv.model.template.base import WorkflowTemplate
 from flowserv.model.parameter.value import TemplateArgument
-from flowserv.controller.multiproc import MultiProcessWorkflowEngine
+from flowserv.model.template.base import WorkflowTemplate
+from flowserv.service.api import API
+from flowserv.tests.files import FakeStream
 
-from flowserv.controller.engine import BenchmarkEngine
-
-import flowserv.model.ranking as ranking
+import flowserv.core.error as err
+import flowserv.model.workflow.state as st
 import flowserv.tests.db as db
-import flowserv.core.util as util
 
 
+# Template directory
 DIR = os.path.dirname(os.path.realpath(__file__))
 TEMPLATE_DIR = os.path.join(DIR, '../.files/benchmark/helloworld')
-# Workflow templates
-TEMPLATE_HELLOWORLD = os.path.join(TEMPLATE_DIR, './benchmark.yaml')
-# Input files
-NAMES_TXT = '../../template/inputs/short-names.txt'
-NAMES_FILE = os.path.join(TEMPLATE_DIR, NAMES_TXT)
-UNKNOWN_FILE = os.path.join(TEMPLATE_DIR, './tmp/no/file/here')
 
 
-SUBMISSION_ID = util.get_unique_identifier()
+# Default users
+UID = '0000'
 
 
-class TestMultiProcessWorkflowEngine(object):
-    """Unit test for the asynchronous workflow controler."""
-    @staticmethod
-    def init(basedir):
-        """Create a fresh database with a single user, single benchmark, and
-        a single submission. The benchmark is the 'Hello World' example.
-        Returns an instance of the benchmark engine with a multi-process
-        backend controller and the created template handle.
-        """
-        con = db.init_db(basedir).connect()
-        sql = 'INSERT INTO api_user(user_id, name, secret, active) '
-        sql += 'VALUES(?, ?, ?, ?)'
-        USER_ID = util.get_unique_identifier()
-        con.execute(sql, (USER_ID, USER_ID, USER_ID, 1))
-        BENCHMARK_ID = util.get_unique_identifier()
-        sql = 'INSERT INTO benchmark(benchmark_id, name, result_schema) '
-        sql += 'VALUES(?, ?, ?)'
-        doc = util.read_object(filename=TEMPLATE_HELLOWORLD)
-        template = WorkflowTemplate.from_dict(doc, sourcedir=TEMPLATE_DIR)
-        schema = json.dumps(template.get_schema().to_dict())
-        con.execute(sql, (BENCHMARK_ID, BENCHMARK_ID, schema))
-        sql = (
-            'INSERT INTO benchmark_submission(submission_id, name, '
-            'benchmark_id, owner_id, parameters, workflow_spec'
-            ') VALUES(?, ?, ?, ?, ?, ?)'
+def test_run_helloworld(tmpdir):
+    """Execute the helloworld example."""
+    # -- Setup ----------------------------------------------------------------
+    # Create the database and service API with a serial workflow engine in
+    # asynchronous mode
+    con = db.init_db(str(tmpdir), users=[UID]).connect()
+    engine = SerialWorkflowEngine(is_async=True)
+    api = API(con=con, engine=engine, basedir=str(tmpdir))
+    # Create workflow template and run group
+    wh = api.workflows().create_workflow(name='W1', sourcedir=TEMPLATE_DIR)
+    w_id = wh['id']
+    gh = api.groups().create_group(workflow_id=w_id, name='G', user_id=UID)
+    g_id = gh['id']
+    # Upload the names file
+    fh = api.uploads().upload_file(
+        group_id=g_id,
+        file=FakeStream(data=['Alice', 'Bob', 'Zoe'], format='txt/plain'),
+        name='names.txt',
+        user_id=UID
+    )
+    file_id = fh['id']
+    # -- Test successful run --------------------------------------------------
+    # Set the template argument values
+    arguments = [
+        {'id': 'names', 'value': file_id},
+        {'id': 'sleeptime', 'value': 3},
+        {'id': 'greeting', 'value': 'Hi'}
+    ]
+    # Run the workflow
+    run = api.runs().start_run(
+        group_id=g_id,
+        arguments=arguments,
+        user_id=UID
+    )
+    r_id = run['id']
+    # Poll workflow state every second.
+    while run['state'] in st.ACTIVE_STATES:
+        time.sleep(1)
+        run = api.runs().get_run(run_id=r_id, user_id=UID)
+    assert run['state'] == st.STATE_SUCCESS
+    resources = dict()
+    for r in run['resources']:
+        resources[r['name']] = r['id']
+    f_id = resources['results/greetings.txt']
+    fh = api.runs().get_result_file(run_id=r_id, resource_id=f_id, user_id=UID)
+    with open(fh.filename) as f:
+        greetings = f.read()
+        assert 'Hi Alice' in greetings
+        assert 'Hi Bob' in greetings
+        assert 'Hi Zoe' in greetings
+    f_id = resources['results/analytics.json']
+    fh = api.runs().get_result_file(run_id=r_id, resource_id=f_id, user_id=UID)
+    assert os.path.isfile(fh.filename)
+    # -- Test cancel run ------------------------------------------------------
+    arguments = [
+        {'id': 'names', 'value': file_id},
+        {'id': 'sleeptime', 'value': 100},
+        {'id': 'greeting', 'value': 'Hi'}
+    ]
+    run = api.runs().start_run(
+        group_id=g_id,
+        arguments=arguments,
+        user_id=UID
+    )
+    r_id = run['id']
+    # Sleep and poll once
+    while run['state'] in st.ACTIVE_STATES:
+        time.sleep(1)
+        run = api.runs().get_run(run_id=r_id, user_id=UID)
+        break
+    assert run['state'] in st.ACTIVE_STATES
+    run = api.runs().cancel_run(run_id=r_id, user_id=UID, reason='done')
+    assert run['state'] == st.STATE_CANCELED
+    assert run['messages'][0] == 'done'
+    run = api.runs().get_run(run_id=r_id, user_id=UID)
+    assert run['state'] == st.STATE_CANCELED
+    assert run['messages'][0] == 'done'
+    # -- Test running workflow with unknown file ------------------------------
+    arguments = [
+        {'id': 'names', 'value': 'UNK'},
+        {'id': 'sleeptime', 'value': 1},
+        {'id': 'greeting', 'value': 'Hi'}
+    ]
+    with pytest.raises(err.UnknownFileError):
+        run = api.runs().start_run(
+            group_id=g_id,
+            arguments=arguments,
+            user_id=UID
         )
-        params = [p.to_dict() for p in template.parameters.values()]
-        con.execute(
-            sql,
-            (
-                SUBMISSION_ID,
-                SUBMISSION_ID,
-                BENCHMARK_ID,
-                USER_ID,
-                json.dumps(params),
-                json.dumps(template.workflow_spec)
-            )
-        )
-        ranking.create_result_table(
-            con=con,
-            benchmark_id=BENCHMARK_ID,
-            schema=template.get_schema(),
-            commit_changes=False
-        )
-        con.commit()
-        engine = BenchmarkEngine(
-            con=con,
-            backend=MultiProcessWorkflowEngine(basedir=basedir, verbose=True)
-        )
-        return engine, template
-
-    def test_cancel_and_delete_run(self, tmpdir):
-        """Execute the helloworld example."""
-        # Read the workflow template
-        engine, template = TestMultiProcessWorkflowEngine.init(str(tmpdir))
-        # Set the template argument values
-        arguments = {
-            'names': TemplateArgument(
-                parameter=template.get_parameter('names'),
-                value=FileHandle(NAMES_FILE)
-            ),
-            'sleeptime': TemplateArgument(
-                parameter=template.get_parameter('sleeptime'),
-                value=30
-            )
-        }
-        # Run the workflow
-        run = engine.start_run(
-            submission_id=SUBMISSION_ID,
-            template=template,
-            arguments=arguments
-        )
-        # Sleep and pool once
-        while run.is_active():
-            time.sleep(1)
-            run = engine.get_run(run.identifier)
-            break
-        assert run.is_active()
-        run = engine.cancel_run(run.identifier, reason='done testing')
-        assert run.is_canceled()
-        assert run.state.messages[0] == 'done testing'
-        run = engine.get_run(run.identifier)
-        assert run.is_canceled()
-        assert run.state.messages[0] == 'done testing'
-        engine.delete_run(run.identifier)
-
-    def test_run_helloworld(self, tmpdir):
-        """Execute the helloworld example."""
-        # Read the workflow template
-        engine, template = TestMultiProcessWorkflowEngine.init(str(tmpdir))
-        # Set the template argument values
-        arguments = {
-            'names': TemplateArgument(
-                parameter=template.get_parameter('names'),
-                value=FileHandle(NAMES_FILE)
-            ),
-            'sleeptime': TemplateArgument(
-                parameter=template.get_parameter('sleeptime'),
-                value=3
-            ),
-            'greeting': TemplateArgument(
-                parameter=template.get_parameter('greeting'),
-                value='Hi'
-            )
-        }
-        # Run the workflow
-        run = engine.start_run(
-            submission_id=SUBMISSION_ID,
-            template=template,
-            arguments=arguments
-        )
-        # Poll workflow state every second.
-        while run.is_active():
-            time.sleep(1)
-            run = engine.get_run(run.identifier)
-        assert run.is_success()
-        with open(run.get_resource('results/greetings.txt').filename) as f:
-            greetings = f.read()
-            assert 'Hi Alice' in greetings
-            assert 'Hi Bob' in greetings
-        result_file = run.get_resource('results/analytics.json').filename
-        assert os.path.isfile(result_file)
-
-    def test_run_with_missing_file(self, tmpdir):
-        """Execute the helloworld example with a missing file that will case
-        an error when copying the input files for the workflow run.
-        """
-        # Read the workflow template
-        engine, template = TestMultiProcessWorkflowEngine.init(str(tmpdir))
-        # Set the template argument values
-        arguments = {
-            'names': TemplateArgument(
-                parameter=template.get_parameter('names'),
-                value=FileHandle(UNKNOWN_FILE)
-            ),
-            'sleeptime': TemplateArgument(
-                parameter=template.get_parameter('sleeptime'),
-                value=3
-            )
-        }
-        # Run the workflow
-        run = engine.start_run(
-            submission_id=SUBMISSION_ID,
-            template=template,
-            arguments=arguments
-        )
-        while run.is_active():
-            time.sleep(1)
-            run = engine.get_run(run.identifier)
-        assert run.is_error()
-        assert 'No such file or directory' in run.state.messages[0]

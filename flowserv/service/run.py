@@ -112,7 +112,10 @@ class RunService(object):
             run_id=run_id,
             state=state
         )
-        return run.update_state(state)
+        return self.serialize.run_handle(
+            run=run.update_state(state),
+            group=self.group_manager.get_group(run.group_id)
+        )
 
     def delete_run(self, run_id, user_id):
         """Delete the run with the given identifier.
@@ -390,7 +393,7 @@ class RunService(object):
         run_id = run.identifier
         # Execute the benchmark workflow for the given set of arguments.
         state = self.backend.exec_workflow(
-            run_id=run_id,
+            run=run,
             template=template,
             arguments=run_args
         )
@@ -472,7 +475,7 @@ class RunService(object):
                         pp_files = pp_inputs.get(tmpl.PPLBL_FILES, [])
                         # Prepare temporary directory with result files for
                         # all runs in the ranking.
-                        datadir = postproc.prepare_postproc_data(
+                        datadir = postproc.uril.prepare_postproc_data(
                             input_files=pp_files,
                             ranking=ranking,
                             run_manager=self.run_manager
@@ -480,13 +483,13 @@ class RunService(object):
                         # Create a new run for the workflow. The identifier for
                         # the run group is None.
                         postproc_arguments = {
-                            postproc.PARA_RUNS: TemplateArgument(
-                                parameter=postproc.PARAMETERS[0],
+                            postproc.base.PARA_RUNS: TemplateArgument(
+                                parameter=postproc.base.PARAMETERS[0],
                                 value=InputFile(
                                     f_handle=FileHandle(filename=datadir),
                                     target_path=pp_inputs.get(
                                         tmpl.PPLBL_RUNS,
-                                        postproc.RUNS_DIR
+                                        postproc.base.RUNS_DIR
                                     )
                                 )
                             )
@@ -501,7 +504,7 @@ class RunService(object):
                             template=WorkflowTemplate(
                                 workflow_spec=workflow_spec,
                                 sourcedir=template.sourcedir,
-                                parameters=postproc.PARAMETERS
+                                parameters=postproc.base.PARAMETERS
                             ),
                             arguments=postproc_arguments,
                             run_async=True

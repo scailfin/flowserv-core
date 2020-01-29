@@ -14,34 +14,8 @@ import os
 import shutil
 import tempfile
 
-from flowserv.model.parameter.base import TemplateParameter
-
 import flowserv.core.util as util
-import flowserv.model.parameter.declaration as pd
-
-
-"""Names for files and folders that contain run result files and run metadata.
-"""
-RUNS_DIR = '.runs'
-RUNS_FILE = 'runs.json'
-
-
-"""Labels for metadata objects in the run listing."""
-LABEL_ID = 'id'
-LABEL_NAME = 'name'
-LABEL_RESOURCES = 'resources'
-
-
-"""Fixed set of parameter declarations for post-processing workflows. Contains
-only the declaration for the runs folder.
-"""
-PARA_RUNS = 'runs'
-PARAMETERS = [
-    TemplateParameter(obj=pd.parameter_declaration(
-        identifier=PARA_RUNS,
-        data_type=pd.DT_FILE
-    ))
-]
+import flowserv.service.postproc.base as base
 
 
 def prepare_postproc_data(input_files, ranking, run_manager):
@@ -86,13 +60,13 @@ def prepare_postproc_data(input_files, ranking, run_manager):
             util.create_dir(os.path.dirname(target_file))
             shutil.copy(src=source_file, dst=target_file)
         run_listing.append({
-            LABEL_ID: run.identifier,
-            LABEL_NAME: entry.group_name,
-            LABEL_RESOURCES: input_files
+            base.LABEL_ID: run.identifier,
+            base.LABEL_NAME: entry.group_name,
+            base.LABEL_RESOURCES: input_files
         })
     # Write the runs metadata to file
     util.write_object(
-        filename=os.path.join(basedir, RUNS_FILE),
+        filename=os.path.join(basedir, base.RUNS_FILE),
         obj=run_listing
     )
     # Return created temporary data directory

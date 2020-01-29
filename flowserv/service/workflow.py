@@ -123,9 +123,8 @@ class WorkflowService(object):
         """
         self.workflow_repo.delete_workflow(workflow_id)
 
-    def get_leaderboard(self, workflow_id, order_by=None, include_all=False):
-        """Get serialization of the evaluation leader board for the given
-        workflow.
+    def get_ranking(self, workflow_id, order_by=None, include_all=False):
+        """Get serialization of the evaluation ranking for the given workflow.
 
         Parameters
         ----------
