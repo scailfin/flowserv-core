@@ -153,11 +153,12 @@ class WorkflowRepository(object):
         # If the file is not found the workflow directory is removed and an
         # error is raised.
         template = None
-        candidates = list()
-        for filename in self.default_filenames:
-            candidates.append(os.path.join(staticdir, filename))
         if specfile is not None:
-            candidates = [specfile] + candidates
+            candidates = [specfile]
+        else:
+            candidates = list()
+            for filename in self.default_filenames:
+                candidates.append(os.path.join(staticdir, filename))
         for filename in candidates:
             if os.path.isfile(filename):
                 # Read template from file. If no error occurs the folder
@@ -342,7 +343,7 @@ class WorkflowRepository(object):
         # Get workflow information from database. If the result is empty an
         # error is raised
         sql = (
-            'SELECT workflow_id, name, description, instructions, postproc_id, '
+            'SELECT workflow_id, name, description, instructions, postproc_id,'
             'workflow_spec, parameters, modules, postproc_spec, result_schema '
             'FROM workflow_template '
             'WHERE workflow_id = ?'
@@ -357,9 +358,9 @@ class WorkflowRepository(object):
         # Get resource handles for current post-processing resources
         resources = list()
         if postproc_id is not None:
-            resourcedir = self.fs.workflow_postprocedir(
+            resourcedir = self.fs.workflow_postprocdir(
                 workflow_id=workflow_id,
-                postproc_id=postproc_id
+                run_id=postproc_id
             )
             sql = (
                 'SELECT resource_id, resource_name '

@@ -12,13 +12,10 @@ import os
 import pytest
 import time
 
-from flowserv.controller.serial.engine import SerialWorkflowEngine
-from flowserv.core.files import FileHandle
-from flowserv.model.parameter.value import TemplateArgument
-from flowserv.model.template.base import WorkflowTemplate
 from flowserv.service.api import API
 from flowserv.tests.files import FakeStream
 
+import flowserv.config.api as config
 import flowserv.core.error as err
 import flowserv.model.workflow.state as st
 import flowserv.tests.db as db
@@ -38,9 +35,8 @@ def test_run_helloworld(tmpdir):
     # -- Setup ----------------------------------------------------------------
     # Create the database and service API with a serial workflow engine in
     # asynchronous mode
-    con = db.init_db(str(tmpdir), users=[UID]).connect()
-    engine = SerialWorkflowEngine(is_async=True)
-    api = API(con=con, engine=engine, basedir=str(tmpdir))
+    os.environ[config.FLOWSERV_API_BASEDIR] = os.path.abspath(str(tmpdir))
+    api = API(con=db.init_db(str(tmpdir), users=[UID]).connect())
     # Create workflow template and run group
     wh = api.workflows().create_workflow(name='W1', sourcedir=TEMPLATE_DIR)
     w_id = wh['id']
@@ -122,3 +118,4 @@ def test_run_helloworld(tmpdir):
             arguments=arguments,
             user_id=UID
         )
+    del os.environ[config.FLOWSERV_API_BASEDIR]

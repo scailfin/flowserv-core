@@ -52,7 +52,7 @@ class Run(object):
         -------
         string
         """
-        return self.resources[name]
+        return self.resources.get(name)
 
 
 class Runs(object):
@@ -73,8 +73,8 @@ class Runs(object):
         self.runs = list()
         doc = util.read_object(filename=os.path.join(basedir, base.RUNS_FILE))
         for obj in doc:
-            identifier = doc[base.LABEL_ID]
-            name = doc[base.LABEL_NAME]
+            identifier = obj[base.LABEL_ID]
+            name = obj[base.LABEL_NAME]
             resources = dict()
             for filename in obj[base.LABEL_RESOURCES]:
                 resources[filename] = os.path.join(basedir, filename)

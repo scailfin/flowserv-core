@@ -8,7 +8,6 @@ workflow:
       parameters:
         inputfile: $[[names]]
         outputfile: results/greetings.txt
-        sleeptime: $[[sleeptime]]
         greeting: $[[greeting]]
     workflow:
       type: serial
@@ -19,7 +18,7 @@ workflow:
               - python code/helloworld.py
                   --inputfile "${inputfile}"
                   --outputfile "${outputfile}"
-                  --sleeptime ${sleeptime}
+                  --sleeptime 0
                   --greeting ${greeting}
               - python code/analyze.py
                   --inputfile "${outputfile}"
@@ -44,8 +43,8 @@ postproc:
                       --runs "${runs}"
                       --outputfile results/compare.json
         outputs:
-          files:
-           - 'results/compare.json'
+            files:
+                - 'results/compare.json'
     inputs:
         files:
             - 'results/analytics.json'
@@ -55,9 +54,6 @@ parameters:
       name: 'Input file'
       datatype: file
       as: data/names.txt
-    - id: sleeptime
-      datatype: int
-      defaultValue: 10
     - id: greeting
       datatype: string
       defaultValue: 'Hello'

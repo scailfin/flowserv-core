@@ -99,8 +99,7 @@ class WorkflowFileSystem(object):
             groupdir = self.workflow_groupdir(workflow_id, group_id)
             return os.path.join(groupdir, 'runs', run_id)
         else:
-            postprocdir = self.workflow_postprocdir(workflow_id, group_id)
-            return os.path.join(postprocdir, run_id)
+            return self.workflow_postprocdir(workflow_id, run_id)
 
     def workflow_basedir(self, workflow_id):
         """Get base directory containing associated files for the workflow with

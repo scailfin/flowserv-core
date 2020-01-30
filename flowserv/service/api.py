@@ -79,7 +79,7 @@ class API(object):
         self.engine = engine if engine is not None else backend
         # Ensure that the API base directory exists
         fsdir = basedir if basedir is not None else config.API_BASEDIR()
-        self.fs = WorkflowFileSystem(util.create_dir(fsdir))
+        self.fs = WorkflowFileSystem(util.create_dir(fsdir, abs=True))
         # Keep an instance of objects that may be used by multiple components
         # of the API. Use the respective property for each of them to ensure
         # that the object is instantiated before access.

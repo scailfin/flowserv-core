@@ -124,6 +124,24 @@ class WorkflowHandle(WorkflowDescriptor):
         self.template = template
         self.resources = ResourceSet(resources)
 
+    def get_postproc_key(self):
+        """Get sorted list of identifier for group run results that were used
+        to generate the current set of post-processing resources.
+
+        Returns
+        -------
+        list(string)
+        """
+        sql = (
+            'SELECT group_run_id '
+            'FROM workflow_postproc p, workflow_template w '
+            'WHERE w.postproc_id = p.postproc_id AND w.workflow_id = ?'
+        )
+        result = list()
+        for row in self.con.execute(sql, (self.identifier,)).fetchall():
+            result.append(row['group_run_id'])
+        return sorted(result)
+
     def get_schema(self):
         """Short-cut to get access to the workflow schema in the template.
 
@@ -135,8 +153,8 @@ class WorkflowHandle(WorkflowDescriptor):
 
     def get_template(self, workflow_spec=None, parameters=None):
         """Get associated workflow template. The template is loaded on-demand
-        if necessary. If either of the optional parameters are given, a modified
-        copy of the template is returned.
+        if necessary. If either of the optional parameters are given, a
+        modified copy of the template is returned.
 
         Returns
         -------
@@ -173,20 +191,33 @@ class WorkflowHandle(WorkflowDescriptor):
             )
         return self.template
 
-    def get_postproc_key(self):
-        """Get sorted list of identifier for group run results that were used
-        to generate the current set of post-processing resources.
+    def update_postproc(self, run_id, runs, commit_changes=True):
+        """Update the current post-processing run for the workflow.
 
-        Returns
-        -------
-        list(string)
+        Parameters
+        ----------
+        run_id: string
+            Unique identifier of the post-porcessing run
+        runs: list(string)
+            Identifier of runs in the post-porcessing key
+        commit_changes: bool, optional
+            Commit changes to database only if True
         """
+        # Insert run keys into workflow_postproc
         sql = (
-            'SELECT group_run_id '
-            'FROM workflow_postproc p, workflow_template w '
-            'WHERE w.postproc_id = p.postproc_id AND w.workflow_id = ?'
+            'INSERT INTO workflow_postproc('
+            'postproc_id, workflow_id, group_run_id) '
+            'VALUES(?, ?, ?)'
         )
-        result = list()
-        for row in self.con.execute(sql, (self.identifier,)).fetchall():
-            result.append(row['group_run_id'])
-        return sorted(result)
+        for group_run_id in runs:
+            self.con.execute(sql, (run_id, self.identifier, group_run_id))
+        # Update the workflow template
+        sql = (
+            'UPDATE workflow_template '
+            'SET postproc_id = ? '
+            'WHERE workflow_id = ?'
+        )
+        self.con.execute(sql, (run_id, self.identifier))
+        # Commit changes if requested
+        if commit_changes:
+            self.con.commit()

@@ -21,7 +21,8 @@ from flowserv.model.template.base import WorkflowTemplate
 import flowserv.core.error as err
 import flowserv.core.util as util
 import flowserv.model.template.base as tmpl
-import flowserv.service.postproc as postproc
+import flowserv.service.postproc.base as postbase
+import flowserv.service.postproc.util as postutil
 import flowserv.view.labels as labels
 
 
@@ -454,65 +455,79 @@ class RunService(object):
                     resources=state.resources,
                     commit_changes=False
                 )
-                # Execute a post-processing workflow if it is specified in the
-                # template and if the ranking results have changed.
-                if template.postproc_spec is not None:
-                    # Get the latest ranking for the workflow and create a
-                    # sorted list of run identifier to compare agains the
-                    # current post-processing key for the workflow.
-                    ranking = self.ranking_manager.get_ranking(
-                        workflow_id=run.workflow_id,
-                        result_schema=result_schema
+            # After the results have been successfully added to the ranking
+            # we commit the new run state to the database
+            self.run_manager.update_run(run_id=run_id, state=state)
+            # Execute a post-processing workflow if it is specified in the
+            # template and if the ranking results have changed.
+            postproc_spec = template.postproc_spec
+            if result_schema is not None and postproc_spec is not None:
+                # Get the latest ranking for the workflow and create a
+                # sorted list of run identifier to compare agains the
+                # current post-processing key for the workflow.
+                ranking = self.ranking_manager.get_ranking(
+                    workflow_id=run.workflow_id,
+                    result_schema=result_schema
+                )
+                runs = sorted([r.run_id for r in ranking])
+                # Run post-processing task synchronously if the current
+                # post-processing resources where generated for a different
+                # set of runs than those in the ranking.
+                if runs != workflow.get_postproc_key():
+                    workflow_spec = postproc_spec.get(tmpl.PPLBL_WORKFLOW)
+                    pp_inputs = postproc_spec.get(tmpl.PPLBL_INPUTS, {})
+                    pp_files = pp_inputs.get(tmpl.PPLBL_FILES, [])
+                    # Prepare temporary directory with result files for
+                    # all runs in the ranking.
+                    datadir = postutil.prepare_postproc_data(
+                        input_files=pp_files,
+                        ranking=ranking,
+                        run_manager=self.run_manager
                     )
-                    runs = sorted([r.run_id for r in ranking])
-                    # Run post-processing task synchronously if the current
-                    # post-processing resources where generated for a different
-                    # set of runs than those in the ranking.
-                    if runs != workflow.get_postproc_key():
-                        postproc_spec = template.postproc_spec
-                        workflow_spec = postproc_spec.get(tmpl.PPLBL_WORKFLOW)
-                        pp_inputs = postproc_spec.get(tmpl.PPLBL_INPUTS, {})
-                        pp_files = pp_inputs.get(tmpl.PPLBL_FILES, [])
-                        # Prepare temporary directory with result files for
-                        # all runs in the ranking.
-                        datadir = postproc.uril.prepare_postproc_data(
-                            input_files=pp_files,
-                            ranking=ranking,
-                            run_manager=self.run_manager
-                        )
-                        # Create a new run for the workflow. The identifier for
-                        # the run group is None.
-                        postproc_arguments = {
-                            postproc.base.PARA_RUNS: TemplateArgument(
-                                parameter=postproc.base.PARAMETERS[0],
-                                value=InputFile(
-                                    f_handle=FileHandle(filename=datadir),
-                                    target_path=pp_inputs.get(
-                                        tmpl.PPLBL_RUNS,
-                                        postproc.base.RUNS_DIR
-                                    )
+                    # Create a new run for the workflow. The identifier for
+                    # the run group is None.
+                    postproc_arguments = {
+                        postbase.PARA_RUNS: TemplateArgument(
+                            parameter=postbase.PARAMETERS[0],
+                            value=InputFile(
+                                f_handle=FileHandle(filename=datadir),
+                                target_path=pp_inputs.get(
+                                    tmpl.PPLBL_RUNS,
+                                    postbase.RUNS_DIR
                                 )
                             )
-                        }
-                        postproc_run = self.run_manager.create_run(
-                            workflow_id=run.workflow_id,
-                            group_id=None,
-                            arguments=postproc_arguments
                         )
-                        postproc_state = self.backend.exec_workflow(
-                            run_id=postproc_run.identifier,
-                            template=WorkflowTemplate(
-                                workflow_spec=workflow_spec,
-                                sourcedir=template.sourcedir,
-                                parameters=postproc.base.PARAMETERS
-                            ),
-                            arguments=postproc_arguments,
-                            run_async=True
-                        )
+                    }
+                    postproc_run = self.run_manager.create_run(
+                        workflow_id=run.workflow_id,
+                        group_id=None,
+                        arguments=postproc_arguments,
+                        commit_changes=False
+                    )
+                    # Set the new run as the current post-processing run and
+                    # enter the run keys
+                    workflow.update_postproc(
+                        run_id=postproc_run.identifier,
+                        runs=runs
+                    )
+                    # Execute the post-processing workflow asynchronously
+                    postproc_state = self.backend.exec_workflow(
+                        run=postproc_run,
+                        template=WorkflowTemplate(
+                            workflow_spec=workflow_spec,
+                            sourcedir=template.sourcedir,
+                            parameters=postbase.PARAMETERS
+                        ),
+                        arguments=postproc_arguments
+                    )
+                    # Update the rpost-processing workflow run state if it is
+                    # no longer pending for execution.
+                    if not postproc_state.is_pending():
                         self.run_manager.update_run(
                             run_id=postproc_run.identifier,
                             state=postproc_state
                         )
-                        # Remove the temporary input folder
-                        shutil.rmtree(datadir)
-        self.run_manager.update_run(run_id=run_id, state=state)
+                    # Remove the temporary input folder
+                    shutil.rmtree(datadir)
+        else:
+            self.run_manager.update_run(run_id=run_id, state=state)

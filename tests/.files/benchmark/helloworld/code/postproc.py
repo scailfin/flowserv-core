@@ -1,6 +1,5 @@
-"""Analytics code for the adopted hello workd Demo. Reads a text file (as
-produced by the helloworld.py code) and outputs the average number of characters
-per line and the number of characters in the line with the most characters.
+"""Post-processing code for hello workd Demo. This code is included with
+flowServ for testing purposes only.
 """
 
 from __future__ import absolute_import, division, print_function
@@ -11,30 +10,21 @@ import os
 import json
 import sys
 
+from flowserv.service.postproc.client import Runs
+
+import flowserv.core.util as util
+
 
 def main(rundir, outputfile):
     """Write greeting for every name in a given input file to the output file.
     The optional waiting period delays the output between each input name.
 
     """
-    # Count number of lines, characters, and keep track of the longest line
-    max_line = ''
-    total_char_count = 0
-    line_count = 0
-    with open(inputfile, 'r') as f:
-        for line in f:
-            line = line.strip()
-            line_length = len(line)
-            total_char_count += line_length
-            line_count += 1
-            if line_length > len(max_line):
-                max_line = line
-    # Create results object
-    results = {
-        'avg_count': total_char_count / line_count,
-        'max_len': len(max_line),
-        'max_line': max_line
-    }
+    # Read avg_count for all runs in the ranking
+    results = list()
+    for run in Runs(rundir):
+        doc = util.read_object(filename=run.get_file('results/analytics.json'))
+        results.append(doc['avg_count'])
     # Write analytics results. Ensure that output directory exists:
     # influenced by http://stackoverflow.com/a/12517490
     if not os.path.exists(os.path.dirname(outputfile)):
