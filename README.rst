@@ -8,7 +8,10 @@ Reproducible and Reusable Data Analysis Workflow Server
 .. image:: https://github.com/scailfin/rob-core/workflows/build/badge.svg
     :target: https://github.com/scailfin/rob-core/actions?query=workflow%3A%22build%22
 
+.. image:: https://codecov.io/gh/scailfin/rob-core/branch/flowserv/graph/badge.svg
+    :target: https://codecov.io/gh/scailfin/rob-core
 
+    
 
 .. figure:: https://github.com/scailfin/rob-core/blob/flowserv/docs/figures/logo.png
     :align: center
