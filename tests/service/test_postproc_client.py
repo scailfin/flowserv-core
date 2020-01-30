@@ -97,4 +97,5 @@ def test_workflow_postproc_client(tmpdir):
     assert [r.run_id for r in ranking] == [r.identifier for r in runs]
     for run in runs:
         assert run.get_file('results/analytics.json') is not None
+        assert os.path.isfile(run.get_file('results/analytics.json'))
         assert run.get_file('results/greeting.txt') is None

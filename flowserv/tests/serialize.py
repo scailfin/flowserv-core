@@ -126,9 +126,10 @@ def validate_ranking(doc):
     """
     util.validate_doc(
         doc=doc,
-        mandatory=['schema', 'ranking', 'resources', 'links']
+        mandatory=['schema', 'ranking', 'links'],
+        optional=['postproc']
     )
-    validate_links(doc=doc, keys=['self', 'workflow', 'resources'])
+    validate_links(doc=doc, keys=['self', 'workflow'])
     # Schema columns
     for col in doc['schema']:
         util.validate_doc(doc=col, mandatory=['id', 'name', 'type'])
@@ -142,6 +143,7 @@ def validate_ranking(doc):
         util.validate_doc(doc=entry['group'], mandatory=['id', 'name'])
         for result in entry['results']:
             util.validate_doc(doc=result, mandatory=['id', 'value'])
+
 
 # -- Runs ---------------------------------------------------------------------
 
@@ -159,7 +161,7 @@ def validate_run_handle(doc, state):
     ------
     ValueError
     """
-    labels = ['id', 'state', 'createdAt', 'links', 'arguments', 'parameters']
+    labels = ['id', 'state', 'createdAt', 'links', 'arguments']
     if state == st.STATE_RUNNING:
         labels.append('startedAt')
     elif state in [st.STATE_ERROR, st.STATE_CANCELED]:
@@ -170,9 +172,10 @@ def validate_run_handle(doc, state):
         labels.append('startedAt')
         labels.append('finishedAt')
         labels.append('resources')
-    util.validate_doc(doc=doc, mandatory=labels)
-    for p in doc['parameters']:
-        validate_parameter(p)
+    util.validate_doc(doc=doc, mandatory=labels, optional=['parameters'])
+    if 'parameters' in doc:
+        for p in doc['parameters']:
+            validate_parameter(p)
     assert doc['state'] == state
     keys = ['self']
     if state in st.ACTIVE_STATES:
@@ -333,7 +336,7 @@ def validate_para_module(doc):
     util.validate_doc(doc=doc, mandatory=['id', 'name', 'index'])
 
 
-def validate_workflow_handle(doc, has_optional):
+def validate_workflow_handle(doc, has_optional=False):
     """Validate serialization of a workflow handle. Here we distinguish between
     handles that have optional elements (description and instructions) and
     those that have not.
@@ -342,7 +345,7 @@ def validate_workflow_handle(doc, has_optional):
     ----------
     doc: dict
         Workflow handle serialization
-    has_optional: bool
+    has_optional: bool, optional
         Flag indicating whether the handle should contain description and
         instruction elements
 
@@ -353,8 +356,12 @@ def validate_workflow_handle(doc, has_optional):
     mandatory = ['id', 'name', 'links', 'parameters', 'modules']
     if has_optional:
         mandatory = mandatory + ['description', 'instructions']
-    util.validate_doc(doc=doc, mandatory=mandatory)
+    util.validate_doc(doc=doc, mandatory=mandatory, optional=['postproc'])
     validate_links(doc=doc, keys=['self', 'ranking', 'groups:create'])
+    # Validate the post-processing run handle if present
+    if 'postproc' in doc:
+        postproc = doc['postproc']
+        validate_run_handle(doc=postproc, state=postproc['state'])
 
 
 def validate_workflow_listing(doc):

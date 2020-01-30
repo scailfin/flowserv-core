@@ -125,38 +125,6 @@ class UrlFactory(object):
         """
         return self.get_group(group_id)
 
-    def download_workflow_archive(self, workflow_id):
-        """Url to GET a workflow resource archive.
-
-        Parameters
-        ----------
-        workflow_id: string
-            Unique workflow identifier
-
-        Returns
-        -------
-        string
-        """
-        return self.get_workflow(workflow_id) + '/downloads/archive'
-
-    def download_workflow_resource(self, workflow_id, resource_id):
-        """Url to GET a workflow resource.
-
-        Parameters
-        ----------
-        workflow_id: string
-            Unique workflow identifier
-        resource_id: string
-            Unique resource identifier
-
-        Returns
-        -------
-        string
-        """
-        base_url = self.get_workflow(workflow_id)
-        url_suffix = '/downloads/resources/{}'.format(resource_id)
-        return base_url + url_suffix
-
     def download_file(self, group_id, file_id):
         """Url to GET a previously uploaded file.
 

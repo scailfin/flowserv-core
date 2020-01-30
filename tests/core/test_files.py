@@ -15,6 +15,7 @@ from datetime import datetime
 
 from flowserv.core.files import FileDescriptor, FileHandle, InputFile
 
+import flowserv.core.error as err
 import flowserv.core.util as util
 
 
@@ -66,7 +67,7 @@ def test_file_handle(tmpdir):
     dh.delete()
     assert not os.path.isdir(dh.path)
     # Error if the file does not exist
-    with pytest.raises(OSError):
+    with pytest.raises(err.UnknownFileError):
         FileHandle(filename=os.path.join(str(tmpdir), 'not-myfile.json'))
 
 

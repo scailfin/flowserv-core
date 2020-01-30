@@ -150,7 +150,7 @@ def test_prepare_inputs_for_local_run(tmpdir):
     template = wf.get_template()
     shutil.rmtree(run_dir)
     os.makedirs(run_dir)
-    with pytest.raises(IOError):
+    with pytest.raises(err.UnknownFileError):
         i_files = template.workflow_spec.get('inputs', {}).get('files', [])
         files = tp.get_upload_files(
             template=template,

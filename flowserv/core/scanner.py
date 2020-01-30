@@ -12,8 +12,10 @@ methods that are used to convert input values into the different data types
 that are supported for parameter declarations.
 """
 
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
 from builtins import input
+
+import flowserv.core.util as util
 
 
 class Scanner(object):
@@ -143,7 +145,7 @@ class Scanner(object):
 # Token Reader
 # ------------------------------------------------------------------------------
 
-class TokenReader(metaclass=ABCMeta):
+class TokenReader(util.ABC):
     """Abstract token reader class that is used by the scanner to get the next
     input token.
     """

@@ -13,10 +13,12 @@ connection string that contains all the information necessary to establish a
 database connection.
 """
 
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
+
+import flowserv.core.util as util
 
 
-class DatabaseConnector(metaclass=ABCMeta):
+class DatabaseConnector(util.ABC):
     """The database connector defines the interface to open a connection to the
     database system that is used by the application. There should be different
     implementations of this class for different database systems.

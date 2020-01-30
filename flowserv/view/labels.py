@@ -28,6 +28,7 @@ DESCRIPTION = 'description'
 INSTRUCTIONS = 'instructions'
 MODULES = 'modules'
 PARAMETERS = 'parameters'
+POSTPROC = 'postproc'
 RESOURCES = 'resources'
 
 # Workflow leaderboard
@@ -38,7 +39,7 @@ SCHEMA = 'schema'
 GROUP = 'group'
 VALUE = 'value'
 
-# Benchmark runs
+# Workflow runs
 ARGUMENTS = 'arguments'
 AS = 'as'
 MESSAGES = 'messages'

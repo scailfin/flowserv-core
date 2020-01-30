@@ -134,7 +134,7 @@ def parameter_declaration(
         identifier, name=None, data_type=DT_STRING, description=None, index=0,
         required=True, values=None, parent=None, default_value=None,
         module=None, as_const=None
-    ):
+):
     """Create a dictionary that contains a module parameter specification.
 
     Raises InvalidParameterError if an invalid data type is given or if the

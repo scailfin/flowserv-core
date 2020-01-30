@@ -115,52 +115,6 @@ paths:
           description: "Invalid sort statement"
         404:
           description: "Unknown workflow"
-  /workflows/{workflowId}/downloads/archive:
-    get:
-      tags:
-      - "workflow"
-      summary: "Download resource file archive"
-      description: "Download a tar archive containing all workflow evaluation files"
-      operationId: "downloadResourceArchive"
-      produces:
-      - "application/gzip"
-      parameters:
-      - in: "path"
-        name: "workflowId"
-        description: "Unique workflow identifier"
-        required: true
-        type: string
-      responses:
-        200:
-          description: "File"
-        404:
-          description: "Unknown workflow resource"
-  /workflows/{workflowId}/downloads/resources/{resourceId}:
-    get:
-      tags:
-      - "workflow"
-      summary: "Download resource file"
-      description: "Download a workflow evaluation resource file"
-      operationId: "downloadResource"
-      produces:
-      - "text/csv"
-      - "image/png"
-      parameters:
-      - in: "path"
-        name: "workflowId"
-        description: "Unique workflow identifier"
-        required: true
-        type: string
-      - in: "path"
-        name: "resourceId"
-        description: "Unique resource identifier"
-        required: true
-        type: string
-      responses:
-        200:
-          description: "File"
-        404:
-          description: "Unknown workflow resource"
 # -- User Groups --------------------------------------------------------------
   /workflows/{workflowId}/groups:
     get:
@@ -965,7 +919,6 @@ definitions:
     description: "Handle containing all information for a workflow run"
     required:
     - id
-    - parameters
     - arguments
     - state
     - links
@@ -1208,7 +1161,25 @@ definitions:
       parameters:
         type: array
         items:
-          $ref: '#/definitions/WorkflowParameter'
+          $ref: "#/definitions/WorkflowParameter"
+      modules:
+        type: array
+        items:
+          type: object
+          required:
+          - id
+          - name
+          - index
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+            index:
+              type: number
+              format: int64
+      postproc:
+        $ref: "#/definitions/RunHandle"
       links:
         $ref: "#/definitions/HATEOASLinks"
   WorkflowLeaderboard:

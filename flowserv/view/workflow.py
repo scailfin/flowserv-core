@@ -8,6 +8,7 @@
 
 """Interface to serialize workflow resource objects."""
 
+from flowserv.view.run import RunSerializer
 
 import flowserv.view.hateoas as hateoas
 import flowserv.view.labels as labels
@@ -17,7 +18,7 @@ class WorkflowSerializer(object):
     """Serializer for workflow resource objects. Defines the methods that are
     used to serialize workflow descriptors, handles, and listing.
     """
-    def __init__(self, urls):
+    def __init__(self, urls, runs=None):
         """Initialize the reference to the Url factory.
 
         Parameters
@@ -26,6 +27,7 @@ class WorkflowSerializer(object):
             Factory for resource urls
         """
         self.urls = urls
+        self.runs = runs if runs is not None else RunSerializer(urls=urls)
 
     def workflow_descriptor(self, workflow):
         """Get dictionary serialization containing the descriptor of a
@@ -88,7 +90,10 @@ class WorkflowSerializer(object):
                     labels.NAME: m.name,
                     labels.INDEX: m.index
                 } for m in modules]
-        modules
+        # Add serialization for post-processing workflow if present
+        if workflow.postproc_run is not None:
+            postproc_run = workflow.postproc_run
+            obj[labels.POSTPROC] = self.runs.run_handle(run=postproc_run)
         return obj
 
     def workflow_leaderboard(self, workflow, ranking):
@@ -130,24 +135,7 @@ class WorkflowSerializer(object):
             hateoas.SELF: self.urls.get_leaderboard(w_id),
             hateoas.WORKFLOW: self.urls.get_workflow(w_id),
         }
-        # Serialize available workflow post-processing resources
-        resources = list()
-        current_resources = workflow.resources
-        if current_resources is not None:
-            for r in current_resources:
-                url = self.urls.download_workflow_resource(
-                    workflow_id=w_id,
-                    resource_id=r.identifier
-                )
-                resources.append({
-                    labels.ID: r.identifier,
-                    labels.NAME: r.name,
-                    labels.CAPTION: r.caption,
-                    labels.LINKS: hateoas.serialize({hateoas.SELF: url})
-                })
-            archive_url = self.urls.download_workflow_archive(w_id)
-            links[hateoas.RESOURCES] = archive_url
-        return {
+        obj = {
             labels.SCHEMA: [{
                     labels.ID: c.identifier,
                     labels.NAME: c.name,
@@ -155,9 +143,13 @@ class WorkflowSerializer(object):
                 } for c in ranking.columns
             ],
             labels.RANKING: entries,
-            labels.RESOURCES: resources,
             labels.LINKS: hateoas.serialize(links)
         }
+        # Add serialization for optional workflow post-processing run handle
+        if workflow.postproc_run is not None:
+            postproc_run = workflow.postproc_run
+            obj[labels.POSTPROC] = self.runs.run_handle(run=postproc_run)
+        return obj
 
     def workflow_listing(self, workflows):
         """Get dictionary serialization of a workflow listing.

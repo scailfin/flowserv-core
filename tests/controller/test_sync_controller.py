@@ -162,7 +162,7 @@ def test_run_with_missing_file(tmpdir):
     assert state.is_error()
     assert len(state.messages) > 0
     # An error is raised if the input file does not exist
-    with pytest.raises(IOError):
+    with pytest.raises(err.UnknownFileError):
         engine.exec_workflow(
             run=run,
             template=template,

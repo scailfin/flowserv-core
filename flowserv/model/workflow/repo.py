@@ -18,10 +18,10 @@ import os
 import shutil
 
 from flowserv.model.parameter.base import ParameterGroup
+from flowserv.model.run.manager import RunManager
 from flowserv.model.template.base import WorkflowTemplate
 from flowserv.model.template.schema import ResultSchema
 from flowserv.model.workflow.base import WorkflowDescriptor, WorkflowHandle
-from flowserv.model.workflow.resource import FSObject
 
 import flowserv.core.error as err
 import flowserv.core.util as util
@@ -355,26 +355,11 @@ class WorkflowRepository(object):
         description = row['description']
         instructions = row['instructions']
         postproc_id = row['postproc_id']
-        # Get resource handles for current post-processing resources
-        resources = list()
+        # Get handles for post-processing workflow run
+        postproc_run = None
         if postproc_id is not None:
-            resourcedir = self.fs.workflow_postprocdir(
-                workflow_id=workflow_id,
-                run_id=postproc_id
-            )
-            sql = (
-                'SELECT resource_id, resource_name '
-                'FROM postproc_resource '
-                'WHERE postproc_id = ?'
-            )
-            for row in self.con.execute(sql, (postproc_id,)).fetchall():
-                resource_name = row['resource_name']
-                fsobj = FSObject(
-                    identifier=row['resource_id'],
-                    name=resource_name,
-                    filename=os.path.join(resourcedir, resource_name)
-                )
-                resources.append(fsobj)
+            run_manager = RunManager(con=self.con, fs=self.fs)
+            postproc_run = run_manager.get_run(run_id=postproc_id)
         # Create workflow template
         parameters = None
         if row['parameters'] is not None:
@@ -410,7 +395,7 @@ class WorkflowRepository(object):
             description=description,
             instructions=instructions,
             template=template,
-            resources=resources
+            postproc_run=postproc_run
         )
 
     def list_workflows(self):

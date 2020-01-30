@@ -20,6 +20,7 @@ import mimetypes
 import os
 import shutil
 
+import flowserv.core.error as err
 import flowserv.core.util as util
 
 
@@ -83,13 +84,17 @@ class FileHandle(FileDescriptor):
 
         Raises
         ------
-        OSError
+        flowserv.core.error.UnknownFileError
         """
-        super(FileHandle, self).__init__(
-            identifier=identifier,
-            name=name if name is not None else os.path.basename(filename),
-            created_at=datetime.utcfromtimestamp(os.path.getmtime(filename))
-        )
+        try:
+            ts = os.path.getmtime(filename)
+            super(FileHandle, self).__init__(
+                identifier=identifier,
+                name=name if name is not None else os.path.basename(filename),
+                created_at=datetime.utcfromtimestamp(ts)
+            )
+        except (IOError, OSError):
+            raise err.UnknownFileError(filename)
         self.path = filename
         # Guess the mime-type from the file name if not given
         if mimetype is not None:

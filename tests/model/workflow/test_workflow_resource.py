@@ -112,7 +112,7 @@ def test_targzip(tmpdir):
     names = list()
     for member in tar.getmembers():
         names.append(member.name)
-    assert len(names) == 21
+    assert len(names) == 23
     assert 'workflow/helloworld/code/analyze.py' in names
     assert 'workflow/helloworld/data/names.txt' in names
     assert 'schema.json' in names

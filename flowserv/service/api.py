@@ -14,6 +14,8 @@ closed properly after every API request has been handled.
 
 from contextlib import contextmanager
 
+import logging
+
 from flowserv.core.db.driver import DatabaseDriver
 from flowserv.model.group.manager import WorkflowGroupManager
 from flowserv.model.ranking.manager import RankingManager
@@ -75,11 +77,13 @@ class API(object):
         """
         self.con = con
         self.urls = urls if urls is not None else UrlFactory()
+        logging.info('API base url {}'.format(self.urls.base_url))
         # Use the global backend if no engine is specified
         self.engine = engine if engine is not None else backend
         # Ensure that the API base directory exists
         fsdir = basedir if basedir is not None else config.API_BASEDIR()
         self.fs = WorkflowFileSystem(util.create_dir(fsdir, abs=True))
+        logging.info('API base directory {}'.format(fsdir))
         # Keep an instance of objects that may be used by multiple components
         # of the API. Use the respective property for each of them to ensure
         # that the object is instantiated before access.

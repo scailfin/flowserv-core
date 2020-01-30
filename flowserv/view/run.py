@@ -57,7 +57,7 @@ class RunSerializer(object):
         }
         return doc
 
-    def run_handle(self, run, group):
+    def run_handle(self, run, group=None):
         """Get serialization for a run handle. The run handle extends the run
         descriptor with the run arguments, the parameter declaration taken from
         the workflow group handle (since it may differ from the parameter list
@@ -68,8 +68,8 @@ class RunSerializer(object):
         ----------
         run: flowserv.model.run.base.RunHandle
             Workflow run handle
-        group: flowserv.model.group.base.GroupHandle
-            Workflow group handle
+        group: flowserv.model.group.base.GroupHandle, optional
+            Workflow group handle. Missing for post-processing workflows
 
         Returns
         -------
@@ -83,8 +83,10 @@ class RunSerializer(object):
                 labels.VALUE: run.arguments[key]
             } for key in run.arguments
         ]
-        parameters = group.parameters.values()
-        doc[labels.PARAMETERS] = [p.to_dict() for p in parameters]
+        # Add group specific parameters
+        if group is not None:
+            parameters = group.parameters.values()
+            doc[labels.PARAMETERS] = [p.to_dict() for p in parameters]
         # Add additional information from the run state
         if not run.is_pending():
             doc[labels.STARTED_AT] = run.state.started_at.isoformat()

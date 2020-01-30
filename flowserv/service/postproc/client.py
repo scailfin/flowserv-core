@@ -73,12 +73,12 @@ class Runs(object):
         self.runs = list()
         doc = util.read_object(filename=os.path.join(basedir, base.RUNS_FILE))
         for obj in doc:
-            identifier = obj[base.LABEL_ID]
+            run_id = obj[base.LABEL_ID]
             name = obj[base.LABEL_NAME]
             resources = dict()
             for filename in obj[base.LABEL_RESOURCES]:
-                resources[filename] = os.path.join(basedir, filename)
-            run = Run(identifier=identifier, name=name, resources=resources)
+                resources[filename] = os.path.join(basedir, run_id, filename)
+            run = Run(identifier=run_id, name=name, resources=resources)
             self.runs.append(run)
 
     def __iter__(self):

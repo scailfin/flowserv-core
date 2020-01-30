@@ -15,6 +15,8 @@ dynamically.
 
 """
 
+import logging
+
 import flowserv.config.backend as backend
 import flowserv.config.base as config
 import flowserv.core.error as err
@@ -48,9 +50,12 @@ def init_backend(raise_error=True):
     # controller class. An error is raised if only one of the two environment
     # variables is set.
     if module_name is None and class_name is None:
+        engine = 'flowserv.controller.serial.engine.SerialWorkflowEngine'
+        logging.info('API backend {}'.format(engine))
         from flowserv.controller.serial.engine import SerialWorkflowEngine
         return SerialWorkflowEngine()
     elif module_name is not None and class_name is not None:
+        logging.info('API backend {}.{}'.format(module_name, class_name))
         from importlib import import_module
         module = import_module(module_name)
         return getattr(module, class_name)()

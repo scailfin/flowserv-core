@@ -64,7 +64,7 @@ def test_workflow_handle():
     assert not wf.has_instructions()
     assert wf.instructions is None
     assert wf.get_instructions() == ''
-    assert len(wf.resources) == 0
+    assert wf.postproc_run is None
     # Get modified workflow template
     wf = WorkflowHandle(
         identifier='ABC',

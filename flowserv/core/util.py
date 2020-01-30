@@ -12,14 +12,22 @@ directories, (iii) validate dictionaries, and (iv) to create of unique
 identifiers.
 """
 
+import abc
 import datetime
 import errno
 import json
 import os
 import shutil
 import time
+import traceback
 import uuid
 import yaml
+
+
+"""ABCMeta alternative."""
+# compatible with Python 2 *and* 3:
+# based on https://stackoverflow.com/questions/35673474/using-abc-abcmeta-in-a-way-it-is-compatible-both-with-python-2-7-and-python-3-5
+ABC = abc.ABCMeta('ABC', (object,), {'__slots__': ()})
 
 
 """Identifier for supported data formats."""
@@ -191,6 +199,25 @@ def read_object(filename, format=None):
             return json.load(f)
     else:
         raise ValueError('unknown data format \'' + str(format) + '\'')
+
+
+def stacktrace(ex):
+    """Get list of strings representing the stack trace for a given exception.
+
+    Parameters
+    ----------
+    ex: Exception
+        Exception that was raised by flowServ code
+
+    Returns
+    -------
+    list(string)
+    """
+    try:
+        st = traceback.format_exception(type(ex), ex, ex.__traceback__)
+    except (AttributeError, TypeError):
+        st = [str(ex)]
+    return [line.strip() for line in st]
 
 
 def to_datetime(timestamp):

@@ -11,6 +11,9 @@ serial workflow specification. This controller allows execution in workflow
 steps within separate sub-processes.
 """
 
+from __future__ import print_function
+
+import logging
 import os
 import subprocess
 
@@ -63,7 +66,7 @@ class SerialWorkflowEngine(WorkflowController):
         verbose: bool, optional
             Print command strings to STDOUT during workflow execution
         """
-        self.exec_func = exec_func if not exec_func is None else run_workflow
+        self.exec_func = exec_func if exec_func is not None else run_workflow
         # Set the is_async flag. If no value is given the default value is set
         # from the respective environment variable
         if is_async is not None:
@@ -151,24 +154,23 @@ class SerialWorkflowEngine(WorkflowController):
         # copied, (ii) the expanded commands that represent the workflow steps,
         # and (iii) the list of output files.
         wf = SerialWorkflow(template, arguments)
-        # Copy all necessary files to the run folder
         try:
+            # Copy all necessary files to the run folder
             util.copy_files(files=wf.upload_files(), target_dir=run.rundir)
-        except (OSError, IOError) as ex:
-            return state.error(messages=[str(ex)])
-        # Create top-level folder for all expected result files (if it does not
-        # exist already)
-        output_files = wf.output_files()
-        for filename in output_files:
-            dirname = os.path.dirname(filename)
-            if dirname:
-                # Create the directory if it does not exist
-                out_dir = os.path.join(run.rundir, dirname)
-                if not os.path.isdir(out_dir):
-                    os.makedirs(out_dir)
-        # Start a new process to run the workflow. Make sure to catch all
-        # exceptions to set the run state properly
-        try:
+            # Create top-level folder for all expected result files (if it does not
+            # exist already)
+            output_files = wf.output_files()
+            for filename in output_files:
+                dirname = os.path.dirname(filename)
+                if dirname:
+                    # Create the directory if it does not exist
+                    out_dir = os.path.join(run.rundir, dirname)
+                    if not os.path.isdir(out_dir):
+                        os.makedirs(out_dir)
+            # Get list of commands to execute.
+            commands = wf.commands()
+            # Start a new process to run the workflow. Make sure to catch all
+            # exceptions to set the run state properly
             state = state.start()
             if RUN_ASYNC(run_async=run_async, is_async=self.is_async):
                 # Run steps asynchronously in a separate process
@@ -187,7 +189,7 @@ class SerialWorkflowEngine(WorkflowController):
                         run.rundir,
                         state,
                         output_files,
-                        wf.commands(),
+                        commands,
                         self.verbose
                     ),
                     callback=task_callback_function
@@ -200,13 +202,14 @@ class SerialWorkflowEngine(WorkflowController):
                     run.rundir,
                     state,
                     output_files,
-                    wf.commands(),
+                    commands,
                     self.verbose
                 )
                 return serialize.deserialize_state(state_dict)
         except Exception as ex:
             # Set the workflow runinto an ERROR state
-            return state.error(messages=[str(ex)])
+            logging.error(ex)
+            return state.error(messages=util.stacktrace(ex))
 
     def modify_template(self, template, parameters):
         """Modify a the workflow specification in a given template by adding
@@ -280,21 +283,21 @@ def callback_function(result, lock, tasks):
     tasks: dict
         Task index of the backend
     """
+    run_id, state_dict = result
     with lock:
-        run_id, state_dict = result
         if run_id in tasks:
             result_state = serialize.deserialize_state(state_dict)
             # Close the pool and remove the entry from the task index
             pool = tasks[run_id]
             pool.close()
             del tasks[run_id]
-            # Get an instance of the API to update the run state.
-            from flowserv.service.api import service
-            with service() as api:
-                api.runs().update_run(
-                    run_id=run_id,
-                    state=result_state
-                )
+    # Get an instance of the API to update the run state.
+    from flowserv.service.api import service
+    with service() as api:
+        api.runs().update_run(
+            run_id=run_id,
+            state=result_state
+        )
 
 
 def run_workflow(run_id, rundir, state, output_files, steps, verbose):
@@ -324,6 +327,7 @@ def run_workflow(run_id, rundir, state, output_files, steps, verbose):
     -------
     (string, dict)
     """
+    logging.debug('start run {}'.format(run_id))
     try:
         # The serial controller ignores the command environments. We start by
         # creating a list of all command statements
@@ -361,7 +365,9 @@ def run_workflow(run_id, rundir, state, output_files, steps, verbose):
                         stderr=subprocess.STDOUT
                     )
                 except subprocess.CalledProcessError as ex:
-                    result_state = state.error(messages=[str(ex)])
+                    print('error {}'.format(ex))
+                    logging.error(ex)
+                    result_state = state.error(messages=util.stacktrace(ex))
                     return run_id, serialize.serialize_state(result_state)
         # Create dictionary of output files
         files = list()
@@ -375,7 +381,9 @@ def run_workflow(run_id, rundir, state, output_files, steps, verbose):
         # Workflow executed successfully
         result_state = state.success(resources=files)
     except Exception as ex:
-        result_state = state.error(messages=[str(ex)])
+        logging.error(ex)
+        result_state = state.error(messages=util.stacktrace(ex))
+    logging.debug('finished run {} = {}'.format(run_id, result_state.type_id))
     return run_id, serialize.serialize_state(result_state)
 
 

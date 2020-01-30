@@ -9,6 +9,7 @@ import errno
 import os
 import json
 import sys
+import time
 
 from flowserv.service.postproc.client import Runs
 
@@ -25,6 +26,9 @@ def main(rundir, outputfile):
     for run in Runs(rundir):
         doc = util.read_object(filename=run.get_file('results/analytics.json'))
         results.append(doc['avg_count'])
+        # Delay execution to allow for testing running post-processing
+        # workflows
+        time.sleep(1)
     # Write analytics results. Ensure that output directory exists:
     # influenced by http://stackoverflow.com/a/12517490
     if not os.path.exists(os.path.dirname(outputfile)):
@@ -41,7 +45,7 @@ if __name__ == '__main__':
     args = sys.argv[1:]
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("-i", "--runs", required=True)
+    parser.add_argument("-r", "--runs", required=True)
     parser.add_argument("-o", "--outputfile", required=True)
 
     parsed_args = parser.parse_args(args)

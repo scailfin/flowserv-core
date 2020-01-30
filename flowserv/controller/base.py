@@ -26,12 +26,14 @@ The controller is also responsible for retrieving output files and for
 providing access to these files.
 """
 
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
+
+import flowserv.core.util as util
 
 
 # -- Controller Interface -----------------------------------------------------
 
-class WorkflowController(metaclass=ABCMeta):
+class WorkflowController(util.ABC):
     """The workflow controller is used to start execution of workflow templates
     for a given set of template parameter arguments, as well as to poll the
     state of workflow execution and to cancel execution.

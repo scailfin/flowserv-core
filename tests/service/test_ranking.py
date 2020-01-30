@@ -83,5 +83,5 @@ def test_workflow_result_ranking(tmpdir):
         group_ids = [r['group']['id'] for r in ranking['ranking']]
         if reversed:
             group_ids = group_ids[::-1]
-        assert group_ids ==[g_id for g_id, _ in groups]
+        assert group_ids == [g_id for g_id, _ in groups]
         reversed = not reversed

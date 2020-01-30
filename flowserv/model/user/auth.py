@@ -14,14 +14,15 @@ given user can execute a requested action.
 import datetime as dt
 import dateutil.parser
 
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
 
 from flowserv.model.user.base import UserHandle
 
 import flowserv.core.error as err
+import flowserv.core.util as util
 
 
-class Auth(metaclass=ABCMeta):
+class Auth(util.ABC):
     """Base class for authentication and authorization methods. Different
     authorization policies should override the methods of this class.
     """
@@ -111,6 +112,10 @@ class Auth(metaclass=ABCMeta):
         """Test whether the given group or run exists. Raises an error if they
         don't exist or if no parameter or both parameters are given.
 
+        Returns the group identifier for the run. If group_id is given the
+        value is returned as the result. If the run_id is given the group
+        identifier is retrieved as part of the database query.
+
         Parameters
         ----------
         group_id: string, optional
@@ -135,10 +140,13 @@ class Auth(metaclass=ABCMeta):
             sql = 'SELECT group_id FROM workflow_group WHERE group_id = ?'
             if self.con.execute(sql, (group_id,)).fetchone() is None:
                 raise err.UnknownWorkflowGroupError(group_id)
+            return group_id
         else:
-            sql = 'SELECT run_id FROM workflow_run WHERE run_id = ?'
-            if self.con.execute(sql, (run_id,)).fetchone() is None:
+            sql = 'SELECT run_id, group_id FROM workflow_run WHERE run_id = ?'
+            row = self.con.execute(sql, (run_id,)).fetchone()
+            if row is None:
                 raise err.UnknownRunError(run_id)
+            return row['group_id']
 
 
 class DefaultAuthPolicy(Auth):
@@ -180,24 +188,21 @@ class DefaultAuthPolicy(Auth):
         flowserv.core.error.UnknownRunError
         flowserv.core.error.UnknownWorkflowGroupError
         """
-        super(DefaultAuthPolicy, self).group_or_run_exists(
+        # Get the group identifier. For post-processing runs the group does
+        # not exists. Every user can access results from post-processing runs.
+        run_group = super(DefaultAuthPolicy, self).group_or_run_exists(
             group_id=group_id,
             run_id=run_id
         )
-        if group_id is not None:
-            sql = (
-                'SELECT group_id FROM group_member '
-                'WHERE group_id = ? AND user_id = ?'
-            )
-            params = (group_id, user_id)
-        else:
-            sql = (
-                'SELECT r.run_id '
-                'FROM workflow_run r, group_member g '
-                'WHERE r.group_id = g.group_id AND '
-                'r.run_id = ? AND user_id = ?'
-            )
-            params = (run_id, user_id)
+        if run_group is None:
+            return True
+        # Check if the user is a member of the run group.
+        sql = (
+            'SELECT group_id '
+            'FROM group_member '
+            'WHERE group_id = ? AND user_id = ?'
+        )
+        params = (run_group, user_id)
         return self.con.execute(sql, params).fetchone() is not None
 
 
