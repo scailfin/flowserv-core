@@ -61,14 +61,14 @@ def add_workflow(
     with service() as api:
         try:
             # Get the workflow repository instance from the API
-            repo = api.workflow_repository()
+            repo = api.workflow_repository
             wf = repo.create_workflow(
                 name=name,
                 description=description,
                 instructions=read_instructions(instructions),
-                src_dir=src,
-                src_repo_url=url,
-                spec_file=specfile
+                sourcedir=src,
+                repourl=url,
+                specfile=specfile
             )
             click.echo('export FLOWSERV_WORKFLOW={}'.format(wf.identifier))
         except (err.ConstraintViolationError, ValueError) as ex:
@@ -83,7 +83,7 @@ def delete_workflow(identifier):
     """Delete a given workflow."""
     with service() as api:
         try:
-            repo = api.workflow_repository()
+            repo = api.workflow_repository
             repo.delete_workflow(identifier)
             click.echo('deleted workflow {}'.format(identifier))
         except err.UnknownObjectError as ex:
@@ -96,7 +96,7 @@ def delete_workflow(identifier):
 def list_workflows():
     """List all workflows."""
     with service() as api:
-        repo = api.workflow_repository()
+        repo = api.workflow_repository
         count = 0
         for bm in repo.list_workflows():
             if count != 0:
@@ -139,7 +139,7 @@ def update_workflow(identifier, name=None, description=None, instructions=None):
         click.echo('nothing to update')
     else:
         with service() as api:
-            repo = api.workflow_repository()
+            repo = api.workflow_repository
             try:
                 repo.update_workflow(
                     workflow_id=identifier,

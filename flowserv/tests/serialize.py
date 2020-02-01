@@ -318,6 +318,9 @@ def validate_workflow_handle(doc, has_optional=False):
     ------
     ValueError
     """
+    # Note: The modules element is optional but it should be contained in all
+    # local test cases. That is the reason why it is in the list of mandatory
+    # elements here.
     mandatory = ['id', 'name', 'parameters', 'modules']
     if has_optional:
         mandatory = mandatory + ['description', 'instructions']
