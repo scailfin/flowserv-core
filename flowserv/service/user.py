@@ -10,30 +10,24 @@
 well as access tokens.
 """
 
-from flowserv.view.user import UserSerializer
-
 
 class UserService(object):
     """Implement methods that handle user login and logout as well as
     registration and activation of new users.
     """
-    def __init__(self, manager, urls=None, serializer=None):
-        """Initialize the user manager that maintains all registered users.
+    def __init__(self, manager, serializer):
+        """Initialize the user manager that maintains all registered users and
+        the resource serializer.
 
         Parameters
         ----------
         manager: flowserv.model.user.manager.UserManager
             Manager for registered users
-        urls: flowserv.view.route.UrlFactory
-            Factory for API resource Urls
-        serializer: flowserv.view.user.UserSerializer, optional
+        serializer: flowserv.view.user.UserSerializer
             Override the default serializer
         """
         self.manager = manager
-        self.urls = urls
         self.serialize = serializer
-        if self.serialize is None:
-            self.serialize = UserSerializer(self.urls)
 
     def activate_user(self, user_id):
         """Activate a new user with the given identifier.
@@ -138,10 +132,7 @@ class UserService(object):
             password=password,
             verify=verify
         )
-        if verify:
-            return self.serialize.registered_user(user)
-        else:
-            return self.serialize.user(user)
+        return self.serialize.user(user)
 
     def request_password_reset(self, username):
         """Request to reset the password for the user with the given name. The

@@ -8,7 +8,6 @@
 
 """Helper methods to test object serialization."""
 
-import flowserv.view.hateoas as hateoas
 import flowserv.core.util as util
 import flowserv.model.workflow.state as st
 
@@ -29,9 +28,8 @@ def validate_file_handle(doc):
     """
     util.validate_doc(
         doc=doc,
-        mandatory=['id', 'name', 'createdAt', 'size', 'links']
+        mandatory=['id', 'name', 'createdAt', 'size']
     )
-    validate_links(doc=doc, keys=['self:download', 'self:delete'])
 
 
 def validate_file_listing(doc, count):
@@ -49,9 +47,8 @@ def validate_file_listing(doc, count):
     ------
     ValueError
     """
-    util.validate_doc(doc=doc, mandatory=['files', 'links'])
+    util.validate_doc(doc=doc, mandatory=['files'])
     assert len(doc['files']) == count
-    validate_links(doc=doc, keys=['self'])
     for fh in doc['files']:
         validate_file_handle(fh)
 
@@ -72,19 +69,7 @@ def validate_group_handle(doc):
     """
     util.validate_doc(
         doc=doc,
-        mandatory=[
-            'id',
-            'name',
-            'workflow',
-            'links',
-            'members',
-            'parameters',
-            'files'
-        ]
-    )
-    validate_links(
-        doc=doc,
-        keys=['self', 'workflow', 'self:upload', 'self:submit']
+        mandatory=['id', 'name', 'workflow', 'members', 'parameters', 'files']
     )
 
 
@@ -100,14 +85,9 @@ def validate_group_listing(doc):
     ------
     ValueError
     """
-    util.validate_doc(doc=doc, mandatory=['groups', 'links'])
-    validate_links(doc, keys=['self'])
+    util.validate_doc(doc=doc, mandatory=['groups'])
     for g in doc['groups']:
-        util.validate_doc(doc=g, mandatory=['id', 'name', 'workflow', 'links'])
-        validate_links(
-            doc=g,
-            keys=['self', 'workflow', 'self:upload', 'self:submit']
-        )
+        util.validate_doc(doc=g, mandatory=['id', 'name', 'workflow'])
 
 
 # -- Rankings -----------------------------------------------------------------
@@ -126,10 +106,9 @@ def validate_ranking(doc):
     """
     util.validate_doc(
         doc=doc,
-        mandatory=['schema', 'ranking', 'links'],
+        mandatory=['schema', 'ranking'],
         optional=['postproc']
     )
-    validate_links(doc=doc, keys=['self', 'workflow'])
     # Schema columns
     for col in doc['schema']:
         util.validate_doc(doc=col, mandatory=['id', 'name', 'type'])
@@ -161,7 +140,7 @@ def validate_run_handle(doc, state):
     ------
     ValueError
     """
-    labels = ['id', 'state', 'createdAt', 'links', 'arguments']
+    labels = ['id', 'state', 'createdAt', 'arguments']
     if state == st.STATE_RUNNING:
         labels.append('startedAt')
     elif state in [st.STATE_ERROR, st.STATE_CANCELED]:
@@ -185,9 +164,7 @@ def validate_run_handle(doc, state):
     if state == st.STATE_SUCCESS:
         keys.append('results')
         for r in doc['resources']:
-            util.validate_doc(doc=r, mandatory=['id', 'name', 'links'])
-            validate_links(doc=r, keys=['self'])
-    validate_links(doc=doc, keys=keys)
+            util.validate_doc(doc=r, mandatory=['id', 'name'])
 
 
 def validate_run_listing(doc):
@@ -202,12 +179,11 @@ def validate_run_listing(doc):
     ------
     ValueError
     """
-    util.validate_doc(doc=doc, mandatory=['runs', 'links'])
-    validate_links(doc=doc, keys=['self', 'submit'])
+    util.validate_doc(doc=doc, mandatory=['runs'])
     for r in doc['runs']:
         util.validate_doc(
             doc=r,
-            mandatory=['id', 'state', 'createdAt', 'links']
+            mandatory=['id', 'state', 'createdAt']
         )
 
 
@@ -227,12 +203,8 @@ def validate_service_descriptor(doc):
     """
     util.validate_doc(
         doc=doc,
-        mandatory=['name', 'version', 'validToken', 'links'],
+        mandatory=['name', 'version', 'validToken'],
         optional=['username']
-    )
-    validate_links(
-        doc=doc,
-        keys=['self', 'login', 'logout', 'register', 'workflows', 'groups']
     )
 
 
@@ -270,16 +242,10 @@ def validate_user_handle(doc, login, inactive=False):
     ------
     ValueError
     """
-    mandatory = ['id', 'username', 'links']
+    mandatory = ['id', 'username']
     if login:
         mandatory.append('token')
     util.validate_doc(doc=doc, mandatory=mandatory)
-    if login:
-        validate_links(doc=doc, keys=['whoami', 'self:logout'])
-    elif inactive:
-        validate_links(doc=doc, keys=['self:activate'])
-    else:
-        validate_links(doc=doc, keys=['self:login'])
 
 
 def validate_user_listing(doc):
@@ -294,8 +260,7 @@ def validate_user_listing(doc):
     ------
     ValueError
     """
-    util.validate_doc(doc=doc, mandatory=['users', 'links'])
-    validate_links(doc=doc, keys=['self'])
+    util.validate_doc(doc=doc, mandatory=['users'])
     for user in doc['users']:
         util.validate_doc(doc=user, mandatory=['id', 'username'])
 
@@ -353,11 +318,10 @@ def validate_workflow_handle(doc, has_optional=False):
     ------
     ValueError
     """
-    mandatory = ['id', 'name', 'links', 'parameters', 'modules']
+    mandatory = ['id', 'name', 'parameters', 'modules']
     if has_optional:
         mandatory = mandatory + ['description', 'instructions']
     util.validate_doc(doc=doc, mandatory=mandatory, optional=['postproc'])
-    validate_links(doc=doc, keys=['self', 'ranking', 'groups:create'])
     # Validate the post-processing run handle if present
     if 'postproc' in doc:
         postproc = doc['postproc']
@@ -376,32 +340,10 @@ def validate_workflow_listing(doc):
     ------
     ValueError
     """
-    util.validate_doc(doc=doc, mandatory=['workflows', 'links'])
-    validate_links(doc=doc, keys=['self'])
+    util.validate_doc(doc=doc, mandatory=['workflows'])
     for wf in doc['workflows']:
         util.validate_doc(
             doc=wf,
-            mandatory=['id', 'name', 'links'],
+            mandatory=['id', 'name'],
             optional=['description', 'instructions']
         )
-        validate_links(doc=wf, keys=['self', 'ranking', 'groups:create'])
-
-
-# -- Helper Functions ---------------------------------------------------------
-
-def validate_links(doc, keys):
-    """Ensure that the given list of HATEOAS references contains the mandatory
-    relationship elements.
-
-    Parameters
-    ----------
-    doc: dict
-        Dictionary serialization of a HATEOAS reference listing
-    keys: list(string)
-        List of mandatory relationship keys in the reference set
-    """
-    # We assume that the given document contains the links key
-    util.validate_doc(
-        doc=hateoas.deserialize(doc['links']),
-        mandatory=keys
-    )

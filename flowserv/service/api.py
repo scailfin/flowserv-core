@@ -31,7 +31,7 @@ from flowserv.service.run import RunService
 from flowserv.service.server import Service
 from flowserv.service.user import UserService
 from flowserv.service.workflow import WorkflowService
-from flowserv.view.route import UrlFactory
+from flowserv.view.factory import DefaultView
 
 import flowserv.config.api as config
 import flowserv.core.error as err
@@ -57,7 +57,7 @@ class API(object):
     - users()
     - workflows()
     """
-    def __init__(self, con, urls=None, engine=None, basedir=None, auth=None):
+    def __init__(self, con, engine=None, basedir=None, auth=None, view=None):
         """Initialize the database connection, URL factory, and the file system
         path generator. All other internal components are created when they are
         acccessed for the first time
@@ -66,28 +66,28 @@ class API(object):
         ----------
         con: DB-API 2.0 database connection
             Connection to underlying database
-        urls: flowserv.view.route.UrlFactory, optional
-            Factory for API resource Urls
         engine: flowserv.controller.base.WorkflowController, optional
             Workflow controller used by the API for workflow execution
         basedir: string, optional
             Path to the base directory for the API
         auth: lowserv.model.user.auth.Auth, optional
             Authentication and authorization policy
+        view: flowserv.view.factory.ViewFactory, optional
+            Factory pattern for resource serializers
         """
         self.con = con
-        self.urls = urls if urls is not None else UrlFactory()
-        logging.info('API base url {}'.format(self.urls.base_url))
         # Use the global backend if no engine is specified
         self.engine = engine if engine is not None else backend
         # Ensure that the API base directory exists
         fsdir = basedir if basedir is not None else config.API_BASEDIR()
         self.fs = WorkflowFileSystem(util.create_dir(fsdir, abs=True))
         logging.info('API base directory {}'.format(fsdir))
+        # Set the serializer factory
+        self.view = view if view is not None else DefaultView()
         # Keep an instance of objects that may be used by multiple components
         # of the API. Use the respective property for each of them to ensure
         # that the object is instantiated before access.
-        self._auth = auth if auth is not None else None
+        self._auth = auth
         self._engine = None
         self._group_manager = None
         self._ranking_manager = None
@@ -158,7 +158,7 @@ class API(object):
             workflow_repo=self.workflow_repository,
             backend=self.engine,
             auth=self.auth,
-            urls=self.urls
+            serializer=self.view.groups()
         )
 
     @property
@@ -205,11 +205,11 @@ class API(object):
             ranking_manager=self.ranking_manager,
             backend=self.engine,
             auth=self.auth,
-            urls=self.urls
+            serializer=self.view.runs()
         )
 
-    def service_descriptor(self, access_token=None):
-        """Get the serialization of the service descriptor. The access token
+    def server(self, access_token=None):
+        """Get API component for the service descriptor. The access token
         is verified to be active and to obtain the user name.
 
         Parameters
@@ -219,13 +219,13 @@ class API(object):
 
         Returns
         -------
-        dict
+        flowserv.service.server.Service
         """
         try:
             username = self.authenticate(access_token).name
         except err.UnauthenticatedAccessError:
             username = None
-        return Service(urls=self.urls).service_descriptor(username=username)
+        return Service(serializer=self.view.server(), username=username)
 
     def uploads(self):
         """Get API service component that provides functionality to access,
@@ -238,7 +238,7 @@ class API(object):
         return UploadFileService(
             group_manager=self.group_manager,
             auth=self.auth,
-            urls=self.urls
+            serializer=self.view.files()
         )
 
     def users(self):
@@ -251,7 +251,7 @@ class API(object):
         if self._users is None:
             self._users = UserService(
                 manager=UserManager(con=self.con),
-                urls=self.urls
+                serializer=self.view.users()
             )
         return self._users
 
@@ -282,7 +282,7 @@ class API(object):
         return WorkflowService(
             workflow_repo=self.workflow_repository,
             ranking_manager=self.ranking_manager,
-            urls=self.urls
+            serializer=self.view.workflows()
         )
 
 

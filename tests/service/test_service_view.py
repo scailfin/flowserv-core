@@ -11,12 +11,12 @@
 import os
 
 from flowserv.service.api import API
-from flowserv.view.route import UrlFactory
 
 import flowserv.config.api as config
 import flowserv.tests.db as db
 import flowserv.tests.serialize as serialize
 import flowserv.version as version
+from flowserv.view.factory import DefaultView
 
 
 """API environment variables that control the base url."""
@@ -38,22 +38,29 @@ def test_service_descriptor(tmpdir):
     os.environ[config.FLOWSERV_API_PORT] = '80'
     con = db.init_db(str(tmpdir)).connect()
     api = API(con=con, basedir=str(tmpdir))
-    r = api.service_descriptor()
+    r = api.server().service_descriptor()
     serialize.validate_service_descriptor(r)
     assert r['name'] == config.DEFAULT_NAME
     assert r['version'] == version.__version__
-    for link in r['links']:
-        assert link['href'].startswith('http://localhost/')
-    # Test initialization of the UrlFactory
-    api = API(
-        con=con,
-        urls=UrlFactory(base_url='http://www.flowserv.org////'),
-        basedir=str(tmpdir)
-    )
-    r = api.service_descriptor()
-    for link in r['links']:
-        ref = link['href']
-        if ref == 'http://www.flowserv.org':
-            continue
-        assert ref.startswith('http://www.flowserv.org/')
-        assert not ref.startswith('http://www.flowserv.org//')
+    assert not r['validToken']
+    api.users().register_user(username='alice', password='abc')
+    token = api.users().login_user(username='alice', password='abc')['token']
+    r = api.server(access_token=token).service_descriptor()
+    serialize.validate_service_descriptor(r)
+    assert r['name'] == config.DEFAULT_NAME
+    assert r['version'] == version.__version__
+    assert r['validToken']
+    assert r['username'] == 'alice'
+    # Test initialization with a different set of labels
+    labels={
+        'SERVER': {
+            'SERVICE_NAME': 'serviceName',
+            'SERVICE_VERSION': 'serviceVersion',
+            'UNK': None
+        }
+    }
+    api = API(con=con, basedir=str(tmpdir), view=DefaultView(labels=labels))
+    r = api.server().service_descriptor()
+    assert r['serviceName'] == config.DEFAULT_NAME
+    assert r['serviceVersion'] == version.__version__
+    assert 'UNK' not in r

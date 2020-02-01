@@ -6,28 +6,59 @@
 # flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
-"""Interface to serialize workflow resource objects."""
+"""Serializer for workflow resources."""
 
-from flowserv.view.run import RunSerializer
-
-import flowserv.view.hateoas as hateoas
-import flowserv.view.labels as labels
+from flowserv.view.base import Serializer
 
 
-class WorkflowSerializer(object):
-    """Serializer for workflow resource objects. Defines the methods that are
-    used to serialize workflow descriptors, handles, and listing.
+class WorkflowSerializer(Serializer):
+    """Default serializer for workflow resource objects. Defines the methods
+    that are used to serialize workflow descriptors, handles, and listing.
     """
-    def __init__(self, urls, runs=None):
-        """Initialize the reference to the Url factory.
+    def __init__(self, runs, labels=None):
+        """Initialize serialization labels and the serializer for run handles.
+        The run serializer is required to serialize run handles that are part
+        of a workflow handle with post-porcessing results.
 
         Parameters
         ----------
-        urls: flowserv.view.route.UrlFactory
-            Factory for resource urls
+        runs: flowserv.view.run.RunSerializer
+            Serializer for run handles
+        labels: object, optional
+            Object instance that contains the values for serialization labels
         """
-        self.urls = urls
-        self.runs = runs if runs is not None else RunSerializer(urls=urls)
+        super(WorkflowSerializer, self).__init__(
+            labels={
+                'COLUMN_ID': 'id',
+                'COLUMN_NAME': 'name',
+                'COLUMN_TYPE': 'type',
+                'COLUMN_VALUE': 'value',
+                'GROUP_ID': 'id',
+                'GROUP_NAME': 'name',
+                'MODULE_ID': 'id',
+                'MODULE_INDEX': 'index',
+                'MODULE_NAME': 'name',
+                'POSTPROC_RUN': 'postproc',
+                'RANKING': 'ranking',
+                'RUN_CREATED': 'createdAt',
+                'RUN_FINISHED': 'finishedAt',
+                'RUN_ID': 'id',
+                'RUN_RESULTS': 'results',
+                'RUN_STARTED': 'startedAt',
+                'WORKFLOW_DESCRIPTION': 'description',
+                'WORKFLOW_ID': 'id',
+                'WORKFLOW_INSTRUCTIONS': 'instructions',
+                'WORKFLOW_GROUP': 'group',
+                'WORKFLOW_LIST': 'workflows',
+                'WORKFLOW_MODULES': 'modules',
+                'WORKFLOW_NAME': 'name',
+                'WORKFLOW_PARAMETERS': 'parameters',
+                'WORKFLOW_RUN': 'run',
+                'WORKFLOW_SCHEMA': 'schema'
+            },
+            override_labels=labels
+        )
+        self.runs = runs
 
     def workflow_descriptor(self, workflow):
         """Get dictionary serialization containing the descriptor of a
@@ -42,25 +73,15 @@ class WorkflowSerializer(object):
         -------
         dict
         """
-        b_id = workflow.identifier
-        leaderboard_url = self.urls.get_leaderboard(b_id)
-        rel_groups_create = hateoas.action(
-            hateoas.CREATE,
-            resource=hateoas.GROUPS
-        )
+        LABELS = self.labels
         obj = {
-            labels.ID: b_id,
-            labels.NAME: workflow.name,
-            labels.LINKS: hateoas.serialize({
-                hateoas.SELF: self.urls.get_workflow(b_id),
-                hateoas.RANKING: leaderboard_url,
-                rel_groups_create: self.urls.create_group(b_id)
-            })
+            LABELS['WORKFLOW_ID']: workflow.identifier,
+            LABELS['WORKFLOW_NAME']: workflow.name
         }
         if workflow.has_description():
-            obj[labels.DESCRIPTION] = workflow.description
+            obj[LABELS['WORKFLOW_DESCRIPTION']] = workflow.description
         if workflow.has_instructions():
-            obj[labels.INSTRUCTIONS] = workflow.instructions
+            obj[LABELS['WORKFLOW_INSTRUCTIONS']] = workflow.instructions
         return obj
 
     def workflow_handle(self, workflow):
@@ -76,24 +97,25 @@ class WorkflowSerializer(object):
         -------
         dict
         """
+        LABELS = self.labels
         obj = self.workflow_descriptor(workflow)
         template = workflow.get_template()
         # Add parameter declarations to the serialized workflow descriptor
         parameters = template.parameters.values()
-        obj[labels.PARAMETERS] = [p.to_dict() for p in parameters]
+        obj[LABELS['WORKFLOW_PARAMETERS']] = [p.to_dict() for p in parameters]
         # Add module definitions if given
         modules = template.modules
         if modules is not None:
-            obj[labels.MODULES] = [
+            obj[LABELS['WORKFLOW_MODULES']] = [
                 {
-                    labels.ID: m.identifier,
-                    labels.NAME: m.name,
-                    labels.INDEX: m.index
+                    LABELS['MODULE_ID']: m.identifier,
+                    LABELS['MODULE_NAME']: m.name,
+                    LABELS['MODULE_INDEX']: m.index
                 } for m in modules]
         # Add serialization for post-processing workflow if present
         if workflow.postproc_run is not None:
-            postproc_run = workflow.postproc_run
-            obj[labels.POSTPROC] = self.runs.run_handle(run=postproc_run)
+            postproc_run = self.runs.run_handle(run=workflow.postproc_run)
+            obj[LABELS['POSTPROC_RUN']] = postproc_run
         return obj
 
     def workflow_leaderboard(self, workflow, ranking):
@@ -110,45 +132,42 @@ class WorkflowSerializer(object):
         -------
         dict
         """
-        w_id = workflow.identifier
+        LABELS = self.labels
         # Serialize ranking entries
         entries = list()
         for run in ranking.entries:
             results = list()
             for key in run.values:
-                results.append({labels.ID: key, labels.VALUE: run.values[key]})
+                results.append({
+                    LABELS['COLUMN_ID']: key,
+                    LABELS['COLUMN_VALUE']: run.values[key]
+                })
             entries.append({
-                labels.RUN: {
-                    labels.ID: run.run_id,
-                    labels.CREATED_AT: run.created_at.isoformat(),
-                    labels.STARTED_AT: run.started_at.isoformat(),
-                    labels.FINISHED_AT: run.finished_at.isoformat()
+                LABELS['WORKFLOW_RUN']: {
+                    LABELS['RUN_ID']: run.run_id,
+                    LABELS['RUN_CREATED']: run.created_at.isoformat(),
+                    LABELS['RUN_STARTED']: run.started_at.isoformat(),
+                    LABELS['RUN_FINISHED']: run.finished_at.isoformat()
                 },
-                labels.GROUP: {
-                    labels.ID: run.group_id,
-                    labels.NAME: run.group_name
+                LABELS['WORKFLOW_GROUP']: {
+                    LABELS['GROUP_ID']: run.group_id,
+                    LABELS['GROUP_NAME']: run.group_name
                 },
-                labels.RESULTS: results
+                LABELS['RUN_RESULTS']: results
             })
-        # HATEOAS references
-        links = {
-            hateoas.SELF: self.urls.get_leaderboard(w_id),
-            hateoas.WORKFLOW: self.urls.get_workflow(w_id),
-        }
         obj = {
-            labels.SCHEMA: [{
-                    labels.ID: c.identifier,
-                    labels.NAME: c.name,
-                    labels.DATA_TYPE: c.data_type
+            LABELS['WORKFLOW_SCHEMA']: [{
+                    LABELS['COLUMN_ID']: c.identifier,
+                    LABELS['COLUMN_NAME']: c.name,
+                    LABELS['COLUMN_TYPE']: c.data_type
                 } for c in ranking.columns
             ],
-            labels.RANKING: entries,
-            labels.LINKS: hateoas.serialize(links)
+            LABELS['RANKING']: entries
         }
         # Add serialization for optional workflow post-processing run handle
         if workflow.postproc_run is not None:
-            postproc_run = workflow.postproc_run
-            obj[labels.POSTPROC] = self.runs.run_handle(run=postproc_run)
+            postproc_run = self.runs.run_handle(run=workflow.postproc_run)
+            obj[self.labels['POSTPROC_RUN']] = postproc_run
         return obj
 
     def workflow_listing(self, workflows):
@@ -163,11 +182,9 @@ class WorkflowSerializer(object):
         -------
         dict
         """
+        LABELS = self.labels
         return {
-            labels.WORKFLOWS: [
+            LABELS['WORKFLOW_LIST']: [
                 self.workflow_descriptor(w) for w in workflows
-            ],
-            labels.LINKS: hateoas.serialize({
-                hateoas.SELF: self.urls.list_workflows()
-            })
+            ]
         }

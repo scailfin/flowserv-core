@@ -8,22 +8,36 @@
 
 """Serializer for workflow user groups."""
 
-import flowserv.view.files as fileserializer
-import flowserv.view.hateoas as hateoas
-import flowserv.view.labels as labels
+from flowserv.view.base import Serializer
 
 
-class WorkflowGroupSerializer(object):
+class WorkflowGroupSerializer(Serializer):
     """Default serializer for workflow user groups."""
-    def __init__(self, urls):
-        """Initialize the reference to the Url factory.
+    def __init__(self, files, labels=None):
+        """Initialize serialization labels.
 
         Parameters
         ----------
-        urls: flowserv.view.route.UrlFactory
-            Factory for resource urls
+        files: flowserv.view.files.UploadFileSerializer
+            Serializer for handles of uploaded files
+        labels: object, optional
+            Object instance that contains the values for serialization labels
         """
-        self.urls = urls
+        super(WorkflowGroupSerializer, self).__init__(
+            labels={
+                'GROUP_ID': 'id',
+                'GROUP_LIST': 'groups',
+                'GROUP_MEMBERS': 'members',
+                'GROUP_NAME': 'name',
+                'GROUP_PARAMETERS': 'parameters',
+                'GROUP_UPLOADS': 'files',
+                'USER_ID': 'id',
+                'USER_NAME': 'username',
+                'WORKFLOW_ID': 'workflow'
+            },
+            override_labels=labels
+        )
+        self.files = files
 
     def group_descriptor(self, group):
         """Get serialization for a workflow group descriptor. The descriptor
@@ -39,19 +53,11 @@ class WorkflowGroupSerializer(object):
         -------
         dict
         """
-        g_id = group.identifier
-        w_id = group.workflow_id
+        LABELS = self.labels
         return {
-            labels.ID: g_id,
-            labels.NAME: group.name,
-            labels.WORKFLOW: w_id,
-            labels.LINKS: hateoas.serialize({
-                hateoas.SELF: self.urls.get_group(g_id),
-                hateoas.WORKFLOW: self.urls.get_workflow(w_id),
-                hateoas.action(hateoas.UPLOAD): self.urls.upload_file(g_id),
-                hateoas.action(hateoas.SUBMIT): self.urls.start_run(g_id)
-
-            })
+            LABELS['GROUP_ID']: group.identifier,
+            LABELS['GROUP_NAME']: group.name,
+            LABELS['WORKFLOW_ID']: group.workflow_id
         }
 
     def group_handle(self, group):
@@ -66,20 +72,27 @@ class WorkflowGroupSerializer(object):
         -------
         dict
         """
+        LABELS = self.labels
         doc = self.group_descriptor(group)
         members = list()
         for u in group.members:
-            members.append({labels.ID: u.identifier, labels.USERNAME: u.name})
-        doc[labels.MEMBERS] = members
+            members.append({
+                LABELS['USER_ID']: u.identifier,
+                LABELS['USER_NAME']: u.name
+            })
+        doc[LABELS['GROUP_MEMBERS']] = members
         parameters = group.parameters.values()
         # Include group specific list of workflow template parameters
-        doc[labels.PARAMETERS] = [p.to_dict() for p in parameters]
+        doc[LABELS['GROUP_PARAMETERS']] = [p.to_dict() for p in parameters]
         # Include handles for all uploaded files
         files = list()
         for file in group.list_files():
-            f = fileserializer.file_handle(group_id=group.identifier, fh=file)
+            f = self.files.file_handle(
+                group_id=group.identifier,
+                fh=file
+            )
             files.append(f)
-        doc[labels.FILES] = files
+        doc[LABELS['GROUP_UPLOADS']] = files
 
         return doc
 
@@ -95,11 +108,7 @@ class WorkflowGroupSerializer(object):
         -------
         dict
         """
+        LABELS = self.labels
         return {
-            labels.GROUPS: [
-                self.group_descriptor(g) for g in groups
-            ],
-            labels.LINKS: hateoas.serialize({
-                hateoas.SELF: self.urls.list_groups()
-            })
+            LABELS['GROUP_LIST']: [self.group_descriptor(g) for g in groups]
         }

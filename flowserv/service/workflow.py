@@ -10,17 +10,14 @@
 and workflow result rankings.
 """
 
-from flowserv.view.workflow import WorkflowSerializer
-
 
 class WorkflowService(object):
     """API component that provides methods to access workflows and workflow
     evaluation rankings (benchmark leader boards).
     """
-    def __init__(self, workflow_repo, ranking_manager, urls, serializer=None):
+    def __init__(self, workflow_repo, ranking_manager, serializer=None):
         """Initialize the internal reference to the workflow repository, the
-        ranking manager, and the route factory. The resource serializer is
-        optional
+        ranking manager, and the resource serializer.
 
         Parameters
         ----------
@@ -30,17 +27,12 @@ class WorkflowService(object):
             Repository to access registered workflows
         ranking_manager: flowserv.model.ranking.manager.RankingManager
             Manager for workflow evaluation rankings
-        urls: flowserv.view.route.UrlFactory
-            Factory for API resource Urls
         serializer: flowserv.view.workflow.WorkflowSerializer, optional
             Override the default serializer
         """
         self.workflow_repo = workflow_repo
         self.ranking_manager = ranking_manager
-        self.urls = urls
         self.serialize = serializer
-        if self.serialize is None:
-            self.serialize = WorkflowSerializer(self.urls)
 
     def create_workflow(
         self, name, description=None, instructions=None, sourcedir=None,

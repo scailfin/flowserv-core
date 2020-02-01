@@ -8,22 +8,30 @@
 
 """Serializer for uploaded workflow user group files."""
 
-import flowserv.view.hateoas as hateoas
-import flowserv.view.labels as labels
+from flowserv.view.base import Serializer
 
 
-class UploadFileSerializer(object):
+class UploadFileSerializer(Serializer):
     """Default serializer for handles and= listings of files that were uploaded
     for a workflow groups."""
-    def __init__(self, urls):
-        """Initialize the reference to the Url factory.
+    def __init__(self, labels=None):
+        """Initialize serialization labels.
 
         Parameters
         ----------
-        urls: flowserv.view.route.UrlFactory
-            Factory for resource urls
+        labels: object, optional
+            Object instance that contains the values for serialization labels
         """
-        self.urls = urls
+        super(UploadFileSerializer, self).__init__(
+            labels={
+                'FILE_DATE': 'createdAt',
+                'FILE_ID': 'id',
+                'FILE_LIST': 'files',
+                'FILE_NAME': 'name',
+                'FILE_SIZE': 'size'
+            },
+            override_labels=labels
+        )
 
     def file_handle(self, group_id, fh):
         """Get serialization for a file handle.
@@ -39,17 +47,12 @@ class UploadFileSerializer(object):
         -------
         dict
         """
-        del_url = self.urls.delete_file(group_id, fh.identifier)
-        dwnld_url = self.urls.download_file(group_id, fh.identifier)
+        LABELS = self.labels
         return {
-            labels.ID: fh.identifier,
-            labels.NAME: fh.name,
-            labels.CREATED_AT: fh.created_at.isoformat(),
-            labels.FILESIZE: fh.size,
-            labels.LINKS: hateoas.serialize({
-                hateoas.action(hateoas.DOWNLOAD): dwnld_url,
-                hateoas.action(hateoas.DELETE): del_url
-            })
+            LABELS['FILE_ID']: fh.identifier,
+            LABELS['FILE_NAME']: fh.name,
+            LABELS['FILE_DATE']: fh.created_at.isoformat(),
+            LABELS['FILE_SIZE']: fh.size
         }
 
     def file_listing(self, group_id, files):
@@ -67,9 +70,5 @@ class UploadFileSerializer(object):
         -------
         dict
         """
-        return {
-            labels.FILES: [self.file_handle(group_id, fh) for fh in files],
-            labels.LINKS: hateoas.serialize({
-                hateoas.SELF: self.urls.list_files(group_id)
-            })
-        }
+        FILES = self.labels['FILE_LIST']
+        return {FILES: [self.file_handle(group_id, fh) for fh in files]}

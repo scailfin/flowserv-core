@@ -31,7 +31,6 @@ Workflow templates contain placeholders for workflow steps and/or input data and
     :align: center
     :alt: ROB Architecture
 
-    **Overview of the flowServ architecture.**
 
 
 *flowServ* was motivated by the `Reproducible Open Benchmarks for Data Analysis Platform (ROB) <https://github.com/scailfin/rob-ui>`_.  The goal of ROB is to allow user communities to evaluate the performance of their different data analysis algorithms in a controlled competition-style format. In ROB, the benchmark coordinator defines the workflow template along with input data. Benchmark participants provide their own implementation of the variable workfow steps. The workflow engine processes workflows on submission. Execution results are maintained by *flowServ* in an internal database. The goal of *flowServ* is to be a more generic platform that can not only be used for benchmarks but also for other types of data analysis workflows.

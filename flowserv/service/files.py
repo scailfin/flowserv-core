@@ -10,8 +10,6 @@
 delete, and upload files for workflow groups.
 """
 
-from flowserv.view.files import UploadFileSerializer
-
 import flowserv.core.error as err
 
 
@@ -19,9 +17,9 @@ class UploadFileService(object):
     """API component that provides methods to access, delete and upload files
     for workflow user groups.
     """
-    def __init__(self, group_manager, auth, urls, serializer=None):
+    def __init__(self, group_manager, auth, serializer):
         """Initialize the internal reference to the workflow group manager and
-        to the route factory.
+        to resource serializer.
 
         Parameters
         ----------
@@ -29,17 +27,12 @@ class UploadFileService(object):
             Manager for workflow groups
         auth: flowserv.model.user.auth.Auth
             Implementation of the authorization policy for the API
-        urls: flowserv.view.route.UrlFactory
-            Factory for API resource Urls
-        serializer: flowserv.view.files.UploadFileSerializer, optional
-            Override the default serializer
+        serializer: flowserv.view.files.UploadFileSerializer
+            Resource serializer
         """
         self.group_manager = group_manager
         self.auth = auth
-        self.urls = urls
         self.serialize = serializer
-        if self.serialize is None:
-            self.serialize = UploadFileSerializer(self.urls)
 
     def delete_file(self, group_id, file_id, user_id):
         """Delete file with given identifier that was previously uploaded.

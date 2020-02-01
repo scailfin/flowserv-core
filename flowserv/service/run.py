@@ -13,7 +13,6 @@ manipulate workflow runs and their results.
 import logging
 import shutil
 
-from flowserv.view.run import RunSerializer
 from flowserv.core.files import FileHandle, InputFile
 from flowserv.model.parameter.value import TemplateArgument
 from flowserv.model.run.base import RunHandle
@@ -24,7 +23,12 @@ import flowserv.core.util as util
 import flowserv.model.template.base as tmpl
 import flowserv.service.postproc.base as postbase
 import flowserv.service.postproc.util as postutil
-import flowserv.view.labels as labels
+
+
+"""Labels for start run request bodies."""
+ARG_AS = 'as'
+ARG_ID = 'id'
+ARG_VALUE = 'value'
 
 
 class RunService(object):
@@ -33,10 +37,10 @@ class RunService(object):
     """
     def __init__(
         self, run_manager, group_manager, workflow_repo, ranking_manager,
-        backend, auth, urls, serializer=None
+        backend, auth, serializer
     ):
         """Initialize the internal reference to the workflow controller, the
-        runa and group managers, and to the route factory.
+        runa and group managers, and to the serializer.
 
         Parameters
         ----------
@@ -52,9 +56,7 @@ class RunService(object):
             Workflow engine controller
         auth: flowserv.model.user.auth.Auth
             Implementation of the authorization policy for the API
-        urls: flowserv.view.route.UrlFactory
-            Factory for API resource Urls
-        serializer: flowserv.view.run.RunSerializer, optional
+        serializer: flowserv.view.run.RunSerializer
             Override the default serializer
         """
         self.run_manager = run_manager
@@ -63,10 +65,7 @@ class RunService(object):
         self.ranking_manager = ranking_manager
         self.backend = backend
         self.auth = auth
-        self.urls = urls
         self.serialize = serializer
-        if self.serialize is None:
-            self.serialize = RunSerializer(self.urls)
 
     def cancel_run(self, run_id, user_id, reason=None):
         """Cancel the run with the given identifier. Returns a serialization of
@@ -350,13 +349,13 @@ class RunService(object):
             try:
                 util.validate_doc(
                     doc=arg,
-                    mandatory=[labels.ID, labels.VALUE],
-                    optional=[labels.AS]
+                    mandatory=[ARG_ID, ARG_VALUE],
+                    optional=[ARG_AS]
                 )
             except ValueError as ex:
                 raise err.InvalidArgumentError(str(ex))
-            arg_id = arg[labels.ID]
-            arg_val = arg[labels.VALUE]
+            arg_id = arg[ARG_ID]
+            arg_val = arg[ARG_VALUE]
             # Raise an error if multiple values are given for the same argument
             if arg_id in run_args:
                 raise err.DuplicateArgumentError(arg_id)
@@ -368,10 +367,10 @@ class RunService(object):
                 # previously uploaded file. This will raise an exception if the
                 # file identifier is unknown
                 fh = group.get_file(arg_val)
-                if labels.AS in arg:
+                if ARG_AS in arg:
                     # Convert the file handle to an input file handle if a
                     # target path is given
-                    fh = InputFile(fh, target_path=arg[labels.AS])
+                    fh = InputFile(fh, target_path=arg[ARG_AS])
                 val = TemplateArgument(parameter=para, value=fh, validate=True)
             elif para.is_list() or para.is_record():
                 raise err.InvalidArgumentError('unsupported parameter type')

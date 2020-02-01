@@ -10,8 +10,6 @@
 and manipulate workflow groups.
 """
 
-from flowserv.view.group import WorkflowGroupSerializer
-
 import flowserv.core.error as err
 
 
@@ -19,12 +17,9 @@ class WorkflowGroupService(object):
     """API component that provides methods to access and manipulate workflow
     groups.
     """
-    def __init__(
-        self, group_manager, workflow_repo, backend, auth, urls,
-        serializer=None
-    ):
+    def __init__(self, group_manager, workflow_repo, backend, auth, serializer):
         """Initialize the internal reference to the group manager, the workflow
-        repository, and the route factory.
+        repository, and the serializer.
 
         Parameters
         ----------
@@ -36,19 +31,14 @@ class WorkflowGroupService(object):
             Workflow engine controller
         auth: flowserv.model.user.auth.Auth
             Implementation of the authorization policy for the API
-        urls: flowserv.view.route.UrlFactory
-            Factory for API resource Urls
-        serializer: flowserv.view.group.WorkflowGroupSerializer, optional
+        serializer: flowserv.view.group.WorkflowGroupSerialize
             Override the default serializer
         """
         self.group_manager = group_manager
         self.workflow_repo = workflow_repo
         self.backend = backend
         self.auth = auth
-        self.urls = urls
         self.serialize = serializer
-        if self.serialize is None:
-            self.serialize = WorkflowGroupSerializer(self.urls)
 
     def create_group(
         self, workflow_id, name, user_id, parameters=None, members=None
