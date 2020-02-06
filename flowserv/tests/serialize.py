@@ -140,7 +140,7 @@ def validate_run_handle(doc, state):
     ------
     ValueError
     """
-    labels = ['id', 'state', 'createdAt', 'arguments']
+    labels = ['id', 'workflowId', 'state', 'createdAt', 'arguments']
     if state == st.STATE_RUNNING:
         labels.append('startedAt')
     elif state in [st.STATE_ERROR, st.STATE_CANCELED]:
@@ -151,7 +151,11 @@ def validate_run_handle(doc, state):
         labels.append('startedAt')
         labels.append('finishedAt')
         labels.append('resources')
-    util.validate_doc(doc=doc, mandatory=labels, optional=['parameters'])
+    util.validate_doc(
+        doc=doc,
+        mandatory=labels,
+        optional=['parameters', 'groupId']
+    )
     if 'parameters' in doc:
         for p in doc['parameters']:
             validate_parameter(p)

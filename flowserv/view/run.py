@@ -31,12 +31,14 @@ class RunSerializer(Serializer):
                 'RUN_CREATED': 'createdAt',
                 'RUN_ERRORS': 'messages',
                 'RUN_FINISHED': 'finishedAt',
+                'RUN_GROUP': 'groupId',
                 'RUN_ID': 'id',
                 'RUN_LIST': 'runs',
                 'RUN_PARAMETERS': 'parameters',
                 'RUN_RESOURCES': 'resources',
                 'RUN_STARTED': 'startedAt',
-                'RUN_STATE': 'state'
+                'RUN_STATE': 'state',
+                'RUN_WORKFLOW': 'workflowId'
             },
             override_labels=labels
         )
@@ -83,6 +85,9 @@ class RunSerializer(Serializer):
         """
         LABELS = self.labels
         doc = self.run_descriptor(run)
+        # Add information about the run workflow and the run group
+        doc[LABELS['RUN_WORKFLOW']] = run.workflow_id
+        doc[LABELS['RUN_GROUP']] = run.group_id
         # Add run arguments
         doc[LABELS['RUN_ARGUMENTS']] = [
             {
