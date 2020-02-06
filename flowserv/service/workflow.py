@@ -189,10 +189,7 @@ class WorkflowService(object):
 
     def get_result_file(self, workflow_id, resource_id):
         """Get file handle for a resource file that was generated as the result
-        of a successful workflow run.
-
-        Raises an unauthorized access error if the user does not have read
-        access to the run.
+        of a successful post-processing workflow run.
 
         Parameters
         ----------
