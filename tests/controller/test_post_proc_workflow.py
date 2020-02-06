@@ -36,55 +36,6 @@ UID = '0000'
 NAMES = ['Alice', 'Bob', 'Gabriel', 'William']
 
 
-def run_erroneous_workflow(api, specfile):
-    """Execute the modified helloworld example."""
-    # Create workflow template
-    wh = api.workflows().create_workflow(
-        name=util.get_unique_identifier(),
-        sourcedir=TEMPLATE_DIR,
-        specfile=specfile
-    )
-    w_id = wh['id']
-    # Create one group and run the workflow
-    gh = api.groups().create_group(workflow_id=w_id, name='G', user_id=UID)
-    g_id = gh['id']
-    # Upload the names file
-    fh = api.uploads().upload_file(
-        group_id=g_id,
-        file=FakeStream(data=NAMES, format='txt/plain'),
-        name='names.txt',
-        user_id=UID
-    )
-    file_id = fh['id']
-    # Set the template argument values
-    arguments = [
-        {'id': 'names', 'value': file_id},
-        {'id': 'greeting', 'value': 'Hi'}
-    ]
-    # Run the workflow
-    run = api.runs().start_run(
-        group_id=g_id,
-        arguments=arguments,
-        user_id=UID
-    )
-    r_id = run['id']
-    # Poll workflow state every second.
-    while run['state'] in st.ACTIVE_STATES:
-        time.sleep(1)
-        run = api.runs().get_run(run_id=r_id, user_id=UID)
-    assert run['state'] == st.STATE_SUCCESS
-    wh = api.workflows().get_workflow(workflow_id=w_id)
-    while 'postproc' not in wh:
-        time.sleep(1)
-        wh = api.workflows().get_workflow(workflow_id=w_id)
-    serialize.validate_workflow_handle(wh)
-    while wh['postproc']['state'] in st.ACTIVE_STATES:
-        time.sleep(1)
-        wh = api.workflows().get_workflow(workflow_id=w_id)
-    serialize.validate_workflow_handle(wh)
-    assert wh['postproc']['state'] == st.STATE_ERROR
-
-
 def test_postproc_workflow(tmpdir):
     """Execute the modified helloworld example."""
     # -- Setup ----------------------------------------------------------------
@@ -167,3 +118,57 @@ def test_postproc_workflow_errors(tmpdir):
     # Erroneous specification
     run_erroneous_workflow(api, SPEC_FILE_ERR_2)
     del os.environ[config.FLOWSERV_API_BASEDIR]
+
+
+# -- Helper functions ---------------------------------------------------------
+
+def run_erroneous_workflow(api, specfile):
+    """Execute the modified helloworld example."""
+    # Create workflow template
+    wh = api.workflows().create_workflow(
+        name=util.get_unique_identifier(),
+        sourcedir=TEMPLATE_DIR,
+        specfile=specfile
+    )
+    w_id = wh['id']
+    # Create one group and run the workflow
+    gh = api.groups().create_group(workflow_id=w_id, name='G', user_id=UID)
+    g_id = gh['id']
+    # Upload the names file
+    fh = api.uploads().upload_file(
+        group_id=g_id,
+        file=FakeStream(data=NAMES, format='txt/plain'),
+        name='names.txt',
+        user_id=UID
+    )
+    file_id = fh['id']
+    # Set the template argument values
+    arguments = [
+        {'id': 'names', 'value': file_id},
+        {'id': 'greeting', 'value': 'Hi'}
+    ]
+    # Run the workflow
+    run = api.runs().start_run(
+        group_id=g_id,
+        arguments=arguments,
+        user_id=UID
+    )
+    r_id = run['id']
+    # Poll workflow state every second.
+    while run['state'] in st.ACTIVE_STATES:
+        print('active run')
+        time.sleep(1)
+        run = api.runs().get_run(run_id=r_id, user_id=UID)
+    assert run['state'] == st.STATE_SUCCESS
+    wh = api.workflows().get_workflow(workflow_id=w_id)
+    while 'postproc' not in wh:
+        print('wait for postproc run to start')
+        time.sleep(1)
+        wh = api.workflows().get_workflow(workflow_id=w_id)
+    serialize.validate_workflow_handle(wh)
+    while wh['postproc']['state'] in st.ACTIVE_STATES:
+        print('postproc run active')
+        time.sleep(1)
+        wh = api.workflows().get_workflow(workflow_id=w_id)
+    serialize.validate_workflow_handle(wh)
+    assert wh['postproc']['state'] == st.STATE_ERROR

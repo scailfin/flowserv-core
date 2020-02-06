@@ -6,7 +6,10 @@
 # flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
-"""Unit test for workflow evaluation rankings."""
+"""Unit test for the post-processing client module that is used to access files
+that are included in the run result folder that is passed as input to a post-
+processing workflow.
+"""
 
 import os
 
@@ -25,7 +28,8 @@ TEMPLATE_DIR = os.path.join(DIR, '../.files/benchmark/helloworld')
 
 def test_workflow_postproc_client(tmpdir):
     """Test preparing and accessing post-processing results."""
-    # Initialize the database and the API
+    # Initialize the database and the API. Create two workflows and four groups
+    # for each workflow.
     api, engine, workflows = service.init_service(
         basedir=str(tmpdir),
         templatedir=TEMPLATE_DIR,
@@ -82,16 +86,20 @@ def test_workflow_postproc_client(tmpdir):
                 state=engine.success(r_id, resources=[f1, f2])
             )
     w_id, _ = workflows[0]
+    # Get the workflow ranking. The ranking should contain four runs.
     template = api.workflow_repository.get_workflow(workflow_id=w_id)
     ranking = api.ranking_manager.get_ranking(
         workflow_id=w_id,
         result_schema=template.get_schema()
     )
+    assert len(ranking) == 4
+    # Prepare data for the post-processing workflow.
     rundir = postproc.prepare_postproc_data(
         input_files=['results/analytics.json'],
         ranking=ranking,
         run_manager=api.run_manager
     )
+    # Test the post-processing client that accesses the prepared data.
     runs = Runs(rundir)
     assert len(runs) == 4
     assert [r.run_id for r in ranking] == [r.identifier for r in runs]

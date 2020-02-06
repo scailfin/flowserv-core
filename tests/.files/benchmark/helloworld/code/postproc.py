@@ -25,7 +25,7 @@ def main(rundir, outputfile):
     results = list()
     for run in Runs(rundir):
         doc = util.read_object(filename=run.get_file('results/analytics.json'))
-        results.append(doc['avg_count'])
+        results.append(doc)
         # Delay execution to allow for testing running post-processing
         # workflows
         time.sleep(1)

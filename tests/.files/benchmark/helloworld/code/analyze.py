@@ -15,7 +15,6 @@ import sys
 def main(inputfile, outputfile):
     """Write greeting for every name in a given input file to the output file.
     The optional waiting period delays the output between each input name.
-
     """
     # Count number of lines, characters, and keep track of the longest line
     max_line = ''
@@ -32,6 +31,7 @@ def main(inputfile, outputfile):
     # Create results object
     results = {
         'avg_count': total_char_count / line_count,
+        'total_count': total_char_count,
         'max_len': len(max_line),
         'max_line': max_line
     }

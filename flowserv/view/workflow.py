@@ -112,7 +112,7 @@ class WorkflowSerializer(Serializer):
                     LABELS['MODULE_NAME']: m.name,
                     LABELS['MODULE_INDEX']: m.index
                 } for m in modules]
-        # Add serialization for post-processing workflow if present
+        # Add serialization for post-processing workflow (if present).
         if workflow.postproc_run is not None:
             postproc_run = self.runs.run_handle(run=workflow.postproc_run)
             obj[LABELS['POSTPROC_RUN']] = postproc_run

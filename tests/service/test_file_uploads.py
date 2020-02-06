@@ -77,6 +77,8 @@ def test_workflow_group_file_upload(tmpdir):
             )
             assert r['name'] == name
             assert fh.name == name
+            gh = api.groups().get_group(group_id=g_id)
+            serialize.validate_group_handle(gh)
     # Error when trying to upload file as no-member
     with pytest.raises(err.UnauthorizedAccessError):
         api.uploads().upload_file(

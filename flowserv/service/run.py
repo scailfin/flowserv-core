@@ -398,9 +398,11 @@ class RunService(object):
             template=template,
             arguments=run_args
         )
-        # Update the run state if it is no longer pending for execution.
+        # Update the run state if it is no longer pending for execution. Make
+        # sure to call the update run method for the server to ensure that
+        # results are inserted and post-processing workflows started.
         if not state.is_pending():
-            self.run_manager.update_run(
+            self.update_run(
                 run_id=run_id,
                 state=state
             )
@@ -476,77 +478,92 @@ class RunService(object):
                 if runs != workflow.get_postproc_key():
                     msg = 'Run post-processing workflow for {}'
                     logging.debug(msg.format(workflow.identifier))
-                    workflow_spec = postproc_spec.get(tmpl.PPLBL_WORKFLOW)
-                    pp_inputs = postproc_spec.get(tmpl.PPLBL_INPUTS, {})
-                    pp_files = pp_inputs.get(tmpl.PPLBL_FILES, [])
-                    # Prepare temporary directory with result files for all
-                    # runs in the ranking. The created directory is the only
-                    # run argument
-                    strace = None
-                    try:
-                        datadir = postutil.prepare_postproc_data(
-                            input_files=pp_files,
-                            ranking=ranking,
-                            run_manager=self.run_manager
-                        )
-                        postproc_arguments = {
-                            postbase.PARA_RUNS: TemplateArgument(
-                                parameter=postbase.PARAMETERS[0],
-                                value=InputFile(
-                                    f_handle=FileHandle(filename=datadir),
-                                    target_path=pp_inputs.get(
-                                        tmpl.PPLBL_RUNS,
-                                        postbase.RUNS_DIR
-                                    )
-                                )
-                            )
-                        }
-                    except (AttributeError, OSError, IOError) as ex:
-                        logging.error(ex)
-                        strace = util.stacktrace(ex)
-                        postproc_arguments = dict()
-                    # Create a new run for the workflow. The identifier for
-                    # the run group is None.
-                    postproc_run = self.run_manager.create_run(
-                        workflow_id=run.workflow_id,
-                        group_id=None,
-                        arguments=postproc_arguments,
-                        commit_changes=False
+                    run_postproc_workflow(
+                        postproc_spec=postproc_spec,
+                        workflow=workflow,
+                        ranking=ranking,
+                        runs=runs,
+                        run_manager=self.run_manager,
+                        backend=self.backend
                     )
-                    # If there were data preparation errors set the created run
-                    # into an error state.
-                    if strace is not None:
-                        self.run_manager.update_run(
-                            run_id=postproc_run.identifier,
-                            state=postproc_run.state.error(messages=strace),
-                            commit_changes=False
-                        )
-                    # Set the new run as the current post-processing run and
-                    # enter the run keys
-                    workflow.update_postproc(
-                        run_id=postproc_run.identifier,
-                        runs=runs
-                    )
-                    # Execute the post-processing workflow asynchronously if
-                    # there were no data preparation errors.
-                    if strace is None:
-                        postproc_state = self.backend.exec_workflow(
-                            run=postproc_run,
-                            template=WorkflowTemplate(
-                                workflow_spec=workflow_spec,
-                                sourcedir=template.sourcedir,
-                                parameters=postbase.PARAMETERS
-                            ),
-                            arguments=postproc_arguments
-                        )
-                        # Update the rpost-processing workflow run state if it is
-                        # no longer pending for execution.
-                        if not postproc_state.is_pending():
-                            self.run_manager.update_run(
-                                run_id=postproc_run.identifier,
-                                state=postproc_state
-                            )
-                        # Remove the temporary input folder
-                        shutil.rmtree(datadir)
         else:
             self.run_manager.update_run(run_id=run_id, state=state)
+
+
+# -- Helper functions ---------------------------------------------------------
+
+def run_postproc_workflow(
+    postproc_spec, workflow, ranking, runs, run_manager, backend
+):
+    """Run post-processing workflow for a workflow template.
+    """
+    workflow_spec = postproc_spec.get(tmpl.PPLBL_WORKFLOW)
+    pp_inputs = postproc_spec.get(tmpl.PPLBL_INPUTS, {})
+    pp_files = pp_inputs.get(tmpl.PPLBL_FILES, [])
+    # Prepare temporary directory with result files for all
+    # runs in the ranking. The created directory is the only
+    # run argument
+    strace = None
+    try:
+        datadir = postutil.prepare_postproc_data(
+            input_files=pp_files,
+            ranking=ranking,
+            run_manager=run_manager
+        )
+        postproc_arguments = {
+            postbase.PARA_RUNS: TemplateArgument(
+                parameter=postbase.PARAMETERS[0],
+                value=InputFile(
+                    f_handle=FileHandle(filename=datadir),
+                    target_path=pp_inputs.get(
+                        tmpl.PPLBL_RUNS,
+                        postbase.RUNS_DIR
+                    )
+                )
+            )
+        }
+    except (AttributeError, OSError, IOError) as ex:
+        logging.error(ex)
+        strace = util.stacktrace(ex)
+        postproc_arguments = dict()
+    # Create a new run for the workflow. The identifier for the run group is
+    # None.
+    run = run_manager.create_run(
+        workflow_id=workflow.identifier,
+        group_id=None,
+        arguments=postproc_arguments,
+        commit_changes=False
+    )
+    # Set the new run as the current post-processing run and enter the run keys
+    workflow.update_postproc(
+        run_id=run.identifier,
+        runs=runs
+    )
+    if strace is not None:
+        # If there were data preparation errors set the created run into an
+        # error state and return.
+        run_manager.update_run(
+            run_id=run.identifier,
+            state=run.state.error(messages=strace)
+        )
+    else:
+        # Execute the post-processing workflow asynchronously if
+        # there were no data preparation errors.
+        postproc_state = backend.exec_workflow(
+            run=run,
+            template=WorkflowTemplate(
+                workflow_spec=workflow_spec,
+                sourcedir=workflow.get_template().sourcedir,
+                parameters=postbase.PARAMETERS
+            ),
+            arguments=postproc_arguments
+        )
+        # Update the rpost-processing workflow run state if it is
+        # no longer pending for execution.
+        if not postproc_state.is_pending():
+            run_manager.update_run(
+                run_id=run.identifier,
+                state=postproc_state
+            )
+        # Remove the temporary input folder
+        shutil.rmtree(datadir)

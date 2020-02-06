@@ -14,7 +14,9 @@ from flowserv.tests.controller import StateEngine
 import flowserv.tests.db as db
 
 
-def init_service(basedir, templatedir, wf_count, gr_count, users=None):
+def init_service(basedir, templatedir, wf_count, gr_count, users=None,
+    specfile=None, engine=None
+):
     """Initialize a database with wf_count workflows, each having gr_count
     groups. Returns the service API, the workflow controller (engine), and a
     list of (workflow_id, list(group_id, user_id))-pairs.
@@ -25,13 +27,17 @@ def init_service(basedir, templatedir, wf_count, gr_count, users=None):
         users = ['0000']
     con = db.init_db(str(basedir), users=users).connect()
     # Create workflow controller abd API service instance
-    engine = StateEngine()
+    engine = engine if engine is not None else StateEngine()
     api = API(con=con, engine=engine, basedir=str(basedir))
     # Create two workflows and groups
     workflows = list()
     for w in range(wf_count):
         name = 'W{}'.format(w)
-        r = api.workflows().create_workflow(name=name, sourcedir=templatedir)
+        r = api.workflows().create_workflow(
+            name=name,
+            sourcedir=templatedir,
+            specfile=specfile
+        )
         w_id = r['id']
         groups = list()
         for g in range(gr_count):
