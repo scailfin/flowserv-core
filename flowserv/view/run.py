@@ -87,7 +87,8 @@ class RunSerializer(Serializer):
         doc = self.run_descriptor(run)
         # Add information about the run workflow and the run group
         doc[LABELS['RUN_WORKFLOW']] = run.workflow_id
-        doc[LABELS['RUN_GROUP']] = run.group_id
+        if run.group_id is not None:
+            doc[LABELS['RUN_GROUP']] = run.group_id
         # Add run arguments
         doc[LABELS['RUN_ARGUMENTS']] = [
             {

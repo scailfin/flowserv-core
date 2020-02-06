@@ -919,7 +919,6 @@ definitions:
     description: "Handle containing all information for a workflow run"
     required:
     - id
-    - groupId
     - workflowId
     - arguments
     - state
