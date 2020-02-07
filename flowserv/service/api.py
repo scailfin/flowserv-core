@@ -38,6 +38,10 @@ import flowserv.core.error as err
 import flowserv.core.util as util
 
 
+"""Name of the header element that contains the access token."""
+HEADER_TOKEN = 'api_key'
+
+
 """Define the workflow backend as a global variable. This is necessary for the
 multi-porcess backend to be able to maintain process state in between API
 requests.

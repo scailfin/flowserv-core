@@ -48,11 +48,21 @@ def test_workflow_view(tmpdir):
     assert r['description'] == 'ABC'
     assert r['instructions'] == 'XYZ'
     workflow_id = r['id']
-    # Workflow Listing
+    # -- Update workflow ------------------------------------------------------
+    r = api.workflows().update_workflow(
+        workflow_id=workflow_id,
+        name='Hello World',
+        description='Simple Hello World Demo',
+        instructions='Just run it'
+    )
+    assert r['name'] == 'Hello World'
+    assert r['description'] == 'Simple Hello World Demo'
+    assert r['instructions'] == 'Just run it'
+    # -- Workflow Listing -----------------------------------------------------
     r = api.workflows().list_workflows()
     serialize.validate_workflow_listing(doc=r)
     assert len(r['workflows']) == 2
-    # Delete workflow
+    # -- Delete workflow ------------------------------------------------------
     api.workflows().delete_workflow(workflow_id)
     r = api.workflows().list_workflows()
     assert len(r['workflows']) == 1

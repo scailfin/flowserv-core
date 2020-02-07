@@ -252,3 +252,43 @@ class WorkflowService(object):
         """
         workflows = self.workflow_repo.list_workflows()
         return self.serialize.workflow_listing(workflows)
+
+    def update_workflow(
+        self, workflow_id, name=None, description=None, instructions=None,
+        commit_changes=True
+    ):
+        """Update name, description, and instructions for a given workflow.
+        Returns the serialized handle for the updated workflow.
+
+        Raises an error if the given workflow does not exist or if the name is
+        not unique.
+
+        Parameters
+        ----------
+        workflow_id: string
+            Unique workflow identifier
+        name: string, optional
+            Unique workflow name
+        description: string, optional
+            Optional short description for display in workflow listings
+        instructions: string, optional
+            Text containing detailed instructions for workflow execution
+        commit_changes: bool, optional
+            Commit changes to database only if True
+
+        Returns
+        -------
+        dict
+
+        Raises
+        ------
+        flowserv.core.error.ConstraintViolationError
+        flowserv.core.error.UnknownWorkflowError
+        """
+        workflow = self.workflow_repo.update_workflow(
+            workflow_id=workflow_id,
+            name=name,
+            description=description,
+            instructions=instructions
+        )
+        return self.serialize.workflow_handle(workflow)

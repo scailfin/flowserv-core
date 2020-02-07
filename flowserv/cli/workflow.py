@@ -60,9 +60,10 @@ def add_workflow(
     # Add workflow template to repository
     with service() as api:
         try:
-            # Get the workflow repository instance from the API
-            repo = api.workflow_repository
-            wf = repo.create_workflow(
+            # Use the workflow service component to create the workflow. This
+            # ensures that the result table is also created if the template
+            # specifies a result schema.
+            wf = api.workflows().create_workflow(
                 name=name,
                 description=description,
                 instructions=read_instructions(instructions),
@@ -70,7 +71,7 @@ def add_workflow(
                 repourl=url,
                 specfile=specfile
             )
-            click.echo('export FLOWSERV_WORKFLOW={}'.format(wf.identifier))
+            click.echo('export FLOWSERV_WORKFLOW={}'.format(wf['id']))
         except (err.ConstraintViolationError, ValueError) as ex:
             click.echo(str(ex))
 
@@ -83,8 +84,7 @@ def delete_workflow(identifier):
     """Delete a given workflow."""
     with service() as api:
         try:
-            repo = api.workflow_repository
-            repo.delete_workflow(identifier)
+            api.workflows().delete_workflow(identifier)
             click.echo('deleted workflow {}'.format(identifier))
         except err.UnknownObjectError as ex:
             click.echo(str(ex))
@@ -96,9 +96,8 @@ def delete_workflow(identifier):
 def list_workflows():
     """List all workflows."""
     with service() as api:
-        repo = api.workflow_repository
         count = 0
-        for bm in repo.list_workflows():
+        for wf in api.workflows().list_workflows()['workflows']:
             if count != 0:
                 click.echo()
             count += 1
@@ -106,10 +105,12 @@ def list_workflows():
             click.echo(title)
             click.echo('-' * len(title))
             click.echo()
-            click.echo('ID          : {}'.format(bm.identifier))
-            click.echo('Name        : {}'.format(bm.name))
-            click.echo('Description : {}'.format(bm.description))
-            click.echo('Instructions: {}'.format(bm.instructions))
+            click.echo('ID          : {}'.format(wf['id']))
+            click.echo('Name        : {}'.format(wf['name']))
+            if 'description' in wf:
+                click.echo('Description : {}'.format(wf['description']))
+            if 'instructions' in wf:
+                click.echo('Instructions: {}'.format(wf['instructions']))
 
 
 # -- Update workflow ----------------------------------------------------------
@@ -139,9 +140,8 @@ def update_workflow(identifier, name=None, description=None, instructions=None):
         click.echo('nothing to update')
     else:
         with service() as api:
-            repo = api.workflow_repository
             try:
-                repo.update_workflow(
+                api.workflows().update_workflow(
                     workflow_id=identifier,
                     name=name,
                     description=description,
