@@ -1006,8 +1006,6 @@ definitions:
     - members
     - parameters
     - files
-    - runs
-    - links
     properties:
       id:
         type: string
@@ -1033,12 +1031,6 @@ definitions:
         type: array
         items:
           $ref: "#/definitions/FileHandle"
-      runs:
-        type: array
-        items:
-          $ref: "#/definitions/RunDescriptor"
-      links:
-        $ref: "#/definitions/HATEOASLinks"
   UserGroupListing:
     type: object
     description: 'List of user group descriptors'
