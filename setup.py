@@ -61,17 +61,17 @@ with open('README.rst', 'rt') as f:
     readme = f.read()
 
 description = (
-    'Reproducible Open Benchmarks for Data Analysis Platform '
+    'Reproducible and Reusable Data Analysis Workflow Server '
     '(Core Infrastructure)'
 )
 setup(
-    name='flowserv',
+    name='flowserv-core',
     version=version,
     description=description,
     long_description=readme,
     long_description_content_type='text/x-rst',
-    keywords='reproducibility benchmarks data-analysis',
-    url='https://github.com/scailfin/rob-core',
+    keywords='reproducibility workflows benchmarks data-analysis',
+    url='https://github.com/scailfin/flowserv-core',
     author='Heiko Mueller',
     author_email='heiko.muller@gmail.com',
     license='MIT',

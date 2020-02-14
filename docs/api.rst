@@ -2,14 +2,9 @@
 API Documentation
 =================
 
-The ``flowserv`` package contains a default implementation of the `ROB API for Web applications <https://raw.githubusercontent.com/scailfin/rob-core/master/dev/resources/api/v1/rob.yaml>`_`. The implementation is contained in the modules in ``flowserv.service``.
-
-
 
 Authentication & Authorization
 ==============================
-
-The API itself does not handle user authentication. In the current `API specification <https://raw.githubusercontent.com/scailfin/rob-core/master/dev/resources/api/v1/rob.yaml>`_ we assume that HTTP requests contain a an access token in the request header field ``api_key``.
 
 Authorization is handled by the API. At this point, API calls that access or manipulate submissions and submission runs require the user to be a member of the respective submission.
 

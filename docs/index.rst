@@ -3,8 +3,8 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to Workflow Templates for Reproducible for Data Analysis Benchmarks's documentation!
-============================================================================================
+Welcome to the Reproducible and Reusable Data Analysis Workflow Server's documentation!
+=======================================================================================
 
 .. include:: ./readme.rst
 

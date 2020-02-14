@@ -57,7 +57,7 @@ The following example declares two input parameters for a workflow template. Wit
 
 The first parameter ``outputFormat`` defines a list of possible values. For each value the ``name`` defines the displayed name while ``value`` defines the resulting value if the respective entry is selected. Only one of the values in the list can be declared as the default value. An input form would render the output format parameter before the threshold parameter.
 
-See the `Workflow & Benchmark Templates <https://github.com/scailfin/rob-core/blob/master/docs/workflow.rst>`_ document for more examples of template parameters and their usage within workflow templates.
+See the `Workflow & Benchmark Templates <https://github.com/scailfin/flowserv-core/blob/master/docs/workflow.rst>`_ document for more examples of template parameters and their usage within workflow templates.
 
 
 
