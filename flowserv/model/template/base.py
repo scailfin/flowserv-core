@@ -40,6 +40,7 @@ LABEL_WORKFLOW = 'workflow'
 """Labels for post-processing workflows."""
 PPLBL_FILES = 'files'
 PPLBL_INPUTS = 'inputs'
+PPLBL_OUTPUTS = 'outputs'
 PPLBL_RUNS = 'runs'
 PPLBL_WORKFLOW = 'workflow'
 
@@ -173,7 +174,7 @@ class WorkflowTemplate(object):
                 util.validate_doc(
                     doc=postproc_spec,
                     mandatory=[PPLBL_WORKFLOW],
-                    optional=[PPLBL_INPUTS]
+                    optional=[PPLBL_INPUTS, PPLBL_OUTPUTS]
                 )
                 if PPLBL_INPUTS in postproc_spec:
                     inputs = postproc_spec[PPLBL_INPUTS]

@@ -107,7 +107,7 @@ def validate_ranking(doc):
     util.validate_doc(
         doc=doc,
         mandatory=['schema', 'ranking'],
-        optional=['postproc']
+        optional=['postproc', 'outputs']
     )
     # Schema columns
     for col in doc['schema']:
@@ -340,7 +340,11 @@ def validate_workflow_handle(doc, has_optional=False):
     mandatory = ['id', 'name', 'parameters', 'modules']
     if has_optional:
         mandatory = mandatory + ['description', 'instructions']
-    util.validate_doc(doc=doc, mandatory=mandatory, optional=['postproc'])
+    util.validate_doc(
+        doc=doc,
+        mandatory=mandatory,
+        optional=['postproc', 'outputs']
+    )
     # Validate the post-processing run handle if present
     if 'postproc' in doc:
         postproc = doc['postproc']

@@ -10,6 +10,8 @@
 
 from flowserv.view.base import Serializer
 
+import flowserv.model.template.base as tmpl
+
 
 class WorkflowSerializer(Serializer):
     """Default serializer for workflow resource objects. Defines the methods
@@ -38,6 +40,7 @@ class WorkflowSerializer(Serializer):
                 'MODULE_ID': 'id',
                 'MODULE_INDEX': 'index',
                 'MODULE_NAME': 'name',
+                'POSTPROC_OUTPUTS': 'outputs',
                 'POSTPROC_RUN': 'postproc',
                 'RANKING': 'ranking',
                 'RUN_CREATED': 'createdAt',
@@ -116,6 +119,10 @@ class WorkflowSerializer(Serializer):
         if workflow.postproc_run is not None:
             postproc_run = self.runs.run_handle(run=workflow.postproc_run)
             obj[LABELS['POSTPROC_RUN']] = postproc_run
+            # Add output descriptors (if given)
+            if tmpl.PPLBL_OUTPUTS in template.postproc_spec:
+                postproc_outputs = template.postproc_spec[tmpl.PPLBL_OUTPUTS]
+                obj[LABELS['POSTPROC_OUTPUTS']] = postproc_outputs
         return obj
 
     def workflow_leaderboard(self, workflow, ranking):
@@ -168,6 +175,11 @@ class WorkflowSerializer(Serializer):
         if workflow.postproc_run is not None:
             postproc_run = self.runs.run_handle(run=workflow.postproc_run)
             obj[self.labels['POSTPROC_RUN']] = postproc_run
+            # Add output descriptors (if given)
+            template = workflow.get_template()
+            if tmpl.PPLBL_OUTPUTS in template.postproc_spec:
+                postproc_outputs = template.postproc_spec[tmpl.PPLBL_OUTPUTS]
+                obj[LABELS['POSTPROC_OUTPUTS']] = postproc_outputs
         return obj
 
     def workflow_listing(self, workflows):

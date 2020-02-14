@@ -52,6 +52,10 @@ postproc:
         files:
             - 'results/analytics.json'
         runs: 'runs/'
+    outputs:
+        - id: 'results/compare.json'
+          title: 'Results'
+          caption: 'The results.'
 parameters:
     - id: names
       name: 'Input file'

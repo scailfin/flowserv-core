@@ -73,7 +73,7 @@ class SerialWorkflowEngine(WorkflowController):
             self.is_async = is_async
         else:
             self.is_async = bool(os.environ.get(SERIAL_ENGINE_ASYNC, 'True'))
-        self.verbose = verbose
+        self.verbose = True #verbose
         # Dictionary of all running tasks
         self.tasks = dict()
         # Lock to manage asynchronous access to the task dictionary
@@ -293,11 +293,14 @@ def callback_function(result, lock, tasks):
             del tasks[run_id]
     # Get an instance of the API to update the run state.
     from flowserv.service.api import service
-    with service() as api:
-        api.runs().update_run(
-            run_id=run_id,
-            state=result_state
-        )
+    try:
+        with service() as api:
+            api.runs().update_run(
+                run_id=run_id,
+                state=result_state
+            )
+    except Exception as ex:
+        logging.error(ex)
 
 
 def run_workflow(run_id, rundir, state, output_files, steps, verbose):
@@ -338,7 +341,7 @@ def run_workflow(run_id, rundir, state, output_files, steps, verbose):
         for cmd in statements:
             # Print command if verbose
             if verbose:
-                print(cmd)
+                print('{}'.format(cmd))
             # Each command is expected to be a shell command that is executed
             # using the subprocess package. The subprocess.run() method is
             # preferred for capturing output to STDERR but it does not exist
@@ -365,7 +368,6 @@ def run_workflow(run_id, rundir, state, output_files, steps, verbose):
                         stderr=subprocess.STDOUT
                     )
                 except subprocess.CalledProcessError as ex:
-                    print('error {}'.format(ex))
                     logging.error(ex)
                     result_state = state.error(messages=util.stacktrace(ex))
                     return run_id, serialize.serialize_state(result_state)

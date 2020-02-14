@@ -841,7 +841,6 @@ definitions:
     - name
     - createdAt
     - size
-    - links
     properties:
       id:
         type: string
@@ -851,39 +850,16 @@ definitions:
         type: string
       size:
         type: number
-      links:
-        $ref: "#/definitions/HATEOASLinks"
   FileListing:
     type: object
     description: "List of handles for uploaded files"
     required:
     - files
-    - links
     properties:
       files:
         type: array
         items:
           $ref: "#/definitions/FileHandle"
-      links:
-        $ref: "#/definitions/HATEOASLinks"
-  HATEOASLinks:
-    type: array
-    description: "List of HATEOAS references"
-    items:
-      $ref: "#/definitions/HATEOASRef"
-  HATEOASRef:
-    type: object
-    description: "HATEOAS reference containing relationship type and HTTP reference"
-    required:
-    - rel
-    - href
-    properties:
-      rel:
-        type: string
-        description: "Relationship type"
-      href:
-        type: string
-        description: "HTTP link"
   RunArgument:
     type: object
     description: "Argument for a new workflow run"
@@ -904,7 +880,6 @@ definitions:
     - id
     - state
     - createdAt
-    - links
     properties:
       id:
         type: string
@@ -912,8 +887,6 @@ definitions:
         type: string
       createdAt:
         type: string
-      links:
-        $ref: "#/definitions/HATEOASLinks"
   RunHandle:
     type: object
     description: "Handle containing all information for a workflow run"
@@ -922,7 +895,6 @@ definitions:
     - workflowId
     - arguments
     - state
-    - links
     properties:
       id:
         type: string
@@ -955,29 +927,21 @@ definitions:
           required:
           - id
           - name
-          - links
           properties:
             id:
               type: string
             name:
               type: string
-            links:
-              $ref: "#/definitions/HATEOASLinks"
-      links:
-        $ref: "#/definitions/HATEOASLinks"
   RunListing:
     type: object
     description: "Listing of run handles"
     required:
     - runs
-    - links
     properties:
       runs:
         type: array
         items:
           $ref: "#/definitions/RunDescriptor"
-      links:
-        $ref: "#/definitions/HATEOASLinks"
   ServiceDescriptor:
     type: object
     description: "Descriptor containing basic service properties"
@@ -985,7 +949,6 @@ definitions:
     - name
     - version
     - validToken
-    - links
     properties:
       name:
         type: string
@@ -995,8 +958,6 @@ definitions:
         type: boolean
       username:
         type: string
-      links:
-        $ref: "#/definitions/HATEOASLinks"
   UserGroupHandle:
     type: object
     description: "Handle for workflow user group"
@@ -1036,7 +997,6 @@ definitions:
     description: 'List of user group descriptors'
     required:
     - groups
-    - links
     properties:
       groups:
         type: array
@@ -1046,7 +1006,6 @@ definitions:
           - id
           - name
           - workflow
-          - links
           properties:
             id:
               type: string
@@ -1054,10 +1013,6 @@ definitions:
               type: string
             workflow:
               type: string
-            links:
-              $ref: "#/definitions/HATEOASLinks"
-      links:
-        $ref: "#/definitions/HATEOASLinks"
   UserCredentials:
     type: object
     description: "User login credentials"
@@ -1086,7 +1041,6 @@ definitions:
     required:
     - id
     - username
-    - links
     properties:
       id:
         type: string
@@ -1094,21 +1048,16 @@ definitions:
         type: string
       token:
         type: string
-      links:
-        $ref: "#/definitions/HATEOASLinks"
   UserListing:
     type: object
     description: "Identifier and name of a registered users"
     required:
     - users
-    - links
     properties:
       users:
         type: array
         items:
           $ref: "#/definitions/UserDescriptor"
-      links:
-        $ref: "#/definitions/HATEOASLinks"
   UserRegistration:
     type: object
     description: "Information about a new user"
@@ -1127,7 +1076,6 @@ definitions:
     required:
     - id
     - name
-    - links
     properties:
       id:
         type: string
@@ -1137,14 +1085,11 @@ definitions:
         type: string
       instructions:
         type: string
-      links:
-        $ref: "#/definitions/HATEOASLinks"
   WorkflowHandle:
     type: object
     required:
     - id
     - name
-    - links
     - parameters
     properties:
       id:
@@ -1177,15 +1122,12 @@ definitions:
               format: int64
       postproc:
         $ref: "#/definitions/RunHandle"
-      links:
-        $ref: "#/definitions/HATEOASLinks"
   WorkflowLeaderboard:
     type: object
     description: "Ordered list of run results"
     required:
     - ranking
     - schema
-    - links
     properties:
       ranking:
         type: array
@@ -1265,22 +1207,15 @@ definitions:
               type: string
             caption:
               type: string
-            links:
-              $ref: "#/definitions/HATEOASLinks"
-      links:
-        $ref: "#/definitions/HATEOASLinks"
   WorkflowListing:
     type: object
     required:
     - workflows
-    - links
     properties:
       workflows:
         type: array
         items:
           $ref: "#/definitions/WorkflowDescriptor"
-      links:
-        $ref: "#/definitions/HATEOASLinks"
   WorkflowParameter:
     type: object
     required:

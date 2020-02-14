@@ -11,36 +11,38 @@ local Docker daemon to execute workflow steps.
 """
 
 import docker
+import logging
 import os
 
 from docker.errors import ContainerError, ImageNotFound, APIError
 
-from flowserv.controller.multiproc import MultiProcessWorkflowEngine
+from flowserv.controller.serial.engine import SerialWorkflowEngine
 from flowserv.model.workflow.resource import FSObject
 
-import flowserv.controller.sync as sync
 import flowserv.core.util as util
+import flowserv.model.workflow.state as serialize
 
 
-class DockerWorkflowEngine(MultiProcessWorkflowEngine):
+class DockerWorkflowEngine(SerialWorkflowEngine):
     """The docker workflow engine is used to execute workflow templates for a
     given set of arguments using docker containers.
 
     the engine extends the multi-process controller for asynchronous execution.
     Workflow runs are executed by the docker_run() function.
     """
-    def __init__(self, basedir=None):
-        """Initialize the base directory under which all workflow runs are
-        maintained. If the directory does not exist it will be created.
+    def __init__(self, is_async=None):
+        """Initialize the super class using the docker_run execution function.
 
         Parameters
         ----------
-        basedir: string
-            Path to directory on disk
+        is_async: bool, optional
+            Flag that determines whether workflows execution is synchronous or
+            asynchronous by default.
         """
         super(DockerWorkflowEngine, self).__init__(
-            basedir=basedir,
-            exec_func=docker_run
+        exec_func=docker_run,
+            is_async=is_async,
+            verbose=True
         )
 
 
@@ -72,6 +74,8 @@ def docker_run(run_id, rundir, state, output_files, steps, verbose):
     -------
     (string, dict)
     """
+    print('start docker run {}'.format(run_id))
+    logging.debug('start docker run {}'.format(run_id))
     # Setup the workflow environment by obtaining volume information for all
     # directories in the run folder.
     volumes = dict()
@@ -84,20 +88,32 @@ def docker_run(run_id, rundir, state, output_files, steps, verbose):
     try:
         for step in steps:
             for cmd in step.commands:
+                if vebose:
+                    print('{}'.format(cmd))
                 client.containers.run(
                     image=step.env,
                     command=cmd,
                     volumes=volumes
                 )
     except (ContainerError, ImageNotFound, APIError) as ex:
-        return run_id, sync.serialize_state(state.error(messages=[str(ex)]))
+        logging.error(ex)
+        result_state = state.error(messages=[str(ex)])
+        return run_id, serialize.serialize_state(result_state)
     # Create dictionary of output files
-    files = dict()
+    files = list()
     for resource_name in output_files:
-        files[resource_name] = FSObject(
-            resource_id=util.get_unique_identifier(),
-            resource_name=resource_name,
-            file_path=os.path.join(rundir, resource_name)
-        )
+        try:
+            f = FSObject(
+                identifier=util.get_unique_identifier(),
+                name=resource_name,
+                filename=os.path.join(rundir, resource_name)
+            )
+        except (OSError, IOError) as ex:
+            logging.error(ex)
+            result_state = state.error(messages=[str(ex)])
+            return run_id, serialize.serialize_state(result_state)
+        files.append(f)
     # Workflow executed successfully
-    return run_id, sync.serialize_state(state.success(resources=files))
+    result_state = state.success(resources=files)
+    logging.debug('finished run {} = {}'.format(run_id, result_state.type_id))
+    return run_id, serialize.serialize_state(result_state)
