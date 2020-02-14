@@ -130,7 +130,6 @@ def test_multi_workflow_run(tmpdir):
 def test_workflow_run_view(tmpdir):
     """Test creating and updating the state of workflow runs."""
     # Initialize the database and the API
-    # Initialize the database and the API
     api, engine, workflows = service.init_service(
         basedir=str(tmpdir),
         templatedir=TEMPLATE_DIR,
@@ -163,6 +162,10 @@ def test_workflow_run_view(tmpdir):
     api.runs().update_run(run_id=r_id, state=engine.start(r_id))
     r = api.runs().get_run(run_id=r_id, user_id=USER_1)
     serialize.validate_run_handle(r, state=st.STATE_RUNNING)
+    # Test polling
+    r = api.runs().poll_runs(group_id=g_id, user_id=USER_1)
+    assert len(r['runs']) == 1
+    assert r_id in r['runs']
     # Set run into error state
     api.runs().update_run(
         run_id=r_id,
@@ -171,6 +174,15 @@ def test_workflow_run_view(tmpdir):
     r = api.runs().get_run(run_id=r_id, user_id=USER_1)
     serialize.validate_run_handle(r, state=st.STATE_ERROR)
     assert r['messages'] == ['There was', 'an error']
+    # Test polling
+    r = api.runs().poll_runs(group_id=g_id, user_id=USER_1)
+    assert len(r['runs']) == 0
+    r = api.runs().poll_runs(
+        group_id=g_id,
+        user_id=USER_1,
+        state=st.STATE_ERROR
+    )
+    assert len(r['runs']) == 1
     # Error accessing run as non-member
     with pytest.raises(err.UnauthorizedAccessError):
         api.runs().get_run(run_id=r_id, user_id=USER_2)

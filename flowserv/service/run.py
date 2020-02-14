@@ -180,7 +180,7 @@ class RunService(object):
         # identifier is given).
         if user_id is not None:
             is_member = self.auth.is_group_member(
-                group_id=group_id,
+                run_id=run_id,
                 user_id=user_id
             )
             if not is_member:
@@ -224,7 +224,7 @@ class RunService(object):
         # identifier is given).
         if user_id is not None:
             is_member = self.auth.is_group_member(
-                group_id=group_id,
+                run_id=run_id,
                 user_id=user_id
             )
             if not is_member:
@@ -283,7 +283,7 @@ class RunService(object):
         group_id: string
             Unique workflow group identifier
         user_id: string
-            unique user identifier
+            Unique user identifier
 
         Returns
         -------
@@ -302,6 +302,38 @@ class RunService(object):
             runs=self.run_manager.list_runs(group_id=group_id),
             group_id=group_id
         )
+
+    def poll_runs(self, group_id, user_id, state=None):
+        """Get list of identifier for group runs that are currently in the
+        given state. By default, the active runs are returned.
+
+        Raises an unauthorized access error if the user does not have read
+        access to the workflow group.
+
+        Parameters
+        ----------
+        group_id: string, optional
+            Unique workflow group identifier
+        user_id: string
+            Unique user identifier
+        state: string, Optional
+                State identifier query
+
+        Returns
+        -------
+        list(string)
+
+        Raises
+        ------
+        flowserv.core.error.UnauthorizedAccessError
+        flowserv.core.error.UnknownWorkflowGroupError
+        """
+        # Raise an error if the user does not have rights to access the
+        # workflow group runs or if the workflow group does not exist.
+        if not self.auth.is_group_member(group_id=group_id, user_id=user_id):
+            raise err.UnauthorizedAccessError()
+        runs = self.run_manager.poll_runs(group_id=group_id, state=state)
+        return self.serialize.runid_listing(runs)
 
     def start_run(self, group_id, arguments, user_id):
         """Start a new workflow run for the given group. The user provided

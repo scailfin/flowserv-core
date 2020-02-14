@@ -43,6 +43,21 @@ class RunSerializer(Serializer):
             override_labels=labels
         )
 
+    def runid_listing(self, runs):
+        """Get serialization for a list of run identifier.
+
+        Parameters
+        ----------
+        runs: list(string)
+            List of run identifier
+
+        Returns
+        -------
+        dict
+        """
+        LABELS = self.labels
+        return {LABELS['RUN_LIST']: runs}
+
     def run_descriptor(self, run):
         """Get serialization for a run descriptor. The descriptor contains the
         run identifier, state, timestampls, and the base list of HATEOAS

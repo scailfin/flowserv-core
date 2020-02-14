@@ -282,7 +282,7 @@ class MissingArgumentError(ConstraintViolationError):
         )
 
 
-# -- Unknown resources ---------------------------------------------------------
+# -- Unknown resources --------------------------------------------------------
 
 class UnknownObjectError(FlowservError):
     """Generic error for references to unknown objects."""
@@ -318,8 +318,8 @@ class UnknownFileError(UnknownObjectError):
 
 
 class UnknownParameterError(UnknownObjectError):
-    """Exception indicating that a workflow specification references a parameter
-    that is not defined for a given template.
+    """Exception indicating that a workflow specification references a
+    parameter that is not defined for a given template.
     """
     def __init__(self, identifier):
         """Initialize error message for given parameter identifier.

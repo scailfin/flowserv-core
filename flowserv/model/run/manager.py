@@ -249,6 +249,35 @@ class RunManager(object):
             runs.append(run)
         return runs
 
+    def poll_runs(self, group_id, state=None):
+        """Get list of identifier for group runs that are currently in the
+        given state. By default, the active runs are returned.
+
+        Parameters
+        ----------
+        group_id: string, optional
+            Unique workflow group identifier
+        state: string, Optional
+                State identifier query
+
+        Returns
+        -------
+        list(string)
+        """
+        # Generate SQL query that returns the identifier of all runs in a given
+        # state. If no state query is given the identifier of active runs are
+        # returned.
+        sql = 'SELECT run_id FROM workflow_run WHERE group_id = ? AND state'
+        if state is None:
+            in_clause = " IN ('{}', '{}')"
+            sql = sql + in_clause.format(st.STATE_PENDING, st.STATE_RUNNING)
+        else:
+            sql = sql + " = '{}'".format(state.upper())
+        result = list()
+        for row in self.con.execute(sql, (group_id,)).fetchall():
+            result.append(row[0])
+        return result
+
     def update_run(self, run_id, state, commit_changes=True):
         """Update the state of the given run. This method does check if the
         state transition is valid. Transitions are valid for active workflows,

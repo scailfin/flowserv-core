@@ -126,6 +126,21 @@ def validate_ranking(doc):
 
 # -- Runs ---------------------------------------------------------------------
 
+def validate_run_descriptor(doc):
+    """Validate serialization of  run descriptor.
+
+    Parameters
+    ----------
+    doc: dict
+        Run handle serialization
+
+    Raises
+    ------
+    ValueError
+    """
+    util.validate_doc(doc=doc, mandatory=['id', 'state', 'createdAt'])
+
+
 def validate_run_handle(doc, state):
     """Validate serialization of a run handle.
 
@@ -185,10 +200,7 @@ def validate_run_listing(doc):
     """
     util.validate_doc(doc=doc, mandatory=['runs'])
     for r in doc['runs']:
-        util.validate_doc(
-            doc=r,
-            mandatory=['id', 'state', 'createdAt']
-        )
+        validate_run_descriptor(doc=r)
 
 
 # -- Service descriptor -------------------------------------------------------

@@ -169,6 +169,10 @@ def test_list_runs(tmpdir):
     assert len(runs) == 2
     assert runs[r1.identifier].is_running()
     assert runs[r2.identifier].is_error()
+    # Poll runs
+    assert len(manager.poll_runs(g.identifier)) == 1
+    assert len(manager.poll_runs(g.identifier, state=st.STATE_ERROR)) == 1
+    assert len(manager.poll_runs(g.identifier, state=st.STATE_SUCCESS)) == 0
 
 
 def test_run_parameters(tmpdir):
