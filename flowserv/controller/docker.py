@@ -88,7 +88,7 @@ def docker_run(run_id, rundir, state, output_files, steps, verbose):
     try:
         for step in steps:
             for cmd in step.commands:
-                if vebose:
+                if verbose:
                     print('{}'.format(cmd))
                 client.containers.run(
                     image=step.env,

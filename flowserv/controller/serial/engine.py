@@ -73,7 +73,7 @@ class SerialWorkflowEngine(WorkflowController):
             self.is_async = is_async
         else:
             self.is_async = bool(os.environ.get(SERIAL_ENGINE_ASYNC, 'True'))
-        self.verbose = True #verbose
+        self.verbose = verbose
         # Dictionary of all running tasks
         self.tasks = dict()
         # Lock to manage asynchronous access to the task dictionary
