@@ -1,22 +1,17 @@
-# This file is part of the Reproducible Open Benchmarks for Data Analysis
-# Platform (ROB).
+# This file is part of the Reproducible and Reusable Data Analysis Workflow
+# Server (flowServ).
 #
-# Copyright (C) 2019 NYU.
+# Copyright (C) [2019-2020] NYU.
 #
-# ROB is free software; you can redistribute it and/or modify it under the
+# flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
 """Collection of Unit tests for utility methods."""
 
 import os
 import pytest
-import tarfile
 
 import flowserv.core.util as util
-
-
-DIR = os.path.dirname(os.path.realpath(__file__))
-TAR_DIR = os.path.join(DIR, '../.files/')
 
 
 """JSON decode error differs between Python 2.7 and 3. This is based on:
@@ -73,42 +68,6 @@ class TestUtilityMethods(object):
         assert util.jquery(doc=doc, path=['C', 'E', 'Z']) is None
         assert util.jquery(doc=doc, path=['I', 'K', 'K']) is None
         assert util.jquery(doc=doc, path=['Z']) is None
-
-    def test_tar_gz(self, tmpdir):
-        """Unit test for compressing directory files in a tar-file that is kept
-        in main memory.
-        """
-        file_like_object = util.tar_gz(
-            directory=TAR_DIR,
-            filenames=[
-                'schema.json',
-                'template/inputs/names.txt',
-                'benchmark/helloworld/code/'
-            ]
-        )
-        out_file = os.path.join(str(tmpdir), 'run.tar.gz')
-        with open(out_file, 'wb') as f:
-            f.write(file_like_object.getvalue())
-        tar = tarfile.open(out_file, mode='r:gz')
-        # Validate that there are 5 entries in the tar file
-        names = list()
-        for member in tar.getmembers():
-            names.append(member.name)
-        assert len(names) == 5
-        assert 'schema.json' in names
-        assert 'template/inputs/names.txt' in names
-        assert 'benchmark/helloworld/code' in names
-        assert 'benchmark/helloworld/code/analyze.py' in names
-        assert 'benchmark/helloworld/code/helloworld.py' in names
-        # Include whole directory in the tar file
-        file_like_object = util.tar_gz(
-            directory=TAR_DIR
-        )
-        out_file = os.path.join(str(tmpdir), 'run.tar.gz')
-        with open(out_file, 'wb') as f:
-            f.write(file_like_object.getvalue())
-        tar = tarfile.open(out_file, mode='r:gz')
-        assert len(tar.getmembers()) > 5
 
     def test_read_write_object(self, tmpdir):
         """Test reading and writing dictionary objects to file in Json format

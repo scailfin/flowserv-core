@@ -25,18 +25,14 @@ workflow:
        - 'results/evaluate.log'
        - 'results/preproc.log'
 postproc:
-    environment: 'toptagger:1.0'
-    mount:
-        - 'code/'
-        - 'data/'
+    workflow:
+        steps:
+        - environment: 'toptagger:1.0'
+          commands:
+            - 'python code/plot-roc.py ${in} data/evaluate/labels.pkl ${out}'
     inputs:
-        - 'results/yProbBest.pkl'
-    commands:
-        - 'python code/plot-roc.py ${in} data/evaluate/labels.pkl ${out}'
-    outputs:
-        - id: 'ROC.png'
-          name: 'ROC Curves'
-          caption: 'ROC curves for all algorithms evaluated on the test sample, shown as the AUC ensemble median of  multiple  trainings. '
+        files:
+            - 'results/yProbBest.pkl'
 modules:
     - id: 'preproc'
       name: 'Pre-Processing Step'

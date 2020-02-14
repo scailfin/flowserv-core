@@ -1,32 +1,35 @@
-# This file is part of the Reproducible Open Benchmarks for Data Analysis
-# Platform (ROB).
+# This file is part of the Reproducible and Reusable Data Analysis Workflow
+# Server (flowServ).
 #
-# Copyright (C) 2019 NYU.
+# Copyright (C) [2019-2020] NYU.
 #
-# ROB is free software; you can redistribute it and/or modify it under the
+# flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
-"""Base serializer interface. Includes implementation of base methods that are
-used by several different serializers.
-"""
+"""Serializer for the service descriptor."""
 
-import flowserv.view.hateoas as hateoas
-import flowserv.view.labels as labels
+from flowserv.view.base import Serializer
 
 
-class ServiceSerializer(object):
-    """Basic serialization methods that are inherited by the more specific
-    serializers for different API resources.
-    """
-    def __init__(self, urls):
-        """Initialize the Url factory.
+class ServiceSerializer(Serializer):
+    """Default serializer for the service descriptor."""
+    def __init__(self, labels=None):
+        """Initialize serialization labels.
 
         Parameters
         ----------
-        urls: flowserv.view.route.UrlFactory
-            Factory for resource Urls
+        labels: object, optional
+            Object instance that contains the values for serialization labels
         """
-        self.urls = urls
+        super(ServiceSerializer, self).__init__(
+            labels={
+                'SERVICE_NAME': 'name',
+                'SERVICE_USER': 'username',
+                'SERVICE_TOKEN_VALID': 'validToken',
+                'SERVICE_VERSION': 'version',
+            },
+            override_labels=labels
+        )
 
     def service_descriptor(self, name, version, username=None):
         """Serialization of the service descriptor. The descriptor contains the
@@ -49,20 +52,17 @@ class ServiceSerializer(object):
         -------
         dict
         """
-        valid_token = not username is None
+        LABELS = self.labels
+        # If the request for the service descriptor contained an API key that
+        # was valid, the name for the respective user will be given. The valid
+        # token flag indicates that the API key was valid and that the
+        # descriptor contains the name of the user.
+        valid_token = username is not None
         obj = {
-            labels.NAME: name,
-            labels.VERSION: version,
-            labels.VALID_TOKEN: valid_token,
-            labels.LINKS: hateoas.serialize({
-                hateoas.SELF: self.urls.service_descriptor(),
-                hateoas.LOGIN: self.urls.login(),
-                hateoas.LOGOUT: self.urls.logout(),
-                hateoas.REGISTER: self.urls.register_user(),
-                hateoas.BENCHMARKS: self.urls.list_benchmarks(),
-                hateoas.SUBMISSIONS: self.urls.list_submissions()
-            })
+            LABELS['SERVICE_NAME']: name,
+            LABELS['SERVICE_VERSION']: version,
+            LABELS['SERVICE_TOKEN_VALID']: valid_token
         }
-        if not username is None:
-            obj[labels.USERNAME] = username
+        if username is not None:
+            obj[LABELS['SERVICE_USER']] = username
         return obj

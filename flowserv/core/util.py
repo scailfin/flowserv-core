@@ -1,9 +1,9 @@
-# This file is part of the Reproducible Open Benchmarks for Data Analysis
-# Platform (ROB).
+# This file is part of the Reproducible and Reusable Data Analysis Workflow
+# Server (flowServ).
 #
-# Copyright (C) 2019 NYU.
+# Copyright (C) [2019-2020] NYU.
 #
-# ROB is free software; you can redistribute it and/or modify it under the
+# flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
 """Helper methods for the reproducible open benchmark platform. Provides
@@ -12,20 +12,60 @@ directories, (iii) validate dictionaries, and (iv) to create of unique
 identifiers.
 """
 
+import abc
 import datetime
 import errno
-import io
 import json
 import os
-import tarfile
+import shutil
 import time
+import traceback
 import uuid
 import yaml
+
+
+"""ABCMeta alternative."""
+# compatible with Python 2 *and* 3:
+# based on https://stackoverflow.com/questions/35673474/using-abc-abcmeta-in-a-way-it-is-compatible-both-with-python-2-7-and-python-3-5
+ABC = abc.ABCMeta('ABC', (object,), {'__slots__': ()})
 
 
 """Identifier for supported data formats."""
 FORMAT_JSON = 'JSON'
 FORMAT_YAML = 'YAML'
+
+
+def copy_files(files, target_dir):
+    """Copy list of files to a target directory. Expects a list of tuples that
+    contain the path to the source file on local disk and the relative target
+    path for the file in the given target directory.
+
+    Parameters
+    ----------
+    files: list((string, string))
+        List of source,target path pairs for files that are being copied
+    target_dir: string
+        Target directory for copied files (e.g., base directory for a
+        workflow run)
+    """
+    for source, target in files:
+        dst = os.path.join(target_dir, target)
+        # If the source references a directory the whole directory tree is
+        # copied
+        if os.path.isdir(source):
+            shutil.copytree(src=source, dst=dst)
+        else:
+            # Based on https://stackoverflow.com/questions/2793789/create-destination-path-for-shutil-copy-files/3284204
+            try:
+                shutil.copy(src=source, dst=dst)
+            except IOError as e:
+                # ENOENT(2): file does not exist, raised also on missing dest
+                # parent dir
+                if e.errno != errno.ENOENT or not os.path.isfile(source):
+                    raise
+                # try creating parent directories
+                os.makedirs(os.path.dirname(dst))
+                shutil.copy(src=source, dst=dst)
 
 
 def create_dir(directory, abs=False):
@@ -161,41 +201,23 @@ def read_object(filename, format=None):
         raise ValueError('unknown data format \'' + str(format) + '\'')
 
 
-def tar_gz(directory, filenames=None):
-    """Create a gzipped tar file containing all files in the given list of
-    file names from the base directory.
+def stacktrace(ex):
+    """Get list of strings representing the stack trace for a given exception.
 
     Parameters
     ----------
-    directory: string
-        Base directory
-    filenames: list(string) or set(string)
-        List of relative path names for files to be included in the compressed
-        tar file.
+    ex: Exception
+        Exception that was raised by flowServ code
 
     Returns
     -------
-    io.BytesIO
+    list(string)
     """
-    file_out = io.BytesIO()
-    tar_handle = tarfile.open(fileobj=file_out, mode='w:gz')
-    for root, dirs, files in os.walk(directory):
-        # Add directories (if contained in the filename list)
-        for dir in dirs:
-            # Get path to file relative to base directory
-            filename = os.path.relpath(os.path.join(root, dir), directory)
-            if filenames is None:
-                tar_handle.add(name=os.path.join(root, dir), arcname=filename)
-            elif filename in filenames or filename + '/' in filenames:
-                tar_handle.add(name=os.path.join(root, dir), arcname=filename)
-        for file in files:
-            # Get path to file relative to base directory
-            filename = os.path.relpath(os.path.join(root, file), directory)
-            if filenames is None or filename in filenames:
-                tar_handle.add(name=os.path.join(root, file), arcname=filename)
-    tar_handle.close()
-    file_out.seek(0)
-    return file_out
+    try:
+        st = traceback.format_exception(type(ex), ex, ex.__traceback__)
+    except (AttributeError, TypeError):
+        st = [str(ex)]
+    return [line.strip() for line in st]
 
 
 def to_datetime(timestamp):
@@ -236,14 +258,14 @@ def to_localstr(date=None, text=None):
     -------
     string
     """
-    if not date is None:
+    if date is not None:
         ts = from_utc_datetime(date)
-    elif not text is None:
+    elif text is not None:
         ts = from_utc_datetime(to_datetime(text))
     return str(ts)[:-7]
 
 
-def validate_doc(doc, mandatory_labels=None, optional_labels=None):
+def validate_doc(doc, mandatory=None, optional=None):
     """Raises error if a dictionary contains labels that are not in the given
     label lists or if there are labels in the mandatory list that are not in
     the dictionary. Returns the given dictionary (if valid).
@@ -252,9 +274,9 @@ def validate_doc(doc, mandatory_labels=None, optional_labels=None):
     ----------
     doc: dict
         Dictionary serialization of an object
-    mandatory_labels: list(string)
+    mandatory: list(string)
         List of mandatory labels for the dictionary serialization
-    optional_labels: list(string), optional
+    optional: list(string), optional
         List of optional labels for the dictionary serialization
 
     Returns
@@ -266,17 +288,17 @@ def validate_doc(doc, mandatory_labels=None, optional_labels=None):
     ValueError
     """
     # Ensure that all mandatory labels are present in the dictionary
-    if not mandatory_labels is None:
-        for key in mandatory_labels:
-            if not key in doc:
-                raise ValueError('missing element \'{}\''.format(key))
+    if mandatory is not None:
+        for key in mandatory:
+            if key not in doc:
+                raise ValueError("missing element '{}'".format(key))
     # Raise error if additional elements are present in the dictionary
-    labels = mandatory_labels if not mandatory_labels is None else list()
-    if not optional_labels is None:
-        labels = labels + optional_labels
+    labels = mandatory if mandatory is not None else list()
+    if optional is not None:
+        labels = labels + optional
     for key in doc:
-        if not key in labels:
-            raise ValueError('unknown element \'{}\''.format(key))
+        if key not in labels:
+            raise ValueError("unknown element '{}'".format(key))
     return doc
 
 

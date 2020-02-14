@@ -1,9 +1,9 @@
-# This file is part of the Reproducible Open Benchmarks for Data Analysis
-# Platform (ROB).
+# This file is part of the Reproducible and Reusable Data Analysis Workflow
+# Server (flowServ).
 #
-# Copyright (C) 2019 NYU.
+# Copyright (C) [2019-2020] NYU.
 #
-# ROB is free software; you can redistribute it and/or modify it under the
+# flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
 """Classes used when installing the package and setting up the database."""
@@ -46,7 +46,8 @@ class DB(object):
         # listing
         files = list()
         for script_file in scripts:
-            files.append(pkg_resources.resource_filename(pkg_name, script_file))
+            filename = pkg_resources.resource_filename(pkg_name, script_file)
+            files.append(filename)
         # Execute the script files
         DatabaseDriver.execute(
             scripts=files,

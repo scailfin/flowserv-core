@@ -403,7 +403,7 @@
 			<data key="d6">
 				<uml:UMLNodeStyle fill="{y:GraphMLReference 1}" highlightFill="{y:GraphMLReference 2}">
 					<uml:UMLNodeStyle.model>
-						<uml:UMLClassModel stereotype="" constraint="" className="FileResource" attributesOpen="true" operationsOpen="true">
+						<uml:UMLClassModel stereotype="" constraint="" className="FSObject" attributesOpen="true" operationsOpen="true">
 							<uml:UMLClassModel.attributes>
 								<x:Array Type="sys:Object">
 									<sys:String>identifier</sys:String>

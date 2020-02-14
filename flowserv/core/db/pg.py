@@ -1,9 +1,9 @@
-# This file is part of the Reproducible Open Benchmarks for Data Analysis
-# Platform (ROB).
+# This file is part of the Reproducible and Reusable Data Analysis Workflow
+# Server (flowServ).
 #
-# Copyright (C) 2019 NYU.
+# Copyright (C) [2019-2020] NYU.
 #
-# ROB is free software; you can redistribute it and/or modify it under the
+# flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
 """Implementation of the database connector for PostgreSQL. Uses the psycopg
@@ -22,31 +22,31 @@ from flowserv.core.db.connector import DatabaseConnector
 """Driver-specific environment variables containing connection information for
 the database.
 """
-PG_ROB_HOST = 'PG_ROB_HOST'
-PG_ROB_DATABASE = 'PG_ROB_DATABASE'
-PG_ROB_USER = 'PG_ROB_USER'
-PG_ROB_PASSWORD = 'PG_ROB_PASSWORD'
-PG_ROB_PORT = 'PG_ROB_PORT'
+PG_FLOWSERV_HOST = 'PG_FLOWSERV_HOST'
+PG_FLOWSERV_DATABASE = 'PG_FLOWSERV_DATABASE'
+PG_FLOWSERV_USER = 'PG_FLOWSERV_USER'
+PG_FLOWSERV_PASSWORD = 'PG_FLOWSERV_PASSWORD'
+PG_FLOWSERV_PORT = 'PG_FLOWSERV_PORT'
 
 
 class PostgresConnection(object):
     """Wrapper around a Psycopg2 connection object. This wrapper is implemented
-    to achieve flexibility of ROB with respect to the database system that is
-    being used. The application is tested (and was originally designed) using
-    SQLLite3. Unfortunately, there seem to be some differences in how query
-    processing in ROB was implements using SQLite3 and how the Psycopg2 module
-    operates: in SQLite3 the execute() method is called directly on the database
-    connection object and it returns a cursor. Also, by default the result rows
-    in SQLLite3 are dictionaries. There is also a difference in how the two
-    databases handle SQL query parameters.
+    to achieve flexibility of flowServ with respect to the database system that
+    is being used. The application is tested (and was originally designed)
+    using SQLLite3. Unfortunately, there seem to be some differences in how
+    query processing in flowServ was implements using SQLite3 and how the
+    Psycopg2 module operates: in SQLite3 the execute() method is called
+    directly on the database connection object and it returns a cursor. Also,
+    by default the result rows in SQLLite3 are dictionaries. There is also a
+    difference in how the two databases handle SQL query parameters.
 
     This wrapper object attempts to emulate the SQLite3 behavior in order to be
     able to use the same code to interact with the underlying database
     independently of the database system.
 
     We make a very strong assumption here. We assume that all SQL queries
-    that are used by ROB do not contain any '?' character other than the ones
-    that are used to define query parameters. This assumption allows us to
+    that are used by flowServ do not contain any '?' character other than the
+    ones that are used to define query parameters. This assumption allows us to
     simply replace the '?' with '%s' to achieve compatibility between the
     different database systems that are currently supported.
 
@@ -84,11 +84,11 @@ class PostgresConnection(object):
         bool
         """
         # Make sure to close any open cursors
-        if not self.cur is None:
+        if self.cur is not None:
             self.cur.close()
             self.cur = None
         # Close the database connections
-        if not self.con is None:
+        if self.con is not None:
             self.con.close()
             self.con = None
         return False
@@ -112,7 +112,7 @@ class PostgresConnection(object):
         -------
         psycopg2.cursor
         """
-        if not self.cur is None:
+        if self.cur is not None:
             self.cur.close()
         self.cur = self.con.cursor(cursor_factory=RealDictCursor)
         return self.cur
@@ -139,7 +139,7 @@ class PostgresConnection(object):
         psycopg2.cursor
         """
         self.cur = self.cursor()
-        if not args is None:
+        if args is not None:
             # Replace all query parameters. Note that code assumes that every
             # '?'' character in SQL query represents a parameter. It does not
             # account for cases where , for example, a '?' is part of a query
@@ -164,7 +164,7 @@ class PostgresConnector(DatabaseConnector):
 
         If the connection string is not given the necessary information to
         connect to the database is expected to be in the respective environment
-        variables PG_ROB_HOST, PG_ROB_DATABASE, PG_ROB_USER, PG_ROB_PASSWORD.
+        variables PG_FLOWSERV_HOST, PG_FLOWSERV_DATABASE, PG_FLOWSERV_USER, PG_FLOWSERV_PASSWORD.
 
         Parameters
         ----------
@@ -176,13 +176,13 @@ class PostgresConnector(DatabaseConnector):
         ------
         ValueError
         """
-        if not connect_string is None:
+        if connect_string is not None:
             # Get host name and port from the first part of the connect string
             # up until the first '/' character
             pos_1 = connect_string.index('/')
             self.host = connect_string[:pos_1]
-            # The database name comes after the host name up until the first ':'
-            # character
+            # The database name comes after the host name up until the first
+            #  ':' character
             pos_2 = connect_string.index(':', pos_1 + 1)
             self.database = connect_string[pos_1+1:pos_2]
             # The user name is after the database name up until the next '/'
@@ -192,11 +192,29 @@ class PostgresConnector(DatabaseConnector):
             self.password = connect_string[pos_3+1:]
             self.port = 5432
         else:
-            self.host = os.environ.get(PG_ROB_HOST, 'localhost')
-            self.port = int(os.environ.get(PG_ROB_PORT, '5432'))
-            self.database = os.environ.get(PG_ROB_DATABASE, 'rob')
-            self.user = os.environ.get(PG_ROB_USER, 'rob')
-            self.password = os.environ.get(PG_ROB_PASSWORD, 'rob')
+            self.host = os.environ.get(PG_FLOWSERV_HOST, 'localhost')
+            self.port = int(os.environ.get(PG_FLOWSERV_PORT, '5432'))
+            self.database = os.environ.get(PG_FLOWSERV_DATABASE, 'flowserv')
+            self.user = os.environ.get(PG_FLOWSERV_USER, 'flowserv')
+            self.password = os.environ.get(PG_FLOWSERV_PASSWORD, 'flowServ')
+
+    @staticmethod
+    def configuration():
+        """Get a list of tuples with the names of additional configuration
+        variables and their current values.
+
+        Returns
+        -------
+        list((string, string))
+        """
+        connector = PostgresConnector()
+        return [
+            (PG_FLOWSERV_HOST, connector.host),
+            (PG_FLOWSERV_PORT, str(connector.port)),
+            (PG_FLOWSERV_DATABASE, connector.database),
+            (PG_FLOWSERV_USER, connector.user),
+            (PG_FLOWSERV_PASSWORD, connector.password),
+        ]
 
     def connect(self):
         """Connect to the underlying PostgreSQL database.

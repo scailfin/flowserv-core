@@ -1,9 +1,9 @@
-# This file is part of the Reproducible Open Benchmarks for Data Analysis
-# Platform (ROB).
+# This file is part of the Reproducible and Reusable Data Analysis Workflow
+# Server (flowServ).
 #
-# Copyright (C) 2019 NYU.
+# Copyright (C) [2019-2020] NYU.
 #
-# ROB is free software; you can redistribute it and/or modify it under the
+# flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
 """Definition of workflow states. The classes in this module represent the
@@ -18,6 +18,8 @@ Contains default methods to (de-)serialize workflow state.
 
 from datetime import datetime
 
+from flowserv.model.workflow.resource import ResourceSet, WorkflowResource
+
 import flowserv.core.util as util
 
 
@@ -27,6 +29,10 @@ STATE_ERROR = 'ERROR'
 STATE_PENDING = 'PENDING'
 STATE_RUNNING = 'RUNNING'
 STATE_SUCCESS = 'SUCCESS'
+
+
+"""Short-cut to list of active states."""
+ACTIVE_STATES = [STATE_PENDING, STATE_RUNNING]
 
 
 class WorkflowState(object):
@@ -44,7 +50,7 @@ class WorkflowState(object):
             Type identifier
         """
         self.type_id = type_id
-        self.created_at = created_at if not created_at is None else datetime.utcnow()
+        self.created_at = created_at if created_at is not None else datetime.utcnow()
 
     def __str__(self):
         """Get printable representation of the state type.
@@ -77,7 +83,7 @@ class WorkflowState(object):
         --------
         bool
         """
-        return self.type_id in [STATE_PENDING, STATE_RUNNING]
+        return self.type_id in ACTIVE_STATES
 
     def is_canceled(self):
         """Returns True if the workflow state is of type CANCELED.
@@ -150,9 +156,9 @@ class StateCanceled(WorkflowState):
             type_id=STATE_CANCELED,
             created_at=created_at
         )
-        self.started_at = started_at if not started_at is None else created_at
-        self.stopped_at = stopped_at if not stopped_at is None else datetime.utcnow()
-        self.messages = messages if not messages is None else ['canceled at user request']
+        self.started_at = started_at if started_at is not None else created_at
+        self.stopped_at = stopped_at if stopped_at is not None else datetime.utcnow()
+        self.messages = messages if messages is not None else ['canceled at user request']
 
 
 class StateError(WorkflowState):
@@ -181,9 +187,9 @@ class StateError(WorkflowState):
             type_id=STATE_ERROR,
             created_at=created_at
         )
-        self.started_at = started_at if not started_at is None else created_at
-        self.stopped_at = stopped_at if not stopped_at is None else datetime.utcnow()
-        self.messages = messages if not messages is None else list()
+        self.started_at = started_at if started_at is not None else created_at
+        self.stopped_at = stopped_at if stopped_at is not None else datetime.utcnow()
+        self.messages = messages if messages is not None else list()
 
 
 class StatePending(WorkflowState):
@@ -282,7 +288,7 @@ class StateRunning(WorkflowState):
             type_id=STATE_RUNNING,
             created_at=created_at
         )
-        self.started_at = started_at if not started_at is None else datetime.utcnow()
+        self.started_at = started_at if started_at is not None else datetime.utcnow()
 
     def cancel(self, messages=None):
         """Get instance of class cancel state for a running wokflow.
@@ -322,13 +328,13 @@ class StateRunning(WorkflowState):
             messages=messages
         )
 
-    def success(self, files=None):
+    def success(self, resources=None):
         """Get instance of success state for a competed wokflow.
 
         Parameters
         ----------
-        files: dict(flowserv.model.resource.FileResource), optional
-            Optional dictionary of created files
+        resources: list(flowserv.model.workflow.resource.WorkflowResource), optional
+            Optional dictionary of created resources
 
         Returns
         -------
@@ -337,7 +343,7 @@ class StateRunning(WorkflowState):
         return StateSuccess(
             created_at=self.created_at,
             started_at=self.started_at,
-            files=files
+            resources=resources
         )
 
 
@@ -345,11 +351,14 @@ class StateSuccess(WorkflowState):
     """Success state representation for a workflow run. The workflow has three
     timestamps: the workflow creation time, workflow run start time and the
     time when the workflow execution finished. The state also maintains handles
-    to any files that were created by the workflow run.
+    to any resources that were created by the workflow run.
     """
-    def __init__(self, created_at, started_at, finished_at=None, files=None):
+    def __init__(self, created_at, started_at, finished_at=None, resources=None):
         """Initialize the timestamps that are associated with the workflow
-        state and the set of created files.
+        state and the list of created resources.
+
+        Raises a ValueError if the names of the created resources are not
+        unique.
 
         Parameters
         ----------
@@ -359,8 +368,8 @@ class StateSuccess(WorkflowState):
             Timestamp when the workflow started running
         finished_at: datetime.datetime, optional
             Timestamp when workflow execution completed
-        files: list or dict(flowserv.model.resource.FileResource), optional
-            Optional dictionary of created files
+        resources: list(flowserv.model.workflow.resource.WorkflowResource), optional
+            Optional list of created resources
 
         Raises
         ------
@@ -371,40 +380,115 @@ class StateSuccess(WorkflowState):
             created_at=created_at
         )
         self.started_at = started_at
-        self.finished_at = finished_at if not finished_at is None else datetime.utcnow()
-        if not files is None:
-            if isinstance(files, list):
-                self.files = dict()
-                for f in files:
-                    if f.resource_name in self.files:
-                        msg = 'duplicate entry \'{}\' in resource list'
-                        raise ValueError(msg.format(f.resource_name))
-                    self.files[f.resource_name] = f
-            else:
-                self.files = files
-        else:
-            self.files = dict()
+        self.finished_at = finished_at if finished_at is not None else datetime.utcnow()
+        self.resources = ResourceSet(resources)
 
-    def get_resource(self, identifier):
-        """Get the file resource with the given identifier.
+    def get_resource(self, identifier=None, name=None):
+        """Get the file resource with the given identifier or name.
 
         Parameters
         ----------
-        identifier: string
-            Unique resource identifier
+        name: string
+            Resource name
 
         Returns
         -------
-        flowserv.model.resource.FileResource
+        flowserv.model.workflow.resource.WorkflowResource
         """
-        return self.files.get(identifier)
+        return self.resources.get_resource(identifier=identifier, name=name)
 
-    def list_resources(self):
-        """Get a list of the file resources that were generated by a successful
-        workflow run.
 
-        Returns
-        -------
-        list(flowserv.model.resource.FileResource)
-        """
-        return self.files.values()
+# -- Serialization/Deserialization helper methods ------------------------------
+
+"""Labels for serialization."""
+LABEL_CREATED_AT = 'createdAt'
+LABEL_FINISHED_AT = 'finishedAt'
+LABEL_MESSAGES = 'messages'
+LABEL_RESOURCES = 'resources'
+LABEL_STARTED_AT = 'startedAt'
+LABEL_STATE_TYPE = 'type'
+LABEL_STOPPED_AT = 'stoppedAt'
+
+
+def deserialize_state(doc):
+    """Create instance of workflow state from a given dictionary serialization.
+
+    Parameters
+    ----------
+    doc: dict
+        Serialization if the workflow state
+
+    Returns
+    -------
+    flowserv.model.workflow.state.WorkflowState
+
+    Raises
+    ------
+    KeyError
+    ValueError
+    """
+    type_id = doc[LABEL_STATE_TYPE]
+    # All state serializations have to have a 'created at' timestamp
+    created_at = util.to_datetime(doc[LABEL_CREATED_AT])
+    if type_id == STATE_PENDING:
+        return StatePending(created_at=created_at)
+    elif type_id == STATE_RUNNING:
+        return StateRunning(
+            created_at=created_at,
+            started_at=util.to_datetime(doc[LABEL_STARTED_AT])
+        )
+    elif type_id == STATE_CANCELED:
+        return StateCanceled(
+            created_at=created_at,
+            started_at=util.to_datetime(doc[LABEL_STARTED_AT]),
+            stopped_at=util.to_datetime(doc[LABEL_FINISHED_AT]),
+            messages=doc[LABEL_MESSAGES]
+        )
+    elif type_id == STATE_ERROR:
+        return StateError(
+            created_at=created_at,
+            started_at=util.to_datetime(doc[LABEL_STARTED_AT]),
+            stopped_at=util.to_datetime(doc[LABEL_FINISHED_AT]),
+            messages=doc[LABEL_MESSAGES]
+        )
+    elif type_id == STATE_SUCCESS:
+        resources = list()
+        for obj in doc[LABEL_RESOURCES]:
+            resources.append(WorkflowResource.from_dict(obj))
+        return StateSuccess(
+            created_at=created_at,
+            started_at=util.to_datetime(doc[LABEL_STARTED_AT]),
+            finished_at=util.to_datetime(doc[LABEL_FINISHED_AT]),
+            resources=resources
+        )
+    else:
+        raise ValueError('invalid state type \'{}\''.format(type_id))
+
+
+def serialize_state(state):
+    """Create dictionary serialization if a given workflow state.
+
+    Parameters
+    ----------
+    state: flowserv.model.workflow.state.WorkflowState
+        Workflow state
+
+    Returns
+    -------
+    dict
+    """
+    doc = {
+        LABEL_STATE_TYPE: state.type_id,
+        LABEL_CREATED_AT: state.created_at.isoformat()
+    }
+    if state.is_running():
+        doc[LABEL_STARTED_AT] = state.started_at.isoformat()
+    elif state.is_canceled() or state.is_error():
+        doc[LABEL_STARTED_AT] = state.started_at.isoformat()
+        doc[LABEL_FINISHED_AT] = state.stopped_at.isoformat()
+        doc[LABEL_MESSAGES] = state.messages
+    elif state.is_success():
+        doc[LABEL_STARTED_AT] = state.started_at.isoformat()
+        doc[LABEL_FINISHED_AT] = state.finished_at.isoformat()
+        doc[LABEL_RESOURCES] = [r.to_dict() for r in state.resources]
+    return doc

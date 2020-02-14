@@ -1,15 +1,69 @@
 workflow:
-    version: '0.3.0'
+    version: 0.3.0
+    inputs:
+      files:
+        - code/analyze.py
+        - code/helloworld.py
+        - $[[names]]
+      parameters:
+        inputfile: $[[names]]
+        outputfile: results/greetings.txt
+        greeting: $[[greeting]]
     workflow:
-      type: 'serial'
+      type: serial
       specification:
         steps:
-          - environment: 'bash'
+          - environment: 'python:3.7'
             commands:
-              - 'echo "Hello World"'
+              - python code/helloworld.py
+                  --inputfile "${inputfile}"
+                  --outputfile "${outputfile}"
+                  --sleeptime 0
+                  --greeting ${greeting}
+              - python code/analyze.py
+                  --inputfile "${outputfile}"
+                  --outputfile results/analytics.json
     outputs:
       files:
-       - 'results.json'
+       - 'results/greetings.txt'
+       - 'results/analytics.json'
+postproc:
+    workflow:
+        version: 0.3.0
+        inputs:
+          files:
+            - code/postproc.py
+            - $[[runs]]
+          parameters:
+            rundir: $[[runs]]
+        workflow:
+          type: serial
+          specification:
+            steps:
+              - environment: 'python:3.7'
+                commands:
+                  - python code/postproc.py
+                      --runs "${rundir}"
+                      --outputfile results/compare.json
+        outputs:
+            files:
+                - 'results/compare.json'
+    inputs:
+        files:
+            - 'results/analytics.json'
+        runs: 'runs/'
+    outputs:
+        - id: 'results/compare.json'
+          title: 'Results'
+          caption: 'The results.'
+parameters:
+    - id: names
+      name: 'Input file'
+      datatype: file
+      as: data/names.txt
+    - id: greeting
+      datatype: string
+      defaultValue: 'Hello'
 modules:
     - id: 'main'
       name: 'Main Step'
@@ -17,9 +71,13 @@ modules:
 results:
     file: 'results/analytics.json'
     schema:
-        - id: 'score'
-          name: 'Score'
-          type: 'int'
-    orderBy:
-        - id: 'score'
-          sortDesc: true
+        - id: avg_count
+          name: 'Avg. Characters per Line'
+          type: decimal
+        - id: max_len
+          name: 'Max. Output Line Length'
+          type: decimal
+        - id: max_line
+          name: 'Longest Output Line'
+          type: string
+          required: False

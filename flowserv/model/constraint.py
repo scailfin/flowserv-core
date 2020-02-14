@@ -1,9 +1,9 @@
-# This file is part of the Reproducible Open Benchmarks for Data Analysis
-# Platform (ROB).
+# This file is part of the Reproducible and Reusable Data Analysis Workflow
+# Server (flowServ).
 #
-# Copyright (C) 2019 NYU.
+# Copyright (C) [2019-2020] NYU.
 #
-# ROB is free software; you can redistribute it and/or modify it under the
+# flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
 """Collection of methods to check and enforce constraints that are currently
@@ -49,9 +49,9 @@ def validate_name(name, con=None, sql=None, args=None):
     # Validate uniqueness if a database connection and SQL statement are given
     if con is None or sql is None:
         return
-    if not args is None:
+    if args is not None:
         query_args = args
     else:
         query_args = (name,)
     if not con.execute(sql, query_args).fetchone() is None:
-        raise err.ConstraintViolationError('name \'{}\' exists'.format(name))
+        raise err.ConstraintViolationError("name '{}' exists".format(name))

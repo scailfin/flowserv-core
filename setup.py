@@ -1,9 +1,9 @@
-# This file is part of the Reproducible Open Benchmarks for Data Analysis
-# Platform (ROB).
+# This file is part of the Reproducible and Reusable Data Analysis Workflow
+# Server (flowServ).
 #
-# Copyright (C) 2019 NYU.
+# Copyright (C) [2019-2020] NYU.
 #
-# ROB is free software; you can redistribute it and/or modify it under the
+# flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
 import os
@@ -22,7 +22,8 @@ install_requires = [
     'passlib',
     'psycopg2-binary',
     'python-dateutil',
-    'pyyaml>=5.1'
+    'pyyaml>=5.1',
+    'Click'
 ]
 
 
@@ -79,6 +80,11 @@ setup(
     extras_require=extras_require,
     tests_require=tests_require,
     install_requires=install_requires,
+    entry_points={
+        'console_scripts': [
+            'flowserv = flowserv.cli.admin:cli',
+        ]
+    },
     classifiers=[
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',

@@ -1,15 +1,12 @@
-# This file is part of the Reproducible Open Benchmarks for Data Analysis
-# Platform (ROB).
+# This file is part of the Reproducible and Reusable Data Analysis Workflow
+# Server (flowServ).
 #
-# Copyright (C) 2019 NYU.
+# Copyright (C) [2019-2020] NYU.
 #
-# ROB is free software; you can redistribute it and/or modify it under the
+# flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
 """API component that provides information about the service iteself."""
-
-from flowserv.view.server import ServiceSerializer
-from flowserv.view.route import UrlFactory
 
 import flowserv.config.api as config
 import flowserv.version as version
@@ -19,25 +16,24 @@ class Service(object):
     """API component that provides the API sevice descriptor that contains the
     basic information and URLs for the service.
     """
-    def __init__(self, urls=None, serializer=None):
-        """Initialize the Url route factory and the serializer for the service
-        descriptor.
+    def __init__(self, serializer, username=None):
+        """Initialize the serializer for the service descriptor.  The optional
+        user name indicates whether a request for the service descriptor
+        contained a valid access token.
 
         Parameters
         ----------
-        urls: flowserv.view.route.UrlFactory
-            Factory for API resource Urls
-        serializer: flowserv.view.server.ServiceSerializer, optional
-            Override the default serializer
+        serializer: flowserv.view.server.ServiceSerializer
+            Service descriptor serializer
+        username: string, optional
+            Name of the authenticated user
 
         Raises
         ------
         ValueError
         """
-        self.urls = urls if not urls is None else UrlFactory()
         self.serialize = serializer
-        if self.serialize is None:
-            self.serialize = ServiceSerializer(self.urls)
+        self.username = username
 
     @property
     def name(self):
@@ -49,15 +45,9 @@ class Service(object):
         """
         return config.API_NAME()
 
-    def service_descriptor(self, username=None):
+    def service_descriptor(self):
         """Get serialization of descriptor containing the basic information
-        about the API. The optional user name indicates whether a request for
-        the service descriptor contained a valid access token.
-
-        Parameters
-        ----------
-        username: string, optional
-            Name of the user that was authenticated by a given access token
+        about the API.
 
         Returns
         -------
@@ -66,7 +56,7 @@ class Service(object):
         return self.serialize.service_descriptor(
             name=self.name,
             version=self.version,
-            username=username
+            username=self.username
         )
 
     @property

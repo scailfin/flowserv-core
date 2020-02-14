@@ -1,13 +1,13 @@
-# This file is part of the Reproducible Open Benchmarks for Data Analysis
-# Platform (ROB).
+# This file is part of the Reproducible and Reusable Data Analysis Workflow
+# Server (flowServ).
 #
-# Copyright (C) 2019 NYU.
+# Copyright (C) [2019-2020] NYU.
 #
-# ROB is free software; you can redistribute it and/or modify it under the
+# flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
-"""Defines helper methods to access the values of environment variables that are
-used for application configuration.
+"""Defines helper methods to access the values of environment variables that
+are used for application configuration.
 """
 
 import os
@@ -16,7 +16,7 @@ import flowserv.core.error as err
 
 
 """Environment variable for test purposes."""
-ROB_TEST = 'ROB_TEST'
+FLOWSERV_TEST = 'FLOWSERV_TEST'
 
 
 def get_variable(name, default_value=None, raise_error=None):

@@ -1,28 +1,62 @@
-# This file is part of the Reproducible Open Benchmarks for Data Analysis
-# Platform (ROB).
+# This file is part of the Reproducible and Reusable Data Analysis Workflow
+# Server (flowServ).
 #
-# Copyright (C) 2019 NYU.
+# Copyright (C) [2019-2020] NYU.
 #
-# ROB is free software; you can redistribute it and/or modify it under the
+# flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
-"""Serializer for benchmark runs."""
+"""Serializer for workflow runs."""
 
-import flowserv.view.hateoas as hateoas
-import flowserv.view.labels as labels
+from flowserv.view.base import Serializer
 
 
-class RunSerializer(object):
-    """Serializer for benchmark runs."""
-    def __init__(self, urls):
-        """Initialize the reference to the Url factory.
+class RunSerializer(Serializer):
+    """Serializer for workflow runs."""
+    def __init__(self, labels=None):
+        """Initialize serialization labels.
 
         Parameters
         ----------
-        urls: flowserv.view.route.UrlFactory
-            Factory for resource urls
+        labels: object, optional
+            Object instance that contains the values for serialization labels
         """
-        self.urls = urls
+        super(RunSerializer, self).__init__(
+            labels={
+                'ARG_ID': 'id',
+                'ARG_VALUE': 'value',
+                'RESOURCE_ID': 'id',
+                'RESOURCE_NAME': 'name',
+                'RUN_ARGUMENTS': 'arguments',
+                'RUN_CREATED': 'createdAt',
+                'RUN_ERRORS': 'messages',
+                'RUN_FINISHED': 'finishedAt',
+                'RUN_GROUP': 'groupId',
+                'RUN_ID': 'id',
+                'RUN_LIST': 'runs',
+                'RUN_PARAMETERS': 'parameters',
+                'RUN_RESOURCES': 'resources',
+                'RUN_STARTED': 'startedAt',
+                'RUN_STATE': 'state',
+                'RUN_WORKFLOW': 'workflowId'
+            },
+            override_labels=labels
+        )
+
+    def runid_listing(self, runs):
+        """Get serialization for a list of run identifier.
+
+        Parameters
+        ----------
+        runs: list(string)
+            List of run identifier
+
+        Returns
+        -------
+        dict
+        """
+        LABELS = self.labels
+        return {LABELS['RUN_LIST']: runs}
 
     def run_descriptor(self, run):
         """Get serialization for a run descriptor. The descriptor contains the
@@ -31,98 +65,87 @@ class RunSerializer(object):
 
         Parameters
         ----------
-        run: flowserv.model.workflow.run.RunHandle
-            Submission handle
+        run: flowserv.model.run.base.RunDescriptor
+            Run decriptor
 
         Returns
         -------
         dict
         """
-        run_id = run.identifier
-        links = {hateoas.SELF: self.urls.get_run(run_id)}
-        if run.is_active():
-            url = self.urls.cancel_run(run_id)
-            links[hateoas.action(hateoas.CANCEL)] = url
-        else:
-            url = self.urls.delete_run(run_id)
-            links[hateoas.action(hateoas.DELETE)] = url
-            if run.is_success():
-                url = self.urls.download_result_archive(run_id)
-                links[hateoas.RESULTS] = url
+        LABELS = self.labels
         doc = {
-            labels.ID: run_id,
-            labels.STATE: run.state.type_id,
-            labels.CREATED_AT: run.state.created_at.isoformat(),
-            labels.LINKS: hateoas.serialize(links)
+            LABELS['RUN_ID']: run.identifier,
+            LABELS['RUN_STATE']: run.state_type_id,
+            LABELS['RUN_CREATED']: run.created_at.isoformat()
         }
-        doc[labels.ARGUMENTS] = [
-            {
-                labels.ID: key,
-                labels.VALUE: run.arguments[key]
-            } for key in run.arguments
-        ]
-        if not run.is_pending():
-            doc[labels.STARTED_AT] = run.state.started_at.isoformat()
-        if run.is_canceled() or run.is_error():
-            doc[labels.FINISHED_AT] = run.state.stopped_at.isoformat()
-            doc[labels.MESSAGES] = run.state.messages
-        elif run.is_success():
-            doc[labels.FINISHED_AT] = run.state.finished_at.isoformat()
-            # Serialize file resources
-            resources = list()
-            for res in run.list_resources():
-                r_url = self.urls.download_result_file(run_id, res.resource_id)
-                resources.append({
-                    labels.ID: res.resource_id,
-                    labels.NAME: res.resource_name,
-                    labels.LINKS: hateoas.serialize({hateoas.SELF: r_url})
-                })
-            doc[labels.RESOURCES] = resources
         return doc
 
-    def run_handle(self, run, submission):
-        """Get serialization for a run handle. The run handle contains the same
-        information than the run descriptor. In addition, the run handle also
-        contains the run arguments and the parameter declaration taken from the
-        submission handle (since it may differ from the parameter list of
-        the benchmark).
+    def run_handle(self, run, group=None):
+        """Get serialization for a run handle. The run handle extends the run
+        descriptor with the run arguments, the parameter declaration taken from
+        the workflow group handle (since it may differ from the parameter list
+        of the workflow), and additional information associated with the run
+        state.
 
         Parameters
         ----------
-        run: flowserv.model.workflow.run.RunHandle
-            Submission handle
-        submission: flowserv.model.submission.SubmissionHandle
-            Submission handle
+        run: flowserv.model.run.base.RunHandle
+            Workflow run handle
+        group: flowserv.model.group.base.GroupHandle, optional
+            Workflow group handle. Missing for post-processing workflows
 
         Returns
         -------
         dict
         """
+        LABELS = self.labels
         doc = self.run_descriptor(run)
-        parameters = submission.parameters.values()
-        doc[labels.PARAMETERS] = [p.to_dict() for p in parameters]
+        # Add information about the run workflow and the run group
+        doc[LABELS['RUN_WORKFLOW']] = run.workflow_id
+        if run.group_id is not None:
+            doc[LABELS['RUN_GROUP']] = run.group_id
+        # Add run arguments
+        doc[LABELS['RUN_ARGUMENTS']] = [
+            {
+                LABELS['ARG_ID']: key,
+                LABELS['ARG_VALUE']: run.arguments[key]
+            } for key in run.arguments
+        ]
+        # Add group specific parameters
+        if group is not None:
+            parameters = group.parameters.values()
+            doc[LABELS['RUN_PARAMETERS']] = [p.to_dict() for p in parameters]
+        # Add additional information from the run state
+        if not run.is_pending():
+            doc[LABELS['RUN_STARTED']] = run.state.started_at.isoformat()
+        if run.is_canceled() or run.is_error():
+            doc[LABELS['RUN_FINISHED']] = run.state.stopped_at.isoformat()
+            doc[LABELS['RUN_ERRORS']] = run.state.messages
+        elif run.is_success():
+            doc[LABELS['RUN_FINISHED']] = run.state.finished_at.isoformat()
+            # Serialize file resources
+            resources = list()
+            for res in run.resources:
+                resources.append({
+                    LABELS['RESOURCE_ID']: res.identifier,
+                    LABELS['RESOURCE_NAME']: res.name
+                })
+            doc[LABELS['RUN_RESOURCES']] = resources
         return doc
 
-    def run_listing(self, runs, submission_id):
+    def run_listing(self, runs, group_id):
         """Get serialization for a list of run handles.
 
         Parameters
         ----------
-        runs: list(flowserv.model.workflow.run.RunHandle)
+        runs: list(flowserv.model.run.base.RunDescriptor)
             List of run handles
-        submission_id: string
-            Unique submission identifier
+        group_id: string
+            Unique workflow group identifier
 
         Returns
         -------
         dict
         """
-        return {
-            labels.RUNS: [
-                self.run_descriptor(r) for r in runs
-            ],
-            labels.LINKS: hateoas.serialize({
-                hateoas.SELF: self.urls.list_runs(submission_id),
-                hateoas.SUBMIT: self.urls.start_run(submission_id)
-            })
-        }
+        LABELS = self.labels
+        return {LABELS['RUN_LIST']: [self.run_descriptor(r) for r in runs]}

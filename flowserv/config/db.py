@@ -1,9 +1,9 @@
-# This file is part of the Reproducible Open Benchmarks for Data Analysis
-# Platform (ROB).
+# This file is part of the Reproducible and Reusable Data Analysis Workflow
+# Server (flowServ).
 #
-# Copyright (C) 2019 NYU.
+# Copyright (C) [2019-2020] NYU.
 #
-# ROB is free software; you can redistribute it and/or modify it under the
+# flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
 """Defines environment variables and default values that are used to control
@@ -18,22 +18,22 @@ import flowserv.config.base as config
 
 
 """Environment variables to configure the database driver."""
-ROB_DB_ID = 'ROB_DBMS'
+FLOWSERV_DB_ID = 'FLOWSERV_DBMS'
 
 
 # -- Public helper method to access configuration values ----------------------
 
 def DB_IDENTIFIER(default_value=None, raise_error=False):
     """Get the identifier for the database management system from the respective
-    environment variable 'ROB_DB_ID'. Raises a MissingConfigurationError if
-    the raise_error flag is True and 'ROB_DB_ID' is not set. If the
-    raise_error flag is False and 'ROB_DB_ID' is not set the default value is
+    environment variable 'FLOWSERV_DB_ID'. Raises a MissingConfigurationError if
+    the raise_error flag is True and 'FLOWSERV_DB_ID' is not set. If the
+    raise_error flag is False and 'FLOWSERV_DB_ID' is not set the default value is
     returned.
 
     Parameters
     ----------
     default_value: string, optional
-        Default value if 'ROB_DB_ID' is not set and raise_error flag is False
+        Default value if 'FLOWSERV_DB_ID' is not set and raise_error flag is False
     raise_error: bool, optional
         Flag indicating whether an error is raised if the environment variable
         is not set (i.e., None or and empty string '')
@@ -47,7 +47,7 @@ def DB_IDENTIFIER(default_value=None, raise_error=False):
     flowserv.core.error.MissingConfigurationError
     """
     return config.get_variable(
-        name=ROB_DB_ID,
+        name=FLOWSERV_DB_ID,
         default_value=default_value,
         raise_error=raise_error
     )

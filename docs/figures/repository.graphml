@@ -140,7 +140,7 @@
 							<uml:UMLClassModel.attributes>
 								<x:Array Type="sys:Object">
 									<sys:String>columns</sys:String>
-									<sys:String>result_file_id</sys:String>
+									<sys:String>result_file</sys:String>
 								</x:Array>
 							</uml:UMLClassModel.attributes>
 							<uml:UMLClassModel.operations>
@@ -249,7 +249,7 @@
 						<uml:UMLClassModel stereotype="" constraint="" className="TemplateFSRepository" attributesOpen="true" operationsOpen="false">
 							<uml:UMLClassModel.attributes>
 								<x:Array Type="sys:Object">
-									<sys:String>base_dir</sys:String>
+									<sys:String>basedir</sys:String>
 									<sys:String>store</sys:String>
 								</x:Array>
 							</uml:UMLClassModel.attributes>

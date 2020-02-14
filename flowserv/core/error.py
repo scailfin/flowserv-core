@@ -1,9 +1,9 @@
-# This file is part of the Reproducible Open Benchmarks for Data Analysis
-# Platform (ROB).
+# This file is part of the Reproducible and Reusable Data Analysis Workflow
+# Server (flowServ).
 #
-# Copyright (C) 2019 NYU.
+# Copyright (C) [2019-2020] NYU.
 #
-# ROB is free software; you can redistribute it and/or modify it under the
+# flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
 """Exceptions that are raised by the various components of the reproducible
@@ -11,9 +11,9 @@ open benchmark platform.
 """
 
 
-class ROBError(Exception):
-    """Base exception indicating that a component of the reproducible open
-    benchmark platform encountered an error situation.
+class FlowservError(Exception):
+    """Base exception indicating that a component of the reproducible and
+    reusable data analysis server encountered an error situation.
     """
     def __init__(self, message):
         """Initialize error message.
@@ -38,7 +38,7 @@ class ROBError(Exception):
 
 # -- Authentication and Authorization errors -----------------------------------
 
-class UnauthenticatedAccessError(ROBError):
+class UnauthenticatedAccessError(FlowservError):
     """This exception is raised if an unauthenticated user attempts to access
     or manipulate application resources.
     """
@@ -49,7 +49,7 @@ class UnauthenticatedAccessError(ROBError):
         )
 
 
-class UnauthorizedAccessError(ROBError):
+class UnauthorizedAccessError(FlowservError):
     """This exception is raised if an authenticated user attempts to access
     or manipulate application resources that they have not authorization to.
     """
@@ -62,7 +62,7 @@ class UnauthorizedAccessError(ROBError):
 
 # -- Configuration -------------------------------------------------------------
 
-class MissingConfigurationError(ROBError):
+class MissingConfigurationError(FlowservError):
     """Error indicating that the value for a mandatory environment variable is
     not set.
     """
@@ -81,7 +81,7 @@ class MissingConfigurationError(ROBError):
 
 # -- Constraints on argument values --------------------------------------------
 
-class ConstraintViolationError(ROBError):
+class ConstraintViolationError(FlowservError):
     """Exception raised when an (implicit) constraint is violated by a requested
     operation. Example constraints are (i) names that are expected to be
     unique, (ii) names that cannot have more than n characters long, etc.
@@ -282,9 +282,9 @@ class MissingArgumentError(ConstraintViolationError):
         )
 
 
-# -- Unknown resources ---------------------------------------------------------
+# -- Unknown resources --------------------------------------------------------
 
-class UnknownObjectError(ROBError):
+class UnknownObjectError(FlowservError):
     """Generic error for references to unknown objects."""
     def __init__(self, obj_id, type_name='object'):
         """Initialize error message.
@@ -298,22 +298,6 @@ class UnknownObjectError(ROBError):
         """
         super(UnknownObjectError, self).__init__(
             message='unknown {} \'{}\''.format(type_name, obj_id)
-        )
-
-
-class UnknownBenchmarkError(UnknownObjectError):
-    """Exception indicating that a given benchmark identifier is unknown."""
-    def __init__(self, benchmark_id):
-        """Initialize error message.
-
-        Parameters
-        ----------
-        benchmark_id : string
-            Unique benchmark identifier
-        """
-        super(UnknownBenchmarkError, self).__init__(
-            obj_id=benchmark_id,
-            type_name='benchmark'
         )
 
 
@@ -334,8 +318,8 @@ class UnknownFileError(UnknownObjectError):
 
 
 class UnknownParameterError(UnknownObjectError):
-    """Exception indicating that a workflow specification references a parameter
-    that is not defined for a given template.
+    """Exception indicating that a workflow specification references a
+    parameter that is not defined for a given template.
     """
     def __init__(self, identifier):
         """Initialize error message for given parameter identifier.
@@ -405,39 +389,6 @@ class UnknownRunError(UnknownObjectError):
         )
 
 
-class UnknownSubmissionError(UnknownObjectError):
-    """Exception indicating that a given submission identifier is unknown."""
-    def __init__(self, user_id):
-        """Initialize error message.
-
-        Parameters
-        ----------
-        user_id : string
-            Unique user identifier
-        """
-        super(UnknownSubmissionError, self).__init__(
-            obj_id=user_id,
-            type_name='submission'
-        )
-
-
-class UnknownTemplateError(UnknownObjectError):
-    """Error when referencing a workflow template with an unknown identifier.
-    """
-    def __init__(self, identifier):
-        """Initialize error message.
-
-        Parameters
-        ----------
-        identifier: string
-            Unique template identifier
-        """
-        super(UnknownTemplateError, self).__init__(
-            type_name='template',
-            obj_id=identifier
-        )
-
-
 class UnknownUserError(UnknownObjectError):
     """Exception indicating that a given user identifier is unknown."""
     def __init__(self, user_id):
@@ -451,4 +402,38 @@ class UnknownUserError(UnknownObjectError):
         super(UnknownUserError, self).__init__(
             obj_id=user_id,
             type_name='user'
+        )
+
+
+class UnknownWorkflowError(UnknownObjectError):
+    """Exception indicating that a given workflow identifier is unknown."""
+    def __init__(self, workflow_id):
+        """Initialize error message.
+
+        Parameters
+        ----------
+        workflow_id : string
+            Unique workflow identifier
+        """
+        super(UnknownWorkflowError, self).__init__(
+            obj_id=workflow_id,
+            type_name='workflow'
+        )
+
+
+class UnknownWorkflowGroupError(UnknownObjectError):
+    """Exception indicating that a given workflow group identifier is
+    unknown.
+    """
+    def __init__(self, group_id):
+        """Initialize error message.
+
+        Parameters
+        ----------
+        group_id : string
+            Unique workflow group identifier
+        """
+        super(UnknownWorkflowGroupError, self).__init__(
+            obj_id=group_id,
+            type_name='group'
         )

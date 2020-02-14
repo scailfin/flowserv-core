@@ -1,23 +1,25 @@
-# This file is part of the Reproducible Open Benchmarks for Data Analysis
-# Platform (ROB).
+# This file is part of the Reproducible and Reusable Data Analysis Workflow
+# Server (flowServ).
 #
-# Copyright (C) 2019 NYU.
+# Copyright (C) [2019-2020] NYU.
 #
-# ROB is free software; you can redistribute it and/or modify it under the
+# flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
-"""Unit tests for the synchronous workflow controller."""
+"""Unit tests for the synchronous mode of the serial workflow controller."""
 
 import os
 import pytest
 
+from flowserv.controller.serial.engine import SerialWorkflowEngine
 from flowserv.core.files import FileHandle
 from flowserv.model.template.base import WorkflowTemplate
-from flowserv.model.template.parameter.value import TemplateArgument
-from flowserv.controller.backend.sync import SyncWorkflowEngine
+from flowserv.model.parameter.value import TemplateArgument
+from flowserv.model.run.base import RunHandle
 
 import flowserv.core.error as err
 import flowserv.core.util as util
+import flowserv.model.workflow.state as st
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))
@@ -33,176 +35,145 @@ NAMES_FILE = os.path.join(TEMPLATE_DIR, './inputs/short-names.txt')
 UNKNOWN_FILE = os.path.join(TEMPLATE_DIR, './tmp/no/file/here')
 
 
-class TestSynchronousWorkflowEngine(object):
-    """Unit test for the synchronous workflow engine."""
-    def test_run_helloworld(self, tmpdir):
-        """Execute the helloworld example."""
-        # Read the workflow template
-        doc = util.read_object(filename=TEMPLATE_HELLOWORLD)
-        template = WorkflowTemplate.from_dict(doc, source_dir=TEMPLATE_DIR)
-        # Set the template argument values
-        arguments = {
-            'names': TemplateArgument(
-                parameter=template.get_parameter('names'),
-                value=FileHandle(NAMES_FILE)
-            ),
-            'sleeptime': TemplateArgument(
-                parameter=template.get_parameter('sleeptime'),
-                value=3
-            )
-        }
-        # Run the workflow
-        engine = SyncWorkflowEngine(str(tmpdir))
-        assert not engine.asynchronous_events()
-        run_id = util.get_short_identifier()
-        state = engine.exec_workflow(
-            run_id=run_id,
-            template=template,
-            arguments=arguments
+def test_run_helloworld(tmpdir):
+    """Execute the helloworld example."""
+    # Read the workflow template
+    doc = util.read_object(filename=TEMPLATE_HELLOWORLD)
+    template = WorkflowTemplate.from_dict(doc, sourcedir=TEMPLATE_DIR)
+    # Set the template argument values
+    arguments = {
+        'names': TemplateArgument(
+            parameter=template.get_parameter('names'),
+            value=FileHandle(NAMES_FILE)
+        ),
+        'sleeptime': TemplateArgument(
+            parameter=template.get_parameter('sleeptime'),
+            value=3
         )
-        # For completeness. Cancel run should have no effect
-        engine.cancel_run(run_id)
-        # Expect the result to be success
-        assert state.is_success()
-        # The base directory for the engine will contain the run state file and
-        # the run directory
-        assert os.path.isfile(engine.get_run_file(run_id))
-        assert os.path.isdir(engine.get_run_dir(run_id))
-        # There is exactly one result file
-        assert len(state.files) == 1
-        assert 'results/greetings.txt' in state.files
-        greetings = list()
-        with open(state.files['results/greetings.txt'].filename, 'r') as f:
-            for line in f:
-                greetings.append(line.strip())
-        assert len(greetings) == 2
-        assert greetings[0] == 'Hello Alice!'
-        assert greetings[1] == 'Hello Bob!'
-        # Read workglow state should give the same result
-        state = engine.get_run_state(run_id)
-        assert state.is_success()
-        assert len(state.files) == 1
-        assert 'results/greetings.txt' in state.files
-        greetings = list()
-        with open(state.files['results/greetings.txt'].filename, 'r') as f:
-            for line in f:
-                greetings.append(line.strip())
-        assert len(greetings) == 2
-        assert greetings[0] == 'Hello Alice!'
-        assert greetings[1] == 'Hello Bob!'
-        # Re-run workflow will raise an error
-        with pytest.raises(err.DuplicateRunError):
-            engine.exec_workflow(
-                run_id=run_id,
-                template=template,
-                arguments=arguments
-            )
-        os.remove(engine.get_run_file(run_id))
-        assert not os.path.isfile(engine.get_run_file(run_id))
-        with pytest.raises(err.DuplicateRunError):
-            engine.exec_workflow(
-                run_id=run_id,
-                template=template,
-                arguments=arguments
-            )
-        # After removing the run we can execute it again with the same
-        # identifier
-        engine.remove_run(run_id)
-        assert not os.path.isfile(engine.get_run_file(run_id))
-        assert not os.path.isdir(engine.get_run_dir(run_id))
-        state = engine.exec_workflow(
-            run_id=run_id,
-            template=template,
-            arguments=arguments
-        )
-        # Check for success and existince of file and folder
-        assert state.is_success()
-        assert os.path.isfile(engine.get_run_file(run_id))
-        assert os.path.isdir(engine.get_run_dir(run_id))
-        # Remove again to ensure that all files are removed correctly
-        engine.remove_run(run_id)
-        assert not os.path.isfile(engine.get_run_file(run_id))
-        assert not os.path.isdir(engine.get_run_dir(run_id))
-        # Error when trying to remove an unknown run
-        with pytest.raises(err.UnknownRunError):
-            engine.remove_run(run_id)
-        # Error when trying to get state of unknown run
-        with pytest.raises(err.UnknownRunError):
-            engine.get_run_state(run_id)
+    }
+    # Run the workflow
+    engine = SerialWorkflowEngine(is_async=False)
+    run_id = util.get_short_identifier()
+    rundir = os.path.join(str(tmpdir), run_id)
+    run = RunHandle(
+        identifier=run_id,
+        workflow_id='0001',
+        group_id='0001',
+        state=st.StatePending(),
+        arguments=dict(),
+        rundir=rundir
+    )
+    state = engine.exec_workflow(
+        run=run,
+        template=template,
+        arguments=arguments
+    )
+    # For completeness. Cancel run should have no effect
+    engine.cancel_run(run_id)
+    # Expect the result to be success
+    assert state.is_success()
+    # The base directory for the run will have been created by the engine
+    assert os.path.isdir(run.rundir)
+    # There is exactly one result file
+    assert len(state.resources) == 1
+    greetings_file = state.resources.get_resource(name='results/greetings.txt')
+    greetings = list()
+    with open(greetings_file.filename, 'r') as f:
+        for line in f:
+            greetings.append(line.strip())
+    assert len(greetings) == 2
+    assert greetings[0] == 'Hello Alice!'
+    assert greetings[1] == 'Hello Bob!'
 
-    def test_run_with_invalid_cmd(self, tmpdir):
-        """Execute the helloworld example with an invalid shell command."""
-        # Read the workflow template
-        doc = util.read_object(filename=TEMPLATE_WITH_INVALID_CMD)
-        template = WorkflowTemplate.from_dict(doc, source_dir=TEMPLATE_DIR)
-        # Set the template argument values
-        arguments = {
-            'names': TemplateArgument(
-                parameter=template.get_parameter('names'),
-                value=FileHandle(NAMES_FILE)
-            ),
-            'sleeptime': TemplateArgument(
-                parameter=template.get_parameter('sleeptime'),
-                value=3
-            )
-        }
-        # Run workflow syncronously
-        engine = SyncWorkflowEngine(str(tmpdir))
-        run_id = util.get_short_identifier()
-        state = engine.exec_workflow(
-            run_id=run_id,
-            template=template,
-            arguments=arguments
-        )
-        assert state.is_error()
-        assert len(state.messages) > 0
-        state = engine.get_run_state(run_id)
-        assert state.is_error()
-        assert len(state.messages) > 0
 
-    def test_run_with_missing_file(self, tmpdir):
-        """Execute the helloworld example with a reference to a missing file.
-        """
-        # Read the workflow template
-        doc = util.read_object(filename=TEMPLATE_WITH_MISSING_FILE)
-        template = WorkflowTemplate.from_dict(doc, source_dir=TEMPLATE_DIR)
-        # Set the template argument values
-        arguments = {
-            'names': TemplateArgument(
-                parameter=template.get_parameter('names'),
-                value=FileHandle(NAMES_FILE)
-            ),
-            'sleeptime': TemplateArgument(
-                parameter=template.get_parameter('sleeptime'),
-                value=3
-            )
-        }
-        # Run workflow syncronously
-        engine = SyncWorkflowEngine(str(tmpdir))
-        run_id = util.get_short_identifier()
-        state = engine.exec_workflow(
-            run_id=run_id,
-            template=template,
-            arguments=arguments
+def test_run_with_invalid_cmd(tmpdir):
+    """Execute the helloworld example with an invalid shell command."""
+    # Read the workflow template
+    doc = util.read_object(filename=TEMPLATE_WITH_INVALID_CMD)
+    template = WorkflowTemplate.from_dict(doc, sourcedir=TEMPLATE_DIR)
+    # Set the template argument values
+    arguments = {
+        'names': TemplateArgument(
+            parameter=template.get_parameter('names'),
+            value=FileHandle(NAMES_FILE)
+        ),
+        'sleeptime': TemplateArgument(
+            parameter=template.get_parameter('sleeptime'),
+            value=3
         )
-        assert state.is_error()
-        assert len(state.messages) > 0
-        state = engine.get_run_state(run_id)
-        assert state.is_error()
-        assert len(state.messages) > 0
-        # An error is raised if the input file does not exist
-        with pytest.raises(IOError):
-            engine.exec_workflow(
-                run_id=util.get_unique_identifier(),
-                template=template,
-                arguments={
-                    'names': TemplateArgument(
-                        parameter=template.get_parameter('names'),
-                        value=FileHandle(UNKNOWN_FILE)
-                    ),
-                    'sleeptime': TemplateArgument(
-                        parameter=template.get_parameter('sleeptime'),
-                        value=3
-                    )
-                }
-            )
+    }
+    # Run workflow syncronously
+    engine = SerialWorkflowEngine(is_async=True)
+    run_id = util.get_short_identifier()
+    rundir = os.path.join(str(tmpdir), run_id)
+    run = RunHandle(
+        identifier=run_id,
+        workflow_id='0001',
+        group_id='0001',
+        state=st.StatePending(),
+        arguments=dict(),
+        rundir=rundir
+    )
+    state = engine.exec_workflow(
+        run=run,
+        template=template,
+        arguments=arguments,
+        run_async=False
+    )
+    assert state.is_error()
+    assert len(state.messages) > 0
+
+
+def test_run_with_missing_file(tmpdir):
+    """Execute the helloworld example with a reference to a missing file.
+    """
+    # Read the workflow template
+    doc = util.read_object(filename=TEMPLATE_WITH_MISSING_FILE)
+    template = WorkflowTemplate.from_dict(doc, sourcedir=TEMPLATE_DIR)
+    # Set the template argument values
+    arguments = {
+        'names': TemplateArgument(
+            parameter=template.get_parameter('names'),
+            value=FileHandle(NAMES_FILE)
+        ),
+        'sleeptime': TemplateArgument(
+            parameter=template.get_parameter('sleeptime'),
+            value=3
+        )
+    }
+    # Run workflow syncronously
+    engine = SerialWorkflowEngine()
+    run_id = util.get_short_identifier()
+    rundir = os.path.join(str(tmpdir), run_id)
+    run = RunHandle(
+        identifier=run_id,
+        workflow_id='0001',
+        group_id='0001',
+        state=st.StatePending(),
+        arguments=dict(),
+        rundir=rundir
+    )
+    state = engine.exec_workflow(
+        run=run,
+        template=template,
+        arguments=arguments,
+        run_async=False
+    )
+    assert state.is_error()
+    assert len(state.messages) > 0
+    # An error is raised if the input file does not exist
+    with pytest.raises(err.UnknownFileError):
+        engine.exec_workflow(
+            run=run,
+            template=template,
+            arguments={
+                'names': TemplateArgument(
+                    parameter=template.get_parameter('names'),
+                    value=FileHandle(UNKNOWN_FILE)
+                ),
+                'sleeptime': TemplateArgument(
+                    parameter=template.get_parameter('sleeptime'),
+                    value=3
+                )
+            }
+        )

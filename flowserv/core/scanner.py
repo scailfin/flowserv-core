@@ -1,9 +1,9 @@
-# This file is part of the Reproducible Open Benchmarks for Data Analysis
-# Platform (ROB).
+# This file is part of the Reproducible and Reusable Data Analysis Workflow
+# Server (flowServ).
 #
-# Copyright (C) 2019 NYU.
+# Copyright (C) [2019-2020] NYU.
 #
-# ROB is free software; you can redistribute it and/or modify it under the
+# flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
 """Simple scanner classes to collect values (e.g., for template parameters)
@@ -14,6 +14,8 @@ that are supported for parameter declarations.
 
 from abc import abstractmethod
 from builtins import input
+
+import flowserv.core.util as util
 
 
 class Scanner(object):
@@ -32,7 +34,7 @@ class Scanner(object):
         reader: flowserv.core.scanner.TokenReader
             Reader for input tokens
         """
-        self.reader = reader if not reader is None else InputReader()
+        self.reader = reader if reader is not None else InputReader()
 
     def next_bool(self, default_value=None):
         """Return next token as boolean. If the read token is an empty string
@@ -56,7 +58,7 @@ class Scanner(object):
         bool
         """
         val = self.reader.next_token()
-        if val == '' and not default_value is None:
+        if val == '' and default_value is not None:
             return default_value
         if val.lower() in ['true', 'yes', 'y', 't', 1]:
             return True
@@ -81,7 +83,7 @@ class Scanner(object):
         string
         """
         val = self.reader.next_token().strip()
-        if val == '' and not default_value is None:
+        if val == '' and default_value is not None:
             return default_value
         return val
 
@@ -99,7 +101,7 @@ class Scanner(object):
         float
         """
         val = self.reader.next_token()
-        if val == '' and not default_value is None:
+        if val == '' and default_value is not None:
             return default_value
         return float(val)
 
@@ -117,7 +119,7 @@ class Scanner(object):
         int
         """
         val = self.reader.next_token()
-        if val == '' and not default_value is None:
+        if val == '' and default_value is not None:
             return default_value
         return int(val)
 
@@ -134,7 +136,7 @@ class Scanner(object):
         string
         """
         val = self.reader.next_token()
-        if val == '' and not default_value is None:
+        if val == '' and default_value is not None:
             return default_value
         return val
 
@@ -143,7 +145,7 @@ class Scanner(object):
 # Token Reader
 # ------------------------------------------------------------------------------
 
-class TokenReader(object):
+class TokenReader(util.ABC):
     """Abstract token reader class that is used by the scanner to get the next
     input token.
     """
