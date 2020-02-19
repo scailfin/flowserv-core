@@ -157,8 +157,8 @@ class SerialWorkflowEngine(WorkflowController):
         try:
             # Copy all necessary files to the run folder
             util.copy_files(files=wf.upload_files(), target_dir=run.rundir)
-            # Create top-level folder for all expected result files (if it does not
-            # exist already)
+            # Create top-level folder for all expected result files (if it does
+            # not exist already)
             output_files = wf.output_files()
             for filename in output_files:
                 dirname = os.path.dirname(filename)

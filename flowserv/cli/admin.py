@@ -108,7 +108,7 @@ def configuration(all=False, database=False, auth=False, backend=False, service=
 @cli.command()
 @click.option(
     '-d', '--dir',
-    type=click.Path(exists=True, dir_okay=False, readable=True),
+    type=click.Path(exists=True, dir_okay=True, readable=True),
     help='Base directory for API files (overrides FLOWSERV_API_DIR).'
 )
 @click.option(

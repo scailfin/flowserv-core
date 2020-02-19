@@ -174,9 +174,7 @@ def replace_args(spec, arguments, parameters):
     """Replace template parameter references in the workflow specification
     with their respective values in the argument dictionary or their
     defined default value. The type of the result is depending on the type
-    of the spec object
-
-    Returns a modified dictionary.
+    of the spec object.
 
     Parameters
     ----------
