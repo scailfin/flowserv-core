@@ -283,6 +283,24 @@ class StatePending(WorkflowState):
         """
         return StateRunning(created_at=self.created_at)
 
+    def success(self, resources=None):
+        """Get instance of success state for a competed wokflow.
+
+        Parameters
+        ----------
+        resources: list(flowserv.model.workflow.resource.WorkflowResource), optional
+            Optional dictionary of created resources
+
+        Returns
+        -------
+        flowserv.model.workflow.state.StateSuccess
+        """
+        return StateSuccess(
+            created_at=self.created_at,
+            started_at=self.created_at,
+            resources=resources
+        )
+
 
 class StateRunning(WorkflowState):
     """State representation for a active workflow run. The workflow has two
