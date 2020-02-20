@@ -52,6 +52,21 @@ class WorkflowState(object):
         self.type_id = type_id
         self.created_at = created_at if created_at is not None else datetime.utcnow()
 
+    def __eq__(self, other):
+        """Equality between two states is defined by comparing their respective
+        type identifier.
+
+        Parameters
+        ----------
+        other: flowserv.model.workflow.state.WorkflowState
+            Workflow state that this state is compared to.
+
+        Returns
+        -------
+        bool
+        """
+        return self.type_id == other.type_id
+
     def __str__(self):
         """Get printable representation of the state type.
 
@@ -267,6 +282,24 @@ class StatePending(WorkflowState):
         flowserv.model.workflow.state.StateRunning
         """
         return StateRunning(created_at=self.created_at)
+
+    def success(self, resources=None):
+        """Get instance of success state for a competed wokflow.
+
+        Parameters
+        ----------
+        resources: list(flowserv.model.workflow.resource.WorkflowResource), optional
+            Optional dictionary of created resources
+
+        Returns
+        -------
+        flowserv.model.workflow.state.StateSuccess
+        """
+        return StateSuccess(
+            created_at=self.created_at,
+            started_at=self.created_at,
+            resources=resources
+        )
 
 
 class StateRunning(WorkflowState):

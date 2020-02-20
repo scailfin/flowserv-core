@@ -6,7 +6,7 @@
 # flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
-"""Unit tests for the asynchronous multiprocess workflow controller."""
+"""Unit tests for the generic remote workflow engine controller."""
 
 import os
 import pytest
@@ -14,6 +14,7 @@ import time
 
 from flowserv.service.api import API
 from flowserv.tests.files import FakeStream
+from flowserv.tests.remote import RemoteTestController
 
 import flowserv.config.api as config
 import flowserv.core.error as err
@@ -30,13 +31,16 @@ TEMPLATE_DIR = os.path.join(DIR, '../.files/benchmark/helloworld')
 UID = '0000'
 
 
-def test_run_helloworld_async(tmpdir):
+def test_run_remote_workflow(tmpdir):
     """Execute the helloworld example."""
     # -- Setup ----------------------------------------------------------------
     # Create the database and service API with a serial workflow engine in
     # asynchronous mode
     os.environ[config.FLOWSERV_API_BASEDIR] = os.path.abspath(str(tmpdir))
-    api = API(con=db.init_db(str(tmpdir), users=[UID]).connect())
+    api = API(
+        con=db.init_db(str(tmpdir), users=[UID]).connect(),
+        engine=RemoteTestController()
+    )
     # Create workflow template and run group
     wh = api.workflows().create_workflow(name='W1', sourcedir=TEMPLATE_DIR)
     w_id = wh['id']
@@ -82,30 +86,6 @@ def test_run_helloworld_async(tmpdir):
     f_id = resources['results/analytics.json']
     fh = api.runs().get_result_file(run_id=r_id, resource_id=f_id, user_id=UID)
     assert os.path.isfile(fh.filename)
-    # -- Test cancel run ------------------------------------------------------
-    arguments = [
-        {'id': 'names', 'value': file_id},
-        {'id': 'sleeptime', 'value': 100},
-        {'id': 'greeting', 'value': 'Hi'}
-    ]
-    run = api.runs().start_run(
-        group_id=g_id,
-        arguments=arguments,
-        user_id=UID
-    )
-    r_id = run['id']
-    # Sleep and poll once
-    while run['state'] in st.ACTIVE_STATES:
-        time.sleep(1)
-        run = api.runs().get_run(run_id=r_id, user_id=UID)
-        break
-    assert run['state'] in st.ACTIVE_STATES
-    run = api.runs().cancel_run(run_id=r_id, user_id=UID, reason='done')
-    assert run['state'] == st.STATE_CANCELED
-    assert run['messages'][0] == 'done'
-    run = api.runs().get_run(run_id=r_id, user_id=UID)
-    assert run['state'] == st.STATE_CANCELED
-    assert run['messages'][0] == 'done'
     # -- Test running workflow with unknown file ------------------------------
     arguments = [
         {'id': 'names', 'value': 'UNK'},

@@ -50,13 +50,13 @@ def main(args):
         format = 'JSON'
     # Ensure that the format specification is valid.
     if format == 'JSON':
-        if not output_file is None:
+        if output_file is not None:
             with open(output_file, 'w') as f:
                 json.dump(PARAMETER_SCHEMA, f)
         else:
             print(json.dumps(PARAMETER_SCHEMA, indent=4))
     elif format == 'YAML':
-        if not output_file is None:
+        if output_file is not None:
             with open(output_file, 'w') as f:
                 yaml.dump(PARAMETER_SCHEMA, f)
         else:

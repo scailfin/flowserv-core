@@ -66,7 +66,7 @@ class UploadFileService(object):
         workflow group.
 
         Currently we do allow downloads for non-submission members (i.e., the
-        user identifier iis optional). If a user identifier is given 
+        user identifier iis optional). If a user identifier is given
         Returns the file handle and the serialization of the file handle.
 
         Parameters

@@ -52,7 +52,7 @@ def test_service_descriptor(tmpdir):
     assert r['validToken']
     assert r['username'] == 'alice'
     # Test initialization with a different set of labels
-    labels={
+    labels = {
         'SERVER': {
             'SERVICE_NAME': 'serviceName',
             'SERVICE_VERSION': 'serviceVersion',

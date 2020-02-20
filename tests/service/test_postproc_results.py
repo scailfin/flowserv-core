@@ -13,14 +13,11 @@ import pytest
 import time
 
 from flowserv.controller.serial.engine import SerialWorkflowEngine
-from flowserv.model.workflow.resource import FSObject
-from flowserv.service.postproc.client import Runs
 from flowserv.tests.files import FakeStream
 
 import flowserv.core.error as err
 import flowserv.core.util as util
 import flowserv.model.workflow.state as st
-import flowserv.service.postproc.util as postproc
 import flowserv.tests.service as service
 
 
