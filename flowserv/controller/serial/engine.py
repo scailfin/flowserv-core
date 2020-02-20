@@ -156,19 +156,14 @@ class SerialWorkflowEngine(WorkflowController):
         wf = SerialWorkflow(template, arguments)
         try:
             # Copy all necessary files to the run folder
-            util.copy_files(files=wf.upload_files(), target_dir=run.rundir)
-            # Create top-level folder for all expected result files (if it does
-            # not exist already)
-            output_files = wf.output_files()
-            for filename in output_files:
-                dirname = os.path.dirname(filename)
-                if dirname:
-                    # Create the directory if it does not exist
-                    out_dir = os.path.join(run.rundir, dirname)
-                    if not os.path.isdir(out_dir):
-                        os.makedirs(out_dir)
+            util.copy_files(files=wf.upload_files, target_dir=run.rundir)
+            # Create top-level folder for all expected result files.
+            util.create_directories(
+                basedir=run.rundir,
+                files=wf.output_files
+            )
             # Get list of commands to execute.
-            commands = wf.commands()
+            commands = wf.commands
             # Start a new process to run the workflow. Make sure to catch all
             # exceptions to set the run state properly
             state = state.start()
@@ -188,7 +183,7 @@ class SerialWorkflowEngine(WorkflowController):
                         run.identifier,
                         run.rundir,
                         state,
-                        output_files,
+                        wf.output_files,
                         commands,
                         self.verbose
                     ),
@@ -201,7 +196,7 @@ class SerialWorkflowEngine(WorkflowController):
                     run.identifier,
                     run.rundir,
                     state,
-                    output_files,
+                    wf.output_files,
                     commands,
                     self.verbose
                 )
@@ -268,7 +263,6 @@ class SerialWorkflowEngine(WorkflowController):
 
 
 # -- Helper Methods -----------------------------------------------------------
-
 
 def callback_function(result, lock, tasks):
     """Callback function for executed tasks.Removes the task from the task

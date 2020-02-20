@@ -52,6 +52,21 @@ class WorkflowState(object):
         self.type_id = type_id
         self.created_at = created_at if created_at is not None else datetime.utcnow()
 
+    def __eq__(self, other):
+        """Equality between two states is defined by comparing their respective
+        type identifier.
+
+        Parameters
+        ----------
+        other: flowserv.model.workflow.state.WorkflowState
+            Workflow state that this state is compared to.
+
+        Returns
+        -------
+        bool
+        """
+        return self.type_id == other.type_id
+
     def __str__(self):
         """Get printable representation of the state type.
 

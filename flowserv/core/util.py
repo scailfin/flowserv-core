@@ -95,6 +95,27 @@ def create_dir(directory, abs=False):
         return directory
 
 
+def create_directories(basedir, files):
+    """Create top-level folder for all files in a given list. The file list
+    contains the path names of (result) files relative to a given base
+    directory. All directories are created under the base directory.
+
+    Parameters
+    ----------
+    basedir: string
+        Base directory under which new directories are created
+    files: list(string)
+        Relative path names for (expected) result files.
+    """
+    for filename in files:
+        dirname = os.path.dirname(filename)
+        if dirname:
+            # Create the directory if it does not exist
+            parentdir = os.path.join(basedir, dirname)
+            if not os.path.isdir(parentdir):
+                os.makedirs(parentdir)
+
+
 def get_unique_identifier():
     """Create a new unique identifier.
 

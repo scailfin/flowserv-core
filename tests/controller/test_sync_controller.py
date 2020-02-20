@@ -35,7 +35,7 @@ NAMES_FILE = os.path.join(TEMPLATE_DIR, './inputs/short-names.txt')
 UNKNOWN_FILE = os.path.join(TEMPLATE_DIR, './tmp/no/file/here')
 
 
-def test_run_helloworld(tmpdir):
+def test_run_helloworld_sync(tmpdir):
     """Execute the helloworld example."""
     # Read the workflow template
     doc = util.read_object(filename=TEMPLATE_HELLOWORLD)
