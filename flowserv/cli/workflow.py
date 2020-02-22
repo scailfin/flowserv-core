@@ -22,7 +22,7 @@ import flowserv.core.error as err
 @click.command(name='create')
 @click.option(
     '-n', '--name',
-    required=True,
+    required=False,
     help='Unique workflow name.'
 )
 @click.option(
@@ -54,7 +54,8 @@ import flowserv.core.error as err
     help='Optional path to workflow specification file.'
 )
 def add_workflow(
-    name, description=None, instructions=None, src=None, url=None, specfile=None
+    name=None, description=None, instructions=None, src=None, url=None,
+    specfile=None
 ):
     """Create a new workflow."""
     # Add workflow template to repository
@@ -66,7 +67,7 @@ def add_workflow(
             wf = api.workflows().create_workflow(
                 name=name,
                 description=description,
-                instructions=read_instructions(instructions),
+                instructions=instructions,
                 sourcedir=src,
                 repourl=url,
                 specfile=specfile
@@ -133,7 +134,9 @@ def list_workflows():
     required=False,
     help='File containing instructions for participants.'
 )
-def update_workflow(identifier, name=None, description=None, instructions=None):
+def update_workflow(
+    identifier, name=None, description=None, instructions=None
+):
     """Update workflow properties."""
     # Ensure that at least one of the optional arguments is given
     if name is None and description is None and instructions is None:

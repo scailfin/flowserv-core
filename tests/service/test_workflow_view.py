@@ -20,6 +20,7 @@ import flowserv.tests.serialize as serialize
 
 DIR = os.path.dirname(os.path.realpath(__file__))
 TEMPLATE_DIR = os.path.join(DIR, '../.files/benchmark/helloworld')
+INSTRUCTION_FILE = os.path.join(DIR, '../.files/benchmark/instructions.txt')
 
 
 def test_workflow_view(tmpdir):
@@ -41,12 +42,12 @@ def test_workflow_view(tmpdir):
     r = api.workflows().create_workflow(
         name='W2',
         description='ABC',
-        instructions='XYZ',
+        instructions=INSTRUCTION_FILE,
         sourcedir=TEMPLATE_DIR
     )
     serialize.validate_workflow_handle(doc=r, has_optional=True)
     assert r['description'] == 'ABC'
-    assert r['instructions'] == 'XYZ'
+    assert r['instructions'] == 'How to run Hello World'
     workflow_id = r['id']
     # -- Update workflow ------------------------------------------------------
     r = api.workflows().update_workflow(
