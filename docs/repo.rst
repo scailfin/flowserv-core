@@ -31,15 +31,15 @@ When the template is added to the repository, either a source directory on the f
 
 .. line-block::
 
-    benchmark.yml
-    benchmark.yaml
     benchmark.json
-    template.yml
-    template.yaml
+    benchmark.yaml
+    benchmark.yml
     template.json
-    workflow.yml
-    workflow.yaml
+    template.yaml
+    template.yml
     workflow.json
+    workflow.yaml
+    workflow.yml
 
 The first matching file is expected to contain the template specification. The suffix determines the expected file format (``.yml`` and ``.yaml`` for files in Yaml format and ``'json`` for Json format). If a specification file is found, the content is stored as ``repository.json`` in the template folder. All files in the source directory are (recursively) copied to the ``static`` folder.
 

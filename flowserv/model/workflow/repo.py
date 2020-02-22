@@ -16,6 +16,7 @@ import git
 import json
 import os
 import shutil
+import tempfile
 
 from flowserv.model.parameter.base import ParameterGroup
 from flowserv.model.run.manager import RunManager
@@ -35,9 +36,29 @@ function.
 DEFAULT_ATTEMPTS = 100
 DEFAULT_IDFUNC = util.get_short_identifier
 
-"""Names for files that are used to identify template specification."""
+"""Names for files that are used to identify template specification and project
+descriptions.
+"""
 DEFAULT_SPECNAMES = ['benchmark', 'workflow', 'template']
-DEFAULT_SPECSUFFIXES = ['.yml', '.yaml', '.json']
+DEFAULT_SPECSUFFIXES = ['.json', '.yaml', '.yml']
+DEFAULT_TEMPLATES = list()
+for name in DEFAULT_SPECNAMES:
+    for suffix in DEFAULT_SPECSUFFIXES:
+        DEFAULT_TEMPLATES.append(name + suffix)
+# List of default project description files
+DESCRIPTION_FILES = list()
+for suffix in DEFAULT_SPECSUFFIXES:
+    DESCRIPTION_FILES.append('flowserv' +suffix)
+
+"""Labels for the project description file."""
+DESCRIPTION = 'description'
+FILES = 'files'
+INSTRUCTIONS = 'instructions'
+NAME = 'name'
+SOURCE = 'source'
+SPECFILE = 'specfile'
+TARGET = 'target'
+WORKFLOWSPEC = 'workflowSpec'
 
 
 class WorkflowRepository(object):
@@ -77,13 +98,10 @@ class WorkflowRepository(object):
         if tmpl_names is not None:
             self.default_filenames = tmpl_names
         else:
-            self.default_filenames = list()
-            for name in DEFAULT_SPECNAMES:
-                for suffix in DEFAULT_SPECSUFFIXES:
-                    self.default_filenames.append(name + suffix)
+            self.default_filenames = DEFAULT_TEMPLATES
 
     def create_workflow(
-        self, name, description=None, instructions=None, sourcedir=None,
+        self, name=None, description=None, instructions=None, sourcedir=None,
         repourl=None, specfile=None, commit_changes=True
     ):
         """Add new workflow to the repository. The associated workflow template
@@ -91,19 +109,32 @@ class WorkflowRepository(object):
         directory or a Git repository. The template repository will raise an
         error if neither or both arguments are given.
 
-        Each workflow has a name and an optional description and set of
-        instructions.
+        The method will look for a workflow description file in the template
+        base folder with the name flowserv.json, flowserv.yaml, flowserv.yml
+        (in this order). The expected structure of the file is:
 
-        Raises an error if the given workflow name is not unique.
+        name: ''
+        description: ''
+        instructions: ''
+        files:
+            - source: ''
+              target: ''
+        specfile: '' or workflowSpec: ''
+
+        An error is raised if both specfile and workflowSpec are present in the
+        description file.
+
+        Raises an error if no workflow name is given or if a given workflow
+        name is not unique.
 
         Parameters
         ----------
-        name: string
+        name: string, optional
             Unique workflow name
         description: string, optional
             Optional short description for display in workflow listings
         instructions: string, optional
-            Text containing detailed instructions for running the workflow
+            File containing instructions for workflow users.
         sourcedir: string, optional
             Directory containing the workflow static files and the workflow
             template specification.
@@ -131,48 +162,67 @@ class WorkflowRepository(object):
             raise ValueError('no source folder or repository url given')
         elif sourcedir is not None and repourl is not None:
             raise ValueError('source folder and repository url given')
-        # Ensure that the workflow name is not empty, not longer than 512
-        # character and unique.
-        sql = 'SELECT name FROM workflow_template WHERE name = ?'
-        constraint.validate_name(name, con=self.con, sql=sql)
-        # Create identifier and folder for the workflow
-        workflow_id, workflowdir = self.create_folder(self.fs.workflow_basedir)
-        # Copy either the given workflow directory into the folder for static
-        # files or clone the Git repository into the folder.
-        staticdir = self.fs.workflow_staticdir(workflow_id)
+        # If a repository Url is given we first clone the repository into a
+        # temporary directory that is used as the project base directory.
+        projectdir = git_clone(repourl) if repourl is not None else sourcedir
+        # Read project metadata from description file. Override with given
+        # arguments
         try:
-            if sourcedir is not None:
-                shutil.copytree(src=sourcedir, dst=staticdir)
-            else:
-                git.Repo.clone_from(repourl, staticdir)
-        except (IOError, OSError, git.exc.GitCommandError) as ex:
-            # Make sure to cleanup by removing the created template folder
-            shutil.rmtree(workflowdir)
+            projectmeta = read_description(
+                projectdir=projectdir,
+                name=name,
+                description=description,
+                instructions=instructions,
+                specfile=specfile
+            )
+        except (IOError, OSError, err.ConstraintViolationError) as ex:
+            # Cleanup project directory if it was cloned from a git repository.
+            if repourl is not None:
+                shutil.rmtree(projectdir)
             raise ex
+        # Create identifier and folder for the workflow template. Create a
+        # sub-folder for static template files that are copied from the project
+        # folder.
+        workflow_id, workflowdir = self.create_folder(self.fs.workflow_basedir)
+        staticdir = self.fs.workflow_staticdir(workflow_id)
         # Find template specification file in the template workflow folder.
         # If the file is not found the workflow directory is removed and an
         # error is raised.
-        template = None
-        if specfile is not None:
-            candidates = [specfile]
-        else:
-            candidates = list()
-            for filename in self.default_filenames:
-                candidates.append(os.path.join(staticdir, filename))
-        for filename in candidates:
-            if os.path.isfile(filename):
-                # Read template from file. If no error occurs the folder
-                # contains a valid template.
-                template = WorkflowTemplate.from_dict(
-                    doc=util.read_object(filename),
-                    sourcedir=staticdir,
-                    validate=True
-                )
-                break
-        # No template file found. Cleanup and raise error.
+        template = read_template(
+            projectmeta=projectmeta,
+            projectdir=projectdir,
+            templatedir=staticdir,
+            default_filenames=self.default_filenames
+        )
         if template is None:
             shutil.rmtree(workflowdir)
             raise err.InvalidTemplateError('no template file found')
+        # Ensure that the workflow name is not empty, not longer than 512
+        # character and unique.
+        try:
+            sql = 'SELECT name FROM workflow_template WHERE name = ?'
+            constraint.validate_name(projectmeta[NAME], con=self.con, sql=sql)
+        except err.ConstraintViolationError as ex:
+            shutil.rmtree(workflowdir)
+            # Cleanup project directory if it was cloned from a git repository.
+            if repourl is not None:
+                shutil.rmtree(projectdir)
+            raise ex
+        # Copy files from the project folder to the template's static file
+        # folder. By default all files in the project folder are copied.
+        try:
+            copy_files(
+                projectmeta=projectmeta,
+                projectdir=projectdir,
+                templatedir=staticdir
+            )
+            # Remove the project folder if it was created from a git repository
+            if repourl is not None:
+                shutil.rmtree(projectdir)
+        except (IOError, OSError, KeyError) as ex:
+            # Make sure to cleanup by removing the created template folder
+            shutil.rmtree(workflowdir)
+            raise ex
         # Insert workflow into database and return descriptor. Database changes
         # are only commited if the respective flag is True.
         sql = (
@@ -193,9 +243,9 @@ class WorkflowRepository(object):
         schema = json.dumps(schema.to_dict()) if schema is not None else None
         args = (
             workflow_id,
-            name,
-            description,
-            instructions,
+            projectmeta.get(NAME),
+            projectmeta.get(DESCRIPTION),
+            projectmeta.get(INSTRUCTIONS),
             json.dumps(template.workflow_spec),
             parameters,
             modules,
@@ -208,9 +258,9 @@ class WorkflowRepository(object):
         return WorkflowHandle(
             con=self.con,
             identifier=workflow_id,
-            name=name,
-            description=description,
-            instructions=instructions,
+            name=projectmeta.get(NAME),
+            description=projectmeta.get(DESCRIPTION),
+            instructions=projectmeta.get(INSTRUCTIONS),
             template=template
         )
 
@@ -484,3 +534,171 @@ class WorkflowRepository(object):
                 self.con.commit()
         # Return the handle for the updated workflow
         return self.get_workflow(workflow_id)
+
+
+# -- Helper Methods -----------------------------------------------------------
+
+def copy_files(projectmeta, projectdir, templatedir):
+    """Copy all template files from the project base folder to the template
+    target folder in the repository. If the 'files' element in the project
+    metadata is given, only the files referenced in the listing will be copied.
+    By default, the whole project folder is copied.
+
+    Parameters
+    ----------
+    projectmeta: dict
+        Project metadata information from the project description file.
+    projectdir: string
+        Path to the base directory containing the project resource files.
+    templatedir: string
+
+    Raises
+    ------
+    IOError, KeyError, OSError
+    """
+    for fspec in projectmeta.get(FILES, [{SOURCE: ''}]):
+        source = os.path.join(projectdir, fspec[SOURCE])
+        target = os.path.join(templatedir, fspec.get(TARGET, ''))
+        if os.path.isdir(source):
+            shutil.copytree(src=source, dst=target)
+        else:
+            if os.path.isdir(target):
+                target = os.path.join(target, os.path.basename(source))
+            shutil.copyfile(src=source, dst=target)
+
+
+def git_clone(repourl):
+    """Clone a git repository from a given Url into a temporary folder on the
+    local disk.
+
+    Parameters
+    ----------
+    repourl: string
+        Url to git repository.
+
+    Returns
+    -------
+    string
+    """
+    # Create a temporary folder for the git repository
+    projectdir = tempfile.mkdtemp()
+    try:
+        git.Repo.clone_from(repourl, projectdir)
+    except (IOError, OSError, git.exc.GitCommandError) as ex:
+        # Make sure to cleanup by removing the created project folder
+        shutil.rmtree(projectdir)
+        raise ex
+    return projectdir
+
+
+def read_description(projectdir, name, description, instructions, specfile):
+    """Read the project description file from the project folder. Looks for a
+    file with the following names: flowserv.json, flowserv.yaml, flowserv.yml.
+
+    Replaces properties with the given arguments. Raises a ValueError if no
+    name or no workflow specification is present in the resulting metadata
+    dictionary.
+
+    Parameters
+    ----------
+    projectdir: string
+        Path to the base directory containing the project resource files.
+    name: string
+        Unique workflow name
+    description: string
+        Optional short description for display in workflow listings
+    instructions: string
+        File containing instructions for workflow users.
+    specfile: string
+        Path to the workflow template specification file (absolute or
+        relative to the workflow directory)
+
+    Returns
+    -------
+    dict
+
+    Raises
+    ------
+    flowserv.core.error.ConstraintViolationError
+    IOError, OSError
+    """
+    doc = dict()
+    for filename in DESCRIPTION_FILES:
+        filename = os.path.join(projectdir, filename)
+        if os.path.isfile(filename):
+            doc = util.read_object(filename)
+            break
+    # Raise an error if both the specification file and workflow specification
+    # are present in the project description.
+    if SPECFILE in doc and WORKFLOWSPEC in doc:
+        msg = 'invalid project description: {} and {} given'
+        raise err.ConstraintViolationError(msg.format(SPECFILE, WORKFLOWSPEC))
+    # Override metadata with given arguments
+    if name is not None:
+        doc[NAME] = name
+    # Raise an error if no name is given
+    if NAME not in doc:
+        raise err.ConstraintViolationError('no template name given')
+    if description is not None:
+        doc[DESCRIPTION] = description
+    if instructions is not None:
+        doc[INSTRUCTIONS] = instructions
+    if specfile is not None:
+        # Set the specification file if given. Remove a workflow specification
+        # in the project description if it exists.
+        doc[SPECFILE] = specfile
+        if WORKFLOWSPEC in doc:
+            del doc[WORKFLOWSPEC]
+    # Read the instructions file if specified
+    if INSTRUCTIONS in doc:
+        with open(os.path.join(projectdir, doc[INSTRUCTIONS]), 'r') as f:
+            doc[INSTRUCTIONS] = f.read().strip()
+    return doc
+
+
+def read_template(projectmeta, projectdir, templatedir, default_filenames):
+    """Read the template specification file in the template workflow folder.
+    If the file is not found None is returned.
+
+    Parameters
+    ----------
+    projectmeta: dict
+        Project metadata information from the project description file.
+    projectdir: string
+        Path to the base directory containing the project resource files.
+    templatedir: string
+        Path to the target directory for template resource files.
+    default_filenames: list(string)
+        List of default file names for workflow templates.
+
+    Returns
+    -------
+    flowserv.model.template.base.WorkflowTemplate
+    """
+    if WORKFLOWSPEC in projectmeta:
+        # If the project metadata contains the workflow specification we can
+        # return immediately
+        return WorkflowTemplate.from_dict(
+            doc=projectmeta.get(WORKFLOWSPEC),
+            sourcedir=templatedir,
+            validate=True
+        )
+    # The list of candidate file names depends on whether the project metadata
+    # contains a reference to the specification file or if we are looking for
+    # a default file
+    if SPECFILE in projectmeta:
+        candidates = [projectmeta[SPECFILE]]
+    else:
+        candidates = list()
+        for filename in default_filenames:
+            candidates.append(filename)
+    for filename in candidates:
+        filename = os.path.join(projectdir, filename)
+        if os.path.isfile(filename):
+            # Read template from file. If no error occurs the folder
+            # contains a valid template.
+            return WorkflowTemplate.from_dict(
+                doc=util.read_object(filename),
+                sourcedir=templatedir,
+                validate=True
+            )

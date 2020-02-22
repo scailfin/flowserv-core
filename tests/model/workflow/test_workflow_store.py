@@ -25,6 +25,7 @@ import flowserv.tests.db as db
 
 DIR = os.path.dirname(os.path.realpath(__file__))
 TEMPLATE_DIR = os.path.join(DIR, '../../.files/benchmark/helloworld')
+INSTRUCTION_FILE = os.path.join(DIR, '../../.files/benchmark/instructions.txt')
 json_template = '../../.files/template/template.json'
 TEMPLATE_WITHOUT_SCHEMA = os.path.join(DIR, json_template)
 error_template = '../../.files/template/alt-validate-error.yaml'
@@ -85,7 +86,7 @@ def test_create_workflow(tmpdir):
     wf2 = repo.create_workflow(
         name='My benchmark',
         description='desc',
-        instructions='instr',
+        instructions=INSTRUCTION_FILE,
         sourcedir=TEMPLATE_DIR,
         specfile=TEMPLATE_WITHOUT_SCHEMA
     )
@@ -93,14 +94,14 @@ def test_create_workflow(tmpdir):
     assert wf2.has_description()
     assert wf2.get_description() == 'desc'
     assert wf2.has_instructions()
-    assert wf2.get_instructions() == 'instr'
+    assert wf2.get_instructions() == 'How to run Hello World'
     assert not wf2.get_template().has_schema()
     wf2 = repo.get_workflow(wf2.identifier)
     assert wf2.name == 'My benchmark'
     assert wf2.has_description()
     assert wf2.get_description() == 'desc'
     assert wf2.has_instructions()
-    assert wf2.get_instructions() == 'instr'
+    assert wf2.get_instructions() == 'How to run Hello World'
     assert not wf2.get_template().has_schema()
     workflows = repo.list_workflows()
     assert len(workflows) == 2
@@ -110,7 +111,7 @@ def test_create_workflow(tmpdir):
     wf3 = repo.create_workflow(
         name='Top Tagger',
         description='desc',
-        instructions='instr',
+        instructions=INSTRUCTION_FILE,
         sourcedir=TEMPLATE_DIR,
         specfile=TOPTAGGER_YAML_FILE
     )
@@ -238,7 +239,7 @@ def test_update_workflow(tmpdir):
     wf2 = repo.create_workflow(
         name='My benchmark',
         description='desc',
-        instructions='instr',
+        instructions=INSTRUCTION_FILE,
         sourcedir=TEMPLATE_DIR
     )
     # Update the name of the first workflow. It is possible to change the
