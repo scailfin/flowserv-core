@@ -49,15 +49,20 @@ def copy_files(files, target_dir):
         workflow run)
     """
     for source, target in files:
+        # The target path is relative to the target directory. Create the
+        # absolute path to the target destination. Ensure that the path does
+        # not end with '/' since this confuses the dirname() method.
         dst = os.path.join(target_dir, target)
-        # Ensure that the parent directory of the target exists
+        while dst.endswith('/'):
+            dst = dst[:-1]
+        # Ensure that the parent directory of the target exists.
         dst_parent = os.path.dirname(dst)
         if dst_parent and not os.path.isdir(dst_parent):
             os.makedirs(dst_parent)
         # If the source references a directory the whole directory tree is
         # copied. Otherwise, a single file is copied.
         if os.path.isdir(source):
-            shutil.copytree(src=source, dst=dst, dirs_exist_ok=True)
+            shutil.copytree(src=source, dst=dst)
         else:
             shutil.copy(src=source, dst=dst)
 

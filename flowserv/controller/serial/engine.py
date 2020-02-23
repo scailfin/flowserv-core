@@ -120,8 +120,8 @@ class SerialWorkflowEngine(WorkflowController):
         process is stated (the state will therefore be RUNNING).
 
         The set of arguments is not further validated. It is assumed that the
-        validation has been performed by the calling code (e.g., the run service
-        manager).
+        validation has been performed by the calling code (e.g., the run
+        service manager).
 
         If the state of the run handle is not pending, an error is raised.
 
@@ -130,8 +130,8 @@ class SerialWorkflowEngine(WorkflowController):
         run: flowserv.model.run.base.RunHandle
             Handle for the run that is being executed.
         template: flowserv.model.template.base.WorkflowTemplate
-            Workflow template containing the parameterized specification and the
-            parameter declarations.
+            Workflow template containing the parameterized specification and
+            the parameter declarations.
         arguments: dict(flowserv.model.parameter.value.TemplateArgument)
             Dictionary of argument values for parameters in the template.
         run_async: bool, optional

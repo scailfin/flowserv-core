@@ -15,6 +15,7 @@ import errno
 import git
 import json
 import os
+import re
 import shutil
 import tempfile
 
@@ -198,15 +199,19 @@ class WorkflowRepository(object):
             shutil.rmtree(workflowdir)
             raise err.InvalidTemplateError('no template file found')
         # Ensure that the workflow name is not empty, not longer than 512
-        # character and unique.
+        # character, and unique.
         try:
-            sql = 'SELECT name FROM workflow_template WHERE name = ?'
-            constraint.validate_name(projectmeta.get(NAME), con=self.con, sql=sql)
+            get_unique_name(
+                con=self.con,
+                projectmeta=projectmeta,
+                sourcedir=sourcedir,
+                repourl=repourl
+            )
         except err.ConstraintViolationError as ex:
-            shutil.rmtree(workflowdir)
-            # Cleanup project directory if it was cloned from a git repository.
-            if repourl is not None:
-                shutil.rmtree(projectdir)
+            cleanup(
+                workflowdir=workflowdir,
+                projectdir=projectdir if repourl is not None else None
+            )
             raise ex
         # Copy files from the project folder to the template's static file
         # folder. By default all files in the project folder are copied.
@@ -220,8 +225,10 @@ class WorkflowRepository(object):
             if repourl is not None:
                 shutil.rmtree(projectdir)
         except (IOError, OSError, KeyError) as ex:
-            # Make sure to cleanup by removing the created template folder
-            shutil.rmtree(workflowdir)
+            cleanup(
+                workflowdir=workflowdir,
+                projectdir=projectdir if repourl is not None else None
+            )
             raise ex
         # Insert workflow into database and return descriptor. Database changes
         # are only commited if the respective flag is True.
@@ -538,6 +545,24 @@ class WorkflowRepository(object):
 
 # -- Helper Methods -----------------------------------------------------------
 
+def cleanup(workflowdir, projectdir):
+    """Remove created workflow directory in case of an error. If the project
+    directory is given it contains a cloned git repository. In that case, the
+    project directory will also be deleted.
+
+    Parameters
+    ----------
+    workflowdir: string
+        Path to created workflow template directory.
+    projectdir: string
+        Path to cloned git repository directory. Will be None if the project
+        was not cloned.
+    """
+    shutil.rmtree(workflowdir)
+    if projectdir is not None:
+        shutil.rmtree(projectdir)
+
+
 def copy_files(projectmeta, projectdir, templatedir):
     """Copy all template files from the project base folder to the template
     target folder in the repository. If the 'files' element in the project
@@ -556,19 +581,80 @@ def copy_files(projectmeta, projectdir, templatedir):
     ------
     IOError, KeyError, OSError
     """
-    # Create a list of (source, target) pairs for the file copy statement
+    # Create a list of (source, target) pairs for the file copy statement.
     files = list()
-    for fspec in projectmeta.get(FILES, [{SOURCE: ''}]):
-        source = os.path.join(projectdir, fspec[SOURCE])
-        target = fspec.get(TARGET, '')
-        if not os.path.isdir(source):
-            if os.path.isdir(os.path.join(templatedir, target)):
-                # Esure that the target is a file and not a directory if the
-                # source is a file. If the target element in fspec is not set,
-                # the copy target would be a directory instead of a file.
-                target = os.path.join(target, os.path.basename(source))
-        files.append((source, target))
+    if FILES not in projectmeta:
+        # If no files listing is present in the project metadata dictionary
+        # copy the whole project directory to the source.
+        for filename in os.listdir(projectdir):
+            files.append((os.path.join(projectdir, filename), filename))
+    else:
+        for fspec in projectmeta.get(FILES, [{SOURCE: ''}]):
+            source = os.path.join(projectdir, fspec[SOURCE])
+            target = fspec.get(TARGET, '')
+            if not os.path.isdir(source):
+                if os.path.isdir(os.path.join(templatedir, target)):
+                    # Esure that the target is a file and not a directory if
+                    # the source is a file. If the target element in fspec is
+                    # not set, the copy target would be a directory instead of
+                    # a file.
+                    target = os.path.join(target, os.path.basename(source))
+            files.append((source, target))
     util.copy_files(files, templatedir)
+
+
+def get_unique_name(con, projectmeta, sourcedir, repourl):
+    """Ensure that the workflow name in the project metadata is not empty, not
+    longer than 512 character, and unique.
+
+    Parameters
+    ----------
+    con: DB-API 2.0 database connection, optional
+        Connection to underlying database
+    projectmeta: dict
+        Project metadata information from the project description file.
+    sourcedir: string
+        Directory containing the workflow static files and the workflow
+        template specification.
+    repourl: string
+        Git repository that contains the the workflow files
+
+    Raises
+    ------
+    flowserv.core.error.ConstraintViolationError
+    """
+    name = projectmeta.get(NAME)
+    # Ensure that the name is not None.
+    if name is None:
+        if sourcedir is not None:
+            name = os.path.basename(sourcedir)
+        else:
+            name = repourl.split('/')[-1]
+        if '.' in name:
+            name = name[:name.find('.')]
+        if '_' in name or '-' in name:
+            name = ' '.join([t.capitalize() for t in re.split('[_-]', name)])
+        else:
+            name = name.capitalize()
+    # Validate that the name is not empty and not too long.
+    constraint.validate_name(name)
+    # Ensure that the name is unique
+    sql = 'SELECT name FROM workflow_template WHERE name = ?'
+    if not con.execute(sql, (name,)).fetchone() is None:
+        # Find a a unique name that matches the template name (int)
+        name_templ = name + ' ({})'
+        sql = 'SELECT name FROM workflow_template WHERE name LIKE ?'
+        existing_names = set()
+        for row in con.execute(sql, (name_templ.format('%'),)).fetchall():
+            existing_names.add(row[0])
+        count = 1
+        while name_templ.format(count) in existing_names:
+            count += 1
+        name = name_templ.format(count)
+        # Re-validate that the name is not too long.
+        constraint.validate_name(name)
+    # constraint.validate_name(, con=self.con, sql=sql)
+    projectmeta[NAME] = name
 
 
 def git_clone(repourl):

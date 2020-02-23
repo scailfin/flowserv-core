@@ -16,6 +16,12 @@ from flowserv.service.api import service
 
 import flowserv.core.error as err
 
+# Define a dictionary that associates identifier with some default repositories
+# for easy install.
+REPOS = {
+    'Hello World': 'https://github.com/scailfin/rob-demo-hello-world.git'
+}
+
 
 # -- Add workflow -------------------------------------------------------------
 
@@ -43,9 +49,9 @@ import flowserv.core.error as err
     help='Workflow template directory.'
 )
 @click.option(
-    '-u', '--url',
+    '-r', '--url',
     required=False,
-    help='Workflow template Git repository URL.'
+    help='Workflow template Git repository name or URL.'
 )
 @click.option(
     '-f', '--specfile',
@@ -58,6 +64,10 @@ def add_workflow(
     specfile=None
 ):
     """Create a new workflow."""
+    # If the url references a known repository in REPO replace the value with
+    # the repository url
+    if url is not None:
+        url = REPOS.get(url, url)
     # Add workflow template to repository
     with service() as api:
         try:

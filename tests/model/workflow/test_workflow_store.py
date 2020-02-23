@@ -20,6 +20,7 @@ from flowserv.model.workflow.repo import WorkflowRepository
 
 import flowserv.core.error as err
 import flowserv.core.util as util
+import flowserv.model.workflow.repo as helper
 import flowserv.tests.db as db
 
 
@@ -54,7 +55,7 @@ def init(basedir):
 def test_create_workflow(tmpdir):
     """Test adding, retrieving and listing workflows."""
     # Initialize the repository
-    repo, connector = init(tmpdir)
+    repo, _ = init(tmpdir)
     # Add workflow with minimal information
     wf1 = repo.create_workflow(name='A', sourcedir=TEMPLATE_DIR)
     assert wf1.name == 'A'
@@ -120,19 +121,18 @@ def test_create_workflow(tmpdir):
     assert wf3.get_template().postproc_spec is not None
     workflows = repo.list_workflows()
     assert len(workflows) == 3
-    # Test error conditions
     # - Missing name
-    with pytest.raises(err.ConstraintViolationError):
-        repo.create_workflow(name=None, sourcedir=TEMPLATE_DIR)
+    wf = repo.create_workflow(name=None, sourcedir=TEMPLATE_DIR)
+    assert wf.name == 'Helloworld'
+    wf = repo.create_workflow(name='My benchmark', sourcedir=TEMPLATE_DIR)
+    assert wf.name == 'My benchmark (1)'
+    # Test error conditions
+    # - Invalid name
     with pytest.raises(err.ConstraintViolationError):
         repo.create_workflow(name=' ', sourcedir=TEMPLATE_DIR)
-    # - Invalid name
     repo.create_workflow(name='a' * 512, sourcedir=TEMPLATE_DIR)
     with pytest.raises(err.ConstraintViolationError):
         repo.create_workflow(name='a' * 513, sourcedir=TEMPLATE_DIR)
-    # - Duplicate name
-    with pytest.raises(err.ConstraintViolationError):
-        repo.create_workflow(name='My benchmark', sourcedir=TEMPLATE_DIR)
     # - Invalid template
     with pytest.raises(err.UnknownParameterError):
         repo.create_workflow(
@@ -154,7 +154,7 @@ def test_create_workflow(tmpdir):
 def test_delete_workflow(tmpdir):
     """Test deleting a workflows from the repository."""
     # Initialize the repository
-    repo, connector = init(tmpdir)
+    repo, _ = init(tmpdir)
     wf1 = repo.create_workflow(name='A', sourcedir=TEMPLATE_DIR)
     wf2 = repo.create_workflow(name='B', sourcedir=TEMPLATE_DIR)
     wf3 = repo.create_workflow(name='C', sourcedir=TEMPLATE_DIR)
@@ -201,7 +201,7 @@ def test_error_for_id_func(tmpdir):
             self.count += 1
             return '0000'
     # initialize a repository with the dummy ID function
-    repo, connector = init(tmpdir)
+    repo, _ = init(tmpdir)
     dummy_func = DummyIDFunc()
     repo = WorkflowRepository(con=repo.con, fs=repo.fs, idfunc=dummy_func)
     os.makedirs(repo.fs.workflow_basedir('0000'))
@@ -234,7 +234,7 @@ def test_get_workflow(tmpdir):
 def test_update_workflow(tmpdir):
     """Test updating workflow properties."""
     # Initialize the repository
-    repo, connector = init(tmpdir)
+    repo, _ = init(tmpdir)
     wf1 = repo.create_workflow(name='A', sourcedir=TEMPLATE_DIR)
     wf2 = repo.create_workflow(
         name='My benchmark',
@@ -280,3 +280,28 @@ def test_update_workflow(tmpdir):
     assert wf2.name == 'The name'
     assert wf2.description == 'The description'
     assert wf2.instructions == 'The instructions'
+
+
+def test_workflow_name(tmpdir):
+    """Test creating workflows with existing names."""
+    # Initialize the repository. Create two workflows, one with name 'Workflow'
+    # and the other with name 'Workflow (2)'
+    repo, connector = init(tmpdir)
+    repo.create_workflow(name='Workflow', sourcedir=TEMPLATE_DIR)
+    repo.create_workflow(name='Workflow (2)', sourcedir=TEMPLATE_DIR)
+    # Creating another workflow with name 'Workflow' will result in a workflow
+    # with name 'Workflow (1)' and the 'Workflow (3)'
+    wf = repo.create_workflow(name='Workflow', sourcedir=TEMPLATE_DIR)
+    assert wf.name == 'Workflow (1)'
+    wf = repo.create_workflow(name='Workflow', sourcedir=TEMPLATE_DIR)
+    assert wf.name == 'Workflow (3)'
+    # Test using a repository name
+    con = connector.connect()
+    pmeta = dict()
+    helper.get_unique_name(
+        con=con,
+        projectmeta=pmeta,
+        sourcedir=None,
+        repourl='https://github.com/scailfin/rob-demo-hello-world.git'
+    )
+    assert pmeta[helper.NAME] == 'Rob Demo Hello World'

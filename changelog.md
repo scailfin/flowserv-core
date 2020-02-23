@@ -10,6 +10,8 @@
 * Add generic controller for remote workflow engines
 
 
-### 0.1.2 - 2020-02-22
+### 0.1.2 - 2020-02-23
 
 * Read template metadata from project description file when adding a workflow template to the repository
+* Create default names for templates with missing or non-unique names
+* Include short-cuts to default repositories when creating workflow templates using the command-line interface

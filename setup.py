@@ -44,8 +44,8 @@ extras_require = {
 }
 
 
-# Get the version string from the version.py file in the flowserv package. Based
-# on:
+# Get the version string from the version.py file in the flowserv package.
+# Based on:
 # https://stackoverflow.com/questions/458550/standard-way-to-embed-version-into-python-package
 with open(os.path.join('flowserv', 'version.py'), 'rt') as f:
     filecontent = f.read()
