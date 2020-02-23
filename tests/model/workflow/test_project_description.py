@@ -54,6 +54,7 @@ def test_create_workflow_with_description(tmpdir):
     assert not os.path.isfile(os.path.join(templatedir, 'code/dont-copy.py'))
     assert os.path.isfile(os.path.join(templatedir, 'data/input.txt'))
     assert os.path.isfile(os.path.join(templatedir, 'copy-me.txt'))
+    assert os.path.isfile(os.path.join(templatedir, 'misc/copy-this.txt'))
     # Override values in description file
     wf = repo.create_workflow(
         sourcedir=TEMPLATE_DIR,

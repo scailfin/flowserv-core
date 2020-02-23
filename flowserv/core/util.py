@@ -50,22 +50,16 @@ def copy_files(files, target_dir):
     """
     for source, target in files:
         dst = os.path.join(target_dir, target)
+        # Ensure that the parent directory of the target exists
+        dst_parent = os.path.dirname(dst)
+        if dst_parent and not os.path.isdir(dst_parent):
+            os.makedirs(dst_parent)
         # If the source references a directory the whole directory tree is
-        # copied
+        # copied. Otherwise, a single file is copied.
         if os.path.isdir(source):
-            shutil.copytree(src=source, dst=dst)
+            shutil.copytree(src=source, dst=dst, dirs_exist_ok=True)
         else:
-            # Based on https://stackoverflow.com/questions/2793789/create-destination-path-for-shutil-copy-files/3284204
-            try:
-                shutil.copy(src=source, dst=dst)
-            except IOError as e:
-                # ENOENT(2): file does not exist, raised also on missing dest
-                # parent dir
-                if e.errno != errno.ENOENT or not os.path.isfile(source):
-                    raise
-                # try creating parent directories
-                os.makedirs(os.path.dirname(dst))
-                shutil.copy(src=source, dst=dst)
+            shutil.copy(src=source, dst=dst)
 
 
 def create_dir(directory, abs=False):

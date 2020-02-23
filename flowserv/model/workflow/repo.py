@@ -175,7 +175,7 @@ class WorkflowRepository(object):
                 instructions=instructions,
                 specfile=specfile
             )
-        except (IOError, OSError, err.ConstraintViolationError) as ex:
+        except (IOError, OSError, ValueError) as ex:
             # Cleanup project directory if it was cloned from a git repository.
             if repourl is not None:
                 shutil.rmtree(projectdir)
@@ -201,7 +201,7 @@ class WorkflowRepository(object):
         # character and unique.
         try:
             sql = 'SELECT name FROM workflow_template WHERE name = ?'
-            constraint.validate_name(projectmeta[NAME], con=self.con, sql=sql)
+            constraint.validate_name(projectmeta.get(NAME), con=self.con, sql=sql)
         except err.ConstraintViolationError as ex:
             shutil.rmtree(workflowdir)
             # Cleanup project directory if it was cloned from a git repository.
@@ -556,15 +556,19 @@ def copy_files(projectmeta, projectdir, templatedir):
     ------
     IOError, KeyError, OSError
     """
+    # Create a list of (source, target) pairs for the file copy statement
+    files = list()
     for fspec in projectmeta.get(FILES, [{SOURCE: ''}]):
         source = os.path.join(projectdir, fspec[SOURCE])
-        target = os.path.join(templatedir, fspec.get(TARGET, ''))
-        if os.path.isdir(source):
-            shutil.copytree(src=source, dst=target)
-        else:
-            if os.path.isdir(target):
+        target = fspec.get(TARGET, '')
+        if not os.path.isdir(source):
+            if os.path.isdir(os.path.join(templatedir, target)):
+                # Esure that the target is a file and not a directory if the
+                # source is a file. If the target element in fspec is not set,
+                # the copy target would be a directory instead of a file.
                 target = os.path.join(target, os.path.basename(source))
-            shutil.copyfile(src=source, dst=target)
+        files.append((source, target))
+    util.copy_files(files, templatedir)
 
 
 def git_clone(repourl):
@@ -619,8 +623,7 @@ def read_description(projectdir, name, description, instructions, specfile):
 
     Raises
     ------
-    flowserv.core.error.ConstraintViolationError
-    IOError, OSError
+    IOError, OSError, ValueError
     """
     doc = dict()
     for filename in DESCRIPTION_FILES:
@@ -632,13 +635,10 @@ def read_description(projectdir, name, description, instructions, specfile):
     # are present in the project description.
     if SPECFILE in doc and WORKFLOWSPEC in doc:
         msg = 'invalid project description: {} and {} given'
-        raise err.ConstraintViolationError(msg.format(SPECFILE, WORKFLOWSPEC))
+        raise ValueError(msg.format(SPECFILE, WORKFLOWSPEC))
     # Override metadata with given arguments
     if name is not None:
         doc[NAME] = name
-    # Raise an error if no name is given
-    if NAME not in doc:
-        raise err.ConstraintViolationError('no template name given')
     if description is not None:
         doc[DESCRIPTION] = description
     if instructions is not None:
