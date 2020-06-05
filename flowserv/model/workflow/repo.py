@@ -49,7 +49,7 @@ for name in DEFAULT_SPECNAMES:
 # List of default project description files
 DESCRIPTION_FILES = list()
 for suffix in DEFAULT_SPECSUFFIXES:
-    DESCRIPTION_FILES.append('flowserv' +suffix)
+    DESCRIPTION_FILES.append('flowserv' + suffix)
 
 """Labels for the project description file."""
 DESCRIPTION = 'description'
@@ -187,7 +187,7 @@ class WorkflowRepository(object):
         workflow_id, workflowdir = self.create_folder(self.fs.workflow_basedir)
         staticdir = self.fs.workflow_staticdir(workflow_id)
         # Find template specification file in the template workflow folder.
-        # If the file is not found the workflow directory is removed and an
+        # If the file is not found, the workflow directory is removed and an
         # error is raised.
         template = read_template(
             projectmeta=projectmeta,
@@ -771,7 +771,7 @@ def read_template(projectmeta, projectdir, templatedir, default_filenames):
         )
     # The list of candidate file names depends on whether the project metadata
     # contains a reference to the specification file or if we are looking for
-    # a default file
+    # a default file.
     if SPECFILE in projectmeta:
         candidates = [projectmeta[SPECFILE]]
     else:

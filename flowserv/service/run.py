@@ -472,14 +472,14 @@ class RunService(object):
         ----------
         run_id: string
             Unique identifier for the run
-        state: robcore.model.workflow.state.WorkflowState
+        state: flowserv.model.workflow.state.WorkflowState
             New workflow state
         commit_changes: bool, optional
             Commit all changes to the database if true
 
         Raises
         ------
-        robcore.core.error.ConstraintViolationError
+        flowserv.core.error.ConstraintViolationError
         """
         # We give special attention to runs that are in SUCCESS state.
         if state.is_success():

@@ -34,7 +34,7 @@ def prepare_postproc_data(input_files, ranking, run_manager):
     input_files: list(string)
         List of identifier for benchmark run output files that are copied into
         the input directory for each submission.
-    ranking: robcore.model.ranking.ResultRanking
+    ranking: flowserv.model.ranking.base.ResultRanking
         List of runs in the current result ranking
         run_manager: flowserv.model.run.manager.RunManager
             Manager for workflow runs

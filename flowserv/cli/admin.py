@@ -66,8 +66,13 @@ def cli():
     default=False,
     help='Show Web Service API configuration variables'
 )
-def configuration(all=False, database=False, auth=False, backend=False, service=False):
+def configuration(
+    all=False, database=False, auth=False, backend=False, service=False
+):
     """Print configuration variables for flowServ."""
+    # Show all configuration variables if no command line option is given:
+    if not (all or database or auth or backend or service):
+        all = True
     comment = '#\n# {}\n#'
     envvar = 'export {}={}'
     # Configuration for the API

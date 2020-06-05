@@ -38,7 +38,7 @@ REPOS = {
 )
 @click.option(
     '-i', '--instructions',
-    type=click.Path(exists=True, dir_okay=False, readable=True),
+    type=click.Path(exists=False),
     required=False,
     help='File containing instructions for running the workflow.'
 )
