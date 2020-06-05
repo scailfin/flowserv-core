@@ -106,6 +106,8 @@ def configuration(
         conf.append((FLOWSERV_BACKEND_CLASS, backend_class))
         backend_module = os.environ.get(FLOWSERV_BACKEND_MODULE, '')
         conf.append((FLOWSERV_BACKEND_MODULE, backend_module))
+        for var, val in conf:
+            click.echo(envvar.format(var, val))
         for var, val in init_backend(raise_error=False).configuration():
             click.echo(envvar.format(var, val))
 

@@ -40,13 +40,13 @@ class DockerWorkflowEngine(SerialWorkflowEngine):
             asynchronous by default.
         """
         super(DockerWorkflowEngine, self).__init__(
-        exec_func=docker_run,
+            exec_func=docker_run,
             is_async=is_async,
             verbose=True
         )
 
 
-# -- Workflow execution function -----------------------------------------------
+# -- Workflow execution function ----------------------------------------------
 
 
 def docker_run(run_id, rundir, state, output_files, steps, verbose):
