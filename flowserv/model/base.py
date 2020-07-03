@@ -16,12 +16,16 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.types import TypeDecorator, Unicode
 
+from flowserv.files import InputFile
 from flowserv.model.parameter.base import ParameterGroup
 from flowserv.model.template.schema import ResultSchema
+from flowserv.model.workflow.resource import WorkflowResource
 
+import flowserv.model.workflow.state as st
 import flowserv.model.parameter.base as pb
 import flowserv.util as util
 
+# -- ORM Base -----------------------------------------------------------------
 
 """Base class for all database tables."""
 Base = declarative_base()
@@ -37,7 +41,7 @@ class JsonObject(TypeDecorator):
     def process_literal_param(self, value, dialect):
         """Expects a JSON serializable object."""
         if value is not None:
-            return json.dumps(value)
+            return json.dumps(value, cls=ArgumentEncoder)
 
     process_bind_param = process_literal_param
 
@@ -241,8 +245,16 @@ class WorkflowHandle(Base):
     result_schema = Column(WorkflowResultSchema)
 
     # -- Relationships --------------------------------------------------------
-    groups = relationship('WorkflowGroup', back_populates='workflow')
-    runs = relationship('WorkflowRun', back_populates='workflow')
+    groups = relationship(
+        'WorkflowGroup',
+        back_populates='workflow',
+        cascade='all, delete, delete-orphan'
+    )
+    runs = relationship(
+        'RunHandle',
+        back_populates='workflow',
+        cascade='all, delete, delete-orphan'
+    )
 
 
 # -- Workflow Groups ----------------------------------------------------------
@@ -293,8 +305,16 @@ class WorkflowGroup(Base):
         back_populates='groups'
     )
     owner = relationship('User', uselist=False)
-    runs = relationship('WorkflowRun', back_populates='group')
-    uploads = relationship('UploadFile', back_populates='group')
+    runs = relationship(
+        'RunHandle',
+        back_populates='group',
+        cascade='all, delete, delete-orphan'
+    )
+    uploads = relationship(
+        'UploadFile',
+        back_populates='group',
+        cascade='all, delete, delete-orphan'
+    )
     workflow = relationship('WorkflowHandle', back_populates='groups')
 
 
@@ -325,7 +345,7 @@ workflow parameters, and timestamps.
 """
 
 
-class WorkflowRun(Base):
+class RunHandle(Base):
     """ Workflow runs may be triggered by workflow group members or they
     represent post-processing workflows. In the latter case the group
     identifier is None.
@@ -347,17 +367,62 @@ class WorkflowRun(Base):
         ForeignKey('workflow_group.group_id'),
         nullable=True
     )
-    state = Column(String(8), nullable=False)
-    created_at = Column(String(26), nullable=False)
+    state_type = Column(String(8), default=st.STATE_PENDING, nullable=False)
+    created_at = Column(String(26), default=util.utc_now(), nullable=False)
     started_at = Column(String(26))
     ended_at = Column(String(26))
     arguments = Column(JsonObject)
 
     # -- Relationships --------------------------------------------------------
-    files = relationship('RunFile', uselist=False)
+    files = relationship('RunFile', cascade='all, delete, delete-orphan')
     group = relationship('WorkflowGroup', back_populates='runs')
-    log = relationship('RunMessage', uselist=False)
+    log = relationship('RunMessage', cascade='all, delete, delete-orphan')
     workflow = relationship('WorkflowHandle', back_populates='runs')
+
+    def state(self):
+        """Get an instance of the workflow state for the given run.
+
+        Returns
+        -------
+        flowserv.model.workflow.state.WorkflowState
+        """
+        if self.state_type == st.STATE_PENDING:
+            return st.StatePending(created_at=self.created_at)
+        elif self.state_type == st.STATE_RUNNING:
+            return st.StateRunning(
+                created_at=self.created_at,
+                started_at=self.started_at
+            )
+        elif self.state_type == st.STATE_CANCELED:
+            return st.StateCanceled(
+                created_at=self.created_at,
+                started_at=self.started_at,
+                stopped_at=self.ended_at,
+                messages=[m.message for m in sorted(self.log, key=by_pos)]
+            )
+        elif self.state_type == st.STATE_ERROR:
+            return st.StateError(
+                created_at=self.created_at,
+                started_at=self.started_at,
+                stopped_at=self.ended_at,
+                messages=[m.message for m in sorted(self.log, key=by_pos)]
+            )
+        else:  # self.state_type == st.STATE_SUCCESS:
+            # Create resource objects.
+            resources = list()
+            for resource in self.files:
+                resource_name = resource.name
+                f = WorkflowResource(
+                    identifier=resource.resource_id,
+                    name=resource_name
+                )
+                resources.append(f)
+            return st.StateSuccess(
+                created_at=self.created_at,
+                started_at=self.started_at,
+                finished_at=self.ended_at,
+                resources=resources
+            )
 
 
 class RunFile(Base):
@@ -374,9 +439,12 @@ class RunFile(Base):
         String(32),
         ForeignKey('workflow_run.run_id')
     )
-    resource_name = Column(Text, nullable=False)
+    name = Column(Text, nullable=False)
 
-    UniqueConstraint('run_id', 'resource_name')
+    UniqueConstraint('run_id', 'name')
+
+    # Relationships -----------------------------------------------------------
+    run = relationship('RunHandle', back_populates='files')
 
 
 class RunMessage(Base):
@@ -393,3 +461,30 @@ class RunMessage(Base):
     )
     pos = Column(Integer, primary_key=True)
     message = Column(Text, nullable=False)
+
+    # Relationships -----------------------------------------------------------
+    run = relationship('RunHandle', back_populates='log')
+
+
+# -- Helper classes and functions ---------------------------------------------
+
+class ArgumentEncoder(json.JSONEncoder):
+    """JSON encoder for run argument values. The encoder is required to handle
+    argument values that are input file objects.
+    """
+    def default(self, obj):
+        if isinstance(obj, InputFile):
+            return {
+                'file': {
+                    'id': obj.identifier,
+                    'name': obj.name,
+                },
+                'target': obj.target_path
+            }
+        # Let the base class default method raise the TypeError
+        return json.JSONEncoder.default(self, obj)
+
+
+def by_pos(msg):
+    """Helper to sort log messaged by position."""
+    return msg.pos

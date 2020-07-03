@@ -24,11 +24,10 @@ class TestConfigDatabase(object):
     def test_config_database(self):
         """Test public methods to get database configuration."""
         # Clear environment variable values if set
-        if config.FLOWSERV_DB_ID in os.environ:
-            del os.environ[config.FLOWSERV_DB_ID]
-        assert config.DB_IDENTIFIER() is None
-        assert config.DB_IDENTIFIER(default_value='ABC') == 'ABC'
+        if config.FLOWSERV_DB in os.environ:
+            del os.environ[config.FLOWSERV_DB]
+        assert config.DB_CONNECT() is None
         with pytest.raises(err.MissingConfigurationError):
-            assert config.DB_IDENTIFIER(raise_error=True)
-        os.environ[config.FLOWSERV_DB_ID] = 'ABC'
-        assert config.DB_IDENTIFIER(default_value='XYZ') == 'ABC'
+            assert config.DB_CONNECT(raise_error=True)
+        os.environ[config.FLOWSERV_DB] = 'ABC'
+        assert config.DB_CONNECT(raise_error=True) == 'ABC'

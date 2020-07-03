@@ -65,7 +65,7 @@ class RunSerializer(Serializer):
 
         Parameters
         ----------
-        run: flowserv.model.run.base.RunDescriptor
+        run: flowserv.model.base.RunHandle
             Run decriptor
 
         Returns
@@ -89,7 +89,7 @@ class RunSerializer(Serializer):
 
         Parameters
         ----------
-        run: flowserv.model.run.base.RunHandle
+        run: flowserv.model.base.RunHandle
             Workflow run handle
         group: flowserv.model.base.GroupHandle, optional
             Workflow group handle. Missing for post-processing workflows
@@ -138,7 +138,7 @@ class RunSerializer(Serializer):
 
         Parameters
         ----------
-        runs: list(flowserv.model.run.base.RunDescriptor)
+        runs: list(flowserv.model.base.RunHandle)
             List of run handles
         group_id: string
             Unique workflow group identifier

@@ -46,7 +46,7 @@ class RemoteTestClient(RemoteClient):
 
         Parameters
         ----------
-        run: flowserv.model.run.base.RunHandle
+        run: flowserv.model.base.RunHandle
             Handle for the run that is being executed.
         template: flowserv.model.template.base.WorkflowTemplate
             Workflow template containing the parameterized specification and the

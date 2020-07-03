@@ -18,7 +18,7 @@ import logging
 
 from flowserv.model.group import WorkflowGroupManager
 from flowserv.model.ranking.manager import RankingManager
-from flowserv.model.run.manager import RunManager
+from flowserv.model.run import RunManager
 from flowserv.model.user import UserManager
 from flowserv.model.auth import DefaultAuthPolicy
 from flowserv.model.workflow.fs import WorkflowFileSystem
@@ -184,7 +184,7 @@ class API(object):
 
         Returns
         --------
-        flowserv.model.run.manager.RunManager
+        flowserv.model.run.RunManager
         """
         if self._run_manager is None:
             self._run_manager = RunManager(

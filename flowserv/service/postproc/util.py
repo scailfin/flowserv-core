@@ -36,7 +36,7 @@ def prepare_postproc_data(input_files, ranking, run_manager):
         the input directory for each submission.
     ranking: flowserv.model.ranking.base.ResultRanking
         List of runs in the current result ranking
-        run_manager: flowserv.model.run.manager.RunManager
+        run_manager: flowserv.model.run.RunManager
             Manager for workflow runs
 
     Returns

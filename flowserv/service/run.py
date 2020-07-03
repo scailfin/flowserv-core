@@ -15,7 +15,7 @@ import shutil
 
 from flowserv.files import FileHandle, InputFile
 from flowserv.model.parameter.value import TemplateArgument
-from flowserv.model.run.base import RunHandle
+from flowserv.model.base import RunHandle
 from flowserv.model.template.base import WorkflowTemplate
 
 import flowserv.error as err
@@ -44,7 +44,7 @@ class RunService(object):
 
         Parameters
         ----------
-        run_manager: flowserv.model.run.manager.RunManager
+        run_manager: flowserv.model.run.RunManager
             Manager for workflow runs
         group_manager: flowserv.model.group..GroupManager
             Manager for workflow groups

@@ -22,6 +22,8 @@ import traceback
 import uuid
 import yaml
 
+from dateutil.tz import UTC
+
 
 """Identifier for supported data formats."""
 FORMAT_JSON = 'JSON'
@@ -278,6 +280,16 @@ def to_localstr(date=None, text=None):
     elif text is not None:
         ts = from_utc_datetime(to_datetime(text))
     return str(ts)[:-7]
+
+
+def utc_now():
+    """Get the current time in UTC timezone as a string in ISO format.
+
+    Returns
+    -------
+    string
+    """
+    return datetime.datetime.now(UTC).isoformat()
 
 
 def validate_doc(doc, mandatory=None, optional=None):

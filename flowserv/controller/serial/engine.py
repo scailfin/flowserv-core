@@ -125,7 +125,7 @@ class SerialWorkflowEngine(WorkflowController):
 
         Parameters
         ----------
-        run: flowserv.model.run.base.RunHandle
+        run: flowserv.model.base.RunHandle
             Handle for the run that is being executed.
         template: flowserv.model.template.base.WorkflowTemplate
             Workflow template containing the parameterized specification and
@@ -241,8 +241,8 @@ class SerialWorkflowEngine(WorkflowController):
             if para.identifier in para_merge:
                 para = para_merge[para.identifier].merge(para)
             para_merge[para.identifier] = para
-            # Depending on whether the type of the parameter is a file or not we
-            # add a parameter reference to the respective input section
+            # Depending on whether the type of the parameter is a file or not
+            # we add a parameter reference to the respective input section.
             if para.is_file():
                 in_files.append(tp.VARIABLE(para.identifier))
             else:

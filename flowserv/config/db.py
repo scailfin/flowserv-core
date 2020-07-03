@@ -23,17 +23,13 @@ FLOWSERV_DB = 'FLOWSERV_DATABASE'
 
 # -- Public helper method to access configuration values ----------------------
 
-def DB_CONNECT(default_value=None, raise_error=False):
+def DB_CONNECT(raise_error=False):
     """Get the database connect string from the environment variable
     'FLOWSERV_DATABASE'. Raises a MissingConfigurationError if the raise_error
-    flag is True and the variable is not set. If the raise_error flag is False
-    and 'FLOWSERV_DATABASE' is not set the default value is returned.
+    flag is True.
 
     Parameters
     ----------
-    default_value: string, default=None
-        Default value if 'FLOWSERV_DATABASE' is not set and raise_error flag is
-        False.
     raise_error: bool, default=False
         Flag indicating whether an error is raised if the environment variable
         is not set (i.e., None or and empty string '')
@@ -48,6 +44,5 @@ def DB_CONNECT(default_value=None, raise_error=False):
     """
     return config.get_variable(
         name=FLOWSERV_DB,
-        default_value=default_value,
         raise_error=raise_error
     )

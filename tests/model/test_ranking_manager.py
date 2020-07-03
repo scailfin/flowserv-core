@@ -13,7 +13,7 @@ import pytest
 
 from flowserv.model.group import WorkflowGroupManager
 from flowserv.model.ranking.manager import RankingManager
-from flowserv.model.run.manager import RunManager
+from flowserv.model.run import RunManager
 from flowserv.model.template.schema import ResultColumn, ResultSchema, SortColumn
 from flowserv.model.workflow.fs import WorkflowFileSystem
 from flowserv.model.workflow.resource import FSObject, ResourceSet
@@ -21,7 +21,6 @@ from flowserv.model.workflow.resource import FSObject, ResourceSet
 import flowserv.error as err
 import flowserv.util as util
 import flowserv.model.parameter.declaration as pd
-import flowserv.tests.db as db
 
 
 """Unique identifier for users and workflow templates."""

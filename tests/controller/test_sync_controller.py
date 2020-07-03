@@ -15,7 +15,7 @@ from flowserv.controller.serial.engine import SerialWorkflowEngine
 from flowserv.files import FileHandle
 from flowserv.model.template.base import WorkflowTemplate
 from flowserv.model.parameter.value import TemplateArgument
-from flowserv.model.run.base import RunHandle
+from flowserv.model.base import RunHandle
 
 import flowserv.error as err
 import flowserv.util as util
