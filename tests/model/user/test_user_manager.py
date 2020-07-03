@@ -11,8 +11,8 @@
 import pytest
 import time
 
-from flowserv.model.user.auth import OpenAccessAuth
-from flowserv.model.user.manager import UserManager
+from flowserv.model.auth import OpenAccessAuth
+from flowserv.model.user import UserManager
 
 import flowserv.error as err
 

@@ -846,7 +846,7 @@
 			<data key="d6">
 				<uml:UMLNodeStyle fill="{y:GraphMLReference 7}" highlightFill="{y:GraphMLReference 8}">
 					<uml:UMLNodeStyle.model>
-						<uml:UMLClassModel stereotype="" constraint="" className="WorkflowGroupDescriptor" attributesOpen="true" operationsOpen="false">
+						<uml:UMLClassModel stereotype="" constraint="" className="WorkflowGroup" attributesOpen="true" operationsOpen="false">
 							<uml:UMLClassModel.attributes>
 								<x:Array Type="sys:Object">
 									<sys:String>identifier</sys:String>
@@ -879,7 +879,7 @@
 			<data key="d6">
 				<uml:UMLNodeStyle fill="{y:GraphMLReference 7}" highlightFill="{y:GraphMLReference 8}">
 					<uml:UMLNodeStyle.model>
-						<uml:UMLClassModel stereotype="" constraint="" className="WorkflowGroupHandle" attributesOpen="true" operationsOpen="true">
+						<uml:UMLClassModel stereotype="" constraint="" className="WorkflowGroup" attributesOpen="true" operationsOpen="true">
 							<uml:UMLClassModel.attributes>
 								<x:Array Type="sys:Object">
 									<sys:String>workflow_spec</sys:String>
@@ -997,7 +997,7 @@
 			<data key="d6">
 				<uml:UMLNodeStyle fill="{y:GraphMLReference 7}" highlightFill="{y:GraphMLReference 8}">
 					<uml:UMLNodeStyle.model>
-						<uml:UMLClassModel stereotype="" constraint="" className="UserHandle" attributesOpen="true" operationsOpen="false">
+						<uml:UMLClassModel stereotype="" constraint="" className="User" attributesOpen="true" operationsOpen="false">
 							<uml:UMLClassModel.attributes>
 								<x:Array Type="sys:Object">
 									<sys:String>user_id</sys:String>

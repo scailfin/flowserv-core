@@ -58,7 +58,7 @@ class DB(object):
     def init(self):
         """Create all tables in the database model schema."""
         # Add import for modules that contain ORM definitions.
-        import flowserv.model.user.base  # noqa: F401
+        import flowserv.model.base  # noqa: F401
         # Drop all tables first before creating them
         Base.metadata.drop_all(self.engine)
         Base.metadata.create_all(self.engine)

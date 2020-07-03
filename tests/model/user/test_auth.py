@@ -13,9 +13,9 @@ import time
 
 from passlib.hash import pbkdf2_sha256
 
-from flowserv.model.user.auth import OpenAccessAuth
-from flowserv.model.user.base import User
-from flowserv.model.user.manager import UserManager
+from flowserv.model.auth import OpenAccessAuth
+from flowserv.model.base import User
+from flowserv.model.user import UserManager
 
 import flowserv.error as err
 import flowserv.util as util

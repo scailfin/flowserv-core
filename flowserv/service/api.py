@@ -16,11 +16,11 @@ from contextlib import contextmanager
 
 import logging
 
-from flowserv.model.group.manager import WorkflowGroupManager
+from flowserv.model.group import WorkflowGroupManager
 from flowserv.model.ranking.manager import RankingManager
 from flowserv.model.run.manager import RunManager
-from flowserv.model.user.manager import UserManager
-from flowserv.model.user.auth import DefaultAuthPolicy
+from flowserv.model.user import UserManager
+from flowserv.model.auth import DefaultAuthPolicy
 from flowserv.model.workflow.fs import WorkflowFileSystem
 from flowserv.model.workflow.repo import WorkflowRepository
 from flowserv.service.backend import init_backend
@@ -104,7 +104,7 @@ class API(object):
 
         Returns
         -------
-        flowserv.model.user.auth.Auth
+        flowserv.model.auth.Auth
         """
         if self._auth is None:
             self._auth = DefaultAuthPolicy(con=self.con)
@@ -124,7 +124,7 @@ class API(object):
 
         Returns
         -------
-        flowserv.model.user.base.UserHandle
+        flowserv.model.base.User
 
         Raises
         ------
@@ -139,7 +139,7 @@ class API(object):
 
         Returns
         --------
-        flowserv.model.group.manager.WorkflowGroupManager
+        flowserv.model.group..WorkflowGroupManager
         """
         if self._group_manager is None:
             self._group_manager = WorkflowGroupManager(

@@ -46,7 +46,7 @@ class RunService(object):
         ----------
         run_manager: flowserv.model.run.manager.RunManager
             Manager for workflow runs
-        group_manager: flowserv.model.group.manager.GroupManager
+        group_manager: flowserv.model.group..GroupManager
             Manager for workflow groups
         workflow_repo: flowserv.model.workflow.repo.WorkflowRepository
             Repository for workflow templates
@@ -54,7 +54,7 @@ class RunService(object):
             Manager for workflow evaluation rankings
         backend: flowserv.controller.base.WorkflowController
             Workflow engine controller
-        auth: flowserv.model.user.auth.Auth
+        auth: flowserv.model.auth.Auth
             Implementation of the authorization policy for the API
         serializer: flowserv.view.run.RunSerializer
             Override the default serializer

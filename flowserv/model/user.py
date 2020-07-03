@@ -22,7 +22,7 @@ import dateutil.parser
 
 from passlib.hash import pbkdf2_sha256
 
-from flowserv.model.user.base import APIKey, PasswordRequest, User
+from flowserv.model.base import APIKey, PasswordRequest, User
 
 import flowserv.config.auth as config
 import flowserv.error as err
@@ -65,19 +65,38 @@ class UserManager(object):
 
         Returns
         -------
-        flowserv.model.user.base.UserHandle
+        flowserv.model.base.User
+
+        Raises
+        ------
+        flowserv.error.UnknownUserError
+        """
+        user = self.get_user(user_id)
+        if not user.active:
+            user.active = True
+            self.db.session.commit()
+        return user
+
+    def get_user(self, user_id, active=None):
+        """Get handle for specified user. The active parameter allows to put an
+        additional constraint on the value of the active property for the user.
+
+        Raises an unknown user error if no matching user exists.
+
+        Returns
+        -------
+        flowserv.model.base.User
 
         Raises
         ------
         flowserv.error.UnknownUserError
         """
         query = self.db.session.query(User).filter(User.user_id == user_id)
+        if active is not None:
+            query = query.filter(User.active == active)
         user = query.one_or_none()
         if user is None:
             raise err.UnknownUserError(user_id)
-        if not user.active:
-            user.active = True
-            self.db.session.commit()
         return user
 
     def list_users(self, prefix=None):
@@ -91,7 +110,7 @@ class UserManager(object):
 
         Returns
         -------
-        list(flowserv.model.user.base.UserHandle)
+        list(flowserv.model.base.User)
 
         Raises
         ------
@@ -124,7 +143,7 @@ class UserManager(object):
 
         Returns
         -------
-        flowserv.model.user.base.UserHandle
+        flowserv.model.base.User
 
         Raises
         ------
@@ -168,12 +187,12 @@ class UserManager(object):
 
         Parameters
         ----------
-        user: flowserv.model.user.base.User
+        user: flowserv.model.base.User
             Handle for user that is being logged out
 
         Returns
         -------
-        flowserv.model.user.base.UserHandle
+        flowserv.model.base.User
         """
         if user.api_key is not None:
             user.api_key = None
@@ -202,7 +221,7 @@ class UserManager(object):
 
         Returns
         -------
-        flowserv.model.user.base.UserHandle
+        flowserv.model.base.User
 
         Raises
         ------
@@ -286,7 +305,7 @@ class UserManager(object):
 
         Returns
         -------
-        flowserv.model.user.base.UserHandle
+        flowserv.model.base.User
 
         Raises
         ------

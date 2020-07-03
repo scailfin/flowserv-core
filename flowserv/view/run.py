@@ -91,7 +91,7 @@ class RunSerializer(Serializer):
         ----------
         run: flowserv.model.run.base.RunHandle
             Workflow run handle
-        group: flowserv.model.group.base.GroupHandle, optional
+        group: flowserv.model.base.GroupHandle, optional
             Workflow group handle. Missing for post-processing workflows
 
         Returns

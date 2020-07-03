@@ -23,13 +23,13 @@ class WorkflowGroupService(object):
 
         Parameters
         ----------
-        group_manager: flowserv.model.group.manager.GroupManager
+        group_manager: flowserv.model.group..GroupManager
             Manager for workflow groups
         workflow_repo: flowserv.model.workflow.repo.WorkflowRepository
             Repository for workflow templates
         backend: flowserv.controller.base.WorkflowController
             Workflow engine controller
-        auth: flowserv.model.user.auth.Auth
+        auth: flowserv.model.auth.Auth
             Implementation of the authorization policy for the API
         serializer: flowserv.view.group.WorkflowGroupSerialize
             Override the default serializer

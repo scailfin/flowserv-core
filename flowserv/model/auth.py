@@ -13,7 +13,7 @@ given user can execute a requested action.
 
 from abc import ABCMeta, abstractmethod
 
-from flowserv.model.user.base import APIKey, User
+from flowserv.model.base import APIKey, User
 
 import datetime as dt
 import dateutil.parser
@@ -47,7 +47,7 @@ class Auth(metaclass=ABCMeta):
 
         Returns
         -------
-        flowserv.model.user.base.UserHandle
+        flowserv.model.base.User
 
         Raises
         ------

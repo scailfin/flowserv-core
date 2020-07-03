@@ -10,8 +10,6 @@
 specifications within workflow templates.
 """
 
-from past.builtins import basestring
-
 import os
 
 from flowserv.files import FileHandle, InputFile
@@ -45,7 +43,7 @@ def get_parameter_references(spec, parameters=None):
         parameters = set()
     for key in spec:
         val = spec[key]
-        if isinstance(val, basestring):
+        if isinstance(val, str):
             # If the value is of type string we test whether the string is a
             # reference to a template parameter
             if is_parameter(val):
@@ -56,7 +54,7 @@ def get_parameter_references(spec, parameters=None):
             get_parameter_references(val, parameters=parameters)
         elif isinstance(val, list):
             for list_val in val:
-                if isinstance(list_val, basestring):
+                if isinstance(list_val, str):
                     # Get potential references to template parameters in
                     # list elements of type string.
                     if is_parameter(list_val):
@@ -67,7 +65,7 @@ def get_parameter_references(spec, parameters=None):
                     get_parameter_references(list_val, parameters=parameters)
                 elif isinstance(list_val, list):
                     # We currently do not support lists of lists
-                    raise err.InvalidTemplateError('nested lists not supported')
+                    raise err.InvalidTemplateError('nested lists not allowed')
     return parameters
 
 
@@ -207,7 +205,7 @@ def replace_args(spec, arguments, parameters):
                 # We currently do not support lists of lists
                 raise err.InvalidTemplateError('nested lists not supported')
             obj.append(replace_args(val, arguments, parameters))
-    elif isinstance(spec, basestring):
+    elif isinstance(spec, str):
         obj = replace_value(spec, arguments, parameters)
     else:
         obj = spec

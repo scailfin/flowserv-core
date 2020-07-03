@@ -11,7 +11,7 @@
 import os
 import pytest
 
-from flowserv.model.group.manager import WorkflowGroupManager
+from flowserv.model.group import WorkflowGroupManager
 from flowserv.model.ranking.manager import RankingManager
 from flowserv.model.run.manager import RunManager
 from flowserv.model.template.schema import ResultColumn, ResultSchema, SortColumn

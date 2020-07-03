@@ -11,8 +11,6 @@ workflow template parameters. The class is a simple wrapper that combines
 the value and the meta-data in the parameter declaration.
 """
 
-from past.builtins import basestring
-
 from flowserv.files import FileHandle, InputFile
 from flowserv.model.parameter.base import ParameterBase
 
@@ -111,7 +109,7 @@ class TemplateArgument(ParameterBase):
                 msg = "expected int for '{}'"
                 raise ValueError(msg.format(self.identifier))
         elif self.is_string():
-            if not isinstance(self.value, basestring):
+            if not isinstance(self.value, str):
                 msg = "expected string for '{}'"
                 raise ValueError(msg.format(self.identifier))
         elif self.is_file():

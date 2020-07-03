@@ -52,7 +52,7 @@ class UserSerializer(Serializer):
         token if the user is logged in.
         Parameters
         ----------
-        user: flowserv.model.user.base.UserHandle
+        user: flowserv.model.base.User
             Handle for a registered user
         include_token: bool, optional
             Include API tokens for logged in users if True
@@ -74,7 +74,7 @@ class UserSerializer(Serializer):
 
         Parameters
         ----------
-        users: list(flowserv.model.user.base.UserHandle)
+        users: list(flowserv.model.base.User)
             List of user handles
 
         Returns

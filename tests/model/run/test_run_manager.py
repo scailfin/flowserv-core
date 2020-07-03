@@ -12,7 +12,7 @@ import os
 import pytest
 
 from flowserv.files import FileHandle, InputFile
-from flowserv.model.group.manager import WorkflowGroupManager
+from flowserv.model.group import WorkflowGroupManager
 from flowserv.model.parameter.base import TemplateParameter
 from flowserv.model.run.manager import RunManager
 from flowserv.model.workflow.fs import WorkflowFileSystem

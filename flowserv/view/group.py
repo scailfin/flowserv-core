@@ -46,7 +46,7 @@ class WorkflowGroupSerializer(Serializer):
 
         Parameters
         ----------
-        group: flowserv.model.group.base.WorkflowGroupDescriptor
+        group: flowserv.model.base.WorkflowGroup
             Workflow group handle
 
         Returns
@@ -65,7 +65,7 @@ class WorkflowGroupSerializer(Serializer):
 
         Parameters
         ----------
-        group: flowserv.model.group.base.WorkflowGroupHandle
+        group: flowserv.model.base.WorkflowGroup
             Workflow group handle
 
         Returns
@@ -101,7 +101,7 @@ class WorkflowGroupSerializer(Serializer):
 
         Parameters
         ----------
-        groups: list(flowserv.model.group.base.WorkflowGroupDescriptor)
+        groups: list(flowserv.model.base.WorkflowGroup)
             List of descriptors for workflow groups
 
         Returns

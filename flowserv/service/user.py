@@ -21,7 +21,7 @@ class UserService(object):
 
         Parameters
         ----------
-        manager: flowserv.model.user.manager.UserManager
+        manager: flowserv.model.user.UserManager
             Manager for registered users
         serializer: flowserv.view.user.UserSerializer
             Override the default serializer
@@ -43,7 +43,7 @@ class UserService(object):
 
         Raises
         ------
-        flowserv.model.user.base.error.UnknownUserError
+        flowserv.model.base.error.UnknownUserError
         """
         return self.serialize.user(self.manager.activate_user(user_id))
 
@@ -80,7 +80,7 @@ class UserService(object):
 
         Raises
         ------
-        flowserv.model.user.base.error.UnknownUserError
+        flowserv.model.base.error.UnknownUserError
         """
         return self.serialize.user(self.manager.login_user(username, password))
 
@@ -89,7 +89,7 @@ class UserService(object):
 
         Parameters
         ----------
-        user: flowserv.model.user.base.UserHandle
+        user: flowserv.model.base.User
             Handle for user that is being logged out
 
         Returns
@@ -185,7 +185,7 @@ class UserService(object):
 
         Parameters
         ----------
-        user: flowserv.model.user.base.UserHandle
+        user: flowserv.model.base.User
             User access token
 
         Returns

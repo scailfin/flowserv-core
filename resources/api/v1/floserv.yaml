@@ -674,7 +674,7 @@ paths:
         200:
           description: "User activated successfully"
           schema:
-            $ref: "#/definitions/UserHandle"
+            $ref: "#/definitions/User"
         404:
           description: "Unknown user"
   /users/login:
@@ -697,7 +697,7 @@ paths:
         200:
           description: "User logged in successfully"
           schema:
-            $ref: "#/definitions/UserHandle"
+            $ref: "#/definitions/User"
         400:
           description: "Invalid username/password supplied"
         404:
@@ -715,7 +715,7 @@ paths:
         200:
           description: "User logged out successfully"
           schema:
-            $ref: "#/definitions/UserHandle"
+            $ref: "#/definitions/User"
         403:
           description: "Forbidden operation"
       security:
@@ -779,7 +779,7 @@ paths:
         200:
           description: "User activated successfully"
           schema:
-            $ref: "#/definitions/UserHandle"
+            $ref: "#/definitions/User"
   /users/register:
     post:
       tags:
@@ -800,7 +800,7 @@ paths:
         201:
           description: "successful operation"
           schema:
-            $ref: "#/definitions/UserHandle"
+            $ref: "#/definitions/User"
         400:
           description: "Invalid or existing username supplied"
   /users/whoami:
@@ -816,7 +816,7 @@ paths:
         200:
           description: "User Handle"
           schema:
-            $ref: "#/definitions/UserHandle"
+            $ref: "#/definitions/User"
         403:
           description: "Forbidden operation"
       security:
@@ -1035,7 +1035,7 @@ definitions:
         type: string
       username:
         type: string
-  UserHandle:
+  User:
     type: object
     description: "Information about a registered user"
     required:
