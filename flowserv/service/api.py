@@ -16,7 +16,6 @@ from contextlib import contextmanager
 
 import logging
 
-from flowserv.core.db.driver import DatabaseDriver
 from flowserv.model.group.manager import WorkflowGroupManager
 from flowserv.model.ranking.manager import RankingManager
 from flowserv.model.run.manager import RunManager
@@ -34,8 +33,8 @@ from flowserv.service.workflow import WorkflowService
 from flowserv.view.factory import DefaultView
 
 import flowserv.config.api as config
-import flowserv.core.error as err
-import flowserv.core.util as util
+import flowserv.error as err
+import flowserv.util as util
 
 
 """Name of the header element that contains the access token."""
@@ -129,7 +128,7 @@ class API(object):
 
         Raises
         ------
-        flowserv.core.error.UnauthenticatedAccessError
+        flowserv.error.UnauthenticatedAccessError
         """
         return self.auth.authenticate(access_token)
 

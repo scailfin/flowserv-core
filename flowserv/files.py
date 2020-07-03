@@ -20,8 +20,8 @@ import mimetypes
 import os
 import shutil
 
-import flowserv.core.error as err
-import flowserv.core.util as util
+import flowserv.error as err
+import flowserv.util as util
 
 
 """Set the default identifier generator."""
@@ -84,7 +84,7 @@ class FileHandle(FileDescriptor):
 
         Raises
         ------
-        flowserv.core.error.UnknownFileError
+        flowserv.error.UnknownFileError
         """
         try:
             ts = os.path.getmtime(filename)
@@ -154,7 +154,7 @@ class InputFile(FileHandle):
 
         Parameters
         ----------
-        f_handle: flowserv.core.files.FileHandle
+        f_handle: flowserv.files.FileHandle
         target_path: string, optional
         """
         super(InputFile, self).__init__(

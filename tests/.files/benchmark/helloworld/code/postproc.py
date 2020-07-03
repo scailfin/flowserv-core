@@ -2,8 +2,6 @@
 flowServ for testing purposes only.
 """
 
-from __future__ import absolute_import, division, print_function
-
 import argparse
 import errno
 import os
@@ -13,7 +11,7 @@ import time
 
 from flowserv.service.postproc.client import Runs
 
-import flowserv.core.util as util
+import flowserv.util as util
 
 
 def main(rundir, outputfile):

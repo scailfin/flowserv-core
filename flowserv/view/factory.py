@@ -11,9 +11,8 @@ view factory class as well as the default implementation for the flowServ
 view.
 """
 
-from abc import abstractmethod
+from abc import ABCMeta, abstractmethod
 
-from flowserv.core.util import ABC
 from flowserv.view.files import UploadFileSerializer
 from flowserv.view.group import WorkflowGroupSerializer
 from flowserv.view.run import RunSerializer
@@ -24,7 +23,7 @@ from flowserv.view.workflow import WorkflowSerializer
 
 # -- Abstract class -----------------------------------------------------------
 
-class ViewFactory(ABC):
+class ViewFactory(metaclass=ABCMeta):
     """Abstract factory class for serializers of the different API components.
     """
     @abstractmethod

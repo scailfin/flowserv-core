@@ -11,15 +11,15 @@
 import os
 import pytest
 
-from flowserv.core.files import FileHandle, InputFile
+from flowserv.files import FileHandle, InputFile
 from flowserv.model.group.manager import WorkflowGroupManager
 from flowserv.model.parameter.base import TemplateParameter
 from flowserv.model.run.manager import RunManager
 from flowserv.model.workflow.fs import WorkflowFileSystem
 from flowserv.model.workflow.resource import FSObject
 
-import flowserv.core.error as err
-import flowserv.core.util as util
+import flowserv.error as err
+import flowserv.util as util
 import flowserv.model.parameter.declaration as pd
 import flowserv.model.parameter.value as pv
 import flowserv.model.workflow.state as st

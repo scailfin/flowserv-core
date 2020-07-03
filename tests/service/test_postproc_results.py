@@ -15,8 +15,8 @@ import time
 from flowserv.controller.serial.engine import SerialWorkflowEngine
 from flowserv.tests.files import FakeStream
 
-import flowserv.core.error as err
-import flowserv.core.util as util
+import flowserv.error as err
+import flowserv.util as util
 import flowserv.model.workflow.state as st
 import flowserv.tests.service as service
 

@@ -10,7 +10,7 @@
 
 import os
 
-import flowserv.core.util as util
+import flowserv.util as util
 
 
 class FakeStream(object):

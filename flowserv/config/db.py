@@ -17,24 +17,24 @@ expected to remain constant throughout the lifespan of a running application.
 import flowserv.config.base as config
 
 
-"""Environment variables to configure the database driver."""
-FLOWSERV_DB_ID = 'FLOWSERV_DBMS'
+"""Environment variable that contains the database connection string."""
+FLOWSERV_DB = 'FLOWSERV_DATABASE'
 
 
 # -- Public helper method to access configuration values ----------------------
 
-def DB_IDENTIFIER(default_value=None, raise_error=False):
-    """Get the identifier for the database management system from the respective
-    environment variable 'FLOWSERV_DB_ID'. Raises a MissingConfigurationError if
-    the raise_error flag is True and 'FLOWSERV_DB_ID' is not set. If the
-    raise_error flag is False and 'FLOWSERV_DB_ID' is not set the default value is
-    returned.
+def DB_CONNECT(default_value=None, raise_error=False):
+    """Get the database connect string from the environment variable
+    'FLOWSERV_DATABASE'. Raises a MissingConfigurationError if the raise_error
+    flag is True and the variable is not set. If the raise_error flag is False
+    and 'FLOWSERV_DATABASE' is not set the default value is returned.
 
     Parameters
     ----------
-    default_value: string, optional
-        Default value if 'FLOWSERV_DB_ID' is not set and raise_error flag is False
-    raise_error: bool, optional
+    default_value: string, default=None
+        Default value if 'FLOWSERV_DATABASE' is not set and raise_error flag is
+        False.
+    raise_error: bool, default=False
         Flag indicating whether an error is raised if the environment variable
         is not set (i.e., None or and empty string '')
 
@@ -44,10 +44,10 @@ def DB_IDENTIFIER(default_value=None, raise_error=False):
 
     Raises
     ------
-    flowserv.core.error.MissingConfigurationError
+    flowserv.error.MissingConfigurationError
     """
     return config.get_variable(
-        name=FLOWSERV_DB_ID,
+        name=FLOWSERV_DB,
         default_value=default_value,
         raise_error=raise_error
     )

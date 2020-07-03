@@ -17,7 +17,7 @@ from flowserv.model.workflow.state import (
 )
 from flowserv.model.workflow.resource import FSObject
 
-import flowserv.core.util as util
+import flowserv.util as util
 
 
 def test_cancel_state():

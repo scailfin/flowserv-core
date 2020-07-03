@@ -15,7 +15,7 @@ that are supported for parameter declarations.
 from abc import abstractmethod
 from builtins import input
 
-import flowserv.core.util as util
+import flowserv.util as util
 
 
 class Scanner(object):
@@ -31,7 +31,7 @@ class Scanner(object):
 
         Parameters
         ----------
-        reader: flowserv.core.scanner.TokenReader
+        reader: flowserv.scanner.TokenReader
             Reader for input tokens
         """
         self.reader = reader if reader is not None else InputReader()
@@ -141,9 +141,9 @@ class Scanner(object):
         return val
 
 
-# ------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Token Reader
-# ------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 class TokenReader(util.ABC):
     """Abstract token reader class that is used by the scanner to get the next

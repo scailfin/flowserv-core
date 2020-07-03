@@ -10,7 +10,7 @@
 delete, and upload files for workflow groups.
 """
 
-import flowserv.core.error as err
+import flowserv.error as err
 
 
 class UploadFileService(object):
@@ -51,8 +51,8 @@ class UploadFileService(object):
 
         Raises
         ------
-        flowserv.core.error.UnauthorizedAccessError
-        flowserv.core.error.UnknownFileError
+        flowserv.error.UnauthorizedAccessError
+        flowserv.error.UnknownFileError
         """
         # Raise an error if the user does not have rights to delete files for
         # the workflow group or if the workflow group does not exist.
@@ -80,13 +80,13 @@ class UploadFileService(object):
 
         Returns
         -------
-        flowserv.core.files.FileHandle, dict
+        flowserv.files.FileHandle, dict
 
         Raises
         ------
-        flowserv.core.error.UnauthorizedAccessError
-        flowserv.core.error.UnknownFileError
-        flowserv.core.error.UnknownWorkflowGroupError
+        flowserv.error.UnauthorizedAccessError
+        flowserv.error.UnknownFileError
+        flowserv.error.UnknownWorkflowGroupError
         """
         # Raise an error if the user does not have rights to access files for
         # the workflow group or if the workflow group does not exist (only if
@@ -120,8 +120,8 @@ class UploadFileService(object):
 
         Raises
         ------
-        flowserv.core.error.UnauthorizedAccessError
-        flowserv.core.error.UnknownWorkflowGroupError
+        flowserv.error.UnauthorizedAccessError
+        flowserv.error.UnknownWorkflowGroupError
         """
         # Raise an error if the user does not have rights to access files for
         # the workflow group or if the workflow group does not exist.
@@ -155,9 +155,9 @@ class UploadFileService(object):
 
         Raises
         ------
-        flowserv.core.error.ConstraintViolationError
-        flowserv.core.error.UnauthorizedAccessError
-        flowserv.core.error.UnknownWorkflowGroupError
+        flowserv.error.ConstraintViolationError
+        flowserv.error.UnauthorizedAccessError
+        flowserv.error.UnknownWorkflowGroupError
         """
         # Raise an error if the user does not have rights to upload files for
         # the workflow group or if the workflow group does not exist.

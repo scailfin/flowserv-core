@@ -13,10 +13,10 @@ import pytest
 
 from datetime import datetime
 
-from flowserv.core.files import FileDescriptor, FileHandle, InputFile
+from flowserv.files import FileDescriptor, FileHandle, InputFile
 
-import flowserv.core.error as err
-import flowserv.core.util as util
+import flowserv.error as err
+import flowserv.util as util
 
 
 def test_file_descriptor():

@@ -12,7 +12,7 @@ are used for application configuration.
 
 import os
 
-import flowserv.core.error as err
+import flowserv.error as err
 
 
 """Environment variable for test purposes."""
@@ -41,7 +41,7 @@ def get_variable(name, default_value=None, raise_error=None):
 
     Raises
     ------
-    flowserv.core.error.MissingConfigurationError
+    flowserv.error.MissingConfigurationError
     """
     value = os.environ.get(name)
     if value is None or value == '':

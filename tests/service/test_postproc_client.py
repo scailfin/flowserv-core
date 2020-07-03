@@ -17,7 +17,7 @@ from flowserv.model.workflow.resource import FSObject
 from flowserv.service.postproc.client import Runs
 from flowserv.tests.files import FakeStream
 
-import flowserv.core.util as util
+import flowserv.util as util
 import flowserv.service.postproc.util as postproc
 import flowserv.tests.service as service
 

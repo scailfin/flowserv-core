@@ -10,7 +10,7 @@
 defined for the objects that are stored in the database.
 """
 
-import flowserv.core.error as err
+import flowserv.error as err
 
 
 def validate_name(name, con=None, sql=None, args=None):
@@ -39,7 +39,7 @@ def validate_name(name, con=None, sql=None, args=None):
 
     Raises
     ------
-    flowserv.core.error.ConstraintViolationError
+    flowserv.error.ConstraintViolationError
     """
     if name is None:
         raise err.ConstraintViolationError('missing name')

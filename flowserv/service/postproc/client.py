@@ -13,7 +13,7 @@ post-processing workflows.
 
 import os
 
-import flowserv.core.util as util
+import flowserv.util as util
 import flowserv.service.postproc.base as base
 
 

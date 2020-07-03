@@ -13,7 +13,7 @@ import os
 from flowserv.model.workflow.resource import FSObject
 from flowserv.tests.files import FakeStream
 
-import flowserv.core.util as util
+import flowserv.util as util
 import flowserv.tests.serialize as serialize
 import flowserv.tests.service as service
 

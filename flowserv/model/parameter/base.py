@@ -11,10 +11,10 @@ properties that are used to (i) identify the parameter, (ii) define a nested
 parameter structure, and (iii) render UI forms to collect parameter values.
 """
 
-from flowserv.core.error import InvalidParameterError
+from flowserv.error import InvalidParameterError
 
-import flowserv.core.error as err
-import flowserv.core.util as util
+import flowserv.error as err
+import flowserv.util as util
 import flowserv.model.parameter.declaration as pd
 
 
@@ -48,7 +48,7 @@ class ParameterBase(object):
 
         Raises
         ------
-        flowserv.core.error.InvalidParameterError
+        flowserv.error.InvalidParameterError
         """
         if data_type not in pd.DATA_TYPES:
             msg = "invalid data type '{}'"
@@ -352,8 +352,8 @@ def create_parameter_index(parameters, validate=True):
 
     Raises
     ------
-    flowserv.core.error.InvalidTemplateError
-    flowserv.core.error.UnknownParameterError
+    flowserv.error.InvalidTemplateError
+    flowserv.error.UnknownParameterError
     """
     result = dict()
     for para in parameters:

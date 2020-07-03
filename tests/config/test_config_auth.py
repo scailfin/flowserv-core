@@ -14,7 +14,7 @@ import os
 import pytest
 
 import flowserv.config.auth as config
-import flowserv.core.error as err
+import flowserv.error as err
 
 
 class TestConfigAuth(object):

@@ -14,7 +14,7 @@ import os
 import pytest
 
 import flowserv.config.api as config
-import flowserv.core.error as err
+import flowserv.error as err
 
 
 class TestConfigAPI(object):

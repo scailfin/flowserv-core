@@ -19,7 +19,7 @@ from docker.errors import ContainerError, ImageNotFound, APIError
 from flowserv.controller.serial.engine import SerialWorkflowEngine
 from flowserv.model.workflow.resource import FSObject
 
-import flowserv.core.util as util
+import flowserv.util as util
 import flowserv.model.workflow.state as serialize
 
 

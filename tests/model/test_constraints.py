@@ -10,10 +10,10 @@
 
 import pytest
 
-import flowserv.core.error as err
+import flowserv.error as err
 import flowserv.model.constraint as constraint
 import flowserv.tests.db as db
-import flowserv.core.util as util
+import flowserv.util as util
 
 
 def test_validate_name(tmpdir):

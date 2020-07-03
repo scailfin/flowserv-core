@@ -11,13 +11,13 @@
 import os
 import pytest
 
-from flowserv.core.files import FileHandle
+from flowserv.files import FileHandle
 from flowserv.model.parameter.base import TemplateParameter
 from flowserv.model.parameter.value import TemplateArgument
 from flowserv.model.template.base import WorkflowTemplate
 
-import flowserv.core.error as err
-import flowserv.core.util as util
+import flowserv.error as err
+import flowserv.util as util
 import flowserv.model.parameter.base as pb
 import flowserv.model.parameter.declaration as pd
 import flowserv.model.parameter.value as pr

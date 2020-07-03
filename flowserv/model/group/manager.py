@@ -15,12 +15,11 @@ import json
 import shutil
 
 from flowserv.model.group.base import WorkflowGroupDescriptor, WorkflowGroupHandle
-from flowserv.model.user.base import UserHandle
 
-import flowserv.core.error as err
+import flowserv.error as err
 import flowserv.model.constraint as constraint
 import flowserv.model.parameter.base as pb
-import flowserv.core.util as util
+import flowserv.util as util
 
 
 class WorkflowGroupManager(object):
@@ -86,8 +85,8 @@ class WorkflowGroupManager(object):
 
         Raises
         ------
-        flowserv.core.error.ConstraintViolationError
-        flowserv.core.error.UnknownUserError
+        flowserv.error.ConstraintViolationError
+        flowserv.error.UnknownUserError
         """
         # Ensure that the given name is valid and unique for the workflow
         sql = (
@@ -171,7 +170,7 @@ class WorkflowGroupManager(object):
 
         Raises
         ------
-        flowserv.core.error.UnknownWorkflowGroupError
+        flowserv.error.UnknownWorkflowGroupError
         """
         # Get group information from the database to have access to the
         # identifier of the associated workflow. If the result is None we
@@ -218,7 +217,7 @@ class WorkflowGroupManager(object):
 
         Raises
         ------
-        flowserv.core.error.UnknownWorkflowGroupError
+        flowserv.error.UnknownWorkflowGroupError
         """
         # Get group information. Raise error if the identifier is unknown.
         sql = (
@@ -324,9 +323,9 @@ class WorkflowGroupManager(object):
 
         Raises
         ------
-        flowserv.core.error.ConstraintViolationError
-        flowserv.core.error.UnknownUserError
-        flowserv.core.error.UnknownWorkflowGroupError
+        flowserv.error.ConstraintViolationError
+        flowserv.error.UnknownUserError
+        flowserv.error.UnknownWorkflowGroupError
         """
         # Get group handle. This will raise an error if the group is unknown.
         group = self.get_group(group_id)

@@ -14,7 +14,7 @@ from flowserv.controller.remote.workflow import RemoteWorkflowHandle
 from flowserv.controller.serial.engine import run_workflow
 from flowserv.controller.serial.workflow import SerialWorkflow
 
-import flowserv.core.util as util
+import flowserv.util as util
 import flowserv.model.workflow.state as serialize
 
 

@@ -14,7 +14,7 @@ by workflow post-processing steps.
 import io
 import tarfile
 
-from flowserv.core.files import FileHandle
+from flowserv.files import FileHandle
 
 
 """Labels for handle serializations."""

@@ -14,13 +14,13 @@ import os
 import pytest
 import shutil
 
-from flowserv.core.files import FileHandle
+from flowserv.files import FileHandle
 from flowserv.model.parameter.value import TemplateArgument
 from flowserv.model.workflow.fs import WorkflowFileSystem
 from flowserv.model.workflow.repo import WorkflowRepository
 
-import flowserv.core.error as err
-import flowserv.core.util as util
+import flowserv.error as err
+import flowserv.util as util
 import flowserv.model.template.parameter as tp
 import flowserv.tests.db as db
 

@@ -18,8 +18,8 @@ import pytest
 from flowserv.model.workflow.fs import WorkflowFileSystem
 from flowserv.model.workflow.repo import WorkflowRepository
 
-import flowserv.core.error as err
-import flowserv.core.util as util
+import flowserv.error as err
+import flowserv.util as util
 import flowserv.model.workflow.repo as helper
 import flowserv.tests.db as db
 

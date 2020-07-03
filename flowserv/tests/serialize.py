@@ -8,7 +8,7 @@
 
 """Helper methods to test object serialization."""
 
-import flowserv.core.util as util
+import flowserv.util as util
 import flowserv.model.workflow.state as st
 
 

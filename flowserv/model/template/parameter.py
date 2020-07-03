@@ -14,10 +14,10 @@ from past.builtins import basestring
 
 import os
 
-from flowserv.core.files import FileHandle, InputFile
+from flowserv.files import FileHandle, InputFile
 from flowserv.model.parameter.value import TemplateArgument
 
-import flowserv.core.error as err
+import flowserv.error as err
 
 
 def get_parameter_references(spec, parameters=None):
@@ -38,7 +38,7 @@ def get_parameter_references(spec, parameters=None):
 
     Raises
     ------
-    flowserv.core.error.InvalidTemplateError
+    flowserv.error.InvalidTemplateError
     """
     # The new object will contain the modified workflow specification
     if parameters is None:
@@ -102,9 +102,9 @@ def get_upload_files(template, basedir, files, arguments):
 
     Raises
     ------
-    flowserv.core.error.InvalidTemplateError
-    flowserv.core.error.MissingArgumentError
-    flowserv.core.error.UnknownParameterError
+    flowserv.error.InvalidTemplateError
+    flowserv.error.MissingArgumentError
+    flowserv.error.UnknownParameterError
     """
     result = list()
     for val in files:
@@ -192,8 +192,8 @@ def replace_args(spec, arguments, parameters):
 
     Raises
     ------
-    flowserv.core.error.InvalidTemplateError
-    flowserv.core.error.MissingArgumentError
+    flowserv.error.InvalidTemplateError
+    flowserv.error.MissingArgumentError
     """
     if isinstance(spec, dict):
         # The new object will contain the modified workflow specification
@@ -237,7 +237,7 @@ def replace_value(value, arguments, parameters):
 
     Raises
     ------
-    flowserv.core.error.MissingArgumentError
+    flowserv.error.MissingArgumentError
     """
     # Check if the value matches the template parameter reference pattern
     if is_parameter(value):

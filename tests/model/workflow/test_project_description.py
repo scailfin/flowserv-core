@@ -15,7 +15,7 @@ import os
 from flowserv.model.workflow.fs import WorkflowFileSystem
 from flowserv.model.workflow.repo import WorkflowRepository
 
-import flowserv.core.util as util
+import flowserv.util as util
 import flowserv.tests.db as db
 
 

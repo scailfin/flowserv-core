@@ -16,8 +16,8 @@ from flowserv.service.api import API
 from flowserv.tests.controller import StateEngine
 from flowserv.tests.files import FakeStream
 
-import flowserv.core.error as err
-import flowserv.core.util as util
+import flowserv.error as err
+import flowserv.util as util
 import flowserv.tests.db as db
 import flowserv.tests.serialize as serialize
 

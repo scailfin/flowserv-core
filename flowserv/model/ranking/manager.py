@@ -12,9 +12,9 @@ and querying analytics results for individual workflows.
 
 from flowserv.model.ranking.base import ResultRanking, RunResult
 
-import flowserv.core.error as err
+import flowserv.error as err
 import flowserv.model.parameter.declaration as pd
-import flowserv.core.util as util
+import flowserv.util as util
 
 
 # -- Result table name for workflows ------------------------------------------
@@ -93,7 +93,7 @@ class RankingManager(object):
 
         Raises
         ------
-        flowserv.core.error.InvalidSortColumnError
+        flowserv.error.InvalidSortColumnError
         """
         # Mapping of schema column names to renamed column identifier
         mapping = result_schema.rename()
@@ -177,7 +177,7 @@ class RankingManager(object):
 
         Raises
         ------
-        flowserv.core.error.ConstraintViolationError
+        flowserv.error.ConstraintViolationError
         """
         # Read the results from the result file that is specified in the
         # workflow result schema. If the file is not found we currently

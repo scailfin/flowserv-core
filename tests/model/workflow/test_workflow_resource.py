@@ -13,7 +13,7 @@ import pytest
 import tarfile
 
 import flowserv.model.workflow.resource as wfres
-import flowserv.core.util as util
+import flowserv.util as util
 
 
 def deserialize_unknown_object():

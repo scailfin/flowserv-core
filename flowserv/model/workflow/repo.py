@@ -25,8 +25,8 @@ from flowserv.model.template.base import WorkflowTemplate
 from flowserv.model.template.schema import ResultSchema
 from flowserv.model.workflow.base import WorkflowDescriptor, WorkflowHandle
 
-import flowserv.core.error as err
-import flowserv.core.util as util
+import flowserv.error as err
+import flowserv.util as util
 import flowserv.model.constraint as constraint
 import flowserv.model.parameter.base as pb
 
@@ -153,8 +153,8 @@ class WorkflowRepository(object):
 
         Raises
         ------
-        flowserv.core.error.ConstraintViolationError
-        flowserv.core.error.InvalidTemplateError
+        flowserv.error.ConstraintViolationError
+        flowserv.error.InvalidTemplateError
         ValueError
         """
         # Exactly one of sourcedir and repourl has to be not None. If both
@@ -337,7 +337,7 @@ class WorkflowRepository(object):
 
         Raises
         ------
-        flowserv.core.error.UnknownWorkflowError
+        flowserv.error.UnknownWorkflowError
         """
         # Get the base directory for the workflow. If the directory does not
         # exist we assume that the workflow is unknown and raise an error.
@@ -395,7 +395,7 @@ class WorkflowRepository(object):
 
         Raises
         ------
-        flowserv.core.error.UnknownWorkflowError
+        flowserv.error.UnknownWorkflowError
         """
         # Get workflow information from database. If the result is empty an
         # error is raised
@@ -504,8 +504,8 @@ class WorkflowRepository(object):
 
         Raises
         ------
-        flowserv.core.error.ConstraintViolationError
-        flowserv.core.error.UnknownWorkflowError
+        flowserv.error.ConstraintViolationError
+        flowserv.error.UnknownWorkflowError
         """
         # Create the SQL update statement depending on the given arguments
         args = list()
@@ -621,7 +621,7 @@ def get_unique_name(con, projectmeta, sourcedir, repourl):
 
     Raises
     ------
-    flowserv.core.error.ConstraintViolationError
+    flowserv.error.ConstraintViolationError
     """
     name = projectmeta.get(NAME)
     # Ensure that the name is not None.

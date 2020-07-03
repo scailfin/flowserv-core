@@ -13,13 +13,13 @@ manipulate workflow runs and their results.
 import logging
 import shutil
 
-from flowserv.core.files import FileHandle, InputFile
+from flowserv.files import FileHandle, InputFile
 from flowserv.model.parameter.value import TemplateArgument
 from flowserv.model.run.base import RunHandle
 from flowserv.model.template.base import WorkflowTemplate
 
-import flowserv.core.error as err
-import flowserv.core.util as util
+import flowserv.error as err
+import flowserv.util as util
 import flowserv.model.template.base as tmpl
 import flowserv.service.postproc.base as postbase
 import flowserv.service.postproc.util as postutil
@@ -89,9 +89,9 @@ class RunService(object):
 
         Raises
         ------
-        flowserv.core.error.UnauthorizedAccessError
-        flowserv.core.error.UnknownRunError
-        flowserv.core.error.InvalidRunStateError
+        flowserv.error.UnauthorizedAccessError
+        flowserv.error.UnknownRunError
+        flowserv.error.InvalidRunStateError
         """
         # Raise an error if the user does not have rights to cancel the run or
         # if the run does not exist.
@@ -133,9 +133,9 @@ class RunService(object):
 
         Raises
         ------
-        flowserv.core.error.UnauthorizedAccessError
-        flowserv.core.error.UnknownRunError
-        flowserv.core.error.InvalidRunStateError
+        flowserv.error.UnauthorizedAccessError
+        flowserv.error.UnknownRunError
+        flowserv.error.InvalidRunStateError
         """
         # Raise an error if the user does not have rights to delete the run or
         # if the run does not exist.
@@ -171,9 +171,9 @@ class RunService(object):
 
         Raises
         ------
-        flowserv.core.error.UnauthorizedAccessError
-        flowserv.core.error.UnknownRunError
-        flowserv.core.error.UnknownResourceError
+        flowserv.error.UnauthorizedAccessError
+        flowserv.error.UnknownRunError
+        flowserv.error.UnknownResourceError
         """
         # Raise an error if the user does not have rights to access files for
         # the workflow run or if the run does not exist (only if the user
@@ -211,13 +211,13 @@ class RunService(object):
 
         Returns
         -------
-        flowserv.core.files.FileHandle
+        flowserv.files.FileHandle
 
         Raises
         ------
-        flowserv.core.error.UnauthorizedAccessError
-        flowserv.core.error.UnknownRunError
-        flowserv.core.error.UnknownResourceError
+        flowserv.error.UnauthorizedAccessError
+        flowserv.error.UnknownRunError
+        flowserv.error.UnknownResourceError
         """
         # Raise an error if the user does not have rights to access files for
         # the workflow run or if the run does not exist (only if the user
@@ -257,8 +257,8 @@ class RunService(object):
 
         Raises
         ------
-        flowserv.core.error.UnauthorizedAccessError
-        flowserv.core.error.UnknownRunError
+        flowserv.error.UnauthorizedAccessError
+        flowserv.error.UnknownRunError
         """
         # Raise an error if the user does not have rights to access the run or
         # if the run does not exist.
@@ -291,8 +291,8 @@ class RunService(object):
 
         Raises
         ------
-        flowserv.core.error.UnauthorizedAccessError
-        flowserv.core.error.UnknownWorkflowGroupError
+        flowserv.error.UnauthorizedAccessError
+        flowserv.error.UnknownWorkflowGroupError
         """
         # Raise an error if the user does not have rights to access the
         # workflow group runs or if the workflow group does not exist.
@@ -325,8 +325,8 @@ class RunService(object):
 
         Raises
         ------
-        flowserv.core.error.UnauthorizedAccessError
-        flowserv.core.error.UnknownWorkflowGroupError
+        flowserv.error.UnauthorizedAccessError
+        flowserv.error.UnknownWorkflowGroupError
         """
         # Raise an error if the user does not have rights to access the
         # workflow group runs or if the workflow group does not exist.
@@ -361,12 +361,12 @@ class RunService(object):
 
         Raises
         ------
-        flowserv.core.error.InvalidArgumentError
-        flowserv.core.error.MissingArgumentError
-        flowserv.core.error.UnauthorizedAccessError
-        flowserv.core.error.UnknownFileError
-        flowserv.core.error.UnknownParameterError
-        flowserv.core.error.UnknownWorkflowGroupError
+        flowserv.error.InvalidArgumentError
+        flowserv.error.MissingArgumentError
+        flowserv.error.UnauthorizedAccessError
+        flowserv.error.UnknownFileError
+        flowserv.error.UnknownParameterError
+        flowserv.error.UnknownWorkflowGroupError
         """
         # Raise an error if the user does not have rights to start new runs for
         # the workflow group or if the workflow group does not exist.
@@ -479,7 +479,7 @@ class RunService(object):
 
         Raises
         ------
-        flowserv.core.error.ConstraintViolationError
+        flowserv.error.ConstraintViolationError
         """
         # We give special attention to runs that are in SUCCESS state.
         if state.is_success():

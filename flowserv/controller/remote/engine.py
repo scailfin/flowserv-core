@@ -25,7 +25,7 @@ from flowserv.model.workflow.resource import FSObject
 from flowserv.model.workflow.state import StateSuccess
 
 import flowserv.controller.serial.engine as serial
-import flowserv.core.util as util
+import flowserv.util as util
 import flowserv.model.workflow.state as serialize
 
 
@@ -148,7 +148,7 @@ class RemoteWorkflowController(WorkflowController):
 
         Raises
         ------
-        flowserv.core.error.DuplicateRunError
+        flowserv.error.DuplicateRunError
         """
         # Get the run state. Ensure that the run is in pending state
         if not run.is_pending():

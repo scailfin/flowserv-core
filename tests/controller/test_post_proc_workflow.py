@@ -15,7 +15,7 @@ from flowserv.service.api import API
 from flowserv.tests.files import FakeStream
 
 import flowserv.config.api as config
-import flowserv.core.util as util
+import flowserv.util as util
 import flowserv.model.workflow.state as st
 import flowserv.tests.db as db
 import flowserv.tests.serialize as serialize

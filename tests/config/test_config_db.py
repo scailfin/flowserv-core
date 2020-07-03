@@ -14,7 +14,7 @@ import os
 import pytest
 
 import flowserv.config.db as config
-import flowserv.core.error as err
+import flowserv.error as err
 
 
 class TestConfigDatabase(object):

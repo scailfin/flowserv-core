@@ -17,7 +17,7 @@ from flowserv.controller.serial.engine import SerialWorkflowEngine
 from flowserv.tests.controller import StateEngine
 
 import flowserv.config.backend as config
-import flowserv.core.error as err
+import flowserv.error as err
 import flowserv.service.backend as service
 
 

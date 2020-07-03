@@ -17,7 +17,7 @@ from flowserv.tests.files import FakeStream
 from flowserv.tests.remote import RemoteTestController
 
 import flowserv.config.api as config
-import flowserv.core.error as err
+import flowserv.error as err
 import flowserv.model.workflow.state as st
 import flowserv.tests.db as db
 

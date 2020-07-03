@@ -13,7 +13,7 @@ import yaml
 
 from flowserv.model.parameter.base import TemplateParameter
 
-import flowserv.core.error as err
+import flowserv.error as err
 import flowserv.model.parameter.base as pb
 import flowserv.model.parameter.declaration as pd
 

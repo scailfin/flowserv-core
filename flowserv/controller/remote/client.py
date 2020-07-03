@@ -15,7 +15,7 @@ workflow execution, get workflow status, and to download workflow result files.
 
 from abc import abstractmethod
 
-import flowserv.core.util as util
+import flowserv.util as util
 
 
 class RemoteClient(util.ABC):

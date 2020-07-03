@@ -11,8 +11,8 @@ is part of the extended workflow template specification that is used to define
 benchmarks.
 """
 
-import flowserv.core.error as err
-import flowserv.core.util as util
+import flowserv.error as err
+import flowserv.util as util
 import flowserv.model.parameter.declaration as pd
 
 
@@ -67,7 +67,7 @@ class ResultColumn(object):
 
         Raises
         ------
-        flowserv.core.error.InvalidTemplateError
+        flowserv.error.InvalidTemplateError
         """
         # Raise error if the data type value is not in the list of supported
         # data types
@@ -97,7 +97,7 @@ class ResultColumn(object):
 
         Raises
         ------
-        flowserv.core.error.InvalidTemplateError
+        flowserv.error.InvalidTemplateError
         """
         # Validate the serialization dictionary
         try:
@@ -198,7 +198,7 @@ class ResultSchema(object):
 
         Raises
         ------
-        flowserv.core.error.InvalidTemplateError
+        flowserv.error.InvalidTemplateError
         """
         # Return None if no document is given
         if doc is None:
@@ -345,7 +345,7 @@ class SortColumn(object):
 
         Raises
         ------
-        flowserv.core.error.InvalidTemplateError
+        flowserv.error.InvalidTemplateError
         """
         # Validate the serialization dictionary
         try:

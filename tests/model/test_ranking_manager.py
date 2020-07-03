@@ -18,8 +18,8 @@ from flowserv.model.template.schema import ResultColumn, ResultSchema, SortColum
 from flowserv.model.workflow.fs import WorkflowFileSystem
 from flowserv.model.workflow.resource import FSObject, ResourceSet
 
-import flowserv.core.error as err
-import flowserv.core.util as util
+import flowserv.error as err
+import flowserv.util as util
 import flowserv.model.parameter.declaration as pd
 import flowserv.tests.db as db
 

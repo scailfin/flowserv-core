@@ -10,7 +10,7 @@
 
 import pkg_resources
 
-from flowserv.core.db.driver import DatabaseDriver
+from flowserv.db.driver import DatabaseDriver
 
 
 class DB(object):

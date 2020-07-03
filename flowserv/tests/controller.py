@@ -14,7 +14,7 @@ from flowserv.model.template.schema import ResultColumn, ResultSchema
 from flowserv.controller.base import WorkflowController
 from flowserv.controller.serial.engine import SerialWorkflowEngine
 
-import flowserv.core.error as err
+import flowserv.error as err
 import flowserv.model.parameter.declaration as pd
 import flowserv.model.workflow.state as st
 
@@ -49,7 +49,7 @@ class StateEngine(WorkflowController):
 
         Raises
         ------
-        flowserv.core.error.UnknownRunError
+        flowserv.error.UnknownRunError
         """
         if run_id not in self.runs:
             raise err.UnknownRunError(run_id)
@@ -118,7 +118,7 @@ class StateEngine(WorkflowController):
 
         Raises
         ------
-        flowserv.core.error.UnknownRunError
+        flowserv.error.UnknownRunError
         """
         if run_id in self.runs:
             return self.runs[run_id]
@@ -148,7 +148,7 @@ class StateEngine(WorkflowController):
 
         Raises
         ------
-        flowserv.core.error.InvalidTemplateError
+        flowserv.error.InvalidTemplateError
         """
         return SerialWorkflowEngine().modify_template(template, parameters)
 

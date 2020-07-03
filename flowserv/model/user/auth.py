@@ -11,30 +11,29 @@ users that have logged in to the system as well as methods to authorize that a
 given user can execute a requested action.
 """
 
+from abc import ABCMeta, abstractmethod
+
+from flowserv.model.user.base import APIKey, User
+
 import datetime as dt
 import dateutil.parser
 
-from abc import abstractmethod
-
-from flowserv.model.user.base import UserHandle
-
-import flowserv.core.error as err
-import flowserv.core.util as util
+import flowserv.error as err
 
 
-class Auth(util.ABC):
+class Auth(metaclass=ABCMeta):
     """Base class for authentication and authorization methods. Different
     authorization policies should override the methods of this class.
     """
-    def __init__(self, con):
+    def __init__(self, db):
         """Initialize the database connection.
 
         Parameters
         ----------
-        con: DB-API 2.0 database connection
-            Connection to underlying database
+        db: flowserv.model.db.DB
+            Database session.
         """
-        self.con = con
+        self.db = db
 
     def authenticate(self, api_key):
         """Get the unique user identifier that is associated with the given
@@ -52,7 +51,7 @@ class Auth(util.ABC):
 
         Raises
         ------
-        flowserv.core.error.UnauthenticatedAccessError
+        flowserv.error.UnauthenticatedAccessError
         """
         # The API key may be None. In this case an error is raised.
         if api_key is None:
@@ -60,22 +59,16 @@ class Auth(util.ABC):
         # Get information for user that that is associated with the API key
         # together with the expiry date of the key. If the API key is unknown
         # or expired raise an error.
-        sql = (
-            'SELECT u.user_id, u.name, k.expires as expires '
-            'FROM api_user u, user_key k '
-            'WHERE u.user_id = k.user_id AND u.active = 1 AND k.api_key = ?'
-        )
-        user = self.con.execute(sql, (api_key,)).fetchone()
+        query = self.db.session.query(User)\
+            .filter(User.user_id == APIKey.user_id)\
+            .filter(APIKey.value == api_key)
+        user = query.one_or_none()
         if user is None:
             raise err.UnauthenticatedAccessError()
-        expires = dateutil.parser.parse(user['expires'])
+        expires = dateutil.parser.parse(user.api_key.expires)
         if expires < dt.datetime.now():
             raise err.UnauthenticatedAccessError()
-        return UserHandle(
-            identifier=user['user_id'],
-            name=user['name'],
-            api_key=api_key
-        )
+        return user
 
     @abstractmethod
     def is_group_member(self, user_id, group_id=None, run_id=None):
@@ -103,8 +96,8 @@ class Auth(util.ABC):
         Raises
         ------
         ValueError
-        flowserv.core.error.UnknownRunError
-        flowserv.core.error.UnknownWorkflowGroupError
+        flowserv.error.UnknownRunError
+        flowserv.error.UnknownWorkflowGroupError
         """
         raise NotImplementedError()
 
@@ -126,8 +119,8 @@ class Auth(util.ABC):
         Raises
         ------
         ValueError
-        flowserv.core.error.UnknownRunError
-        flowserv.core.error.UnknownWorkflowGroupError
+        flowserv.error.UnknownRunError
+        flowserv.error.UnknownWorkflowGroupError
         """
         # Validate that the combination of arguments is valid.
         if group_id is None and run_id is None:
@@ -151,15 +144,15 @@ class Auth(util.ABC):
 
 class DefaultAuthPolicy(Auth):
     """Default implementation for the API's authorization methods."""
-    def __init__(self, con):
+    def __init__(self, db):
         """Initialize the database connection.
 
         Parameters
         ----------
-        con: DB-API 2.0 database connection
-            Connection to underlying database
+        db: flowserv.model.db.DB
+            Database session.
         """
-        super(DefaultAuthPolicy, self).__init__(con)
+        super(DefaultAuthPolicy, self).__init__(db)
 
     def is_group_member(self, user_id, group_id=None, run_id=None):
         """Verify that the given user is member of a workflow group. The group
@@ -185,8 +178,8 @@ class DefaultAuthPolicy(Auth):
         Raises
         ------
         ValueError
-        flowserv.core.error.UnknownRunError
-        flowserv.core.error.UnknownWorkflowGroupError
+        flowserv.error.UnknownRunError
+        flowserv.error.UnknownWorkflowGroupError
         """
         # Get the group identifier. For post-processing runs the group does
         # not exists. Every user can access results from post-processing runs.
@@ -210,15 +203,15 @@ class OpenAccessAuth(Auth):
     """Implementation for the API's authorization policy that gives full access
     to any registered user.
     """
-    def __init__(self, con):
+    def __init__(self, db):
         """Initialize the database connection.
 
         Parameters
         ----------
-        con: DB-API 2.0 database connection
-            Connection to underlying database
+        db: flowserv.model.db.DB
+            Database session.
         """
-        super(OpenAccessAuth, self).__init__(con)
+        super(OpenAccessAuth, self).__init__(db)
 
     def is_group_member(self, user_id, group_id=None, run_id=None):
         """Anyone has access to a workflow group. This method still ensures

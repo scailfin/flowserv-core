@@ -36,7 +36,7 @@ class FlowservError(Exception):
         return self.message
 
 
-# -- Authentication and Authorization errors -----------------------------------
+# -- Authentication and Authorization errors ----------------------------------
 
 class UnauthenticatedAccessError(FlowservError):
     """This exception is raised if an unauthenticated user attempts to access
@@ -60,7 +60,7 @@ class UnauthorizedAccessError(FlowservError):
         )
 
 
-# -- Configuration -------------------------------------------------------------
+# -- Configuration ------------------------------------------------------------
 
 class MissingConfigurationError(FlowservError):
     """Error indicating that the value for a mandatory environment variable is
@@ -79,7 +79,7 @@ class MissingConfigurationError(FlowservError):
         )
 
 
-# -- Constraints on argument values --------------------------------------------
+# -- Constraints on argument values -------------------------------------------
 
 class ConstraintViolationError(FlowservError):
     """Exception raised when an (implicit) constraint is violated by a requested

@@ -12,7 +12,6 @@ directories, (iii) validate dictionaries, and (iv) to create of unique
 identifiers.
 """
 
-import abc
 import datetime
 import errno
 import json
@@ -22,12 +21,6 @@ import time
 import traceback
 import uuid
 import yaml
-
-
-"""ABCMeta alternative."""
-# compatible with Python 2 *and* 3:
-# based on https://stackoverflow.com/questions/35673474/using-abc-abcmeta-in-a-way-it-is-compatible-both-with-python-2-7-and-python-3-5
-ABC = abc.ABCMeta('ABC', (object,), {'__slots__': ()})
 
 
 """Identifier for supported data formats."""
@@ -81,7 +74,8 @@ def create_dir(directory, abs=False):
     -------
     string
     """
-    # Based on https://stackoverflow.com/questions/273192/how-can-i-safely-create-a-nested-directory
+    # Based on https://stackoverflow.com/questions/273192/
+    # how-can-i-safely-create-a-nested-directory
     if not os.path.exists(directory):
         try:
             os.makedirs(directory)
@@ -138,7 +132,8 @@ def get_short_identifier():
 
 def from_utc_datetime(utc_datetime):
     """Convert a timestamp in UTC time to local time. This code is based on
-    https://stackoverflow.com/questions/4770297/convert-utc-datetime-string-to-local-datetime
+    https://stackoverflow.com/questions/4770297/
+    convert-utc-datetime-string-to-local-datetime
 
     Parameters
     ----------
@@ -187,8 +182,8 @@ def jquery(doc, path):
 
 
 def read_object(filename, format=None):
-    """Load a Json object from a file. The file may either be in Yaml or in Json
-    format.
+    """Load a Json object from a file. The file may either be in Yaml or in
+    Json format.
 
     Parameters
     ----------

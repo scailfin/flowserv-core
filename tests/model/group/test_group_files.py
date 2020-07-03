@@ -15,8 +15,8 @@ from flowserv.model.group.manager import WorkflowGroupManager
 from flowserv.model.workflow.fs import WorkflowFileSystem
 from flowserv.tests.files import FakeStream
 
-import flowserv.core.error as err
-import flowserv.core.util as util
+import flowserv.error as err
+import flowserv.util as util
 import flowserv.tests.db as db
 
 

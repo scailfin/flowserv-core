@@ -14,8 +14,8 @@ import pytest
 from flowserv.model.workflow.resource import FSObject
 from flowserv.tests.files import FakeStream
 
-import flowserv.core.error as err
-import flowserv.core.util as util
+import flowserv.error as err
+import flowserv.util as util
 import flowserv.model.workflow.state as st
 import flowserv.tests.serialize as serialize
 import flowserv.tests.service as service

@@ -14,7 +14,7 @@ import os
 import shutil
 import tempfile
 
-import flowserv.core.util as util
+import flowserv.util as util
 import flowserv.service.postproc.base as base
 
 

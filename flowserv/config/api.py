@@ -63,7 +63,7 @@ def API_BASEDIR(default_value=None, raise_error=False):
 
     Raises
     ------
-    flowserv.core.error.MissingConfigurationError
+    flowserv.error.MissingConfigurationError
     """
     val = config.get_variable(
         name=FLOWSERV_API_BASEDIR,

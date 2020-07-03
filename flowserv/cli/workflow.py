@@ -14,7 +14,7 @@ import click
 
 from flowserv.service.api import service
 
-import flowserv.core.error as err
+import flowserv.error as err
 
 # Define a dictionary that associates identifier with some default repositories
 # for easy install.

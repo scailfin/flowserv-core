@@ -8,7 +8,7 @@
 
 """Unit test for reading arguments for serial workflow templates."""
 
-from flowserv.core.scanner import Scanner, ListReader
+from flowserv.scanner import Scanner, ListReader
 from flowserv.model.parameter.base import TemplateParameter, AS_INPUT
 from flowserv.model.template.base import WorkflowTemplate
 

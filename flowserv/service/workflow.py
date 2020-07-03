@@ -10,7 +10,7 @@
 and workflow result rankings.
 """
 
-import flowserv.core.error as err
+import flowserv.error as err
 
 
 class WorkflowService(object):
@@ -69,8 +69,8 @@ class WorkflowService(object):
 
         Raises
         ------
-        flowserv.core.error.ConstraintViolationError
-        flowserv.core.error.InvalidTemplateError
+        flowserv.error.ConstraintViolationError
+        flowserv.error.InvalidTemplateError
         ValueError
         """
         # Create workflow in the repository to get the workflow handle. Do not
@@ -111,7 +111,7 @@ class WorkflowService(object):
 
         Raises
         ------
-        flowserv.core.error.UnknownWorkflowError
+        flowserv.error.UnknownWorkflowError
         """
         self.workflow_repo.delete_workflow(workflow_id)
 
@@ -135,7 +135,7 @@ class WorkflowService(object):
 
         Raises
         ------
-        flowserv.core.error.UnknownWorkflowError
+        flowserv.error.UnknownWorkflowError
         """
         # Get the workflow handle to ensure that the workflow exists
         workflow = self.workflow_repo.get_workflow(workflow_id)
@@ -173,8 +173,8 @@ class WorkflowService(object):
 
         Raises
         ------
-        flowserv.core.error.UnknownWorkflowError
-        flowserv.core.error.UnknownResourceError
+        flowserv.error.UnknownWorkflowError
+        flowserv.error.UnknownResourceError
         """
         # Get the workflow handle. This will raise an error if the workflow
         # does not exist.
@@ -200,12 +200,12 @@ class WorkflowService(object):
 
         Returns
         -------
-        flowserv.core.files.FileHandle
+        flowserv.files.FileHandle
 
         Raises
         ------
-        flowserv.core.error.UnknownWorkflowError
-        flowserv.core.error.UnknownResourceError
+        flowserv.error.UnknownWorkflowError
+        flowserv.error.UnknownResourceError
         """
         # Get the workflow handle. This will raise an error if the workflow
         # does not exist.
@@ -236,7 +236,7 @@ class WorkflowService(object):
 
         Raises
         ------
-        flowserv.core.error.UnknownWorkflowError
+        flowserv.error.UnknownWorkflowError
         """
         # Get the workflow handle. This will ensure that the workflow exists.
         workflow = self.workflow_repo.get_workflow(workflow_id)
@@ -282,8 +282,8 @@ class WorkflowService(object):
 
         Raises
         ------
-        flowserv.core.error.ConstraintViolationError
-        flowserv.core.error.UnknownWorkflowError
+        flowserv.error.ConstraintViolationError
+        flowserv.error.UnknownWorkflowError
         """
         workflow = self.workflow_repo.update_workflow(
             workflow_id=workflow_id,

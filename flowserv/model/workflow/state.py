@@ -20,7 +20,7 @@ from datetime import datetime
 
 from flowserv.model.workflow.resource import ResourceSet, WorkflowResource
 
-import flowserv.core.util as util
+import flowserv.util as util
 
 
 """Definition of state type identifier."""

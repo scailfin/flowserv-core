@@ -13,7 +13,7 @@ the value and the meta-data in the parameter declaration.
 
 from past.builtins import basestring
 
-from flowserv.core.files import FileHandle, InputFile
+from flowserv.files import FileHandle, InputFile
 from flowserv.model.parameter.base import ParameterBase
 
 
@@ -34,7 +34,7 @@ class TemplateArgument(ParameterBase):
         ----------
         parameter: flowserv.model.parameter.base.TemplateParameter
             Parameter declaration
-        value: list or dict or scalar or flowserv.core.files.InputFile
+        value: list or dict or scalar or flowserv.files.InputFile
             Parameter value. the type depends on the parameter data type.
         validate: bool, optional
             Validate the argument value against the parameter declaration if
@@ -100,7 +100,10 @@ class TemplateArgument(ParameterBase):
                 msg = "expected bool for '{}'"
                 raise ValueError(msg.format(self.identifier))
         elif self.is_float():
-            if not isinstance(self.value, float) and not isinstance(self.value, int):
+            if (
+                not isinstance(self.value, float) and
+                not isinstance(self.value, int)
+            ):
                 msg = "expected float for '{}'"
                 raise ValueError(msg.format(self.identifier))
         elif self.is_int():
@@ -133,9 +136,9 @@ class TemplateArgument(ParameterBase):
             raise ValueError("unknown data type '{}'".format(self.data_type))
 
 
-# ------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Helper Methods
-# ------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 def mandatory_arguments(parameters, parent=None):
     """Get a list of parameter names that are mandatory. The optional parent

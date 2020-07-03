@@ -19,7 +19,7 @@ import logging
 
 import flowserv.config.backend as backend
 import flowserv.config.base as config
-import flowserv.core.error as err
+import flowserv.error as err
 
 
 def init_backend(raise_error=True):
@@ -41,7 +41,7 @@ def init_backend(raise_error=True):
 
     Raises
     ------
-    flowserv.core.error.MissingConfigurationError
+    flowserv.error.MissingConfigurationError
     """
     module_name = config.get_variable(name=backend.FLOWSERV_BACKEND_MODULE)
     class_name = config.get_variable(name=backend.FLOWSERV_BACKEND_CLASS)

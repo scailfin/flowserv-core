@@ -17,8 +17,8 @@ from flowserv.tests.parameter import StringParameter
 
 import flowserv.tests.db as db
 
-import flowserv.core.error as err
-import flowserv.core.util as util
+import flowserv.error as err
+import flowserv.util as util
 import flowserv.tests.serialize as serialize
 
 

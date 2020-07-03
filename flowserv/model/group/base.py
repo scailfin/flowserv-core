@@ -15,35 +15,14 @@ only. Group membership is also used for access control when starting a new
 workflow run.
 """
 
-from flowserv.core.files import FileHandle
+from flowserv.files import FileHandle
 
-import flowserv.core.error as err
-import flowserv.core.util as util
+import flowserv.error as err
+import flowserv.util as util
 import flowserv.model.constraint as constraint
 
 
-class WorkflowGroupDescriptor(object):
-    """The descriptor for a workflow group contains only the group identifier,
-    the group name, and the identifier of the associated workflow.
-    """
-    def __init__(self, identifier, name, workflow_id):
-        """Initialize the object properties.
-
-        Parameters
-        ----------
-        identifier: string
-            Unique group identifier
-        name: string
-            Unique group name
-        workflow_id: string
-            Unique workflow identifier
-        """
-        self.identifier = identifier
-        self.name = name
-        self.workflow_id = workflow_id
-
-
-class WorkflowGroupHandle(WorkflowGroupDescriptor):
+class WorkflowGroup(object):
     """A workflow group is a container for sets of users and sets of workflow
     runs. Each group is associated with a workflow template.  When the group is
     created, variations to the original workflow may be made to the workflow
@@ -112,7 +91,7 @@ class WorkflowGroupHandle(WorkflowGroupDescriptor):
 
         Raises
         ------
-        flowserv.core.error.UnknownFileError
+        flowserv.error.UnknownFileError
         """
         # Get the file handle which contains the path to the file on disk.
         # This will raise an error if the file does not exist
@@ -137,11 +116,11 @@ class WorkflowGroupHandle(WorkflowGroupDescriptor):
 
         Returns
         -------
-        flowserv.core.files.FileHandle
+        flowserv.files.FileHandle
 
         Raises
         ------
-        flowserv.core.error.UnknownFileError
+        flowserv.error.UnknownFileError
         """
         # Get name of the file from the underlying database. Raise error if the
         # result is empty.
@@ -168,7 +147,7 @@ class WorkflowGroupHandle(WorkflowGroupDescriptor):
 
         Returns
         -------
-        list(flowserv.core.files.FileHandle)
+        list(flowserv.files.FileHandle)
         """
         # Get list of uploaded files from the underlying database
         sql = 'SELECT file_id, name FROM group_upload_file WHERE group_id = ?'
@@ -208,11 +187,11 @@ class WorkflowGroupHandle(WorkflowGroupDescriptor):
 
         Returns
         -------
-        flowserv.core.files.FileHandle
+        flowserv.files.FileHandle
 
         Raises
         ------
-        flowserv.core.error.ConstraintViolationError
+        flowserv.error.ConstraintViolationError
         """
         # Ensure that the given file name is valid
         constraint.validate_name(name)

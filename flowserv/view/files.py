@@ -40,7 +40,7 @@ class UploadFileSerializer(Serializer):
         ----------
         group_id: string
             Unique workflow group identifier
-        fh: flowserv.core.files.FileHandle
+        fh: flowserv.files.FileHandle
             File handle
 
         Returns
@@ -63,7 +63,7 @@ class UploadFileSerializer(Serializer):
         ----------
         group_id: string
             Unique workflow group identifier
-        files: list(flowserv.core.files.FileHandle)
+        files: list(flowserv.files.FileHandle)
             List of file handle
 
         Returns

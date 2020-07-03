@@ -8,9 +8,7 @@
 
 """Helper methods for reading workflow template parameters."""
 
-from __future__ import print_function
-
-from flowserv.core.scanner import Scanner
+from flowserv.scanner import Scanner
 
 
 def read(parameters, scanner=None, files=None):
@@ -28,7 +26,7 @@ def read(parameters, scanner=None, files=None):
     ----------
     parameters: list(flowserv.model.parameter.base.TemplateParameter)
         List of workflow template parameter declarations
-    scanner: flowserv.core.scanner.Scanner
+    scanner: flowserv.scanner.Scanner
         Input scanner to read parameter values
     files: list()
         List of (idenifier, name ) pairs
@@ -69,9 +67,9 @@ def read_parameter(para, scanner, prompt_prefix='', files=None):
     ----------
     para: flowserv.model.parameter.TemplateParameter
         Workflow template parameter declaration
-    scanner: flowserv.core.scanner.Scanner
+    scanner: flowserv.scanner.Scanner
     prompt_prefix: string, optional
-    files: list(flowserv.core.files.FileDescriptor)
+    files: list(flowserv.files.FileDescriptor)
         List of file descriptors
 
     Returns

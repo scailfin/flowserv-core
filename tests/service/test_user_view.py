@@ -14,7 +14,7 @@ import pytest
 
 from flowserv.service.api import API
 
-import flowserv.core.error as err
+import flowserv.error as err
 import flowserv.tests.db as db
 import flowserv.tests.serialize as serialize
 

@@ -11,8 +11,6 @@ serial workflow specification. This controller allows execution in workflow
 steps within separate sub-processes.
 """
 
-from __future__ import print_function
-
 import logging
 import os
 import subprocess
@@ -25,7 +23,7 @@ from flowserv.controller.serial.workflow import SerialWorkflow
 from flowserv.model.template.base import WorkflowTemplate
 from flowserv.model.workflow.resource import FSObject
 
-import flowserv.core.util as util
+import flowserv.util as util
 import flowserv.model.template.parameter as tp
 import flowserv.model.workflow.state as serialize
 
@@ -144,7 +142,7 @@ class SerialWorkflowEngine(WorkflowController):
 
         Raises
         ------
-        flowserv.core.error.DuplicateRunError
+        flowserv.error.DuplicateRunError
         """
         # Get the run state. Ensure that the run is in pending state
         if not run.is_pending():
@@ -229,7 +227,7 @@ class SerialWorkflowEngine(WorkflowController):
 
         Raises
         ------
-        flowserv.core.error.InvalidTemplateError
+        flowserv.error.InvalidTemplateError
         """
         # Get a copy of the files and parameters sections of the inputs
         # declaration

@@ -10,7 +10,7 @@
 
 import pytest
 
-import flowserv.core.error as err
+import flowserv.error as err
 import flowserv.model.parameter.declaration as pd
 import flowserv.model.template.schema as schema
 

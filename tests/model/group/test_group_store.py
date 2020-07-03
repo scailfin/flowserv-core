@@ -14,7 +14,7 @@ import pytest
 from flowserv.model.group.manager import WorkflowGroupManager
 from flowserv.model.workflow.fs import WorkflowFileSystem
 
-import flowserv.core.error as err
+import flowserv.error as err
 import flowserv.model.parameter.base as pb
 import flowserv.model.parameter.declaration as pd
 import flowserv.tests.db as db

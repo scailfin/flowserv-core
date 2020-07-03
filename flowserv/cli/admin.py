@@ -17,14 +17,14 @@ import os
 from flowserv.config.auth import FLOWSERV_AUTH_LOGINTTL, AUTH_LOGINTTL
 from flowserv.config.backend import (
     FLOWSERV_BACKEND_CLASS, FLOWSERV_BACKEND_MODULE)
-from flowserv.config.install import DB
-from flowserv.core.db.driver import DatabaseDriver
 from flowserv.cli.workflow import workflowcli
+from flowserv.model.db import DB
 from flowserv.service.backend import init_backend
 
 import flowserv.config.api as api
-import flowserv.core.error as err
-import flowserv.core.util as util
+import flowserv.config.db as db
+import flowserv.error as err
+import flowserv.util as util
 
 
 @click.group()
@@ -96,9 +96,8 @@ def configuration(
     # Configuration for the underlying database
     if database or all:
         click.echo(comment.format('Database'))
-        for var, val in DatabaseDriver.configuration():
-            click.echo(envvar.format(var, val))
-    # Configuration for thw workflow execution backend
+        click.echo(envvar.format(db.FLOWSERV_DB, db.DB_CONNECT()))
+    # Configuration for the workflow execution backend
     if backend or all:
         click.echo(comment.format('Workflow Controller'))
         conf = list()
@@ -134,7 +133,7 @@ def init(dir=None, force=False):
         click.confirm('Continue?', default=True, abort=True)
     # Create a new instance of the database
     try:
-        DB.init()
+        DB().init()
     except err.MissingConfigurationError as ex:
         click.echo(str(ex))
     # If the base directory is given ensure that the directory exists

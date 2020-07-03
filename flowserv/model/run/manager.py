@@ -13,11 +13,11 @@ about workflow runs in an underlying database.
 import json
 import shutil
 
-from flowserv.core.files import InputFile
+from flowserv.files import InputFile
 from flowserv.model.run.base import RunDescriptor, RunHandle
 
-import flowserv.core.error as err
-import flowserv.core.util as util
+import flowserv.error as err
+import flowserv.util as util
 import flowserv.model.run.state as shelper
 import flowserv.model.workflow.state as st
 
@@ -66,7 +66,7 @@ class RunManager(object):
 
         Raises
         ------
-        flowserv.core.error.MissingArgumentError
+        flowserv.error.MissingArgumentError
         """
         # Create a unique run identifier
         run_id = util.get_unique_identifier()
@@ -118,7 +118,7 @@ class RunManager(object):
 
         Raises
         ------
-        flowserv.core.error.UnknownRunError
+        flowserv.error.UnknownRunError
         """
         # Retrieve the workflow identifier and group identifier from the
         # database in order to be able to generate the path for the run folder.
@@ -161,7 +161,7 @@ class RunManager(object):
 
         Raises
         ------
-        flowserv.core.error.UnknownRunError
+        flowserv.error.UnknownRunError
         """
         # Fetch run information from the database. If the result is None the
         # run is unknown and an error is raised.
@@ -190,7 +190,7 @@ class RunManager(object):
 
         Raises
         ------
-        flowserv.core.error.UnknownRunError
+        flowserv.error.UnknownRunError
         """
         # Fetch run information from the database. Raises an error if the run
         # is unknown..
@@ -295,8 +295,8 @@ class RunManager(object):
 
         Raises
         ------
-        flowserv.core.error.ConstraintViolationError
-        flowserv.core.error.UnknownRunError
+        flowserv.error.ConstraintViolationError
+        flowserv.error.UnknownRunError
         """
         # Fetch run information from the database. Raises an error if the run
         # is unknown..

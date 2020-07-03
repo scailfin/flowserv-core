@@ -11,7 +11,7 @@
 import os
 import pytest
 
-import flowserv.core.util as util
+import flowserv.util as util
 
 
 """JSON decode error differs between Python 2.7 and 3. This is based on:

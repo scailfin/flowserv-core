@@ -98,7 +98,7 @@ class UserService(object):
 
         Raises
         ------
-        flowserv.core.error.UnauthenticatedAccessError
+        flowserv.error.UnauthenticatedAccessError
         """
         return self.serialize.user(self.manager.logout_user(user))
 
@@ -124,8 +124,8 @@ class UserService(object):
 
         Raises
         ------
-        flowserv.core.error.ConstraintViolationError
-        flowserv.core.error.DuplicateUserError
+        flowserv.error.ConstraintViolationError
+        flowserv.error.DuplicateUserError
         """
         user = self.manager.register_user(
             username=username,
@@ -171,8 +171,8 @@ class UserService(object):
 
         Raises
         ------
-        flowserv.core.error.ConstraintViolationError
-        flowserv.core.error.UnknownRequestError
+        flowserv.error.ConstraintViolationError
+        flowserv.error.UnknownRequestError
         """
         user = self.manager.reset_password(
             request_id=request_id,

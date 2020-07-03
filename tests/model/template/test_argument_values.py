@@ -13,7 +13,7 @@ argument values for parameterized workflow templates.
 import os
 import pytest
 
-from flowserv.core.files import FileHandle, InputFile
+from flowserv.files import FileHandle, InputFile
 from flowserv.model.parameter.base import TemplateParameter
 from flowserv.model.template.base import WorkflowTemplate
 
