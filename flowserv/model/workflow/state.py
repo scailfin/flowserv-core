@@ -152,7 +152,9 @@ class StateCanceled(WorkflowState):
     time when the workflow was canceled. The state also maintains an optional
     list of messages.
     """
-    def __init__(self, created_at, started_at=None, stopped_at=None, messages=None):
+    def __init__(
+        self, created_at, started_at=None, stopped_at=None, messages=None
+    ):
         """Initialize the timestamps that are associated with the workflow
         state and the optional messages.
 

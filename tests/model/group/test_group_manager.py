@@ -11,7 +11,7 @@
 import os
 import pytest
 
-from flowserv.model.base import User, WorkflowTemplate
+from flowserv.model.base import User, WorkflowHandle
 from flowserv.model.group import WorkflowGroupManager
 from flowserv.model.workflow.fs import WorkflowFileSystem
 
@@ -38,7 +38,7 @@ def init(db, basedir):
         db.session.add(user)
     # Add two dummy workflow templates.
     for workflow_id in [WORKFLOW_1, WORKFLOW_2]:
-        workflow = WorkflowTemplate(
+        workflow = WorkflowHandle(
             workflow_id=workflow_id,
             name=workflow_id,
             workflow_spec='{}'

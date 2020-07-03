@@ -25,7 +25,7 @@ class WorkflowGroupService(object):
         ----------
         group_manager: flowserv.model.group..GroupManager
             Manager for workflow groups
-        workflow_repo: flowserv.model.workflow.repo.WorkflowRepository
+        workflow_repo: flowserv.model.workflow.manager.WorkflowManager
             Repository for workflow templates
         backend: flowserv.controller.base.WorkflowController
             Workflow engine controller

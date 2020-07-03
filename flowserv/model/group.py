@@ -13,7 +13,7 @@ database.
 
 import shutil
 
-from flowserv.model.base import UploadFile, WorkflowGroup, WorkflowTemplate
+from flowserv.model.base import UploadFile, WorkflowGroup, WorkflowHandle
 from flowserv.model.user import UserManager
 
 from flowserv.files import FileHandle
@@ -315,8 +315,8 @@ class WorkflowGroupManager(object):
             return self.users.get_user(user_id, active=True).groups
         elif user_id is None:
             # Return all groups for a workflow template.
-            workflow = self.db.session.query(WorkflowTemplate)\
-                .filter(WorkflowTemplate.workflow_id == workflow_id)\
+            workflow = self.db.session.query(WorkflowHandle)\
+                .filter(WorkflowHandle.workflow_id == workflow_id)\
                 .one_or_none()
             if workflow is None:
                 raise err.UnknownWorkflowError(workflow_id)

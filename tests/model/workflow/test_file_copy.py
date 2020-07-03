@@ -16,13 +16,10 @@ import shutil
 
 from flowserv.files import FileHandle
 from flowserv.model.parameter.value import TemplateArgument
-from flowserv.model.workflow.fs import WorkflowFileSystem
-from flowserv.model.workflow.repo import WorkflowRepository
 
 import flowserv.error as err
 import flowserv.util as util
 import flowserv.model.template.parameter as tp
-import flowserv.tests.db as db
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))
@@ -74,24 +71,18 @@ def test_input_file_copy(tmpdir):
     assert os.path.isfile(os.path.join(str(tmpdir), target))
 
 
-def test_prepare_inputs_for_local_run(tmpdir):
+def test_prepare_inputs_for_local_run(wfmanager, tmpdir):
     """Test copying input files for a local workflow run."""
     # Initialize the repository
-    connector = db.init_db(str(tmpdir))
-    repodir = util.create_dir(os.path.join(str(tmpdir), 'workflows'))
-    repo = WorkflowRepository(
-        con=connector.connect(),
-        fs=WorkflowFileSystem(repodir)
-    )
     # Load first template
-    wf = repo.create_workflow(
+    wf = wfmanager.create_workflow(
         name='A',
         sourcedir=WORKFLOW_DIR,
         specfile=specfile
     )
-    template = wf.get_template()
+    template = wfmanager.get_template(wf.workflow_id)
     # Create run directory
-    run_dir = os.path.join(str(tmpdir), 'run')
+    run_dir = os.path.join(tmpdir, 'run')
     os.makedirs(run_dir)
     # Copy input files to run directory
     files = tp.get_upload_files(
@@ -142,12 +133,12 @@ def test_prepare_inputs_for_local_run(tmpdir):
             arguments={}
         )
     # - Error when copying non-existing file
-    wf = repo.create_workflow(
+    wf = wfmanager.create_workflow(
         name='B',
         sourcedir=WORKFLOW_DIR,
         specfile=specfile
     )
-    template = wf.get_template()
+    template = wfmanager.get_template(wf.workflow_id)
     shutil.rmtree(run_dir)
     os.makedirs(run_dir)
     with pytest.raises(err.UnknownFileError):
@@ -194,12 +185,12 @@ def test_prepare_inputs_for_local_run(tmpdir):
     assert not os.path.isfile(os.path.join(run_dir, 'data', 'persons.txt'))
     assert os.path.isfile(os.path.join(run_dir, 'data', 'friends.txt'))
     # Template with input file parameter that is not of type file
-    wf = repo.create_workflow(
+    wf = wfmanager.create_workflow(
         name='C',
         sourcedir=WORKFLOW_DIR,
         specfile=specfile_ERR
     )
-    template = wf.get_template()
+    template = wfmanager.get_template(wf.workflow_id)
     shutil.rmtree(run_dir)
     os.makedirs(run_dir)
     # Copy input files to run directory

@@ -25,7 +25,7 @@ class WorkflowService(object):
         ----------
         con: DB-API 2.0 database connection
             Connection to underlying database
-        workflow_repo: flowserv.model.workflow.repo.WorkflowRepository
+        workflow_repo: flowserv.model.workflow.manager.WorkflowManager
             Repository to access registered workflows
         ranking_manager: flowserv.model.ranking.manager.RankingManager
             Manager for workflow evaluation rankings
@@ -65,7 +65,7 @@ class WorkflowService(object):
 
         Returns
         -------
-        flowserv.model.workflow.base.WorkflowHandle
+        flowserv.model.base.WorkflowHandle
 
         Raises
         ------

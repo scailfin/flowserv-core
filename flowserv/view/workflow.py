@@ -69,7 +69,7 @@ class WorkflowSerializer(Serializer):
 
         Parameters
         ----------
-        workflow: flowserv.model.workflow.base.WorkflowHDescriptor
+        workflow: flowserv.model.base.WorkflowHDescriptor
             Workflow descriptor
 
         Returns
@@ -93,7 +93,7 @@ class WorkflowSerializer(Serializer):
 
         Parameters
         ----------
-        workflow: flowserv.model.workflow.base.WorkflowHandle
+        workflow: flowserv.model.base.WorkflowHandle
             Workflow handle
 
         Returns
@@ -130,7 +130,7 @@ class WorkflowSerializer(Serializer):
 
         Parameters
         ----------
-        workflow: flowserv.model.workflow.base.WorkflowHandle
+        workflow: flowserv.model.base.WorkflowHandle
             Workflow handle
         leaderboard: flowserv.model.ranking.ResultRanking
             List of entries in the workflow evaluation leaderboard
@@ -187,7 +187,7 @@ class WorkflowSerializer(Serializer):
 
         Parameters
         ----------
-        workflows: list(flowserv.model.workflow.base.WorkflowDescriptor)
+        workflows: list(flowserv.model.base.WorkflowHandle)
             List of workflow descriptors
 
         Returns

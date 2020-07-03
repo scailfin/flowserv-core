@@ -11,7 +11,7 @@
 import os
 import pytest
 
-from flowserv.model.base import User, WorkflowTemplate
+from flowserv.model.base import User, WorkflowHandle
 from flowserv.model.group import WorkflowGroupManager
 from flowserv.model.workflow.fs import WorkflowFileSystem
 from flowserv.tests.files import FakeStream
@@ -28,7 +28,7 @@ def init(db, basedir):
     # Register three new users.
     user = User(user_id='U0000', name='U0000', secret='U0000', active=True)
     db.session.add(user)
-    workflow = WorkflowTemplate(
+    workflow = WorkflowHandle(
         workflow_id='W0000',
         name='W0000',
         workflow_spec='{}'

@@ -22,7 +22,7 @@ from flowserv.model.run.manager import RunManager
 from flowserv.model.user import UserManager
 from flowserv.model.auth import DefaultAuthPolicy
 from flowserv.model.workflow.fs import WorkflowFileSystem
-from flowserv.model.workflow.repo import WorkflowRepository
+from flowserv.model.workflow.manager import WorkflowManager
 from flowserv.service.backend import init_backend
 from flowserv.service.files import UploadFileService
 from flowserv.service.group import WorkflowGroupService
@@ -265,10 +265,10 @@ class API(object):
 
         Returns
         --------
-        flowserv.model.workflow.repo.WorkflowRepository
+        flowserv.model.workflow.manager.WorkflowManager
         """
         if self._workflow_repo is None:
-            self._workflow_repo = WorkflowRepository(
+            self._workflow_repo = WorkflowManager(
                 con=self.con,
                 fs=self.fs
             )

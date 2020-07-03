@@ -9,9 +9,14 @@
 
 """Pytest fixtures for unit tests."""
 
+import os
 import pytest
 
 from flowserv.model.db import DB, TEST_URL
+from flowserv.model.workflow.fs import WorkflowFileSystem
+from flowserv.model.workflow.manager import WorkflowManager
+
+import flowserv.util as util
 
 
 @pytest.fixture
@@ -20,3 +25,15 @@ def database():
     db = DB(connect_url=TEST_URL, web_app=True)
     db.init()
     return db
+
+
+@pytest.fixture
+def wfmanager(database, tmpdir):
+    """Create empty database. Return a test instance of the workflow
+    repository manager.
+    """
+    repodir = util.create_dir(os.path.join(tmpdir, 'workflows'))
+    return WorkflowManager(
+        db=database,
+        fs=WorkflowFileSystem(repodir)
+    )

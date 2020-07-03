@@ -16,12 +16,10 @@ import os
 import pytest
 
 from flowserv.model.workflow.fs import WorkflowFileSystem
-from flowserv.model.workflow.repo import WorkflowRepository
+from flowserv.model.workflow.manager import WorkflowManager
 
 import flowserv.error as err
-import flowserv.util as util
-import flowserv.model.workflow.repo as helper
-import flowserv.tests.db as db
+import flowserv.model.workflow.manager as helper
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))
@@ -39,52 +37,34 @@ TOPTAGGER_YAML_FILE = os.path.join(DIR, TOP_TAGGER_YAML)
 TEMPLATE = dict({'A': 1})
 
 
-def init(basedir):
-    """Create empty database. Return a test instance of the workflow
-    repository and a connector to the database.
-    """
-    connector = db.init_db(str(basedir))
-    repodir = util.create_dir(os.path.join(str(basedir), 'workflows'))
-    repo = WorkflowRepository(
-        con=connector.connect(),
-        fs=WorkflowFileSystem(repodir)
-    )
-    return repo, connector
-
-
-def test_create_workflow(tmpdir):
+def test_create_workflow(wfmanager):
     """Test adding, retrieving and listing workflows."""
     # Initialize the repository
-    repo, _ = init(tmpdir)
     # Add workflow with minimal information
-    wf1 = repo.create_workflow(name='A', sourcedir=TEMPLATE_DIR)
+    wf1 = wfmanager.create_workflow(name='A', sourcedir=TEMPLATE_DIR)
     assert wf1.name == 'A'
-    assert not wf1.has_description()
-    assert wf1.get_description() == ''
-    assert not wf1.has_instructions()
-    assert wf1.get_instructions() == ''
-    assert wf1.get_template().has_schema()
-    templatedir = wf1.get_template().sourcedir
+    assert wf1.description is None
+    assert wf1.instructions is None
+    template = wfmanager.get_template(wf1.workflow_id)
+    assert template.has_schema()
+    templatedir = template.sourcedir
     assert os.path.isfile(os.path.join(templatedir, 'code/helloworld.py'))
     assert os.path.isfile(os.path.join(templatedir, 'data/names.txt'))
-    assert len(wf1.get_postproc_key()) == 0
     # Get workflow from repository
-    wf1 = repo.get_workflow(wf1.identifier)
+    wf1 = wfmanager.get_workflow(wf1.workflow_id)
     assert wf1.name == 'A'
-    assert not wf1.has_description()
-    assert wf1.get_description() == ''
-    assert not wf1.has_instructions()
-    assert wf1.get_instructions() == ''
-    assert wf1.get_template().has_schema()
-    workflows = repo.list_workflows()
+    assert wf1.description is None
+    assert wf1.instructions is None
+    template = wfmanager.get_template(wf1.workflow_id)
+    assert template.has_schema()
+    workflows = wfmanager.list_workflows()
     assert len(workflows) == 1
-    assert wf1.identifier in [w.identifier for w in workflows]
-    templatedir = wf1.get_template().sourcedir
+    assert wf1.workflow_id in [w.workflow_id for w in workflows]
+    templatedir = wfmanager.get_template(wf1.workflow_id).sourcedir
     assert os.path.isfile(os.path.join(templatedir, 'code/helloworld.py'))
     assert os.path.isfile(os.path.join(templatedir, 'data/names.txt'))
-    assert len(wf1.get_postproc_key()) == 0
     # Template without schema
-    wf2 = repo.create_workflow(
+    wf2 = wfmanager.create_workflow(
         name='My benchmark',
         description='desc',
         instructions=INSTRUCTION_FILE,
@@ -92,103 +72,100 @@ def test_create_workflow(tmpdir):
         specfile=TEMPLATE_WITHOUT_SCHEMA
     )
     assert wf2.name == 'My benchmark'
-    assert wf2.has_description()
-    assert wf2.get_description() == 'desc'
-    assert wf2.has_instructions()
-    assert wf2.get_instructions() == 'How to run Hello World'
-    assert not wf2.get_template().has_schema()
-    wf2 = repo.get_workflow(wf2.identifier)
+    assert wf2.description == 'desc'
+    assert wf2.instructions == 'How to run Hello World'
+    template = wfmanager.get_template(wf2.workflow_id)
+    assert not template.has_schema()
+    wf2 = wfmanager.get_workflow(wf2.workflow_id)
     assert wf2.name == 'My benchmark'
-    assert wf2.has_description()
-    assert wf2.get_description() == 'desc'
-    assert wf2.has_instructions()
-    assert wf2.get_instructions() == 'How to run Hello World'
-    assert not wf2.get_template().has_schema()
-    workflows = repo.list_workflows()
+    assert wf2.description == 'desc'
+    assert wf2.instructions == 'How to run Hello World'
+    template = wfmanager.get_template(wf2.workflow_id)
+    assert not template.has_schema()
+    workflows = wfmanager.list_workflows()
     assert len(workflows) == 2
-    assert wf1.identifier in [w.identifier for w in workflows]
-    assert wf2.identifier in [w.identifier for w in workflows]
+    assert wf1.workflow_id in [w.workflow_id for w in workflows]
+    assert wf2.workflow_id in [w.workflow_id for w in workflows]
     # Template with post-processing step
-    wf3 = repo.create_workflow(
+    wf3 = wfmanager.create_workflow(
         name='Top Tagger',
         description='desc',
         instructions=INSTRUCTION_FILE,
         sourcedir=TEMPLATE_DIR,
         specfile=TOPTAGGER_YAML_FILE
     )
-    assert wf3.get_template().postproc_spec is not None
-    wf3 = repo.get_workflow(wf3.identifier)
-    assert wf3.get_template().postproc_spec is not None
-    workflows = repo.list_workflows()
+    assert wfmanager.get_template(wf3.workflow_id).postproc_spec is not None
+    wf3 = wfmanager.get_workflow(wf3.workflow_id)
+    assert wfmanager.get_template(wf3.workflow_id).postproc_spec is not None
+    workflows = wfmanager.list_workflows()
     assert len(workflows) == 3
     # - Missing name
-    wf = repo.create_workflow(name=None, sourcedir=TEMPLATE_DIR)
+    wf = wfmanager.create_workflow(name=None, sourcedir=TEMPLATE_DIR)
     assert wf.name == 'Helloworld'
-    wf = repo.create_workflow(name='My benchmark', sourcedir=TEMPLATE_DIR)
+    wf = wfmanager.create_workflow(name='My benchmark', sourcedir=TEMPLATE_DIR)
     assert wf.name == 'My benchmark (1)'
     # Test error conditions
     # - Invalid name
     with pytest.raises(err.ConstraintViolationError):
-        repo.create_workflow(name=' ', sourcedir=TEMPLATE_DIR)
-    repo.create_workflow(name='a' * 512, sourcedir=TEMPLATE_DIR)
+        wfmanager.create_workflow(name=' ', sourcedir=TEMPLATE_DIR)
+    wfmanager.create_workflow(name='a' * 512, sourcedir=TEMPLATE_DIR)
     with pytest.raises(err.ConstraintViolationError):
-        repo.create_workflow(name='a' * 513, sourcedir=TEMPLATE_DIR)
+        wfmanager.create_workflow(name='a' * 513, sourcedir=TEMPLATE_DIR)
     # - Invalid template
     with pytest.raises(err.UnknownParameterError):
-        repo.create_workflow(
+        wfmanager.create_workflow(
             name='A benchmark',
             sourcedir=TEMPLATE_DIR,
             specfile=TEMPLATE_WITH_ERROR
         )
     # - Source and repo given
     with pytest.raises(ValueError):
-        repo.create_workflow(name='A benchmark', sourcedir='src', repourl='git')
+        wfmanager.create_workflow(name='Git', sourcedir='src', repourl='git')
     # - No source given
     with pytest.raises(ValueError):
-        repo.create_workflow(name='A benchmark')
+        wfmanager.create_workflow(name='A benchmark')
     # - Error cloning repository
     with pytest.raises(git.exc.GitCommandError):
-        repo.create_workflow(name='A benchmark', repourl='/dev/null')
+        wfmanager.create_workflow(name='A benchmark', repourl='/dev/null')
 
 
-def test_delete_workflow(tmpdir):
+def test_delete_workflow(wfmanager):
     """Test deleting a workflows from the repository."""
     # Initialize the repository
-    repo, _ = init(tmpdir)
-    wf1 = repo.create_workflow(name='A', sourcedir=TEMPLATE_DIR)
-    wf2 = repo.create_workflow(name='B', sourcedir=TEMPLATE_DIR)
-    wf3 = repo.create_workflow(name='C', sourcedir=TEMPLATE_DIR)
-    workflows = repo.list_workflows()
+    wf1 = wfmanager.create_workflow(name='A', sourcedir=TEMPLATE_DIR)
+    wf2 = wfmanager.create_workflow(name='B', sourcedir=TEMPLATE_DIR)
+    wf3 = wfmanager.create_workflow(name='C', sourcedir=TEMPLATE_DIR)
+    workflows = wfmanager.list_workflows()
     assert len(workflows) == 3
-    assert wf1.identifier in [w.identifier for w in workflows]
-    assert wf2.identifier in [w.identifier for w in workflows]
-    assert wf3.identifier in [w.identifier for w in workflows]
+    assert wf1.workflow_id in [w.workflow_id for w in workflows]
+    assert wf2.workflow_id in [w.workflow_id for w in workflows]
+    assert wf3.workflow_id in [w.workflow_id for w in workflows]
     # Ensure that the tample and workflow folder exists for wf1 prior to
     # deletion and that both folders are deleted correctly
-    templatedir = wf1.template.sourcedir
-    workflowdir = repo.fs.workflow_basedir(wf1.identifier)
+    templatedir = wfmanager.get_template(wf1.workflow_id).sourcedir
+    workflowdir = wfmanager.fs.workflow_basedir(wf1.workflow_id)
     assert os.path.isdir(templatedir)
     assert os.path.isdir(workflowdir)
-    repo.delete_workflow(wf1.identifier)
+    wfmanager.delete_workflow(wf1.workflow_id)
     assert not os.path.isdir(templatedir)
     assert not os.path.isdir(workflowdir)
-    workflows = repo.list_workflows()
+    workflows = wfmanager.list_workflows()
     assert len(workflows) == 2
-    assert wf1.identifier not in [w.identifier for w in workflows]
-    assert wf2.identifier in [w.identifier for w in workflows]
-    assert wf3.identifier in [w.identifier for w in workflows]
+    assert wf1.workflow_id not in [w.workflow_id for w in workflows]
+    assert wf2.workflow_id in [w.workflow_id for w in workflows]
+    assert wf3.workflow_id in [w.workflow_id for w in workflows]
     # Deleting the same repository multiple times raises an error
-    repo.delete_workflow(wf2.identifier)
+    wfmanager.delete_workflow(wf2.workflow_id)
     with pytest.raises(err.UnknownWorkflowError):
-        repo.delete_workflow(wf2.identifier)
-    workflows = repo.list_workflows()
+        wfmanager.delete_workflow(wf2.workflow_id)
+    workflows = wfmanager.list_workflows()
     assert len(workflows) == 1
-    assert wf1.identifier not in [w.identifier for w in workflows]
-    assert wf2.identifier not in [w.identifier for w in workflows]
-    assert wf3.identifier in [w.identifier for w in workflows]
+    assert wf1.workflow_id not in [w.workflow_id for w in workflows]
+    assert wf2.workflow_id not in [w.workflow_id for w in workflows]
+    assert wf3.workflow_id in [w.workflow_id for w in workflows]
 
 
-def test_error_for_id_func(tmpdir):
+def test_error_for_id_func(database, tmpdir):
     """Error when the id function cannot return unique folder identifier.
     """
     # -- Helper class ---------------------------------------------------------
@@ -201,42 +178,41 @@ def test_error_for_id_func(tmpdir):
             self.count += 1
             return '0000'
     # initialize a repository with the dummy ID function
-    repo, _ = init(tmpdir)
     dummy_func = DummyIDFunc()
-    repo = WorkflowRepository(con=repo.con, fs=repo.fs, idfunc=dummy_func)
+    repo = WorkflowManager(
+        db=database,
+        fs=WorkflowFileSystem(tmpdir),
+        idfunc=dummy_func
+    )
     os.makedirs(repo.fs.workflow_basedir('0000'))
     with pytest.raises(RuntimeError):
         repo.create_workflow(name='A', sourcedir=TEMPLATE_DIR)
     assert dummy_func.count == 101
 
 
-def test_get_workflow(tmpdir):
+def test_get_workflow(wfmanager):
     """Test retrieving workflows from the repository."""
     # Initialize the repository
-    repo, connector = init(tmpdir)
-    wf1 = repo.create_workflow(name='A', sourcedir=TEMPLATE_DIR)
-    wf2 = repo.create_workflow(name='B', sourcedir=TEMPLATE_DIR)
-    # Re-connect to the repository
-    repo = WorkflowRepository(con=connector.connect(), fs=repo.fs)
-    wf_reload = repo.get_workflow(wf1.identifier)
-    assert wf1.identifier == wf_reload.identifier
+    wf1 = wfmanager.create_workflow(name='A', sourcedir=TEMPLATE_DIR)
+    wf2 = wfmanager.create_workflow(name='B', sourcedir=TEMPLATE_DIR)
+    wf_reload = wfmanager.get_workflow(wf1.workflow_id)
+    assert wf1.workflow_id == wf_reload.workflow_id
     assert wf1.name == wf_reload.name
     # Delete the workflow
-    repo.delete_workflow(wf1.identifier)
+    wfmanager.delete_workflow(wf1.workflow_id)
     with pytest.raises(err.UnknownWorkflowError):
-        repo.get_workflow(wf1.identifier)
+        wfmanager.get_workflow(wf1.workflow_id)
     # The second workflow still exists
-    wf_reload = repo.get_workflow(wf2.identifier)
-    assert wf2.identifier == wf_reload.identifier
+    wf_reload = wfmanager.get_workflow(wf2.workflow_id)
+    assert wf2.workflow_id == wf_reload.workflow_id
     assert wf2.name == wf_reload.name
 
 
-def test_update_workflow(tmpdir):
+def test_update_workflow(wfmanager):
     """Test updating workflow properties."""
     # Initialize the repository
-    repo, _ = init(tmpdir)
-    wf1 = repo.create_workflow(name='A', sourcedir=TEMPLATE_DIR)
-    wf2 = repo.create_workflow(
+    wf1 = wfmanager.create_workflow(name='A', sourcedir=TEMPLATE_DIR)
+    wf2 = wfmanager.create_workflow(
         name='My benchmark',
         description='desc',
         instructions=INSTRUCTION_FILE,
@@ -244,26 +220,26 @@ def test_update_workflow(tmpdir):
     )
     # Update the name of the first workflow. It is possible to change the
     # name to an existing name only if it is the same workflow
-    wf1 = repo.update_workflow(workflow_id=wf1.identifier, name='B')
+    wf1 = wfmanager.update_workflow(workflow_id=wf1.workflow_id, name='B')
     assert wf1.name == 'B'
-    wf1 = repo.update_workflow(workflow_id=wf1.identifier, name='B')
+    wf1 = wfmanager.update_workflow(workflow_id=wf1.workflow_id, name='B')
     assert wf1.name == 'B'
     with pytest.raises(err.ConstraintViolationError):
-        repo.update_workflow(
-            workflow_id=wf1.identifier,
+        wfmanager.update_workflow(
+            workflow_id=wf1.workflow_id,
             name='My benchmark'
         )
     # Update description and instructions
-    wf1 = repo.update_workflow(
-        workflow_id=wf1.identifier,
+    wf1 = wfmanager.update_workflow(
+        workflow_id=wf1.workflow_id,
         description='My description',
         instructions='My instructions'
     )
     assert wf1.name == 'B'
     assert wf1.description == 'My description'
     assert wf1.instructions == 'My instructions'
-    wf2 = repo.update_workflow(
-        workflow_id=wf2.identifier,
+    wf2 = wfmanager.update_workflow(
+        workflow_id=wf2.workflow_id,
         name='The name',
         description='The description',
         instructions='The instructions'
@@ -272,36 +248,34 @@ def test_update_workflow(tmpdir):
     assert wf2.description == 'The description'
     assert wf2.instructions == 'The instructions'
     # Do nothing
-    wf1 = repo.update_workflow(workflow_id=wf1.identifier)
+    wf1 = wfmanager.update_workflow(workflow_id=wf1.workflow_id)
     assert wf1.name == 'B'
     assert wf1.description == 'My description'
     assert wf1.instructions == 'My instructions'
-    wf2 = repo.update_workflow(workflow_id=wf2.identifier)
+    wf2 = wfmanager.update_workflow(workflow_id=wf2.workflow_id)
     assert wf2.name == 'The name'
     assert wf2.description == 'The description'
     assert wf2.instructions == 'The instructions'
 
 
-def test_workflow_name(tmpdir):
+def test_workflow_name(wfmanager):
     """Test creating workflows with existing names."""
     # Initialize the repository. Create two workflows, one with name 'Workflow'
     # and the other with name 'Workflow (2)'
-    repo, connector = init(tmpdir)
-    repo.create_workflow(name='Workflow', sourcedir=TEMPLATE_DIR)
-    repo.create_workflow(name='Workflow (2)', sourcedir=TEMPLATE_DIR)
+    wfmanager.create_workflow(name='Workflow', sourcedir=TEMPLATE_DIR)
+    wfmanager.create_workflow(name='Workflow (2)', sourcedir=TEMPLATE_DIR)
     # Creating another workflow with name 'Workflow' will result in a workflow
     # with name 'Workflow (1)' and the 'Workflow (3)'
-    wf = repo.create_workflow(name='Workflow', sourcedir=TEMPLATE_DIR)
+    wf = wfmanager.create_workflow(name='Workflow', sourcedir=TEMPLATE_DIR)
     assert wf.name == 'Workflow (1)'
-    wf = repo.create_workflow(name='Workflow', sourcedir=TEMPLATE_DIR)
+    wf = wfmanager.create_workflow(name='Workflow', sourcedir=TEMPLATE_DIR)
     assert wf.name == 'Workflow (3)'
     # Test using a repository name
-    con = connector.connect()
     pmeta = dict()
     helper.get_unique_name(
-        con=con,
         projectmeta=pmeta,
         sourcedir=None,
-        repourl='https://github.com/scailfin/rob-demo-hello-world.git'
+        repourl='https://github.com/scailfin/rob-demo-hello-world.git',
+        existing_names=[w.name for w in wfmanager.list_workflows()]
     )
     assert pmeta[helper.NAME] == 'Rob Demo Hello World'

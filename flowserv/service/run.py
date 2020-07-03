@@ -48,7 +48,7 @@ class RunService(object):
             Manager for workflow runs
         group_manager: flowserv.model.group..GroupManager
             Manager for workflow groups
-        workflow_repo: flowserv.model.workflow.repo.WorkflowRepository
+        workflow_repo: flowserv.model.workflow.manager.WorkflowManager
             Repository for workflow templates
         ranking_manager: flowserv.model.ranking.manager.RankingManager
             Manager for workflow evaluation rankings

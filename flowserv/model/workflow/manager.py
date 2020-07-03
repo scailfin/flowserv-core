@@ -13,22 +13,17 @@ underlying database.
 
 import errno
 import git
-import json
 import os
 import re
 import shutil
 import tempfile
 
-from flowserv.model.parameter.base import ParameterGroup
-from flowserv.model.run.manager import RunManager
+from flowserv.model.base import WorkflowHandle
 from flowserv.model.template.base import WorkflowTemplate
-from flowserv.model.template.schema import ResultSchema
-from flowserv.model.workflow.base import WorkflowDescriptor, WorkflowHandle
 
 import flowserv.error as err
 import flowserv.util as util
 import flowserv.model.constraint as constraint
-import flowserv.model.parameter.base as pb
 
 
 """ "Default values for the max. attempts parameter and the ID generator
@@ -62,11 +57,11 @@ TARGET = 'target'
 WORKFLOWSPEC = 'workflowSpec'
 
 
-class WorkflowRepository(object):
-    """The workflow repository maintains information that is associated with
-    workflow templates in a given repository.
+class WorkflowManager(object):
+    """The workflow manager maintains information that is associated with
+    workflow templates in a workflow repository.
     """
-    def __init__(self, con, fs, idfunc=None, attempts=None, tmpl_names=None):
+    def __init__(self, db, fs, idfunc=None, attempts=None, tmpl_names=None):
         """Initialize the database connection, and the generator for workflow
         related file names and directory paths. The optional parameters are
         used to configure the identifier function that is used to generate
@@ -77,8 +72,8 @@ class WorkflowRepository(object):
 
         Parameters
         ----------
-        con: DB-API 2.0 database connection
-            Connection to underlying database
+        db: flowserv.model.db.DB
+            Database session.
         fs: flowserv.model.workflow.fs.WorkflowFileSystem
             Generattor for file names and directory paths
         idfunc: func, optional
@@ -89,7 +84,7 @@ class WorkflowRepository(object):
         tmpl_names: list(string), optional
             List of default names for template specification files
         """
-        self.con = con
+        self.db = db
         self.fs = fs
         # Initialize the identifier function and the max. number of attempts
         # that are made to generate a unique identifier.
@@ -149,7 +144,7 @@ class WorkflowRepository(object):
 
         Returns
         -------
-        flowserv.model.workflow.base.WorkflowHandle
+        flowserv.model.base.WorkflowHandle
 
         Raises
         ------
@@ -202,10 +197,10 @@ class WorkflowRepository(object):
         # character, and unique.
         try:
             get_unique_name(
-                con=self.con,
                 projectmeta=projectmeta,
                 sourcedir=sourcedir,
-                repourl=repourl
+                repourl=repourl,
+                existing_names=[wf.name for wf in self.list_workflows()]
             )
         except err.ConstraintViolationError as ex:
             cleanup(
@@ -232,44 +227,20 @@ class WorkflowRepository(object):
             raise ex
         # Insert workflow into database and return descriptor. Database changes
         # are only commited if the respective flag is True.
-        sql = (
-            'INSERT INTO workflow_template(workflow_id, name, description, '
-            'instructions, workflow_spec, parameters, modules, postproc_spec, '
-            'result_schema) '
-            'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
-        )
-        # Serialize values for optional template elements
-        parameters = [p.to_dict() for p in template.parameters.values()]
-        parameters = json.dumps(parameters) if len(parameters) > 0 else None
-        postproc = template.postproc_spec
-        postproc = json.dumps(postproc) if postproc is not None else None
-        modules = template.modules
-        if modules is not None:
-            modules = json.dumps([m.to_dict() for m in modules])
-        schema = template.result_schema
-        schema = json.dumps(schema.to_dict()) if schema is not None else None
-        args = (
-            workflow_id,
-            projectmeta.get(NAME),
-            projectmeta.get(DESCRIPTION),
-            projectmeta.get(INSTRUCTIONS),
-            json.dumps(template.workflow_spec),
-            parameters,
-            modules,
-            postproc,
-            schema
-        )
-        self.con.execute(sql, args)
-        if commit_changes:
-            self.con.commit()
-        return WorkflowHandle(
-            con=self.con,
-            identifier=workflow_id,
+        workflow = WorkflowHandle(
+            workflow_id=workflow_id,
             name=projectmeta.get(NAME),
             description=projectmeta.get(DESCRIPTION),
             instructions=projectmeta.get(INSTRUCTIONS),
-            template=template
+            workflow_spec=template.workflow_spec,
+            parameters=template.parameters,
+            modules=template.modules,
+            postproc_spec=template.postproc_spec,
+            result_schema=template.result_schema
         )
+        self.db.session.add(workflow)
+        self.db.session.commit()
+        return workflow
 
     def create_folder(self, dirfunc):
         """Create a new unique folder in a base directory using the internal
@@ -339,46 +310,47 @@ class WorkflowRepository(object):
         ------
         flowserv.error.UnknownWorkflowError
         """
-        # Get the base directory for the workflow. If the directory does not
-        # exist we assume that the workflow is unknown and raise an error.
+        # Get the workflow and workflow directory. This will raise an error if
+        # the workflow does not exist.
+        workflow = self.get_workflow(workflow_id)
         workflowdir = self.fs.workflow_basedir(workflow_id)
-        if not os.path.isdir(workflowdir):
-            raise err.UnknownWorkflowError(workflow_id)
-        # Create list of SQL statements to delete all records that are
-        # associated with the workflow
-        stmts = list()
-        # -- Workflow Runs ----------------------------------------------------
-        stmts.append(
-            'DELETE FROM run_result_file WHERE run_id IN ('
-            '   SELECT r.run_id FROM workflow_run r WHERE r.workflow_id = ?)'
-        )
-        stmts.append(
-            'DELETE FROM run_error_log WHERE run_id IN ('
-            '   SELECT r.run_id FROM workflow_run r WHERE r.workflow_id = ?)'
-        )
-        stmts.append('DELETE FROM workflow_run WHERE workflow_id = ?')
-        # -- Workflow Group ---------------------------------------------------
-        stmts.append(
-            'DELETE FROM group_member WHERE group_id IN ('
-            '   SELECT g.group_id FROM workflow_group g '
-            '   WHERE g.workflow_id = ?)'
-        )
-        stmts.append(
-            'DELETE FROM group_upload_file WHERE group_id IN ('
-            '   SELECT g.group_id FROM workflow_group g '
-            '   WHERE g.workflow_id = ?)'
-        )
-        stmts.append('DELETE FROM workflow_group WHERE workflow_id = ?')
-        # -- Workflow Template ------------------------------------------------
-        stmts.append('DELETE FROM workflow_postproc WHERE workflow_id = ?')
-        stmts.append('DELETE FROM workflow_template WHERE workflow_id = ?')
-        for sql in stmts:
-            self.con.execute(sql, (workflow_id,))
-        if commit_changes:
-            self.con.commit()
-        # Delete all files that are associated with the workflow
+        # Delete the workflow from the database.
+        self.db.session.delete(workflow)
+        self.db.session.commit()
+        # Delete all files that are associated with the workflow if the changes
+        # to the database were successful.
         if os.path.isdir(workflowdir):
             shutil.rmtree(workflowdir)
+
+    def get_template(self, workflow_id):
+        """Get template for the workflow with the given identifier. Raises
+        an error if no workflow with the identifier exists.
+
+        Parameters
+        ----------
+        workflow_id: string
+            Unique workflow identifier
+
+        Returns
+        -------
+        flowserv.model.template.base.WorkflowTemplate
+
+        Raises
+        ------
+        flowserv.error.UnknownWorkflowError
+        """
+        # Get the workflow from the database. This will raise an error if the
+        # workflow does not exist.
+        workflow = self.get_workflow(workflow_id)
+        # Retuen template handle for the workflow.
+        return WorkflowTemplate(
+            workflow_spec=workflow.workflow_spec,
+            sourcedir=self.fs.workflow_staticdir(workflow_id),
+            parameters=workflow.parameters,
+            modules=workflow.modules,
+            postproc_spec=workflow.postproc_spec,
+            result_schema=workflow.result_schema
+        )
 
     def get_workflow(self, workflow_id):
         """Get handle for the workflow with the given identifier. Raises
@@ -391,7 +363,7 @@ class WorkflowRepository(object):
 
         Returns
         -------
-        flowserv.model.workflow.base.WorkflowHandle
+        flowserv.model.base.WorkflowHandle
 
         Raises
         ------
@@ -399,86 +371,24 @@ class WorkflowRepository(object):
         """
         # Get workflow information from database. If the result is empty an
         # error is raised
-        sql = (
-            'SELECT workflow_id, name, description, instructions, postproc_id,'
-            'workflow_spec, parameters, modules, postproc_spec, result_schema '
-            'FROM workflow_template '
-            'WHERE workflow_id = ?'
-        )
-        row = self.con.execute(sql, (workflow_id,)).fetchone()
-        if row is None:
+        workflow = self.db.session.query(WorkflowHandle)\
+            .filter(WorkflowHandle.workflow_id == workflow_id)\
+            .one_or_none()
+        if workflow is None:
             raise err.UnknownWorkflowError(workflow_id)
-        name = row['name']
-        description = row['description']
-        instructions = row['instructions']
-        postproc_id = row['postproc_id']
-        # Get handles for post-processing workflow run
-        postproc_run = None
-        if postproc_id is not None:
-            run_manager = RunManager(con=self.con, fs=self.fs)
-            postproc_run = run_manager.get_run(run_id=postproc_id)
-        # Create workflow template
-        parameters = None
-        if row['parameters'] is not None:
-            parameters = pb.create_parameter_index(
-                json.loads(row['parameters']),
-                validate=False
-            )
-        modules = None
-        if row['modules'] is not None:
-            modules = list()
-            for m in json.loads(row['modules']):
-                modules.append(ParameterGroup.from_dict(m))
-        postproc_spec = None
-        if row['postproc_spec'] is not None:
-            postproc_spec = json.loads(row['postproc_spec'])
-        result_schema = None
-        if row['result_schema'] is not None:
-            doc = json.loads(row['result_schema'])
-            result_schema = ResultSchema.from_dict(doc)
-        template = WorkflowTemplate(
-            workflow_spec=json.loads(row['workflow_spec']),
-            sourcedir=self.fs.workflow_staticdir(workflow_id),
-            parameters=parameters,
-            modules=modules,
-            postproc_spec=postproc_spec,
-            result_schema=result_schema
-        )
-        # Return workflow handle
-        return WorkflowHandle(
-            con=self.con,
-            identifier=workflow_id,
-            name=name,
-            description=description,
-            instructions=instructions,
-            template=template,
-            postproc_run=postproc_run
-        )
+        return workflow
 
     def list_workflows(self):
         """Get a list of descriptors for all workflows in the repository.
 
         Returns
         -------
-        list(flowserv.model.workflow.base.WorkflowDescriptor)
+        list(flowserv.model.base.WorkflowHandle)
         """
-        sql = 'SELECT workflow_id, name, description, instructions '
-        sql += 'FROM workflow_template '
-        result = list()
-        for row in self.con.execute(sql).fetchall():
-            result.append(
-                WorkflowDescriptor(
-                    identifier=row['workflow_id'],
-                    name=row['name'],
-                    description=row['description'],
-                    instructions=row['instructions']
-                )
-            )
-        return result
+        return self.db.session.query(WorkflowHandle).all()
 
     def update_workflow(
-        self, workflow_id, name=None, description=None, instructions=None,
-        commit_changes=True
+        self, workflow_id, name=None, description=None, instructions=None
     ):
         """Update name, description, and instructions for a given workflow.
 
@@ -495,52 +405,38 @@ class WorkflowRepository(object):
             Optional short description for display in workflow listings
         instructions: string, optional
             Text containing detailed instructions for workflow execution
-        commit_changes: bool, optional
-            Commit changes to database only if True
 
         Returns
         -------
-        flowserv.model.workflow.base.WorkflowHandle
+        flowserv.model.base.WorkflowHandle
 
         Raises
         ------
         flowserv.error.ConstraintViolationError
         flowserv.error.UnknownWorkflowError
         """
-        # Create the SQL update statement depending on the given arguments
-        args = list()
-        sql = 'UPDATE workflow_template SET'
+        # Get the workflow from the database. This will raise an error if the
+        # workflow does not exist.
+        workflow = self.get_workflow(workflow_id)
+        # Update workflow properties.
         if name is not None:
-            # Ensure that the name is unique
-            constraint_sql = 'SELECT name FROM workflow_template '
-            constraint_sql += 'WHERE name = ? AND workflow_id <> ?'
-            constraint.validate_name(
-                name,
-                con=self.con,
-                sql=constraint_sql,
-                args=(name, workflow_id))
-            args.append(name)
-            sql += ' name = ?'
+            # Ensure that the name is a valid name.
+            constraint.validate_name(name)
+            # Ensure that the name is unique.
+            wf = self.db.session.query(WorkflowHandle)\
+                .filter(WorkflowHandle.name == name)\
+                .one_or_none()
+            if wf is not None and wf.workflow_id != workflow_id:
+                msg = "workflow '{}' exists".format(name)
+                raise err.ConstraintViolationError(msg)
+            workflow.name = name
         if description is not None:
-            if len(args) > 0:
-                sql += ','
-            args.append(description)
-            sql += ' description = ?'
+            workflow.description = description
         if instructions is not None:
-            if len(args) > 0:
-                sql += ','
-            args.append(instructions)
-            sql += ' instructions = ?'
-        # If none of the optional arguments was given we do not need to update
-        # anything
-        if len(args) > 0:
-            args.append(workflow_id)
-            sql += ' WHERE workflow_id = ?'
-            self.con.execute(sql, args)
-            if commit_changes:
-                self.con.commit()
-        # Return the handle for the updated workflow
-        return self.get_workflow(workflow_id)
+            workflow.instructions = instructions
+        # Commit changes and return workflow handle.
+        self.db.session.commit()
+        return workflow
 
 
 # -- Helper Methods -----------------------------------------------------------
@@ -603,14 +499,12 @@ def copy_files(projectmeta, projectdir, templatedir):
     util.copy_files(files, templatedir)
 
 
-def get_unique_name(con, projectmeta, sourcedir, repourl):
+def get_unique_name(projectmeta, sourcedir, repourl, existing_names):
     """Ensure that the workflow name in the project metadata is not empty, not
     longer than 512 character, and unique.
 
     Parameters
     ----------
-    con: DB-API 2.0 database connection, optional
-        Connection to underlying database
     projectmeta: dict
         Project metadata information from the project description file.
     sourcedir: string
@@ -618,6 +512,8 @@ def get_unique_name(con, projectmeta, sourcedir, repourl):
         template specification.
     repourl: string
         Git repository that contains the the workflow files
+    existing_names: set
+        Set of names for existing projects.
 
     Raises
     ------
@@ -638,22 +534,16 @@ def get_unique_name(con, projectmeta, sourcedir, repourl):
             name = name.capitalize()
     # Validate that the name is not empty and not too long.
     constraint.validate_name(name)
-    # Ensure that the name is unique
-    sql = 'SELECT name FROM workflow_template WHERE name = ?'
-    if not con.execute(sql, (name,)).fetchone() is None:
+    # Ensure that the name is unique.
+    if name in existing_names:
         # Find a a unique name that matches the template name (int)
         name_templ = name + ' ({})'
-        sql = 'SELECT name FROM workflow_template WHERE name LIKE ?'
-        existing_names = set()
-        for row in con.execute(sql, (name_templ.format('%'),)).fetchall():
-            existing_names.add(row[0])
         count = 1
         while name_templ.format(count) in existing_names:
             count += 1
         name = name_templ.format(count)
         # Re-validate that the name is not too long.
         constraint.validate_name(name)
-    # constraint.validate_name(, con=self.con, sql=sql)
     projectmeta[NAME] = name
 
 

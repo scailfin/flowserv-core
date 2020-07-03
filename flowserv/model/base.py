@@ -10,11 +10,14 @@
 
 import json
 
-from sqlalchemy import Boolean, String, Text
+from sqlalchemy import Boolean, Integer, String, Text
 from sqlalchemy import Column, ForeignKey, UniqueConstraint, Table
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.types import TypeDecorator, Unicode
+
+from flowserv.model.parameter.base import ParameterGroup
+from flowserv.model.template.schema import ResultSchema
 
 import flowserv.model.parameter.base as pb
 import flowserv.util as util
@@ -62,6 +65,46 @@ class WorkflowParameters(TypeDecorator):
         """Create parameter index from JSON serialization."""
         if value is not None:
             return pb.create_parameter_index(json.loads(value), validate=False)
+
+
+class WorkflowModules(TypeDecorator):
+    """Decorator for workflow parameters groups that are stored as serialized
+    Json objects.
+    """
+
+    impl = Unicode
+
+    def process_literal_param(self, value, dialect):
+        """Expects a list of workflow module objects."""
+        if value is not None:
+            return json.dumps([m.to_dict() for m in value])
+
+    process_bind_param = process_literal_param
+
+    def process_result_value(self, value, dialect):
+        """Create workflow module list from JSON serialization."""
+        if value is not None:
+            return [ParameterGroup.from_dict(m) for m in json.loads(value)]
+
+
+class WorkflowResultSchema(TypeDecorator):
+    """Decorator for the workflow result schema that is stored as serialized
+    Json object.
+    """
+
+    impl = Unicode
+
+    def process_literal_param(self, value, dialect):
+        """Expects a workflow result schema object."""
+        if value is not None:
+            return json.dumps(value.to_dict())
+
+    process_bind_param = process_literal_param
+
+    def process_result_value(self, value, dialect):
+        """Create result schema from JSON serialization."""
+        if value is not None:
+            return ResultSchema.from_dict(json.loads(value))
 
 
 # -- Association Tables -------------------------------------------------------
@@ -169,7 +212,7 @@ post-processing step over a set of workflow run results are maintained.
 """
 
 
-class WorkflowTemplate(Base):
+class WorkflowHandle(Base):
     """Each workflow has a unique name, an optional short descriptor and set of
     instructions. The five main components of the template are (i) the workflow
     specification, (ii) the list of parameter declarations, (iii) a optional
@@ -193,12 +236,13 @@ class WorkflowTemplate(Base):
     instructions = Column(Text)
     workflow_spec = Column(JsonObject, nullable=False)
     parameters = Column(WorkflowParameters)
-    modules = Column(Text)
+    modules = Column(WorkflowModules)
     postproc_spec = Column(JsonObject)
-    result_schema = Column(JsonObject)
+    result_schema = Column(WorkflowResultSchema)
 
     # -- Relationships --------------------------------------------------------
     groups = relationship('WorkflowGroup', back_populates='workflow')
+    runs = relationship('WorkflowRun', back_populates='workflow')
 
 
 # -- Workflow Groups ----------------------------------------------------------
@@ -249,8 +293,9 @@ class WorkflowGroup(Base):
         back_populates='groups'
     )
     owner = relationship('User', uselist=False)
+    runs = relationship('WorkflowRun', back_populates='group')
     uploads = relationship('UploadFile', back_populates='group')
-    workflow = relationship('WorkflowTemplate', back_populates='groups')
+    workflow = relationship('WorkflowHandle', back_populates='groups')
 
 
 class UploadFile(Base):
@@ -271,3 +316,80 @@ class UploadFile(Base):
 
     # -- Relationships --------------------------------------------------------
     group = relationship('WorkflowGroup', back_populates='uploads')
+
+
+# Workflow Run ----------------------------------------------------------------
+
+"""Workflow runs maintain the run status, the provided argument values for
+workflow parameters, and timestamps.
+"""
+
+
+class WorkflowRun(Base):
+    """ Workflow runs may be triggered by workflow group members or they
+    represent post-processing workflows. In the latter case the group
+    identifier is None.
+    """
+    # -- Schema ---------------------------------------------------------------
+    __tablename__ = 'workflow_run'
+
+    run_id = Column(
+        String(32),
+        default=util.get_unique_identifier,
+        primary_key=True
+    )
+    workflow_id = Column(
+        String(32),
+        ForeignKey('workflow_template.workflow_id')
+    )
+    group_id = Column(
+        String(32),
+        ForeignKey('workflow_group.group_id'),
+        nullable=True
+    )
+    state = Column(String(8), nullable=False)
+    created_at = Column(String(26), nullable=False)
+    started_at = Column(String(26))
+    ended_at = Column(String(26))
+    arguments = Column(JsonObject)
+
+    # -- Relationships --------------------------------------------------------
+    files = relationship('RunFile', uselist=False)
+    group = relationship('WorkflowGroup', back_populates='runs')
+    log = relationship('RunMessage', uselist=False)
+    workflow = relationship('WorkflowHandle', back_populates='runs')
+
+
+class RunFile(Base):
+    """File resources that are created by successful workflow runs."""
+    # -- Schema ---------------------------------------------------------------
+    __tablename__ = 'run_file'
+
+    resource_id = Column(
+        String(32),
+        default=util.get_unique_identifier,
+        primary_key=True
+    )
+    run_id = Column(
+        String(32),
+        ForeignKey('workflow_run.run_id')
+    )
+    resource_name = Column(Text, nullable=False)
+
+    UniqueConstraint('run_id', 'resource_name')
+
+
+class RunMessage(Base):
+    """Log for messages created by workflow runs. Primarily ised for error
+    messages by now.
+    """
+    # -- Schema ---------------------------------------------------------------
+    __tablename__ = 'run_log'
+
+    run_id = Column(
+        String(32),
+        ForeignKey('workflow_run.run_id'),
+        primary_key=True
+    )
+    pos = Column(Integer, primary_key=True)
+    message = Column(Text, nullable=False)
