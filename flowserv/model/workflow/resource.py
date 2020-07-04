@@ -172,7 +172,8 @@ class ResourceSet(object):
 
         Parameters
         ----------
-        resources: list(flowserv.model.workflow.resource.WorkflowResource), optional
+        resources: list(flowserv.model.workflow.resource.WorkflowResource),
+                default=None
             List of resource handles
 
         Raises

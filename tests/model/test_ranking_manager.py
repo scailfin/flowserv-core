@@ -9,24 +9,20 @@
 """Unit tests for the manager that maintains workflow result rankings."""
 
 import os
-import pytest
 
+from flowserv.model.base import User, WorkflowHandle
 from flowserv.model.group import WorkflowGroupManager
-from flowserv.model.ranking.manager import RankingManager
+from flowserv.model.ranking import RankingManager
 from flowserv.model.run import RunManager
-from flowserv.model.template.schema import ResultColumn, ResultSchema, SortColumn
+from flowserv.model.template.schema import (
+    ResultSchema, ResultColumn, SortColumn
+)
 from flowserv.model.workflow.fs import WorkflowFileSystem
-from flowserv.model.workflow.resource import FSObject, ResourceSet
+from flowserv.model.workflow.resource import ResourceSet, WorkflowResource
 
-import flowserv.error as err
-import flowserv.util as util
 import flowserv.model.parameter.declaration as pd
-
-
-"""Unique identifier for users and workflow templates."""
-USER_1 = '0000'
-WORKFLOW_1 = '0000'
-WORKFLOW_2 = '0001'
+import flowserv.model.workflow.state as st
+import flowserv.util as util
 
 
 """Result schema for the test workflows."""
@@ -52,175 +48,147 @@ SCHEMA_2 = ResultSchema(
 )
 
 
-def init(basedir):
-    """Create a fresh database with one user, two workflows, and three groups
-    for each workflow. Returns a ranking manager, a run manager, as well as the
-    handles for the created groups.
+def init(db, basedir):
+    """Create a fresh database with one user, two workflows, and four groups
+    for each workflow. Each group has two successful runs and one error run.
+    Returns the ranking manager, run manager, and workflows with their groups
+    and runs.
     """
-    # Create new database with three users
-    connector = db.init_db(
-        str(basedir),
-        workflows=[WORKFLOW_1, WORKFLOW_2],
-        users=[USER_1]
-    )
-    con = connector.connect()
-    workflowdir = os.path.join(str(basedir), 'workflows')
-    group_manager = WorkflowGroupManager(
-        con=con,
-        fs=WorkflowFileSystem(workflowdir)
-    )
-    handles = list()
-    for workflow_id in [WORKFLOW_1, WORKFLOW_2]:
-        for i in range(3):
+    user_id = 'U0000'
+    user = User(user_id=user_id, name=user_id, secret=user_id, active=True)
+    db.session.add(user)
+    # Add two workflow templates.
+    workflows = list()
+    for i, schema in enumerate([SCHEMA_1, SCHEMA_2]):
+        w_id = 'W{}'.format(i)
+        wf = WorkflowHandle(
+            workflow_id=w_id,
+            name=w_id,
+            workflow_spec='{}',
+            result_schema=schema
+        )
+        db.session.add(wf)
+        workflows.append(wf)
+    db.session.commit()
+    # Add four groups for each workflow.
+    fs = WorkflowFileSystem(os.path.join(str(basedir), 'workflows'))
+    group_manager = WorkflowGroupManager(db=db, fs=fs)
+    run_manager = RunManager(db=db, fs=fs)
+    objects = list()
+    for wf in workflows:
+        groups = list()
+        for i in range(4):
             g = group_manager.create_group(
-                workflow_id=workflow_id,
-                name='Group {}'.format(i),
-                user_id=USER_1,
+                workflow_id=wf.workflow_id,
+                name='G{}'.format(i),
+                user_id=user_id,
                 parameters=dict(),
                 workflow_spec=dict()
             )
-            handles.append(g)
-    run_manager = RunManager(
-        con=con,
-        fs=WorkflowFileSystem(workflowdir)
-    )
-    return RankingManager(con), run_manager, handles[0:3], handles[3:]
+            runs = list()
+            for j in range(3):
+                r = run_manager.create_run(
+                    workflow_id=wf.workflow_id,
+                    group_id=g.group_id
+                )
+                runs.append(r)
+            groups.append((g, runs))
+        objects.append((wf, groups))
+    return RankingManager(db=db), run_manager, objects
 
 
-def insert_run(
-    workflow_id, group_id, result_schema, run_manager, ranking_manager, data
-):
-    """Insert a successful run with the given result data into the database.
-    Return the ranking after the run was insterted.
-    """
-    r = run_manager.create_run(
-        workflow_id=workflow_id,
-        group_id=group_id,
-        arguments=dict()
+def run_success(run_manager, run, values):
+    """Set given run into success state with the given result data."""
+    rundir = run_manager.fs.run_basedir(
+        workflow_id=run.workflow_id,
+        group_id=run.group_id,
+        run_id=run.run_id
     )
-    rundir = run_manager.fs.run_basedir(workflow_id, group_id, r.identifier)
     filename = os.path.join(rundir, RESULT_FILE_ID)
-    util.write_object(filename=filename, obj=data)
-    ranking_manager.insert_result(
-        workflow_id=workflow_id,
-        result_schema=result_schema,
-        run_id=r.identifier,
-        resources=ResourceSet([
-            FSObject(
-                identifier=util.get_unique_identifier(),
-                name=RESULT_FILE_ID,
-                filename=filename
-            )
-        ])
-    )
-    return ranking_manager.get_ranking(
-        workflow_id=workflow_id,
-        result_schema=result_schema
+    util.write_object(filename=filename, obj=values)
+    ts = util.utc_now()
+    run_manager.update_run(
+        run_id=run.run_id,
+        state=st.StateSuccess(
+            created_at=ts,
+            started_at=ts,
+            finished_at=ts,
+            resources=ResourceSet([
+                WorkflowResource(
+                    identifier=util.get_unique_identifier(),
+                    name=RESULT_FILE_ID
+                )
+            ])
+        )
     )
 
 
-def test_result_rankings(tmpdir):
-    """Test ranking results for multiple workflow runs."""
-    manager, run_manager, handles_1, handles_2 = init(tmpdir)
-    # Register the two workflow schemas
-    manager.register_workflow(workflow_id=WORKFLOW_1, result_schema=SCHEMA_1)
-    manager.register_workflow(workflow_id=WORKFLOW_2, result_schema=SCHEMA_2)
-    # Upload two files for each group in workflow 1 and insert the results into
-    # the ranking database
-    results = list([
-        [handles_1[0].identifier],
-        [handles_1[1].identifier, handles_1[0].identifier],
-        [handles_1[2].identifier, handles_1[1].identifier, handles_1[0].identifier],
-        [handles_1[0].identifier, handles_1[2].identifier, handles_1[1].identifier],
-        [handles_1[1].identifier, handles_1[0].identifier, handles_1[2].identifier],
-        [handles_1[2].identifier, handles_1[1].identifier, handles_1[0].identifier]
-    ])
-    results = results[::-1]
-    for c in [2, 15]:
-        for gh in handles_1:
-            ranking = insert_run(
-                workflow_id=WORKFLOW_1,
-                result_schema=SCHEMA_1,
-                group_id=gh.identifier,
+def test_empty_rankings(database, tmpdir):
+    """The rankings for workflows without completed runs are empty."""
+    manager, _, workflows = init(database, tmpdir)
+    for wf, _ in workflows:
+        assert len(manager.get_ranking(wf)) == 0
+
+
+def test_multi_success_runs_for_one(database, tmpdir):
+    """Test rankings for workflows where each group has multiple successful
+    runs.
+    """
+    manager, run_manager, workflows = init(database, tmpdir)
+    # Set all runs for the first workflow to success. Increase the value for
+    # a counter.
+    wf, groups = workflows[0]
+    count = 0
+    asc_order = list()
+    desc_order = list()
+    for g, runs in groups:
+        for i, r in enumerate(runs):
+            run_success(
                 run_manager=run_manager,
-                ranking_manager=manager,
-                data={'count': c, 'avg': 1.0/float(c), 'name': 'N{}'.format(c)}
+                run=r,
+                values={'count': count, 'avg': 1.0, 'name': r.run_id}
             )
-            c += 1
-            assert [r.group_id for r in ranking] == results.pop()
-    # Include all results
+            count += 1
+            if i == 0:
+                asc_order.append(r.run_id)
+        desc_order.append(r.run_id)
+    ranking = manager.get_ranking(wf)
+    rank_order = [e.run_id for e in ranking]
+    assert rank_order == desc_order[::-1]
     ranking = manager.get_ranking(
-        workflow_id=WORKFLOW_1,
-        result_schema=SCHEMA_1,
+        wf,
+        order_by=[SortColumn(identifier='count', sort_desc=False)]
+    )
+    rank_order = [e.run_id for e in ranking]
+    assert rank_order == asc_order
+
+
+def test_multi_success_runs_for_all(database, tmpdir):
+    """Test rankings for workflows where each group has multiple successful
+    runs.
+    """
+    manager, run_manager, workflows = init(database, tmpdir)
+    # Set all runs for the first workflow to success. Increase the value for
+    # a counter.
+    wf, groups = workflows[0]
+    count = 0
+    count_order = list()
+    for g, runs in groups:
+        for r in runs:
+            run_success(
+                run_manager=run_manager,
+                run=r,
+                values={'count': count, 'avg': 1.0, 'name': r.run_id}
+            )
+            count_order.append(r.run_id)
+            count += 1
+    ranking = manager.get_ranking(wf, include_all=True)
+    rank_order = [e.run_id for e in ranking]
+    assert rank_order == count_order[::-1]
+    ranking = manager.get_ranking(
+        wf,
+        order_by=[SortColumn(identifier='count', sort_desc=False)],
         include_all=True
     )
-    assert len(ranking) == 6
-    group_order = [r.group_id for r in ranking]
-    assert group_order == [
-        handles_1[2].identifier,
-        handles_1[1].identifier,
-        handles_1[0].identifier,
-        handles_1[2].identifier,
-        handles_1[1].identifier,
-        handles_1[0].identifier
-    ]
-    # Upload two files for each group in workflow 2 and insert the results into
-    # the ranking database
-    results = list([
-        [handles_2[0].identifier],
-        [handles_2[0].identifier, handles_2[1].identifier],
-        [handles_2[0].identifier, handles_2[1].identifier, handles_2[2].identifier],
-        [handles_2[0].identifier, handles_2[1].identifier, handles_2[2].identifier],
-        [handles_2[0].identifier, handles_2[1].identifier, handles_2[2].identifier],
-        [handles_2[0].identifier, handles_2[1].identifier, handles_2[2].identifier]
-    ])
-    results = results[::-1]
-    for c in [100, 200]:
-        x = 0
-        for gh in handles_2:
-            ranking = insert_run(
-                workflow_id=WORKFLOW_2,
-                result_schema=SCHEMA_2,
-                group_id=gh.identifier,
-                run_manager=run_manager,
-                ranking_manager=manager,
-                data={'min': c-x, 'max': 1, 'values': {'min': c+x, 'max': c+x}}
-            )
-            x += 10
-            assert [r.group_id for r in ranking] == results.pop()
-        # Error when using the wrong schema
-        with pytest.raises(err.ConstraintViolationError):
-            ranking = insert_run(
-                workflow_id=WORKFLOW_1,
-                result_schema=SCHEMA_1,
-                group_id=gh.identifier,
-                run_manager=run_manager,
-                ranking_manager=manager,
-                data={'min': c-x, 'max': c-x, 'values': {'min': c+x, 'max': c+x}}
-            )
-    # Different sort oder
-    ranking = manager.get_ranking(
-        workflow_id=WORKFLOW_2,
-        result_schema=SCHEMA_2,
-        order_by=[
-            SortColumn(identifier='max', sort_desc=True),
-            SortColumn(identifier='min', sort_desc=True)
-        ]
-    )
-    assert len(ranking) == 3
-    group_order = [r.group_id for r in ranking]
-    assert group_order == [
-        handles_2[2].identifier,
-        handles_2[1].identifier,
-        handles_2[0].identifier
-    ]
-    # Error for unknown sore column
-    with pytest.raises(err.InvalidSortColumnError):
-        manager.get_ranking(
-            workflow_id=WORKFLOW_2,
-            result_schema=SCHEMA_2,
-            order_by=[
-                SortColumn(identifier='max', sort_desc=True),
-                SortColumn(identifier='avg', sort_desc=True)
-            ]
-        )
+    rank_order = [e.run_id for e in ranking]
+    assert rank_order == count_order

@@ -13,7 +13,7 @@ database.
 
 import shutil
 
-from flowserv.model.base import UploadFile, WorkflowGroup, WorkflowHandle
+from flowserv.model.base import UploadFile, GroupHandle, WorkflowHandle
 from flowserv.model.user import UserManager
 
 from flowserv.files import FileHandle
@@ -85,7 +85,7 @@ class WorkflowGroupManager(object):
 
         Returns
         -------
-        flowserv.model.base.WorkflowGroup
+        flowserv.model.base.GroupHandle
 
         Raises
         ------
@@ -94,16 +94,16 @@ class WorkflowGroupManager(object):
         """
         # Ensure that the given name is valid and unique for the workflow
         constraint.validate_name(name)
-        group = self.db.session.query(WorkflowGroup)\
-            .filter(WorkflowGroup.name == name)\
-            .filter(WorkflowGroup.workflow_id == workflow_id)\
+        group = self.db.session.query(GroupHandle)\
+            .filter(GroupHandle.name == name)\
+            .filter(GroupHandle.workflow_id == workflow_id)\
             .one_or_none()
         if group is not None:
             msg = "group '{}' exists".format(name)
             raise err.ConstraintViolationError(msg)
         # Create the group object
         identifier = util.get_unique_identifier()
-        group = WorkflowGroup(
+        group = GroupHandle(
             group_id=identifier,
             name=name,
             workflow_id=workflow_id,
@@ -241,14 +241,14 @@ class WorkflowGroupManager(object):
 
         Returns
         -------
-        flowserv.model.base.WorkflowGroup
+        flowserv.model.base.GroupHandle
 
         Raises
         ------
         flowserv.error.UnknownWorkflowGroupError
         """
-        group = self.db.session.query(WorkflowGroup)\
-            .filter(WorkflowGroup.group_id == group_id)\
+        group = self.db.session.query(GroupHandle)\
+            .filter(GroupHandle.group_id == group_id)\
             .one_or_none()
         if group is None:
             raise err.UnknownWorkflowGroupError(group_id)
@@ -303,13 +303,13 @@ class WorkflowGroupManager(object):
 
         Returns
         -------
-        list(flowserv.model.base.WorkflowGroup)
+        list(flowserv.model.base.GroupHandle)
         """
         # Generate query depending on whether a user and workflow filter is
         # given or not.
         if workflow_id is None and user_id is None:
             # Return list of all groups.
-            return self.db.session.query(WorkflowGroup).all()
+            return self.db.session.query(GroupHandle).all()
         elif workflow_id is None:
             # Return all groups that a user is a member of.
             return self.users.get_user(user_id, active=True).groups
@@ -340,7 +340,7 @@ class WorkflowGroupManager(object):
 
         Returns
         -------
-        flowserv.model.base.WorkflowGroup
+        flowserv.model.base.GroupHandle
 
         Raises
         ------

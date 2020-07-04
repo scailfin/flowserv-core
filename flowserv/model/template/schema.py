@@ -80,6 +80,26 @@ class ResultColumn(object):
         self.path = path
         self.required = required if required is not None else True
 
+    def cast(self, value):
+        """Cast the given value to the data type of the column. Will raise
+        ValueError if type cast is not successful.
+
+        Parameters
+        ----------
+        value: scalar
+            Expects a scalar value that can be converted to the respective
+            column type.
+
+        Returns
+        -------
+        int, float, or string
+        """
+        if self.data_type == pd.DT_INTEGER:
+            return int(value)
+        elif self.data_type == pd.DT_DECIMAL:
+            return float(value)
+        return str(value)
+
     @classmethod
     def from_dict(cls, doc):
         """Get an instance of the column from the dictionary serialization.
@@ -255,8 +275,8 @@ class ResultSchema(object):
         return len(self.columns) == 0
 
     def get_default_order(self):
-        """By default the first column in the schema is used as the sort column.
-        Values in the column are sorted in descending order.
+        """By default the first column in the schema is used as the sort
+        column. Values in the column are sorted in descending order.
 
         Returns
         -------
@@ -266,33 +286,6 @@ class ResultSchema(object):
             return self.order_by
         col = self.columns[0]
         return [SortColumn(identifier=col.identifier, sort_desc=True)]
-
-    def rename(self, prefix=None):
-        """Create a mapping of column names in the schema to a fixed naming
-        patttern where each column is identified by a given prefix and a unique
-        counter values. The result is a dictionary that maps the original column
-        names to the renamed ones. This dictionary can for example be used to
-        generate SQL SELECT clauses when querying workflow results from the
-        respective results table.
-
-        Parameters
-        ----------
-        prefix: string, optional
-            Optional column name prefix. If not given the default prefix 'col'
-            is used
-
-        Returns
-        -------
-        dict
-        """
-        # Use the default prefix if none is given
-        prefix = prefix if prefix is not None else 'col'
-        # Mapping of original column names to their query name.
-        mapping = dict()
-        for col in self.columns:
-            cid = '{}{}'.format(prefix, len(mapping))
-            mapping[col.identifier] = cid
-        return mapping
 
     def to_dict(self):
         """Get dictionary serialization for the result schema object.
@@ -310,9 +303,9 @@ class ResultSchema(object):
 
 class SortColumn(object):
     """The sort column defines part of an ORDER BY statement that is used to
-    sort benchmark results when creating the benchmark leader board. Each object
-    contains a reference to a result column and a flag indicating the sort
-    order for values in the column.
+    sort benchmark results when creating the benchmark leader board. Each
+    object contains a reference to a result column and a flag indicating the
+    sort order for values in the column.
     """
     def __init__(self, identifier, sort_desc=None):
         """Initialize the object properties.

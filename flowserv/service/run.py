@@ -481,40 +481,17 @@ class RunService(object):
         ------
         flowserv.error.ConstraintViolationError
         """
-        # We give special attention to runs that are in SUCCESS state.
+        # Commit new run state.
+        run = self.run_manager.update_run(run_id=run_id, state=state)
         if state.is_success():
-            # Get the current hanlde for the run to have access to the
-            # associated workflow
-            run = self.run_manager.get_run(run_id)
-            # Get the template and the result schema for the workflow that the
-            # run belongs to.
-            workflow = self.workflow_repo.get_workflow(run.workflow_id)
-            template = workflow.get_template()
-            result_schema = template.get_schema()
-            # Insert result values into the ranking if the template defines a
-            # result schema.
-            if result_schema is not None:
-                self.ranking_manager.insert_result(
-                    workflow_id=run.workflow_id,
-                    run_id=run_id,
-                    result_schema=result_schema,
-                    resources=state.resources,
-                    commit_changes=False
-                )
-            # After the results have been successfully added to the ranking
-            # we commit the new run state to the database
-            self.run_manager.update_run(run_id=run_id, state=state)
-            # Execute a post-processing workflow if it is specified in the
-            # template and if the ranking results have changed.
-            postproc_spec = template.postproc_spec
+            result_schema = run.workflow.result_schema
+            postproc_spec = run.workflow.postproc_spec
             if result_schema is not None and postproc_spec is not None:
                 # Get the latest ranking for the workflow and create a
                 # sorted list of run identifier to compare agains the
                 # current post-processing key for the workflow.
-                ranking = self.ranking_manager.get_ranking(
-                    workflow_id=run.workflow_id,
-                    result_schema=result_schema
-                )
+                workflow = run.workflow
+                ranking = self.ranking_manager.get_ranking(workflow=workflow)
                 runs = sorted([r.run_id for r in ranking])
                 # Run post-processing task synchronously if the current
                 # post-processing resources where generated for a different

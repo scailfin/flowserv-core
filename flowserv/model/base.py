@@ -157,7 +157,7 @@ class User(Base):
         cascade='all, delete, delete-orphan'
     )
     groups = relationship(
-        'WorkflowGroup',
+        'GroupHandle',
         secondary=group_member,
         back_populates='members'
     )
@@ -246,7 +246,7 @@ class WorkflowHandle(Base):
 
     # -- Relationships --------------------------------------------------------
     groups = relationship(
-        'WorkflowGroup',
+        'GroupHandle',
         back_populates='workflow',
         cascade='all, delete, delete-orphan'
     )
@@ -275,7 +275,7 @@ parameter declarations.
 """
 
 
-class WorkflowGroup(Base):
+class GroupHandle(Base):
     """A workflow group associates a set of users with a workflow template. It
     allows to define a group-specific set of parameters for the template.
     """
@@ -335,7 +335,7 @@ class UploadFile(Base):
     file_type = Column(String(255))
 
     # -- Relationships --------------------------------------------------------
-    group = relationship('WorkflowGroup', back_populates='uploads')
+    group = relationship('GroupHandle', back_populates='uploads')
 
 
 # Workflow Run ----------------------------------------------------------------
@@ -372,10 +372,11 @@ class RunHandle(Base):
     started_at = Column(String(26))
     ended_at = Column(String(26))
     arguments = Column(JsonObject)
+    result = Column(JsonObject)
 
     # -- Relationships --------------------------------------------------------
     files = relationship('RunFile', cascade='all, delete, delete-orphan')
-    group = relationship('WorkflowGroup', back_populates='runs')
+    group = relationship('GroupHandle', back_populates='runs')
     log = relationship('RunMessage', cascade='all, delete, delete-orphan')
     workflow = relationship('WorkflowHandle', back_populates='runs')
 

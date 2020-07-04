@@ -85,19 +85,6 @@ class WorkflowService(object):
             specfile=specfile,
             commit_changes=False
         )
-        # If the workflow template contains a result schema register the
-        # workflow with the ranking manager
-        result_schema = workflow.get_schema()
-        if result_schema is not None:
-            self.ranking_manager.register_workflow(
-                workflow_id=workflow.identifier,
-                result_schema=result_schema,
-                commit_changes=True
-            )
-        else:
-            # Commit changes to database. Get the connection from the workflow
-            # repository.
-            self.workflow_repo.con.commit()
         # Return serialization og the workflow handle
         return self.serialize.workflow_handle(workflow)
 

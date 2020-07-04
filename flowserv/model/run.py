@@ -203,6 +203,10 @@ class RunManager(object):
         state: flowserv.model.workflow.state.WorkflowState
             New workflow state
 
+        Returns
+        -------
+        flowserv.model.base.RunHandle
+
         Raises
         ------
         flowserv.error.ConstraintViolationError
@@ -244,6 +248,26 @@ class RunManager(object):
             run.files = resources
             run.started_at = state.started_at
             run.ended_at = state.finished_at
+            # Parse run result if the associated workflow has a result schema.
+            result_schema = run.workflow.result_schema
+            if result_schema is not None:
+                # Read the results from the result file that is specified in
+                # the workflow result schema. If the file is not found we
+                # currently do not raise an error.
+                f = self.get_resource_file(run, result_schema.result_file)
+                if os.path.isfile(f):
+                    results = util.read_object(f)
+                    # Create a dictionary of result values.
+                    values = dict()
+                    for col in result_schema.columns:
+                        val = util.jquery(doc=results, path=col.jpath())
+                        col_id = col.identifier
+                        if val is None and col.required:
+                            msg = "missing value for '{}'".format(col_id)
+                            raise err.ConstraintViolationError(msg)
+                        elif val is not None:
+                            values[col_id] = col.cast(val)
+                    run.result = values
         # -- PENDING ----------------------------------------------------------
         elif current_state != st.STATE_PENDING:
             msg = 'cannot set run in pending state to {}'
@@ -251,3 +275,4 @@ class RunManager(object):
         run.state_type = state.type_id
         # Commit changes to database.
         self.db.session.commit()
+        return run
