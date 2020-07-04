@@ -15,7 +15,7 @@ import pytest
 from flowserv.model.workflow.state import (
     StateCanceled, StateError, StatePending, StateRunning, StateSuccess
 )
-from flowserv.model.workflow.resource import FSObject
+from flowserv.model.workflow.resource import WorkflowResource
 
 import flowserv.util as util
 
@@ -144,11 +144,7 @@ def test_running_state(tmpdir):
     util.write_object(filename=filename, obj={'A': 1})
     success = state.success(
         resources=[
-            FSObject(
-                identifier='0',
-                name='results/myfile.json',
-                filename=filename
-            )
+            WorkflowResource(resource_id='0', key='results/myfile.json')
         ]
     )
     assert success.is_success()
@@ -159,8 +155,8 @@ def test_running_state(tmpdir):
     assert success.created_at == state.created_at
     assert success.started_at == state.started_at
     assert len(success.resources) == 1
-    r = success.get_resource(name='results/myfile.json')
-    assert r.name == 'results/myfile.json'
+    r = success.get_resource(key='results/myfile.json')
+    assert r.key == 'results/myfile.json'
 
 
 def test_success_state(tmpdir):
@@ -191,18 +187,15 @@ def test_success_state(tmpdir):
         created_at=created_at,
         started_at=started_at,
         finished_at=finished_at,
-        resources=[
-            FSObject(identifier='0', name='myfile.json', filename=filename)
-        ]
+        resources=[WorkflowResource(resource_id='0', key='myfile.json')]
     )
     assert state.created_at == created_at
     assert state.started_at == started_at
     assert state.finished_at == finished_at
     assert len(state.resources) == 1
     # Get the file resource
-    f = state.get_resource(name='myfile.json')
-    assert f.mimetype == 'application/json'
-    assert util.read_object(filename) == {'A': 1}
+    f = state.get_resource(key='myfile.json')
+    assert f is not None
     assert len(state.resources) == 1
     # Invalid file resource lists
     with pytest.raises(ValueError):
@@ -211,10 +204,7 @@ def test_success_state(tmpdir):
             started_at=started_at,
             finished_at=finished_at,
             resources=[
-                FSObject(identifier='0', name='my.json', filename=filename),
-                FSObject(identifier='1', name='my.json', filename=filename)
+                WorkflowResource(resource_id='0', key='my.json'),
+                WorkflowResource(resource_id='1', key='my.json')
             ]
         )
-    # Delete the file resource
-    f.delete()
-    assert not os.path.exists(f.filename)

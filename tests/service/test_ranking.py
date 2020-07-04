@@ -10,7 +10,7 @@
 
 import os
 
-from flowserv.model.workflow.resource import FSObject
+from flowserv.model.workflow.resource import WorkflowResource
 from flowserv.tests.files import FakeStream
 
 import flowserv.util as util
@@ -64,12 +64,12 @@ def test_workflow_result_ranking(tmpdir):
                 'max_line': 'NO LINE'
             }
             avg_count += inc
-            fso = FSObject(
-                identifier=util.get_unique_identifier(),
-                name='results/analytics.json',
-                filename=FakeStream(data=data).save(
-                    os.path.join(run.rundir, 'results/analytics.json')
-                )
+            FakeStream(data=data).save(
+                os.path.join(run.rundir, 'results/analytics.json')
+            )
+            fso = WorkflowResource(
+                resource_id=util.get_unique_identifier(),
+                key='results/analytics.json'
             )
             api.runs().update_run(
                 run_id=r_id,

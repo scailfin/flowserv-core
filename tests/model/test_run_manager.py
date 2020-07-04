@@ -17,7 +17,7 @@ from flowserv.model.group import WorkflowGroupManager
 from flowserv.model.parameter.base import TemplateParameter
 from flowserv.model.run import RunManager
 from flowserv.model.workflow.fs import WorkflowFileSystem
-from flowserv.model.workflow.resource import FSObject
+from flowserv.model.workflow.resource import WorkflowResource
 
 import flowserv.error as err
 import flowserv.util as util
@@ -250,9 +250,7 @@ def test_successful_run_lifecycle(database, tmpdir):
     rundir = manager.fs.run_basedir(workflow_id, group_id, r.run_id)
     filename = os.path.join(rundir, 'results.json')
     util.write_object(filename=filename, obj={'A': 1})
-    resources = [
-        FSObject(identifier='0001', name='results.json', filename=filename)
-    ]
+    resources = [WorkflowResource(resource_id='0001', key='results.json')]
     state = state.success(resources=resources)
     manager.update_run(run_id=r.run_id, state=state)
     r = manager.get_run(r.run_id)
@@ -264,8 +262,8 @@ def test_successful_run_lifecycle(database, tmpdir):
     assert not state.is_error()
     assert state.is_success()
     assert len(state.resources) == 1
-    f = state.resources.get_resource(name='results.json')
-    filename = manager.get_resource_file(r, f.name)
+    f = state.resources.get_resource(key='results.json')
+    filename = manager.get_resource_file(r, f.key)
     assert util.read_object(filename) == {'A': 1}
     # Delete the run.
     manager.delete_run(run_id=r.run_id)

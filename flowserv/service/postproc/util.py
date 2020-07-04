@@ -54,7 +54,7 @@ def prepare_postproc_data(input_files, ranking, run_manager):
         run = run_manager.get_run(entry.run_id)
         rundir = util.create_dir(os.path.join(basedir, run.identifier))
         for in_key in input_files:
-            fh = run.resources.get_resource(name=in_key)
+            fh = run.resources.get_resource(key=in_key)
             source_file = fh.filename
             target_file = os.path.join(rundir, in_key)
             util.create_dir(os.path.dirname(target_file))

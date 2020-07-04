@@ -414,8 +414,8 @@ class RunHandle(Base):
             for resource in self.files:
                 resource_name = resource.name
                 f = WorkflowResource(
-                    identifier=resource.resource_id,
-                    name=resource_name
+                    resource_id=resource.resource_id,
+                    key=resource_name
                 )
                 resources.append(f)
             return st.StateSuccess(

@@ -13,7 +13,6 @@ import pytest
 import tarfile
 
 import flowserv.model.workflow.resource as wfres
-import flowserv.util as util
 
 
 def deserialize_unknown_object():
@@ -26,62 +25,38 @@ def deserialize_unknown_object():
         wfres.WorkflowResource.from_dict({wfres.LABEL_TYPE: 'unknown'})
 
 
-def test_file_resource_handle(tmpdir):
-    """Unit test for file system resource object handles."""
-    filename = os.path.join(str(tmpdir), 'myfile.json')
-    util.write_object(filename=filename, obj={'A': 1})
-    fs = wfres.FSObject(
-        identifier='ABC',
-        name='results/myfile.json',
-        filename=filename
-    )
-    assert fs.identifier == 'ABC'
-    assert fs.created_at is not None
-    assert fs.size > 0
-    assert fs.name == 'results/myfile.json'
-    assert fs.mimetype == 'application/json'
-    assert os.path.isfile(fs.path)
-    # Serialize and deserialize
-    fh = wfres.WorkflowResource.from_dict(fs.to_dict())
-    assert fh.identifier == fs.identifier
-    assert fh.name == fs.name
-    assert fh.size == fs.size
-    assert fh.mimetype == fs.mimetype
-    assert fh.created_at_local_time() == fs.created_at_local_time()
-
-
 def test_resource_set():
     """Unit test for the resource set."""
     resources = wfres.ResourceSet(resources=[
-        wfres.WorkflowResource(identifier='0', name='MyRes0'),
-        wfres.WorkflowResource(identifier='1', name='MyRes1'),
-        wfres.WorkflowResource(identifier='2', name='MyRes2')
+        wfres.WorkflowResource(resource_id='0', key='MyRes0'),
+        wfres.WorkflowResource(resource_id='1', key='MyRes1'),
+        wfres.WorkflowResource(resource_id='2', key='MyRes2')
     ])
     assert len(resources) == 3
     # Get resources by identifier
-    assert resources.get_resource(identifier='0').name == 'MyRes0'
-    assert resources.get_resource(identifier='1').name == 'MyRes1'
-    assert resources.get_resource(identifier='2').name == 'MyRes2'
+    assert resources.get_resource(identifier='0').key == 'MyRes0'
+    assert resources.get_resource(identifier='1').key == 'MyRes1'
+    assert resources.get_resource(identifier='2').key == 'MyRes2'
     assert resources.get_resource(identifier='3') is None
     # Get resources by name
-    assert resources.get_resource(name='MyRes0').identifier == '0'
-    assert resources.get_resource(name='MyRes1').identifier == '1'
-    assert resources.get_resource(name='MyRes2').identifier == '2'
-    assert resources.get_resource(name='MyRes3') is None
+    assert resources.get_resource(key='MyRes0').resource_id == '0'
+    assert resources.get_resource(key='MyRes1').resource_id == '1'
+    assert resources.get_resource(key='MyRes2').resource_id == '2'
+    assert resources.get_resource(key='MyRes3') is None
     # Error cases
     # - 1: Duplicate identifier
     with pytest.raises(ValueError):
         wfres.ResourceSet(resources=[
-            wfres.WorkflowResource(identifier='0', name='MyRes0'),
-            wfres.WorkflowResource(identifier='1', name='MyRes1'),
-            wfres.WorkflowResource(identifier='0', name='MyRes2')
+            wfres.WorkflowResource(resource_id='0', key='MyRes0'),
+            wfres.WorkflowResource(resource_id='1', key='MyRes1'),
+            wfres.WorkflowResource(resource_id='0', key='MyRes2')
         ])
     # - 2: Duplicate name
     with pytest.raises(ValueError):
         wfres.ResourceSet(resources=[
-            wfres.WorkflowResource(identifier='0', name='MyRes0'),
-            wfres.WorkflowResource(identifier='1', name='MyRes0'),
-            wfres.WorkflowResource(identifier='2', name='MyRes2')
+            wfres.WorkflowResource(resource_id='0', key='MyRes0'),
+            wfres.WorkflowResource(resource_id='1', key='MyRes0'),
+            wfres.WorkflowResource(resource_id='2', key='MyRes2')
         ])
 
 
@@ -91,28 +66,26 @@ def test_targzip(tmpdir):
     TAR_DIR = os.path.join(DIR, '../../.files/')
     resources = list()
     resources.append(
-        wfres.FSObject(
-            identifier='0',
-            name='workflow',
-            filename=os.path.join(TAR_DIR, 'benchmark')
+        wfres.WorkflowResource(
+            resource_id='0',
+            key='workflows'
         )
     )
     resources.append(
-        wfres.FSObject(
-            identifier='1',
-            name='schema.json',
-            filename=os.path.join(TAR_DIR, 'schema.json')
+        wfres.WorkflowResource(
+            resource_id='1',
+            key='schema.json'
         )
     )
     out_file = os.path.join(str(tmpdir), 'run.tar.gz')
     with open(out_file, 'wb') as f:
-        f.write(wfres.ResourceSet(resources).targz().getvalue())
+        f.write(wfres.ResourceSet(resources).targz(TAR_DIR).getvalue())
     tar = tarfile.open(out_file, mode='r:gz')
     # Validate that there are 5 entries in the tar file
     names = list()
     for member in tar.getmembers():
         names.append(member.name)
-    assert len(names) == 37
-    assert 'workflow/helloworld/code/analyze.py' in names
-    assert 'workflow/helloworld/data/names.txt' in names
+    assert len(names) == 7
+    assert 'workflows/helloworld/code/helloworld.py' in names
+    assert 'workflows/helloworld/data/names.txt' in names
     assert 'schema.json' in names

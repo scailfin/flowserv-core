@@ -115,8 +115,8 @@ def run_success(run_manager, run, values):
             finished_at=ts,
             resources=ResourceSet([
                 WorkflowResource(
-                    identifier=util.get_unique_identifier(),
-                    name=RESULT_FILE_ID
+                    resource_id=util.get_unique_identifier(),
+                    key=RESULT_FILE_ID
                 )
             ])
         )

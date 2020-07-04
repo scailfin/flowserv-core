@@ -21,7 +21,7 @@ from functools import partial
 from multiprocessing import Lock, Pool
 
 from flowserv.controller.base import WorkflowController
-from flowserv.model.workflow.resource import FSObject
+from flowserv.model.workflow.resource import WorkflowResource
 from flowserv.model.workflow.state import StateSuccess
 
 import flowserv.controller.serial.engine as serial
@@ -124,8 +124,8 @@ class RemoteWorkflowController(WorkflowController):
         process is stated (the state will therefore be RUNNING).
 
         The set of arguments is not further validated. It is assumed that the
-        validation has been performed by the calling code (e.g., the run service
-        manager).
+        validation has been performed by the calling code (e.g., the run
+        service manager).
 
         If the state of the run handle is not pending, an error is raised.
 
@@ -134,8 +134,8 @@ class RemoteWorkflowController(WorkflowController):
         run: flowserv.model.base.RunHandle
             Handle for the run that is being executed.
         template: flowserv.model.template.base.WorkflowTemplate
-            Workflow template containing the parameterized specification and the
-            parameter declarations.
+            Workflow template containing the parameterized specification and
+            the parameter declarations.
         arguments: dict(flowserv.model.parameter.value.TemplateArgument)
             Dictionary of argument values for parameters in the template.
         run_async: bool, optional
@@ -308,10 +308,9 @@ def run_workflow(run_id, rundir, workflow_id, state, output_files, client):
                 # Download the respective result file first
                 target = os.path.join(rundir, resource_name)
                 client.download_file(workflow_id, resource_name, target)
-                f = FSObject(
-                    identifier=util.get_unique_identifier(),
-                    name=resource_name,
-                    filename=target
+                f = WorkflowResource(
+                    resource_id=util.get_unique_identifier(),
+                    key=resource_name
                 )
                 files.append(f)
             # Create a modified workflow state handle that contains the wrkflow

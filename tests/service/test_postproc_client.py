@@ -13,7 +13,7 @@ processing workflow.
 
 import os
 
-from flowserv.model.workflow.resource import FSObject
+from flowserv.model.workflow.resource import WorkflowResource
 from flowserv.service.postproc.client import Runs
 from flowserv.tests.files import FakeStream
 
@@ -67,19 +67,19 @@ def test_workflow_postproc_client(tmpdir):
             }
             avg_count += 10.0
             line += 'A'
-            f1 = FSObject(
-                identifier=util.get_unique_identifier(),
-                name='results/analytics.json',
-                filename=FakeStream(data=data).save(
-                    os.path.join(run.rundir, 'results/analytics.json')
-                )
+            FakeStream(data=data).save(
+                os.path.join(run.rundir, 'results/analytics.json')
             )
-            f2 = FSObject(
-                identifier=util.get_unique_identifier(),
-                name='results/greeting.txt',
-                filename=FakeStream(data=['Hi Alice', 'Hi Bob']).save(
-                    os.path.join(run.rundir, 'results/greeting.txt')
-                )
+            f1 = WorkflowResource(
+                resource_id=util.get_unique_identifier(),
+                key='results/analytics.json',
+            )
+            FakeStream(data=['Hi Alice', 'Hi Bob']).save(
+                os.path.join(run.rundir, 'results/greeting.txt')
+            )
+            f2 = WorkflowResource(
+                resource_id=util.get_unique_identifier(),
+                key='results/greeting.txt'
             )
             api.runs().update_run(
                 run_id=r_id,

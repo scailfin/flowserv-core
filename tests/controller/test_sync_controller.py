@@ -76,7 +76,7 @@ def test_run_helloworld_sync(tmpdir):
     assert os.path.isdir(run.rundir)
     # There is exactly one result file
     assert len(state.resources) == 1
-    greetings_file = state.resources.get_resource(name='results/greetings.txt')
+    greetings_file = state.resources.get_resource(key='results/greetings.txt')
     greetings = list()
     with open(greetings_file.filename, 'r') as f:
         for line in f:

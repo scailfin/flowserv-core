@@ -21,7 +21,7 @@ from multiprocessing import Lock, Pool
 from flowserv.controller.base import WorkflowController
 from flowserv.controller.serial.workflow import SerialWorkflow
 from flowserv.model.template.base import WorkflowTemplate
-from flowserv.model.workflow.resource import FSObject
+from flowserv.model.workflow.resource import WorkflowResource
 
 import flowserv.util as util
 import flowserv.model.template.parameter as tp
@@ -366,10 +366,9 @@ def run_workflow(run_id, rundir, state, output_files, steps, verbose):
         # Create dictionary of output files
         files = list()
         for resource_name in output_files:
-            f = FSObject(
-                identifier=util.get_unique_identifier(),
-                name=resource_name,
-                filename=os.path.join(rundir, resource_name)
+            f = WorkflowResource(
+                resource_id=util.get_unique_identifier(),
+                key=resource_name
             )
             files.append(f)
         # Workflow executed successfully

@@ -12,45 +12,30 @@ by workflow post-processing steps.
 """
 
 import io
+import os
 import tarfile
 
-from flowserv.files import FileHandle
-
-
-"""Labels for handle serializations."""
-LABEL_FILEPATH = 'path'
-LABEL_ID = 'id'
-LABEL_NAME = 'name'
-LABEL_TYPE = 'type'
-
-
-# -- Resource Handles ---------------------------------------------------------
 
 class WorkflowResource(object):
-    """Abstract handle for resources that are created as the result of
-    successful workflow runs. Each resource has a unique identifier and a
-    unique name. The resource identifier is used to identify a particular
-    version of the resource. Multiple versions of a resource may be the result
-    of repeated workflow execution (or post-processing). The resource name
-    is assumed to be the human-readable persistent identifier that is used by
-    the user to identify the current version of a resource.
-
-    Implementations of this class need to provide a method to serialize class
-    instances. For each resource the static from_dict() method in this base
-    class should be extended accordingly.
+    """Handle for resources that are created by successful workflow runs. Each
+    resource has a unique identifier and a unique key. The resource identifier
+    is used to identify a particular version of the resource. Multiple versions
+    of a resource may be the result of repeated workflow execution. The
+    resource key is assumed to be the human-readable persistent identifier that
+    is used by the user to identify the current version of a resource.
     """
-    def __init__(self, identifier, name):
+    def __init__(self, resource_id, key):
         """Initialize the unique object identifier.
 
         Parameters
         ----------
-        identifier: string
+        resource_id: string
             Unique object identifier
-        name: string
+        key: string
             Human-readable persistent identifier for the resource.
         """
-        self.identifier = identifier
-        self.name = name
+        self.resource_id = resource_id
+        self.key = key
 
     @classmethod
     def from_dict(cls, doc):
@@ -72,11 +57,10 @@ class WorkflowResource(object):
         ------
         ValueError
         """
-        r_type = doc.get(LABEL_TYPE)
-        if r_type == 'FSObject':
-            return FSObject.from_dict(doc)
-        else:
-            raise ValueError("unknown resource type '{}'".format(r_type))
+        return WorkflowResource(
+            resource_id=doc['id'],
+            key=doc['key']
+        )
 
     def to_dict(self):
         """Create dictionary serialization of the resource handle.
@@ -86,87 +70,17 @@ class WorkflowResource(object):
         dict
         """
         return {
-            LABEL_ID: self.identifier,
-            LABEL_NAME: self.name
+            'id': self.resource_id,
+            'key': self.key
         }
 
-
-class FSObject(FileHandle):
-    """Handle for file resources that are created as the result of a workflow
-    run. Each workflow specification is expected to contain a list of names
-    that identify the files that are generated as the result of a successful
-    workflow run. These files are kept in the directory of the respective
-    workflow run.
-
-    File resources have a unique internal identifier and a resource name. The
-    resource name is a relative file path that identifies the result file in
-    the run folder. The associated file path provides access to the file on
-    disk. Resource files are maintained by the workflow backend in a persistent
-    manner in order to be accessible as long as information about the workflow
-    run is maintained by the workflow engine.
-    """
-    def __init__(self, identifier, name, filename):
-        """Initialize the resource identifier, name and the file handle that
-        provides access to the file on disk.
-
-        Parameters
-        ----------
-        identifier: string
-            Resource identifier that is unique among all resources that are
-            created within a single workflow run.
-        name: string
-            Relative path name that references the resource file in the run
-            directory
-        file_path: string
-            Path to access the resource file on disk
-        """
-        super(FSObject, self).__init__(
-            identifier=identifier,
-            name=name,
-            filename=filename
-        )
-
-    @classmethod
-    def from_dict(cls, doc):
-        """Get object instance from serialization.
-
-        Parameters
-        ----------
-        doc: dict
-            Dictionary serialization for workflow resource
-
-        Returns
-        -------
-        """
-        return cls(
-            identifier=doc[LABEL_ID],
-            name=doc[LABEL_NAME],
-            filename=doc[LABEL_FILEPATH]
-        )
-
-    def to_dict(self):
-        """Create dictionary serialization for the file resource handle.
-
-        Returns
-        -------
-        dict
-        """
-        return {
-            LABEL_ID: self.identifier,
-            LABEL_NAME: self.name,
-            LABEL_FILEPATH: self.path,
-            LABEL_TYPE: 'FSObject'
-        }
-
-
-# -- Resource Sets ------------------------------------------------------------
 
 class ResourceSet(object):
-    """Set of workflow resources that have unique identifier and unique names.
-    Allows retrieval of resources either by name or identifier.
+    """Set of workflow resources that have unique identifier and unique keyes.
+    Allows retrieval of resources either by key or identifier.
     """
     def __init__(self, resources=None):
-        """Initialize the resource listing. Ensures that identifier and names
+        """Initialize the resource listing. Ensures that identifier and keys
         are unique. Raises ValueError if either uniqueness constraint is
         violated.
 
@@ -181,18 +95,18 @@ class ResourceSet(object):
         ValueError
         """
         if resources is not None:
-            # Verify that the resource names and identifiers are unique
+            # Verify that the resource keys and identifiers are unique
             identifiers = set()
-            names = set()
+            keys = set()
             for r in resources:
-                if r.identifier in identifiers:
+                if r.resource_id in identifiers:
                     msg = "duplicate identifier '{}' in resource list"
-                    raise ValueError(msg.format(r.identifier))
-                identifiers.add(r.identifier)
-                if r.name in names:
-                    msg = "duplicate name '{}' in resource list"
-                    raise ValueError(msg.format(r.name))
-                names.add(r.name)
+                    raise ValueError(msg.format(r.resource_id))
+                identifiers.add(r.resource_id)
+                if r.key in keys:
+                    msg = "duplicate key '{}' in resource list"
+                    raise ValueError(msg.format(r.key))
+                keys.add(r.key)
             self.elements = resources
         else:
             self.elements = list()
@@ -215,15 +129,15 @@ class ResourceSet(object):
         """
         return len(self.elements)
 
-    def get_resource(self, identifier=None, name=None):
-        """Get the resource with the given identifier or name.
+    def get_resource(self, identifier=None, key=None):
+        """Get the resource with the given identifier or key.
 
         Parameters
         ----------
-        identifier: string, optional
-            unique resource version identifier
-        name: string, optional
-            Resource name
+        identifier: string, default=None
+            Unique resource version identifier.
+        key: string, default=None
+            Unique resource key.
 
         Returns
         -------
@@ -231,15 +145,15 @@ class ResourceSet(object):
         """
         for r in self.elements:
             if identifier is not None:
-                match = r.identifier == identifier
+                match = r.resource_id == identifier
             else:
                 match = True
-            if match and name is not None:
-                match = r.name == name
+            if match and key is not None:
+                match = match and r.key == key
             if match:
                 return r
 
-    def targz(self):
+    def targz(self, basedir):
         """Create a gzipped tar file containing all files in the given resource
         set.
 
@@ -250,7 +164,8 @@ class ResourceSet(object):
         file_out = io.BytesIO()
         tar_handle = tarfile.open(fileobj=file_out, mode='w:gz')
         for r in self.elements:
-            tar_handle.add(name=r.filename, arcname=r.name)
+            filename = os.path.join(basedir, r.key)
+            tar_handle.add(name=filename, arcname=r.key)
         tar_handle.close()
         file_out.seek(0)
         return file_out

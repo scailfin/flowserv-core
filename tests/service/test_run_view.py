@@ -11,7 +11,7 @@
 import os
 import pytest
 
-from flowserv.model.workflow.resource import FSObject
+from flowserv.model.workflow.resource import WorkflowResource
 from flowserv.tests.files import FakeStream
 
 import flowserv.error as err
@@ -61,17 +61,17 @@ def test_multi_workflow_run(tmpdir):
                 run = api.run_manager.get_run(r_id)
                 fn = os.path.join(run.rundir, 'results/data.json')
                 data = {'group': g_id, 'run': r_id}
-                f1 = FSObject(
+                FakeStream(data=data).save(fn)
+                f1 = WorkflowResource(
                     identifier=util.get_unique_identifier(),
-                    name='results/data.json',
-                    filename=FakeStream(data=data).save(fn)
+                    name='results/data.json'
                 )
                 fn = os.path.join(run.rundir, 'values.txt')
                 data = [g_id, r_id]
-                f2 = FSObject(
+                FakeStream(data=data, format='txt/plain').save(fn)
+                f2 = WorkflowResource(
                     identifier=util.get_unique_identifier(),
-                    name='values.txt',
-                    filename=FakeStream(data=data, format='txt/plain').save(fn)
+                    name='values.txt'
                 )
                 api.runs().update_run(
                     run_id=r_id,
@@ -196,10 +196,10 @@ def test_workflow_run_view(tmpdir):
     engine.start(r_id)
     run = api.run_manager.get_run(r_id)
     filename = os.path.join(run.rundir, 'results/data.json')
-    f = FSObject(
+    FakeStream(data={'a': 1}).save(filename)
+    f = WorkflowResource(
         identifier=util.get_unique_identifier(),
-        name='results/data.json',
-        filename=FakeStream(data={'a': 1}).save(filename)
+        name='results/data.json'
     )
     api.runs().update_run(
         run_id=r_id,

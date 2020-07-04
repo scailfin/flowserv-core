@@ -17,7 +17,7 @@ import os
 from docker.errors import ContainerError, ImageNotFound, APIError
 
 from flowserv.controller.serial.engine import SerialWorkflowEngine
-from flowserv.model.workflow.resource import FSObject
+from flowserv.model.workflow.resource import WorkflowResource
 
 import flowserv.util as util
 import flowserv.model.workflow.state as serialize
@@ -103,10 +103,9 @@ def docker_run(run_id, rundir, state, output_files, steps, verbose):
     files = list()
     for resource_name in output_files:
         try:
-            f = FSObject(
-                identifier=util.get_unique_identifier(),
-                name=resource_name,
-                filename=os.path.join(rundir, resource_name)
+            f = WorkflowResource(
+                resource_id=util.get_unique_identifier(),
+                key=resource_name
             )
         except (OSError, IOError) as ex:
             logging.error(ex)

@@ -244,7 +244,7 @@ class RunManager(object):
                 raise err.ConstraintViolationError(msg.format(current_state))
             resources = list()
             for resource in state.resources:
-                resources.append(RunFile(name=resource.name))
+                resources.append(RunFile(name=resource.key))
             run.files = resources
             run.started_at = state.started_at
             run.ended_at = state.finished_at

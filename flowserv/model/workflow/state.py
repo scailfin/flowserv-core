@@ -427,19 +427,21 @@ class StateSuccess(WorkflowState):
         self.finished_at = finished_at if finished_at is not None else utc_now()  # noqa: E501
         self.resources = ResourceSet(resources)
 
-    def get_resource(self, identifier=None, name=None):
+    def get_resource(self, identifier=None, key=None):
         """Get the file resource with the given identifier or name.
 
         Parameters
         ----------
-        name: string
-            Resource name
+        identifier: string, default=None
+            Unique resource version identifier.
+        key: string, default=None
+            Unique resource key.
 
         Returns
         -------
         flowserv.model.workflow.resource.WorkflowResource
         """
-        return self.resources.get_resource(identifier=identifier, name=name)
+        return self.resources.get_resource(identifier=identifier, key=key)
 
 
 # -- Serialization/Deserialization helper methods -----------------------------

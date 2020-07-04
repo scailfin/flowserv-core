@@ -11,7 +11,7 @@
 import os
 import pytest
 
-from flowserv.model.workflow.resource import FSObject
+from flowserv.model.workflow.resource import WorkflowResource
 
 import flowserv.util as util
 import flowserv.model.workflow.state as state
@@ -99,16 +99,16 @@ def test_success_state(tmpdir):
         started_at=util.to_datetime(STARTED_AT),
         finished_at=util.to_datetime(FINISHED_AT),
         resources=[
-            FSObject(identifier='0', name='myfile1', filename=filename),
-            FSObject(identifier='1', name='myfile2', filename=filename)
+            WorkflowResource(resource_id='0', key='myfile1',),
+            WorkflowResource(resource_id='1', key='myfile2')
         ]
     )
     s = state.deserialize_state(state.serialize_state(s))
     assert s.is_success()
-    assert s.get_resource(name='myfile1').identifier == '0'
-    assert s.get_resource(name='myfile2').identifier == '1'
-    assert s.get_resource(identifier='0').name == 'myfile1'
-    assert s.get_resource(identifier='1').name == 'myfile2'
+    assert s.get_resource(key='myfile1').resource_id == '0'
+    assert s.get_resource(key='myfile2').resource_id == '1'
+    assert s.get_resource(identifier='0').key == 'myfile1'
+    assert s.get_resource(identifier='1').key == 'myfile2'
     assert len(s.resources) == 2
     validate_date(s.created_at, util.to_datetime(CREATED_AT))
     validate_date(s.started_at, util.to_datetime(STARTED_AT))
