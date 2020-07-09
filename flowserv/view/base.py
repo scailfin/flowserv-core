@@ -15,7 +15,7 @@ class Serializer(object):
     of labels.
     """
     def __init__(self, labels, override_labels=None):
-        """Initialize the disctionary of serialization labels.
+        """Initialize the dictionary of serialization labels.
 
         Parameters
         ----------

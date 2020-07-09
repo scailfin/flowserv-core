@@ -19,11 +19,10 @@ import flowserv.error as err
 import flowserv.util as util
 
 
-def init_db(api_factory, hello_world):
-    """Initialize a new databse with two users, one group and a succesful run.
-    Returns API instance, user identifier, group identifier and run identifier.
+def init_db(api, hello_world):
+    """Initialize a new database with two users, one group and a successful
+    run. Returns user identifier, group identifier and run identifier.
     """
-    api = api_factory()
     user_1 = create_user(api)
     user_2 = create_user(api)
     workflow_id = hello_world(api)['id']
@@ -45,40 +44,52 @@ def init_db(api_factory, hello_world):
             files=['results/data.json', 'values.txt']
         )
     )
-    return api, user_1, user_2, group_id, run_id
+    return user_1, user_2, group_id, run_id
 
 
-def test_access_run_result_files(api_factory, hello_world):
+def test_access_run_result_files(service, hello_world):
     """Test accessing run result files."""
-    # Initialize the database and the API.
-    api, user_1, user_2, group_id, run_id = init_db(api_factory, hello_world)
-    # Get the run handle.
-    doc = api.runs().get_run(run_id=run_id, user_id=user_1)
-    # Create disctionary from run handle that maps result file names to the
-    # file identifier.
-    files = dict()
-    for fh in doc['files']:
-        files[fh['name']] = fh['id']
-    # Read content of result files.
-    fh = api.runs().get_result_file(run_id, files['results/data.json'], user_1)
-    results = util.read_object(fh.filename)
-    assert results == {'group': group_id, 'run': run_id}
-    fh = api.runs().get_result_file(run_id, files['values.txt'], user_1)
-    values = util.read_object(fh.filename)
-    assert values == '{} {}'.format(group_id, run_id)
-    # Error when user 2 attempts to read file.
-    with pytest.raises(err.UnauthorizedAccessError):
-        api.runs().get_result_file(run_id, files['results/data.json'], user_2)
-    # Get an archive containing the result files.
+    # -- Setup ----------------------------------------------------------------
+    with service() as api:
+        user_1, user_2, group_id, run_id = init_db(api, hello_world)
+    # -- Read result files ----------------------------------------------------
+    with service() as api:
+        # Map file names to file handles.
+        r = api.runs().get_run(run_id=run_id, user_id=user_1)
+        files = dict()
+        for fh in r['files']:
+            files[fh['name']] = fh['id']
+        # Read content of result files.
+        fh = api.runs().get_result_file(
+            run_id=run_id,
+            file_id=files['results/data.json'],
+            user_id=user_1
+        )
+        results = util.read_object(fh.filename)
+        assert results == {'group': group_id, 'run': run_id}
+        fh = api.runs().get_result_file(run_id, files['values.txt'], user_1)
+        values = util.read_object(fh.filename)
+        assert values == '{} {}'.format(group_id, run_id)
+    # -- Error when user 2 attempts to read file ------------------------------
+    with service() as api:
+        with pytest.raises(err.UnauthorizedAccessError):
+            api.runs().get_result_file(
+                run_id=run_id,
+                file_id=files['results/data.json'],
+                user_id=user_2
+            )
 
 
-def test_result_archive(api_factory, hello_world):
+def test_result_archive(service, hello_world):
     """Test getting an archive of run results."""
-    # Initialize the database and the API.
-    api, user_1, user_2, group_id, run_id = init_db(api_factory, hello_world)
-    archive = api.runs().get_result_archive(run_id=run_id, user_id=user_1)
-    tar = tarfile.open(fileobj=archive, mode='r:gz')
-    members = [t.name for t in tar.getmembers()]
-    assert len(members) == 2
-    assert 'results/data.json' in members
-    assert 'values.txt' in members
+    # -- Setup ----------------------------------------------------------------
+    with service() as api:
+        user_1, user_2, group_id, run_id = init_db(api, hello_world)
+    # -- Get result archive ---------------------------------------------------
+    with service() as api:
+        archive = api.runs().get_result_archive(run_id=run_id, user_id=user_1)
+        tar = tarfile.open(fileobj=archive, mode='r:gz')
+        members = [t.name for t in tar.getmembers()]
+        assert len(members) == 2
+        assert 'results/data.json' in members
+        assert 'values.txt' in members

@@ -79,9 +79,7 @@ class WorkflowService(object):
         flowserv.error.InvalidTemplateError
         ValueError
         """
-        # Create workflow in the repository to get the workflow handle. Do not
-        # commit changes in the database yet since we may need to add the
-        # ranking result table.
+        # Create workflow in the repository to get the workflow handle.
         workflow = self.workflow_repo.create_workflow(
             name=name,
             description=description,

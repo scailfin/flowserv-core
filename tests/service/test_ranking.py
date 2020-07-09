@@ -14,28 +14,33 @@ from flowserv.tests.service import create_ranking, create_user
 import flowserv.tests.serialize as serialize
 
 
-def test_workflow_result_ranking(api_factory, hello_world):
+def test_workflow_result_ranking(service, hello_world):
     """Test creating rankings from multiple workflow runs."""
-    api = api_factory()
-    user_1 = create_user(api)
-    workflow_id = hello_world(api)['id']
-    # Create four groups with a successful run each.
-    groups = create_ranking(api, workflow_id, user_1, 4)
-    # Get ranking in decreasing order of avg_count.
-    doc = api.workflows().get_ranking(
-        workflow_id=workflow_id,
-        order_by=[SortColumn('avg_count')],
-        include_all=False
-    )
-    serialize.validate_ranking(doc)
-    ranking = [e['group']['id'] for e in doc['ranking']]
-    assert groups == ranking[::-1]
-    # Get ranking in decreasing order of max_len.
-    doc = api.workflows().get_ranking(
-        workflow_id=workflow_id,
-        order_by=[SortColumn('max_len')],
-        include_all=False
-    )
-    serialize.validate_ranking(doc)
-    ranking = [e['group']['id'] for e in doc['ranking']]
-    assert groups == ranking
+    # -- Setup ----------------------------------------------------------------
+    #
+    # Create four groups for the 'Hello World' workflow with one successful
+    # run each.
+    with service() as api:
+        user_1 = create_user(api)
+        workflow_id = hello_world(api)['id']
+        groups = create_ranking(api, workflow_id, user_1, 4)
+    # -- Get ranking in decreasing order of avg_count -------------------------
+    with service() as api:
+        r = api.workflows().get_ranking(
+            workflow_id=workflow_id,
+            order_by=[SortColumn('avg_count')],
+            include_all=False
+        )
+        serialize.validate_ranking(r)
+        ranking = [e['group']['id'] for e in r['ranking']]
+        assert groups == ranking[::-1]
+    # -- Get ranking in decreasing order of max_len ---------------------------
+    with service() as api:
+        r = api.workflows().get_ranking(
+            workflow_id=workflow_id,
+            order_by=[SortColumn('max_len')],
+            include_all=False
+        )
+        serialize.validate_ranking(r)
+        ranking = [e['group']['id'] for e in r['ranking']]
+        assert groups == ranking

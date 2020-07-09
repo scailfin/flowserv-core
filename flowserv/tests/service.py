@@ -16,7 +16,21 @@ import flowserv.util as util
 
 
 def create_group(api, workflow_id, users):
-    """Create a new group for the given workflow."""
+    """Create a new group for the given workflow.
+
+    Parameters
+    ----------
+    api: flowserv.service.api.API
+        Service API manager.
+    workflow_id: string
+        Unique workflow identifier.
+    users: list(string)
+        Identifier for group members.
+
+    Returns
+    -------
+    string
+    """
     doc = api.groups().create_group(
         workflow_id=workflow_id,
         name=util.get_unique_identifier(),
@@ -31,6 +45,21 @@ def create_ranking(api, workflow_id, user_id, count):
     successful run each. Returns the group identifier in order of creation.
     The avg_len value is increased as groups are created and the max_len value
     is decreased.
+
+    Parameters
+    ----------
+    api: flowserv.service.api.API
+        Service API manager.
+    workflow_id: string
+        Unique workflow identifier.
+    user_id: string
+        Identifier for the group owner.
+    count: int
+        Number of groups that are created for the workflow.
+
+    Returns
+    -------
+    list(string)
     """
     groups = list()
     for i in range(count):
@@ -66,6 +95,11 @@ def create_workflow(api, sourcedir, specfile=None):
 def create_user(api):
     """Register a new user with the API and return the unique user identifier.
 
+    Parameters
+    ----------
+    api: flowserv.service.api.API
+        Service API manager.
+
     Returns
     -------
     string
@@ -80,7 +114,22 @@ def create_user(api):
 
 
 def start_hello_world(api, group_id, user_id):
-    """Start a new run for the Hello World template."""
+    """Start a new run for the Hello World template. Returns the run identifier
+    and the identifier for the input file.
+
+    Parameters
+    ----------
+    api: flowserv.service.api.API
+        Service API manager.
+    group_id: string
+        Unique group identifier.
+    user_id: string
+        Unique user identifier.
+
+    Returns
+    -------
+    string, string
+    """
     file_id = api.uploads().upload_file(
         group_id=group_id,
         file=FakeStream(data=['Alice', 'Bob'], format='txt/plain'),
@@ -114,6 +163,18 @@ def upload_file(api, group_id, user_id, file):
 
 
 def write_results(api, run_id, files):
+    """Create a reult file for a given workflow run.
+
+
+    Parameters
+    ----------
+    api: flowserv.service.api.API
+        Service API manager.
+    run_id: string
+        Unique run identifier.
+    files: list
+        List of 3-tuples containing the file data, format, and relative path.
+    """
     run = api.run_manager.get_run(run_id)
     for data, format, rel_path in files:
         filename = os.path.join(run.get_rundir(), rel_path)

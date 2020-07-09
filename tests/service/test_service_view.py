@@ -11,32 +11,39 @@
 import flowserv.config.api as config
 import flowserv.tests.serialize as serialize
 import flowserv.version as version
+
 from flowserv.view.factory import DefaultView
 
 
-def test_default_service_descriptor(api_factory):
+def test_default_service_descriptor_view(service):
     """Test the service descriptor serialization."""
-    api = api_factory()
-    r = api.server().service_descriptor()
-    serialize.validate_service_descriptor(r)
-    assert r['name'] == config.DEFAULT_NAME
-    assert r['version'] == version.__version__
-    assert not r['validToken']
-    api.users().register_user(username='alice', password='abc')
-    token = api.users().login_user(username='alice', password='abc')['token']
-    r = api.server(access_token=token).service_descriptor()
-    serialize.validate_service_descriptor(r)
-    assert r['name'] == config.DEFAULT_NAME
-    assert r['version'] == version.__version__
-    assert r['validToken']
-    assert r['username'] == 'alice'
+    # -- Test service descriptor without information for logged-in user -------
+    with service() as api:
+        r = api.server().service_descriptor()
+        serialize.validate_service_descriptor(r)
+        assert r['name'] == config.DEFAULT_NAME
+        assert r['version'] == version.__version__
+        assert not r['validToken']
+    # -- Test service descriptor with user information ------------------------
+    username = 'alice'
+    pwd = 'abc'
+    with service() as api:
+        api.users().register_user(username=username, password=pwd)
+        r = api.users().login_user(username=username, password=pwd)
+        serialize.validate_user_handle(r, login=True)
+        api_key = r['token']
+        r = api.server(access_token=api_key).service_descriptor()
+        serialize.validate_service_descriptor(r)
+        assert r['name'] == config.DEFAULT_NAME
+        assert r['version'] == version.__version__
+        assert r['validToken']
+        assert r['username'] == username
 
 
-def test_service_descriptor_with_custom_labels(api_factory):
+def test_service_descriptor_with_custom_labels_view(service):
     """Test serialization for a service descriptor with a custom set of view
     labels.
     """
-    # Test initialization with a different set of labels
     labels = {
         'SERVER': {
             'SERVICE_NAME': 'serviceName',
@@ -44,8 +51,9 @@ def test_service_descriptor_with_custom_labels(api_factory):
             'UNK': None
         }
     }
-    api = api_factory(view=DefaultView(labels=labels))
-    r = api.server().service_descriptor()
-    assert r['serviceName'] == config.DEFAULT_NAME
-    assert r['serviceVersion'] == version.__version__
-    assert 'UNK' not in r
+    # -- Test initialization with a different set of labels -------------------
+    with service(view=DefaultView(labels=labels)) as api:
+        r = api.server().service_descriptor()
+        assert r['serviceName'] == config.DEFAULT_NAME
+        assert r['serviceVersion'] == version.__version__
+        assert 'UNK' not in r

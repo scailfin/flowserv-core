@@ -13,7 +13,7 @@ import os
 import pytest
 
 from flowserv.model.db import DB, TEST_URL
-from flowserv.service.api import API
+from flowserv.service.api import service as serviceapi
 from flowserv.tests.controller import StateEngine
 
 import flowserv.util as util
@@ -24,10 +24,10 @@ TEMPLATE_DIR = os.path.join(DIR, './.files/benchmark/helloworld')
 
 
 @pytest.fixture
-def api_factory(database, tmpdir):
+def service(database, tmpdir):
     """Factory pattern for service API objects."""
     def _api(engine=StateEngine(), auth=None, view=None):
-        return API(
+        return serviceapi(
             db=database,
             engine=engine,
             basedir=tmpdir,

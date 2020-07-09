@@ -19,28 +19,32 @@ from flowserv.tests.service import create_ranking, create_user
 import flowserv.service.postproc.util as postproc
 
 
-def test_workflow_postproc_client(api_factory, hello_world):
+def test_workflow_postproc_client(service, hello_world):
     """Test preparing and accessing post-processing results."""
-    api = api_factory()
-    user_1 = create_user(api)
-    workflow_id = hello_world(api)['id']
-    # Create four groups with a successful run each.
-    create_ranking(api, workflow_id, user_1, 4)
-    # Get ranking in decreasing order of avg_count.
-    ranking = api.ranking_manager.get_ranking(
-        workflow=api.workflow_repository.get_workflow(workflow_id)
-    )
-    # Prepare data for the post-processing workflow.
-    rundir = postproc.prepare_postproc_data(
-        input_files=['results/analytics.json'],
-        ranking=ranking,
-        run_manager=api.run_manager
-    )
-    # Test the post-processing client that accesses the prepared data.
-    runs = Runs(rundir)
-    assert len(runs) == 4
-    assert [r.run_id for r in ranking] == [r.run_id for r in runs]
-    for run in runs:
-        assert run.get_file(name='results/analytics.json') is not None
-        assert os.path.isfile(run.get_file(name='results/analytics.json'))
-        assert run.get_file(name='results/greeting.txt') is None
+    # -- Setup ----------------------------------------------------------------
+    #
+    # Create four groups for the 'Hello World' workflow with one successful
+    # run each.
+    with service() as api:
+        user_1 = create_user(api)
+        workflow_id = hello_world(api)['id']
+        create_ranking(api, workflow_id, user_1, 4)
+    # -- Get ranking in decreasing order of avg_count. ------------------------
+    with service() as api:
+        ranking = api.ranking_manager.get_ranking(
+            workflow=api.workflow_repository.get_workflow(workflow_id)
+        )
+        # Prepare data for the post-processing workflow.
+        rundir = postproc.prepare_postproc_data(
+            input_files=['results/analytics.json'],
+            ranking=ranking,
+            run_manager=api.run_manager
+        )
+        # Test the post-processing client that accesses the prepared data.
+        runs = Runs(rundir)
+        assert len(runs) == 4
+        assert [r.run_id for r in ranking] == [r.run_id for r in runs]
+        for run in runs:
+            assert run.get_file(name='results/analytics.json') is not None
+            assert os.path.isfile(run.get_file(name='results/analytics.json'))
+            assert run.get_file(name='results/greeting.txt') is None
