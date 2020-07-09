@@ -45,7 +45,7 @@ class StateEngine(WorkflowController):
         Parameters
         ----------
         run_id: string
-            Unique run identifier
+            Unique run identifier.
 
         Raises
         ------
@@ -91,17 +91,17 @@ class StateEngine(WorkflowController):
         run: flowserv.model.base.RunHandle
             Handle for the run that is being executed.
         template: flowserv.model.template.base.WorkflowTemplate
-            Workflow template containing the parameterized specification and the
-            parameter declarations
+            Workflow template containing the parameterized specification and
+            the parameter declarations.
         arguments: dict(flowserv.model.parameter.value.TemplateArgument)
-            Dictionary of argument values for parameters in the template
+            Dictionary of argument values for parameters in the template.
 
         Returns
         -------
         flowserv.model.workflow.state.WorkflowState
         """
         state = st.StatePending()
-        self.runs[run.identifier] = state
+        self.runs[run.run_id] = state
         return state
 
     def get_run(self, run_id):
@@ -169,20 +169,20 @@ class StateEngine(WorkflowController):
         self.runs[run_id] = state
         return state
 
-    def success(self, run_id, resources=None):
+    def success(self, run_id, files=None):
         """Set the default state to SUCCESS.
 
         Parameters
         ----------
         run_id: string
             Unique run identifier
-        resources: list(flowserv.model.workflow.resource.WorkflowResource), optional
-            List of created resource files
+        files: list(string), default=None
+            List of created resource files (relative paths).
 
         Returns
         -------
         flowserv.model.workflow.state.WorkflowState
         """
-        state = self.runs[run_id].success(resources=resources)
+        state = self.runs[run_id].success(files=files)
         self.runs[run_id] = state
         return state

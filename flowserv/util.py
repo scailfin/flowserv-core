@@ -260,28 +260,6 @@ def to_datetime(timestamp):
         return datetime.datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S')
 
 
-def to_localstr(date=None, text=None):
-    """Convert a date or string representation of a timestamp in UTC timezone
-    to local timezone. Removes the milli-seconds from the returned string.
-
-    Parameters
-    ----------
-    date: datetime.datetime, optional
-        Timestamp as datetime object
-    text: string, optional
-        Timestamp as string
-
-    Returns
-    -------
-    string
-    """
-    if date is not None:
-        ts = from_utc_datetime(date)
-    elif text is not None:
-        ts = from_utc_datetime(to_datetime(text))
-    return str(ts)[:-7]
-
-
 def utc_now():
     """Get the current time in UTC timezone as a string in ISO format.
 

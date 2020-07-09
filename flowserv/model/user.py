@@ -36,23 +36,23 @@ class UserManager(object):
     valid until a timeout period has passed. When the user logs out the API key
     is invalidated. API keys are stored in an underlying database.
     """
-    def __init__(self, db, login_timeout=None):
+    def __init__(self, session, token_timeout=None):
         """Initialize the database connection and the login timeout.
 
         Parameters
         ----------
-        db: flowserv.model.db.DB
+        session: sqlalchemy.orm.session.Session
             Database session.
-        login_timeout: int
-            Specifies the period (in seconds) for which an API key is valid
-            after login
+        token_timeout: int
+            Specifies the period (in seconds) for which an API keys and request
+            tokens are valid.
         """
-        self.db = db
-        if login_timeout is not None:
-            self.login_timeout = login_timeout
+        self.session = session
+        if token_timeout is not None:
+            self.token_timeout = token_timeout
         else:
             # Get value from the respective environment variable
-            self.login_timeout = config.AUTH_LOGINTTL()
+            self.token_timeout = config.AUTH_LOGINTTL()
 
     def activate_user(self, user_id):
         """Activate the user with the given identifier. A user is active if the
@@ -74,7 +74,6 @@ class UserManager(object):
         user = self.get_user(user_id)
         if not user.active:
             user.active = True
-            self.db.session.commit()
         return user
 
     def get_user(self, user_id, active=None):
@@ -91,7 +90,7 @@ class UserManager(object):
         ------
         flowserv.error.UnknownUserError
         """
-        query = self.db.session.query(User).filter(User.user_id == user_id)
+        query = self.session.query(User).filter(User.user_id == user_id)
         if active is not None:
             query = query.filter(User.active == active)
         user = query.one_or_none()
@@ -118,8 +117,7 @@ class UserManager(object):
         """
         # Construct search query based on whether the query argument is given
         # or not
-        query = self.db.session.query(User)
-        query = query .filter(User.active == True)  # noqa: E712
+        query = self.session.query(User).filter(User.active == True)  # noqa: E501, E712
         if prefix is not None:
             query = query.filter(User.name.like('{}%'.format(prefix)))
         query = query.order_by(User.name)
@@ -151,7 +149,7 @@ class UserManager(object):
         """
         # Get the unique user identifier and encrypted password. Raise error
         # if user is unknown
-        query = self.db.session.query(User)\
+        query = self.session.query(User)\
             .filter(User.name == username)\
             .filter(User.active == True)  # noqa: E712
         user = query.one_or_none()
@@ -161,7 +159,7 @@ class UserManager(object):
         if not pbkdf2_sha256.verify(password, user.secret):
             raise err.UnknownUserError(username)
         user_id = user.user_id
-        ttl = dt.datetime.now() + dt.timedelta(seconds=self.login_timeout)
+        ttl = dt.datetime.now() + dt.timedelta(seconds=self.token_timeout)
         # Check if a valid access token is currently associated with the user.
         api_key = user.api_key
         if api_key is not None:
@@ -170,19 +168,17 @@ class UserManager(object):
                 # The key has expired. Set a new key value.
                 api_key.value = util.get_unique_identifier()
             api_key.expires = ttl.isoformat()
-            self.db.session.commit()
-            return user
-        # Create a new API key for the user and set the expiry date. The key
-        # expires login_timeout seconds from now.
-        user.api_key = APIKey(
-            user_id=user_id,
-            value=util.get_unique_identifier(),
-            expires=ttl.isoformat()
-        )
-        self.db.session.commit()
+        else:
+            # Create a new API key for the user and set the expiry date. The
+            # key expires token_timeout seconds from now.
+            user.api_key = APIKey(
+                user_id=user_id,
+                value=util.get_unique_identifier(),
+                expires=ttl.isoformat()
+            )
         return user
 
-    def logout_user(self, user):
+    def logout_user(self, api_key):
         """Invalidate the API key for the given user. This will logout the user.
 
         Parameters
@@ -194,9 +190,14 @@ class UserManager(object):
         -------
         flowserv.model.base.User
         """
-        if user.api_key is not None:
+        # Query the database to get the user handle based on the API key.
+        user = self.session.query(User)\
+            .join(APIKey)\
+            .filter(APIKey.value == api_key)\
+            .one_or_none()
+        if user is not None:
+            # Invalidate the API key by setting it to None.
             user.api_key = None
-            self.db.session.commit()
         return user
 
     def register_user(self, username, password, verify=False):
@@ -240,19 +241,19 @@ class UserManager(object):
         # If a user with the given username already exists raise an error
         # Get the unique user identifier and encrypted password. Raise error
         # if user is unknown
-        query = self.db.session.query(User).filter(User.name == username)
+        query = self.session.query(User).filter(User.name == username)
         user = query.one_or_none()
         if user is not None:
             raise err.DuplicateUserError(username)
         # Insert new user into database after creating an unique user
         # identifier and the password hash.
         user = User(
+            user_id=util.get_unique_identifier(),
             name=username,
             secret=pbkdf2_sha256.hash(password.strip()),
             active=False if verify else True
         )
-        self.db.session.add(user)
-        self.db.session.commit()
+        self.session.add(user)
         return user
 
     def request_password_reset(self, username):
@@ -275,7 +276,7 @@ class UserManager(object):
         """
         request_id = util.get_unique_identifier()
         # Get user identifier that is associated with the username
-        query = self.db.session.query(User)\
+        query = self.session.query(User)\
             .filter(User.name == username)\
             .filter(User.active == True)  # noqa: E712
         user = query.one_or_none()
@@ -283,12 +284,11 @@ class UserManager(object):
             return request_id
         # Create new password reset request. The expiry date for the request is
         # calculated using the login timeout
-        expires = dt.datetime.now() + dt.timedelta(seconds=self.login_timeout)
+        expires = dt.datetime.now() + dt.timedelta(seconds=self.token_timeout)
         user.password_request = PasswordRequest(
             request_id=request_id,
             expires=expires.isoformat()
         )
-        self.db.session.commit()
         return request_id
 
     def reset_password(self, request_id, password):
@@ -316,7 +316,7 @@ class UserManager(object):
         validate_password(password)
         # Get the user and expiry date for the request. Raise error if the
         # request is unknown or has expired.
-        query = self.db.session.query(User)\
+        query = self.session.query(User)\
             .filter(User.user_id == PasswordRequest.user_id)\
             .filter(PasswordRequest.request_id == request_id)
         user = query.one_or_none()
@@ -332,7 +332,6 @@ class UserManager(object):
         user.api_key = None
         # Remove the request
         user.password_request = None
-        self.db.session.commit()
         # Return handle for user
         return user
 

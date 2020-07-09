@@ -16,8 +16,6 @@ import shutil
 from flowserv.model.base import UploadFile, GroupHandle, WorkflowHandle
 from flowserv.model.user import UserManager
 
-from flowserv.files import FileHandle
-
 import flowserv.error as err
 import flowserv.model.constraint as constraint
 import flowserv.util as util
@@ -28,26 +26,26 @@ class WorkflowGroupManager(object):
     workflow runs. The manager provides functionality to interact with the
     underlying database for creating and maintaining workflow groups.
     """
-    def __init__(self, db, fs, users=None):
+    def __init__(self, session, fs, users=None):
         """Initialize the connection to the underlying database and the file
         system helper to access group files.
 
         Parameters
         ----------
-        db: flowserv.model.db.DB
+        session: sqlalchemy.orm.session.Session
             Database session.
         fs: flowserv.model.workflow.fs.WorkflowFileSystem
             Helper to generate file system paths to group folders
         users: flowserv.model.user.UserManager
             Manager to access user objects.
         """
-        self.db = db
+        self.session = session
         self.fs = fs
-        self.users = users if users is not None else UserManager(db=db)
+        self.users = users if users else UserManager(session=session)
 
     def create_group(
         self, workflow_id, name, user_id, parameters, workflow_spec,
-        members=None, commit_changes=True
+        members=None
     ):
         """Create a new group for a given workflow. Within each workflow,
         the names of groups are expected to be unique.
@@ -80,8 +78,6 @@ class WorkflowGroupManager(object):
             Workflow specification
         members: list(string), optional
             Optional list of user identifiers for other group members
-        commit_changes: bool, optional
-            Commit changes to database only if True
 
         Returns
         -------
@@ -94,7 +90,7 @@ class WorkflowGroupManager(object):
         """
         # Ensure that the given name is valid and unique for the workflow
         constraint.validate_name(name)
-        group = self.db.session.query(GroupHandle)\
+        group = self.session.query(GroupHandle)\
             .filter(GroupHandle.name == name)\
             .filter(GroupHandle.workflow_id == workflow_id)\
             .one_or_none()
@@ -114,7 +110,7 @@ class WorkflowGroupManager(object):
         # Create a set of member identifier that contains the identifier of
         # the group owner. Ensure that all group members exist. This will also
         # ensure that the group owner exists.
-        member_set = set([user_id]) if members is None else set(members)
+        member_set = set() if members is None else set(members)
         if user_id not in member_set:
             member_set.add(user_id)
         for member_id in member_set:
@@ -122,9 +118,8 @@ class WorkflowGroupManager(object):
         # Create the group base directory.
         groupdir = self.fs.workflow_groupdir(workflow_id, identifier)
         util.create_dir(groupdir)
-        # Enter group information into the database and commit all changes
-        self.db.session.add(group)
-        self.db.session.commit()
+        # Enter group information into the database.
+        self.session.add(group)
         return group
 
     def delete_file(self, group_id, file_id):
@@ -150,21 +145,16 @@ class WorkflowGroupManager(object):
         for i, file in enumerate(group.uploads):
             if file.file_id == file_id:
                 del group.uploads[i]
-                fh = FileHandle(
-                    identifier=file_id,
-                    name=file.name,
-                    filename=self.fs.group_uploadfile(
+                fh = file.set_filename(
+                    self.fs.group_uploadfile(
                         workflow_id=group.workflow_id,
                         group_id=group.group_id,
                         file_id=file_id
                     )
                 )
-                break
         # No file with matching identifier was found.
         if fh is None:
             raise err.UnknownFileError(file_id)
-        # Commit changes to database.
-        self.db.session.commit()
         # If deleting the database record was successful delete the file on
         # disk
         fh.delete()
@@ -172,16 +162,10 @@ class WorkflowGroupManager(object):
     def delete_group(self, group_id):
         """Delete the given workflow group and all associated resources.
 
-        The changes to the underlying database are only commited if the
-        commit_changes flag is True. Note that the deletion of files and
-        directories cannot be rolled back.
-
         Parameters
         ----------
         group_id: string
             Unique group identifier
-        commit_changes: bool, optional
-            Commit changes to database only if True
 
         Raises
         ------
@@ -191,9 +175,10 @@ class WorkflowGroupManager(object):
         # assume that the group does not exist and raise an error.
         group = self.get_group(group_id)
         groupdir = self.fs.workflow_groupdir(group.workflow_id, group_id)
-        self.db.session.delete(group)
-        self.db.session.commit()
-        # Delete the base directory containing group files
+        # Delete the group and the base directory containing group files.
+        # Commit changes before deleting the directory.
+        self.session.delete(group)
+        self.session.commit()
         shutil.rmtree(groupdir)
 
     def get_file(self, group_id, file_id):
@@ -209,7 +194,7 @@ class WorkflowGroupManager(object):
 
         Returns
         -------
-        flowserv.files.FileHandle
+        flowserv.model.base.UploadFile
 
         Raises
         ------
@@ -219,10 +204,8 @@ class WorkflowGroupManager(object):
         group = self.get_group(group_id)
         for file in group.uploads:
             if file.file_id == file_id:
-                return FileHandle(
-                    identifier=file_id,
-                    name=file.name,
-                    filename=self.fs.group_uploadfile(
+                return file.set_filename(
+                    self.fs.group_uploadfile(
                         workflow_id=group.workflow_id,
                         group_id=group.group_id,
                         file_id=file_id
@@ -247,11 +230,15 @@ class WorkflowGroupManager(object):
         ------
         flowserv.error.UnknownWorkflowGroupError
         """
-        group = self.db.session.query(GroupHandle)\
+        group = self.session.query(GroupHandle)\
             .filter(GroupHandle.group_id == group_id)\
             .one_or_none()
         if group is None:
             raise err.UnknownWorkflowGroupError(group_id)
+        # Set static file directory for the associated workflow.
+        workflow = group.workflow
+        workflow_id = workflow.workflow_id
+        workflow.set_staticdir(self.fs.workflow_staticdir(workflow_id))
         return group
 
     def list_files(self, group_id):
@@ -265,7 +252,7 @@ class WorkflowGroupManager(object):
 
         Returns
         -------
-        list(flowserv.files.FileHandle)
+        list(flowserv.model.base.UploadFile)
 
         Raises
         ------
@@ -276,10 +263,8 @@ class WorkflowGroupManager(object):
         # Convert file objects to file handles.
         files = list()
         for file in group.uploads:
-            fh = FileHandle(
-                identifier=file.file_id,
-                name=file.name,
-                filename=self.fs.group_uploadfile(
+            fh = file.set_filename(
+                self.fs.group_uploadfile(
                     workflow_id=group.workflow_id,
                     group_id=group.group_id,
                     file_id=file.file_id
@@ -309,13 +294,13 @@ class WorkflowGroupManager(object):
         # given or not.
         if workflow_id is None and user_id is None:
             # Return list of all groups.
-            return self.db.session.query(GroupHandle).all()
+            return self.session.query(GroupHandle).all()
         elif workflow_id is None:
             # Return all groups that a user is a member of.
             return self.users.get_user(user_id, active=True).groups
         elif user_id is None:
             # Return all groups for a workflow template.
-            workflow = self.db.session.query(WorkflowHandle)\
+            workflow = self.session.query(WorkflowHandle)\
                 .filter(WorkflowHandle.workflow_id == workflow_id)\
                 .one_or_none()
             if workflow is None:
@@ -360,7 +345,6 @@ class WorkflowGroupManager(object):
             group.members = list()
             for user_id in members:
                 group.members.append(self.users.get_user(user_id, active=True))
-        self.db.session.commit()
         return group
 
     def upload_file(self, group_id, file, name, file_type=None):
@@ -384,7 +368,7 @@ class WorkflowGroupManager(object):
 
         Returns
         -------
-        flowserv.files.FileHandle
+        flowserv.model.base.UploadFile
 
         Raises
         ------
@@ -407,10 +391,5 @@ class WorkflowGroupManager(object):
         # Insert information into database.
         fileobj = UploadFile(file_id=file_id, name=name, file_type=file_type)
         group.uploads.append(fileobj)
-        self.db.session.commit()
         # Return handle for uploaded file
-        return FileHandle(
-            identifier=file_id,
-            filename=output_file,
-            name=name
-        )
+        return fileobj.set_filename(output_file)

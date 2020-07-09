@@ -17,7 +17,6 @@ from flowserv.tests.files import FakeStream
 import flowserv.config.api as config
 import flowserv.util as util
 import flowserv.model.workflow.state as st
-import flowserv.tests.db as db
 import flowserv.tests.serialize as serialize
 
 
@@ -36,13 +35,12 @@ UID = '0000'
 NAMES = ['Alice', 'Bob', 'Gabriel', 'William']
 
 
-def test_postproc_workflow(tmpdir):
+def test_postproc_workflow(database):
     """Execute the modified helloworld example."""
     # -- Setup ----------------------------------------------------------------
     # Create the database and service API with a serial workflow engine in
     # asynchronous mode
-    os.environ[config.FLOWSERV_API_BASEDIR] = os.path.abspath(str(tmpdir))
-    api = API(con=db.init_db(str(tmpdir), users=[UID]).connect())
+    api = API(db=database, users=[UID]).connect()))
     # Create workflow template
     wh = api.workflows().create_workflow(
         name='W1',

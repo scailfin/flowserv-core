@@ -59,7 +59,7 @@ class UploadFileService(object):
         if not self.auth.is_group_member(group_id=group_id, user_id=user_id):
             raise err.UnauthorizedAccessError()
         # Delete the file using the workflow group handle
-        self.group_manager.get_group(group_id).delete_file(file_id)
+        self.group_manager.delete_file(group_id=group_id, file_id=file_id)
 
     def get_file(self, group_id, file_id, user_id=None):
         """Get handle for file with given identifier that was uploaded to the
@@ -80,7 +80,7 @@ class UploadFileService(object):
 
         Returns
         -------
-        flowserv.files.FileHandle, dict
+        flowserv.model.base.FileHandle, dict
 
         Raises
         ------
@@ -99,7 +99,7 @@ class UploadFileService(object):
             if not is_member:
                 raise err.UnauthorizedAccessError()
         # Return the file handle and a serialization of tit
-        fh = self.group_manager.get_group(group_id).get_file(file_id)
+        fh = self.group_manager.get_file(group_id=group_id, file_id=file_id)
         doc = self.serialize.file_handle(group_id=group_id, fh=fh)
         return fh, doc
 
@@ -129,7 +129,7 @@ class UploadFileService(object):
             raise err.UnauthorizedAccessError()
         return self.serialize.file_listing(
             group_id=group_id,
-            files=self.group_manager.get_group(group_id).list_files()
+            files=self.group_manager.list_files(group_id)
         )
 
     def upload_file(self, group_id, file, name, user_id, file_type=None):
@@ -164,7 +164,8 @@ class UploadFileService(object):
         if not self.auth.is_group_member(group_id=group_id, user_id=user_id):
             raise err.UnauthorizedAccessError()
         # Return serialization of the uploaded file
-        fh = self.group_manager.get_group(group_id).upload_file(
+        fh = self.group_manager.upload_file(
+            group_id=group_id,
             file=file,
             name=name,
             file_type=file_type

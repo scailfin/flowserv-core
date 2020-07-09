@@ -13,27 +13,48 @@ import os
 import pytest
 
 from flowserv.model.db import DB, TEST_URL
-from flowserv.model.workflow.fs import WorkflowFileSystem
-from flowserv.model.workflow.manager import WorkflowManager
+from flowserv.service.api import API
+from flowserv.tests.controller import StateEngine
 
 import flowserv.util as util
+
+
+DIR = os.path.dirname(os.path.realpath(__file__))
+TEMPLATE_DIR = os.path.join(DIR, './.files/benchmark/helloworld')
+
+
+@pytest.fixture
+def api_factory(database, tmpdir):
+    """Factory pattern for service API objects."""
+    def _api(engine=StateEngine(), auth=None, view=None):
+        return API(
+            db=database,
+            engine=engine,
+            basedir=tmpdir,
+            auth=auth,
+            view=view
+        )
+
+    return _api
 
 
 @pytest.fixture
 def database():
     """Create a fresh instance of the database."""
-    db = DB(connect_url=TEST_URL, web_app=True)
+    db = DB(connect_url=TEST_URL, web_app=False)
     db.init()
     return db
 
 
 @pytest.fixture
-def wfmanager(database, tmpdir):
-    """Create empty database. Return a test instance of the workflow
-    repository manager.
-    """
-    repodir = util.create_dir(os.path.join(tmpdir, 'workflows'))
-    return WorkflowManager(
-        db=database,
-        fs=WorkflowFileSystem(repodir)
-    )
+def hello_world():
+    """Factory pattern for Hello-World workflows."""
+    def _hello_world(api, name=None, description=None, instructions=None):
+        return api.workflows().create_workflow(
+            name=name if name is not None else util.get_unique_identifier(),
+            description=description,
+            instructions=instructions,
+            sourcedir=TEMPLATE_DIR
+        )
+
+    return _hello_world

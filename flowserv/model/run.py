@@ -25,34 +25,39 @@ class RunManager(object):
     delete, and retrieve runs. the manager also provides the functionality to
     update the state of workflow runs.
     """
-    def __init__(self, db, fs):
+    def __init__(self, session, fs):
         """Initialize the connection to the underlying database and the file
         system helper to get path names for run folders.
 
         Parameters
         ----------
-        db: flowserv.model.db.DB
+        session: sqlalchemy.orm.session.Session
             Database session.
         fs: flowserv.model.workflow.fs.WorkflowFileSystem
             Helper to generate file system paths to group folders
         """
-        self.db = db
+        self.session = session
         self.fs = fs
 
-    def create_run(self, workflow_id, group_id=None, arguments=None):
+    def create_run(self, workflow=None, group=None, arguments=None, runs=None):
         """Create a new entry for a run that is in pending state. Returns a
-        handle for the created run. The group identifier may be None in which
-        case the run is a post-processing run that is only associated with the
-        workflow but not any particular group.
+        handle for the created run.
+
+        A run is either created for a group (i.e., a grop submission run) or
+        for a workflow (i.e., a post-processing run). Only one of the two
+        parameters is expected to be None.
 
         Parameters
         ----------
-        workflow_id: string
-            Unique workflow identifier
-        group_id: string
-            Unique workflow group identifier
+        workflow: flowserv.model.base.WorkflowHandle, default=None
+            Workflow handle if this is a post-processing run.
+        group: flowserv.model.base.GroupHandle
+            Group handle if this is a group sumbission run.
         arguments: dict(flowserv.model.parameter.value.TemplateArgument)
             Dictionary of argument values for parameters in the template
+        runs: list(string), default=None
+            List of run identifier that define the input for a post-processing
+            run.
 
         Returns
         -------
@@ -60,10 +65,25 @@ class RunManager(object):
 
         Raises
         ------
+        ValueError
         flowserv.error.MissingArgumentError
         """
+        # Ensure that only group or workflow is given.
+        if workflow is None and group is None:
+            raise ValueError('missing arguments for workflow or group')
+        elif workflow is not None and group is not None:
+            raise ValueError('arguments for workflow or group')
+        elif group is not None and runs is not None:
+            raise ValueError('unexpected argument runs')
         # Create a unique run identifier.
         run_id = util.get_unique_identifier()
+        # Get workflow and group identifier.
+        if workflow is None:
+            workflow_id = group.workflow_id
+            group_id = group.group_id
+        else:
+            workflow_id = workflow.workflow_id
+            group_id = None
         # Serialize the given dictionary of workflow arguments (if not None)
         arg_values = dict()
         if arguments is not None:
@@ -71,15 +91,22 @@ class RunManager(object):
                 arg_values[key] = arguments[key].value
         # Return handle for the created run. Ensure that the run base directory
         # is created.
-        util.create_dir(self.fs.run_basedir(workflow_id, group_id, run_id))
+        rundir = self.fs.run_basedir(workflow_id, group_id, run_id)
+        util.create_dir(rundir)
         run = RunHandle(
             run_id=run_id,
             workflow_id=workflow_id,
             group_id=group_id,
-            arguments=arg_values
+            arguments=arg_values,
+            state_type=st.STATE_PENDING
         )
-        self.db.session.add(run)
-        self.db.session.commit()
+        self.session.add(run)
+        # Update the workflow handle if this is a post-processing run.
+        if workflow is not None:
+            workflow.postproc_ranking_key = runs
+            workflow.postproc_run_id = run_id
+        # Set run base directory.
+        run.set_rundir(rundir)
         return run
 
     def delete_run(self, run_id):
@@ -100,26 +127,11 @@ class RunManager(object):
         workflow_id = run.workflow_id
         group_id = run.group_id
         rundir = self.fs.run_basedir(workflow_id, group_id, run_id)
-        # Delete run and commit changes.
-        self.db.session.delete(run)
-        self.db.session.commit()
-        # Delete the base directory containing group files
+        # Delete run and the base directory containing run files. Commit
+        # changes before deleting the directory.
+        self.session.delete(run)
+        self.session.commit()
         shutil.rmtree(rundir)
-
-    def get_resource_file(self, run, resource_name):
-        """Get path to file represented by a workflow resource.
-
-        Patameters
-        ----------
-        resource_name: string
-            Name of the resource.
-
-        Returns
-        -------
-        string
-        """
-        rundir = self.fs.run_basedir(run.workflow_id, run.group_id, run.run_id)
-        return os.path.join(rundir, resource_name)
 
     def get_run(self, run_id):
         """Get handle for the given run from the underlying database. Raises an
@@ -140,11 +152,19 @@ class RunManager(object):
         """
         # Fetch run information from the database. Raises an error if the run
         # is unknown..
-        run = self.db.session.query(RunHandle)\
+        run = self.session\
+            .query(RunHandle)\
             .filter(RunHandle.run_id == run_id)\
             .one_or_none()
         if run is None:
             raise err.UnknownRunError(run_id)
+        # Set run base directory.
+        rundir = self.fs.run_basedir(run.workflow_id, run.group_id, run_id)
+        run.set_rundir(rundir)
+        workflow = run.workflow
+        workflow_id = workflow.workflow_id
+        workflow.set_staticdir(self.fs.workflow_staticdir(workflow_id))
+        set_files(run, rundir)
         return run
 
     def list_runs(self, group_id):
@@ -160,9 +180,24 @@ class RunManager(object):
         -------
         list(flowserv.model.base.RunHandle)
         """
-        return self.db.session.query(RunHandle)\
+        rs = self.session\
+            .query(RunHandle)\
             .filter(RunHandle.group_id == group_id)\
             .all()
+        # Set run directory for all elements in the query result.
+        runs = list()
+        for run in rs:
+            rundir = self.fs.run_basedir(
+                workflow_id=run.workflow_id,
+                group_id=run.group_id,
+                run_id=run.run_id
+            )
+            workflow = run.workflow
+            workflow_id = workflow.workflow_id
+            workflow.set_staticdir(self.fs.workflow_staticdir(workflow_id))
+            set_files(run, rundir)
+            runs.append(run)
+        return runs
 
     def poll_runs(self, group_id, state=None):
         """Get list of identifier for group runs that are currently in the
@@ -182,7 +217,8 @@ class RunManager(object):
         # Generate query that returns the handles of all runs in a given group
         # and state. If no state constraint is given the active runs are
         # returned.
-        query = self.db.session.query(RunHandle)\
+        query = self.session\
+            .query(RunHandle)\
             .filter(RunHandle.group_id == group_id)
         if state is not None:
             query = query.filter(RunHandle.state_type == state)
@@ -242,10 +278,13 @@ class RunManager(object):
             if current_state not in st.ACTIVE_STATES:
                 msg = 'cannot set run in {} state to error state'
                 raise err.ConstraintViolationError(msg.format(current_state))
-            resources = list()
-            for resource in state.resources:
-                resources.append(RunFile(name=resource.key))
-            run.files = resources
+            rundir = run.get_rundir()
+            files = list()
+            for f_path in state.files:
+                f = RunFile(relative_path=f_path)
+                f.set_filename(os.path.join(rundir, f_path))
+                files.append(f)
+            run.files = files
             run.started_at = state.started_at
             run.ended_at = state.finished_at
             # Parse run result if the associated workflow has a result schema.
@@ -254,9 +293,9 @@ class RunManager(object):
                 # Read the results from the result file that is specified in
                 # the workflow result schema. If the file is not found we
                 # currently do not raise an error.
-                f = self.get_resource_file(run, result_schema.result_file)
-                if os.path.isfile(f):
-                    results = util.read_object(f)
+                f = run.get_file(by_name=result_schema.result_file)
+                if f is not None:
+                    results = util.read_object(f.filename)
                     # Create a dictionary of result values.
                     values = dict()
                     for col in result_schema.columns:
@@ -274,5 +313,22 @@ class RunManager(object):
             raise err.ConstraintViolationError(msg.format(state.type_id))
         run.state_type = state.type_id
         # Commit changes to database.
-        self.db.session.commit()
         return run
+
+
+# -- Helper functions ---------------------------------------------------------
+
+def set_files(run, rundir):
+    """Set filenames for the run and potential result files.
+
+    Parameters
+    ----------
+    run: flowserv.model.base.RunHandle
+        Handle for a workflow run.
+    rundir: string
+        Base directory for run files.
+    """
+    run.set_rundir(rundir)
+    if run.is_success():
+        for f in run.files:
+            f.set_filename(os.path.join(rundir, f.relative_path))

@@ -34,10 +34,10 @@ def prepare_postproc_data(input_files, ranking, run_manager):
     input_files: list(string)
         List of identifier for benchmark run output files that are copied into
         the input directory for each submission.
-    ranking: flowserv.model.ranking.base.ResultRanking
+    ranking: list(flowserv.model.ranking.RunResult)
         List of runs in the current result ranking
-        run_manager: flowserv.model.run.RunManager
-            Manager for workflow runs
+    run_manager: flowserv.model.run.RunManager
+        Manager for workflow runs
 
     Returns
     -------
@@ -48,21 +48,21 @@ def prepare_postproc_data(input_files, ranking, run_manager):
     # contain the 'runs.json' file containing the run metadata.
     basedir = tempfile.mkdtemp()
     run_listing = list()
-    for entry in ranking.entries:
+    for entry in ranking:
         # Create a sub-folder for the run in the ranking result. Then copy the
         # requested files from the run resources to that folder.
         run = run_manager.get_run(entry.run_id)
-        rundir = util.create_dir(os.path.join(basedir, run.identifier))
+        rundir = util.create_dir(os.path.join(basedir, run.run_id))
         for in_key in input_files:
-            fh = run.resources.get_resource(key=in_key)
+            fh = run.get_file(by_name=in_key)
             source_file = fh.filename
             target_file = os.path.join(rundir, in_key)
             util.create_dir(os.path.dirname(target_file))
             shutil.copy(src=source_file, dst=target_file)
         run_listing.append({
-            base.LABEL_ID: run.identifier,
+            base.LABEL_ID: run.run_id,
             base.LABEL_NAME: entry.group_name,
-            base.LABEL_RESOURCES: input_files
+            base.LABEL_FILES: input_files
         })
     # Write the runs metadata to file
     util.write_object(

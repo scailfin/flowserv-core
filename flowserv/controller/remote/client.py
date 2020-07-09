@@ -13,12 +13,10 @@ that is required by the workflow controller to execute workflows, cancel
 workflow execution, get workflow status, and to download workflow result files.
 """
 
-from abc import abstractmethod
-
-import flowserv.util as util
+from abc import ABCMeta, abstractmethod
 
 
-class RemoteClient(util.ABC):
+class RemoteClient(metaclass=ABCMeta):
     """The remote client class is an abstract interface that defines the
     methods that are required by the remote workflow controller to execute and
     monitor remote workflows. Different workflow engies will implement their
@@ -38,8 +36,8 @@ class RemoteClient(util.ABC):
         run: flowserv.model.base.RunHandle
             Handle for the run that is being executed.
         template: flowserv.model.template.base.WorkflowTemplate
-            Workflow template containing the parameterized specification and the
-            parameter declarations.
+            Workflow template containing the parameterized specification and
+            the parameter declarations.
         arguments: dict(flowserv.model.parameter.value.TemplateArgument)
             Dictionary of argument values for parameters in the template.
 

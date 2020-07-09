@@ -49,16 +49,68 @@ class DB(object):
         if echo:
             import logging
             logging.info('Connect to database Url %s' % (connect_url))
-        self.engine = create_engine(connect_url, echo=echo)
+        self._engine = create_engine(connect_url, echo=echo)
         if web_app:
-            self.session = scoped_session(sessionmaker(bind=self.engine))
+            self._session = scoped_session(sessionmaker(bind=self._engine))
         else:
-            self.session = sessionmaker(bind=self.engine)()
+            self._session = sessionmaker(bind=self._engine)
 
     def init(self):
         """Create all tables in the database model schema."""
         # Add import for modules that contain ORM definitions.
         import flowserv.model.base  # noqa: F401
         # Drop all tables first before creating them
-        Base.metadata.drop_all(self.engine)
-        Base.metadata.create_all(self.engine)
+        Base.metadata.drop_all(self._engine)
+        Base.metadata.create_all(self._engine)
+
+    def session(self):
+        """Create a new database session instance. The sessoin is wrapped by a
+        context manager to properly manage the session scope.
+
+        Returns
+        -------
+        flowserv.model.db.SessionScope
+        """
+        return SessionScope(self._session())
+
+
+class SessionScope(object):
+    """Context manager for providing transactional scope around a series of
+    database operations.
+    """
+    def __init__(self, session):
+        """Initialize the database session.
+
+        Parameters
+        ----------
+        session: sqlalchemy.orm.session.Session
+            Database sessin.
+        """
+        self.session = session
+
+    def __enter__(self):
+        """Return the managed database session object.
+
+        Returns
+        -------
+        sqlalchemy.orm.session.Session
+        """
+        return self.session
+
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        """Commit or rollback transaction depending on the exception type.
+        Does not surpress any exceptions.
+        """
+        if exc_type is None:
+            try:
+                self.session.commit()
+            except Exception:
+                self.session.rollback()
+                raise
+            finally:
+                self.session.close()
+        else:
+            try:
+                self.session.rollback()
+            finally:
+                self.session.close()

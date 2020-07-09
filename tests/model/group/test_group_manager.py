@@ -11,309 +11,213 @@
 import os
 import pytest
 
-from flowserv.model.base import User, WorkflowHandle
 from flowserv.model.group import WorkflowGroupManager
 from flowserv.model.workflow.fs import WorkflowFileSystem
 
 import flowserv.error as err
-import flowserv.model.parameter.base as pb
-import flowserv.model.parameter.declaration as pd
+import flowserv.tests.model as model
 
 
-"""Unique identifier for users and workflow templates."""
-USER_1 = '0000'
-USER_2 = '0001'
-USER_3 = '0002'
-WORKFLOW_1 = '0004'
-WORKFLOW_2 = '0005'
-
-
-def init(db, basedir):
-    """Create a fresh database with three users and two workflows. Returns an
-    instance of the workflow group manager class.
-    """
-    # Register three new users.
-    for user_id in [USER_1, USER_2, USER_3]:
-        user = User(user_id=user_id, name=user_id, secret=user_id, active=True)
-        db.session.add(user)
-    # Add two dummy workflow templates.
-    for workflow_id in [WORKFLOW_1, WORKFLOW_2]:
-        workflow = WorkflowHandle(
-            workflow_id=workflow_id,
-            name=workflow_id,
-            workflow_spec='{}'
-        )
-        db.session.add(workflow)
-    db.session.commit()
-    return WorkflowGroupManager(
-        db=db,
-        fs=WorkflowFileSystem(os.path.join(basedir, 'workflows'))
-    )
-
-
-def test_create_workflow_group(database, tmpdir):
+def test_create_group(database, tmpdir):
     """Test creating and retrieving new workflow groups."""
-    # Create database and the group manager
-    manager = init(database, tmpdir)
-    # Create a new workflow group with a single user
-    g1 = manager.create_group(
-        workflow_id=WORKFLOW_1,
-        name='Group 1',
-        user_id=USER_1,
-        parameters=dict(),
-        workflow_spec=dict()
-    )
-    assert g1.name == 'Group 1'
-    assert g1.owner_id == USER_1
-    assert len(g1.members) == 1
-    assert isinstance(g1.parameters, dict)
-    assert len(g1.parameters) == 0
-    assert isinstance(g1.workflow_spec, dict)
-    assert len(g1.workflow_spec) == 0
-    # Retrieve the group from the database
-    g1 = manager.get_group(g1.group_id)
-    assert g1.name == 'Group 1'
-    assert g1.owner_id == USER_1
-    assert len(g1.members) == 1
-    assert isinstance(g1.parameters, dict)
-    assert len(g1.parameters) == 0
-    assert isinstance(g1.workflow_spec, dict)
-    assert len(g1.workflow_spec) == 0
-    # Create second group where all users are members
-    workflow_spec = dict({'files': ['file1', 'file2']})
-    g2 = manager.create_group(
-        workflow_id=WORKFLOW_1,
-        name='Group 2',
-        user_id=USER_2,
-        parameters=pb.create_parameter_index([
-            pd.parameter_declaration('p1'),
-            pd.parameter_declaration(
-                identifier='p2',
-                name='A',
-                data_type=pd.DT_INTEGER
-            )
-        ]),
-        workflow_spec=workflow_spec,
-        members=[USER_1, USER_3]
-    )
-    assert g2.owner_id == USER_2
-    assert len(g2.members) == 3
-    assert len(g2.parameters) == 2
-    assert 'p1' in g2.parameters
-    assert 'p2' in g2.parameters
-    assert g2.parameters['p2'].name == 'A'
-    assert g2.parameters['p2'].data_type == pd.DT_INTEGER
-    assert g2.workflow_spec == workflow_spec
-    for user_id in [USER_1, USER_2, USER_3]:
-        assert user_id in [u.user_id for u in g2.members]
-    # Retrieve the group from the database
-    g2 = manager.get_group(g2.group_id)
-    assert g2.owner_id == USER_2
-    assert len(g2.members) == 3
-    assert len(g2.parameters) == 2
-    assert g2.workflow_spec == workflow_spec
-    # Duplicate users in the member list
-    g3 = manager.create_group(
-        workflow_id=WORKFLOW_1,
-        name='Group 3',
-        user_id=USER_3,
-        parameters=dict(),
-        workflow_spec=dict(),
-        members=[USER_1, USER_3, USER_2, USER_1, USER_3]
-    )
-    assert len(g3.members) == 3
-    for user_id in [USER_1, USER_3]:
-        assert user_id in [u.user_id for u in g3.members]
-    # Retrieve the group from the database
-    g3 = manager.get_group(g3.group_id)
-    assert len(g3.members) == 3
-    for user_id in [USER_1, USER_3]:
-        assert user_id in [u.user_id for u in g3.members]
-    # Error conditions
-    # - Invalid name
-    with pytest.raises(err.ConstraintViolationError):
-        manager.create_group(
-            workflow_id=WORKFLOW_1,
-            name='A' * 513,
-            user_id=USER_1,
-            parameters=dict(),
-            workflow_spec=dict()
-        )
-    # - Duplicate name
-    with pytest.raises(err.ConstraintViolationError):
-        manager.create_group(
-            workflow_id=WORKFLOW_1,
+    # -- Setup ----------------------------------------------------------------
+    #
+    # Create a database with a single workflow.
+    fs = WorkflowFileSystem(tmpdir)
+    with database.session() as session:
+        user_id = model.create_user(session, active=True)
+        workflow_id = model.create_workflow(session)
+    # -- Test create group ----------------------------------------------------
+    with database.session() as session:
+        manager = WorkflowGroupManager(session=session, fs=fs)
+        group = manager.create_group(
+            workflow_id=workflow_id,
             name='Group 1',
-            user_id=USER_1,
+            user_id=user_id,
             parameters=dict(),
             workflow_spec=dict()
         )
-    # - Unknown user
-    with pytest.raises(err.UnknownUserError):
-        manager.create_group(
-            workflow_id=WORKFLOW_1,
-            name='D',
-            user_id=USER_1,
+        assert group.name == 'Group 1'
+        assert group.owner_id == user_id
+        assert len(group.members) == 1
+        assert isinstance(group.parameters, dict)
+        assert len(group.parameters) == 0
+        assert isinstance(group.workflow_spec, dict)
+        assert len(group.workflow_spec) == 0
+        # Retrieve the group from the database
+        group = manager.get_group(group.group_id)
+        assert group.name == 'Group 1'
+        assert group.owner_id == user_id
+        assert len(group.members) == 1
+        assert isinstance(group.parameters, dict)
+        assert len(group.parameters) == 0
+        assert isinstance(group.workflow_spec, dict)
+        assert len(group.workflow_spec) == 0
+    # -- Test create group with duplicate members -----------------------------
+    with database.session() as session:
+        manager = WorkflowGroupManager(session=session, fs=fs)
+        group = manager.create_group(
+            workflow_id=workflow_id,
+            name='Group 2',
+            user_id=user_id,
             parameters=dict(),
             workflow_spec=dict(),
-            members=[USER_2, 'not a user']
+            members=[user_id, user_id, user_id]
         )
+        assert len(group.members) == 1
+        # Retrieve the group from the database
+        group = manager.get_group(group.group_id)
+        assert len(group.members) == 1
+    # -- Test error cases -----------------------------------------------------
+    with database.session() as session:
+        manager = WorkflowGroupManager(session=session, fs=fs)
+        # - Invalid name
+        with pytest.raises(err.ConstraintViolationError):
+            manager.create_group(
+                workflow_id=workflow_id,
+                name='A' * 513,
+                user_id=user_id,
+                parameters=dict(),
+                workflow_spec=dict()
+            )
+        # - Duplicate name
+        with pytest.raises(err.ConstraintViolationError):
+            manager.create_group(
+                workflow_id=workflow_id,
+                name='Group 1',
+                user_id=user_id,
+                parameters=dict(),
+                workflow_spec=dict()
+            )
+        # - Unknown user
+        with pytest.raises(err.UnknownUserError):
+            manager.create_group(
+                workflow_id=workflow_id,
+                name='D',
+                user_id=user_id,
+                parameters=dict(),
+                workflow_spec=dict(),
+                members=[user_id, 'not a user']
+            )
 
 
 def test_delete_group(database, tmpdir):
     """Test creating and deleting workflow groups."""
-    # Create database and the group manager
-    manager = init(database, tmpdir)
-    # Create two new workflow groups with a single user
-    g1 = manager.create_group(
-        workflow_id=WORKFLOW_1,
-        name='Group 1',
-        user_id=USER_1,
-        parameters=dict(),
-        workflow_spec=dict()
-    )
-    g2 = manager.create_group(
-        workflow_id=WORKFLOW_1,
-        name='Group 2',
-        user_id=USER_2,
-        parameters=dict(),
-        workflow_spec=dict()
-    )
-    groupdir_1 = manager.fs.workflow_groupdir(WORKFLOW_1, g1.group_id)
-    groupdir_2 = manager.fs.workflow_groupdir(WORKFLOW_1, g2.group_id)
-    assert os.path.isdir(groupdir_1)
-    assert os.path.isdir(groupdir_2)
-    # Delete the first group. Ensure that the group folder is also removed
-    manager.delete_group(g1.group_id)
-    assert not os.path.isdir(groupdir_1)
-    assert os.path.isdir(groupdir_2)
-    # Access to the deleted group will raise an error
-    with pytest.raises(err.UnknownWorkflowGroupError):
-        manager.get_group(g1.group_id)
-    with pytest.raises(err.UnknownWorkflowGroupError):
-        manager.delete_group(g1.group_id)
-    # Delete the second group
-    manager.get_group(g2.group_id)
-    manager.delete_group(g2.group_id)
-    assert not os.path.isdir(groupdir_2)
-    with pytest.raises(err.UnknownWorkflowGroupError):
-        manager.get_group(g1.group_id)
+    # -- Setup ----------------------------------------------------------------
+    #
+    # Create a database with two groups for a single workflow.
+    fs = WorkflowFileSystem(tmpdir)
+    with database.session() as session:
+        user_id = model.create_user(session, active=True)
+        wf_id = model.create_workflow(session)
+        manager = WorkflowGroupManager(session=session, fs=fs)
+        group_1 = manager.create_group(wf_id, 'A', user_id, {}, []).group_id
+        group_2 = manager.create_group(wf_id, 'B', user_id, {}, []).group_id
+    # -- Delete group ---------------------------------------------------------
+    with database.session() as session:
+        # Ensure that group directores are deleted.
+        manager = WorkflowGroupManager(session=session, fs=fs)
+        groupdir = fs.workflow_groupdir(wf_id, group_1)
+        manager.delete_group(group_1)
+        assert not os.path.isdir(groupdir)
+        # Access to group 1 raises error while group 2 is still accessible.
+        with pytest.raises(err.UnknownWorkflowGroupError):
+            manager.get_group(group_1)
+        assert manager.get_group(group_2) is not None
 
 
 def test_list_groups(database, tmpdir):
     """Test listing groups by user or by workflow."""
-    # Create database and the group manager
-    manager = init(database, tmpdir)
-    # Create three new groups, two for the first workflow and one for the
-    # second workflow
-    manager.create_group(
-        workflow_id=WORKFLOW_1,
-        name='Group 1',
-        user_id=USER_1,
-        parameters=dict(),
-        workflow_spec=dict()
-    )
-    manager.create_group(
-        workflow_id=WORKFLOW_1,
-        name='Group 2',
-        user_id=USER_2,
-        members=[USER_3],
-        parameters=dict(),
-        workflow_spec=dict()
-    )
-    manager.create_group(
-        workflow_id=WORKFLOW_2,
-        name='Group 3',
-        user_id=USER_3,
-        members=[USER_1],
-        parameters=dict(),
-        workflow_spec=dict()
-    )
-    # Get names of all groups in the database
-    validate_groups(
-        groups=manager.list_groups(),
-        names=['Group 1', 'Group 2', 'Group 3']
-    )
-    # Workflow 1 has two groups and workflow 2 has one group
-    validate_groups(
-        groups=manager.list_groups(workflow_id=WORKFLOW_1),
-        names=['Group 1', 'Group 2']
-    )
-    validate_groups(
-        groups=manager.list_groups(workflow_id=WORKFLOW_2),
-        names=['Group 3']
-    )
-    # User 1 and user 3 are member of two groups. User 2 is member of one group
-    validate_groups(
-        groups=manager.list_groups(user_id=USER_1),
-        names=['Group 1', 'Group 3']
-    )
-    validate_groups(
-        groups=manager.list_groups(user_id=USER_2),
-        names=['Group 2']
-    )
-    validate_groups(
-        groups=manager.list_groups(user_id=USER_3),
-        names=['Group 2', 'Group 3']
-    )
-    # List submissions with both optional parameters given
-    validate_groups(
-        groups=manager.list_groups(user_id=USER_1, workflow_id=WORKFLOW_1),
-        names=['Group 1']
-    )
+    # -- Setup ----------------------------------------------------------------
+    #
+    # Create a database with three groups for a two workflow. Group 1 has
+    # user 1 as only member, group 2 has user 2 and 3 as member, group 3 has
+    # user 1 and 3 as members.
+    fs = WorkflowFileSystem(tmpdir)
+    with database.session() as session:
+        user_1 = model.create_user(session, active=True)
+        user_2 = model.create_user(session, active=True)
+        user_3 = model.create_user(session, active=True)
+        workflow_1 = model.create_workflow(session)
+        workflow_2 = model.create_workflow(session)
+        members_1 = [user_1]
+        group_1 = model.create_group(session, workflow_1, users=members_1)
+        members_2 = [user_2, user_3]
+        group_2 = model.create_group(session, workflow_1, users=members_2)
+        members_3 = [user_1, user_3]
+        group_3 = model.create_group(session, workflow_2, users=members_3)
+    # -- Test list all groups -------------------------------------------------
+    with database.session() as session:
+        manager = WorkflowGroupManager(session=session, fs=fs)
+        assert len(manager.list_groups()) == 3
+        assert len(manager.list_groups(workflow_1)) == 2
+        assert len(manager.list_groups(workflow_2)) == 1
+    # -- Test list groups for users -------------------------------------------
+    with database.session() as session:
+        manager = WorkflowGroupManager(session=session, fs=fs)
+        # User 1 is member of group 1 and 3.
+        groups = manager.list_groups(user_id=user_1)
+        assert len(groups) == 2
+        assert [g.name for g in groups] == [group_1, group_3]
+        # User 2 is member of group 2.
+        groups = manager.list_groups(user_id=user_2)
+        assert len(groups) == 1
+        assert [g.name for g in groups] == [group_2]
+        # User 3 is member of group 2 and 3.
+        groups = manager.list_groups(user_id=user_3)
+        assert len(groups) == 2
+        assert [g.name for g in groups] == [group_2, group_3]
 
 
 def test_update_groups(database, tmpdir):
     """Test updating group name and group members."""
-    # Create database and the group manager
-    manager = init(database, tmpdir)
-    # Create three new groups, two for the first workflow and one for the
-    # second workflow
-    g1 = manager.create_group(
-        workflow_id=WORKFLOW_1,
-        name='Group 1',
-        user_id=USER_1,
-        parameters=dict(),
-        workflow_spec=dict()
-    )
-    g2 = manager.create_group(
-        workflow_id=WORKFLOW_1,
-        name='Group 2',
-        user_id=USER_2,
-        members=[USER_3],
-        parameters=dict(),
-        workflow_spec=dict()
-    )
-    # Change add USER_3 to group 1.
-    manager.update_group(g1.group_id, members=[USER_1, USER_3])
-    # Rename group 2 and replace USER_3 with USER_1.
-    manager.update_group(
-        g2.group_id,
-        name='My Group',
-        members=[USER_1, USER_2]
-    )
-    g1 = manager.get_group(g1.group_id)
-    assert g1.name == 'Group 1'
-    assert {USER_1, USER_3} == set([u.user_id for u in g1.members])
-    g2 = manager.get_group(g2.group_id)
-    assert g2.name == 'My Group'
-    assert {USER_1, USER_2} == set([u.user_id for u in g2.members])
-    # No changes
-    manager.update_group(g1.group_id)
-    g1 = manager.get_group(g1.group_id)
-    assert g1.name == 'Group 1'
-    assert {USER_1, USER_3} == set([u.user_id for u in g1.members])
-    manager.update_group(g1.group_id, name=g1.name)
-    g1 = manager.get_group(g1.group_id)
-    assert g1.name == 'Group 1'
-    assert {USER_1, USER_3} == set([u.user_id for u in g1.members])
-
-
-def validate_groups(groups, names):
-    """Ensure that the given names exactly match the names of the descriptors
-    in the group listing.
-    """
-    group_names = [g.name for g in groups]
-    assert len(groups) == len(names)
-    for name in names:
-        assert name in group_names
+    # -- Setup ----------------------------------------------------------------
+    #
+    # Create a database with two groups for one workflow. Group 1 has user 1 as
+    # only member, group 2 has user 2 and 3 as member.
+    fs = WorkflowFileSystem(tmpdir)
+    with database.session() as session:
+        user_1 = model.create_user(session, active=True)
+        user_2 = model.create_user(session, active=True)
+        user_3 = model.create_user(session, active=True)
+        workflow_id = model.create_workflow(session)
+        members_1 = [user_1]
+        group_1 = model.create_group(session, workflow_id, users=members_1)
+        members_2 = [user_2, user_3]
+        group_2 = model.create_group(session, workflow_id, users=members_2)
+    # -- Test add member ------------------------------------------------------
+    with database.session() as session:
+        manager = WorkflowGroupManager(session=session, fs=fs)
+        members_1 = [user_1, user_3]
+        manager.update_group(group_1, members=members_1)
+        members = [m.user_id for m in manager.get_group(group_1).members]
+        assert set(members) == set(members_1)
+        members = [m.user_id for m in manager.get_group(group_2).members]
+        assert set(members) == set(members_2)
+    # -- Test rename group ----------------------------------------------------
+    with database.session() as session:
+        manager = WorkflowGroupManager(session=session, fs=fs)
+        manager.update_group(group_2, name='My Group')
+        assert manager.get_group(group_1).name == group_1
+        assert manager.get_group(group_2).name == 'My Group'
+    # -- Test rename group and change members ---------------------------------
+    with database.session() as session:
+        manager = WorkflowGroupManager(session=session, fs=fs)
+        members_2 = [user_1] + members_2
+        manager.update_group(group_2, name='The Group', members=members_2)
+        members = [m.user_id for m in manager.get_group(group_1).members]
+        assert set(members) == set(members_1)
+        members = [m.user_id for m in manager.get_group(group_2).members]
+        assert set(members) == set(members_2)
+        assert manager.get_group(group_1).name == group_1
+        assert manager.get_group(group_2).name == 'The Group'
+    # -- Test no changes ------------------------------------------------------
+    with database.session() as session:
+        manager = WorkflowGroupManager(session=session, fs=fs)
+        manager.update_group(group_2, name='The Group', members=members_2)
+        members = [m.user_id for m in manager.get_group(group_1).members]
+        assert set(members) == set(members_1)
+        members = [m.user_id for m in manager.get_group(group_2).members]
+        assert set(members) == set(members_2)
+        assert manager.get_group(group_1).name == group_1
+        assert manager.get_group(group_2).name == 'The Group'

@@ -21,7 +21,7 @@ from functools import partial
 from multiprocessing import Lock, Pool
 
 from flowserv.controller.base import WorkflowController
-from flowserv.model.workflow.resource import WorkflowResource
+from flowserv.model.db import DB
 from flowserv.model.workflow.state import StateSuccess
 
 import flowserv.controller.serial.engine as serial
@@ -152,14 +152,14 @@ class RemoteWorkflowController(WorkflowController):
         """
         # Get the run state. Ensure that the run is in pending state
         if not run.is_pending():
-            raise RuntimeError("invalid run state '{}'".format(run.state))
+            raise RuntimeError("invalid run state '{}'".format(run.state()))
         try:
             # Create a workflow on the remote engine. This will also upload all
             # necessary files to the remote engine. Workflow execution may not
             # be started (indicated by the state property of the returned
             # handle for the remote workflow.
             wf = self.client.create_workflow(run, template, arguments)
-            workflow_id = wf.identifier
+            workflow_id = wf.workflow_id
             # Run the workflow. Depending on the values of the is_async and
             # run_async flags the process will either block execution while
             # monitoring the workflow state or not.
@@ -172,12 +172,12 @@ class RemoteWorkflowController(WorkflowController):
                     tasks=self.tasks
                 )
                 with self.lock:
-                    self.tasks[run.identifier] = (pool, workflow_id)
+                    self.tasks[run.run_id] = (pool, workflow_id)
                 pool.apply_async(
                     run_workflow,
                     args=(
-                        run.identifier,
-                        run.rundir,
+                        run.run_id,
+                        run.get_rundir(),
                         workflow_id,
                         wf.state,
                         wf.output_files,
@@ -191,8 +191,8 @@ class RemoteWorkflowController(WorkflowController):
                 # while waiting (i.e., polling the remote engine) for the
                 # workflow execution to finish.
                 _, state_dict = run_workflow(
-                    run.identifier,
-                    run.rundir,
+                    run.run_id,
+                    run.get_rundir(),
                     workflow_id,
                     wf.state,
                     wf.output_files,
@@ -202,7 +202,7 @@ class RemoteWorkflowController(WorkflowController):
         except Exception as ex:
             # Set the workflow runinto an ERROR state
             logging.error(ex)
-            return run.state.error(messages=util.stacktrace(ex))
+            return run.state().error(messages=util.stacktrace(ex))
 
 
 # -- Helper Methods -----------------------------------------------------------
@@ -229,14 +229,18 @@ def callback_function(result, lock, tasks):
             pool.close()
             del tasks[run_id]
     # Get an instance of the API to update the run state.
-    from flowserv.service.api import service
+    from flowserv.service.api import API
     try:
-        with service() as api:
-            api.runs().update_run(
-                run_id=run_id,
-                state=result_state
-            )
+        db = DB()
+        API(db=db).runs().update_run(
+            run_id=run_id,
+            state=result_state
+        )
+        db.session.commit()
+        db.session.close()
     except Exception as ex:
+        for line in util.stacktrace(ex):
+            logging.error(line)
         logging.error(ex)
 
 
@@ -289,13 +293,15 @@ def run_workflow(run_id, rundir, workflow_id, state, output_files, client):
             wf_state = curr_state
             if wf_state.is_running():
                 # Get an instance of the API to update the run state.
-                from flowserv.service.api import service
+                from flowserv.service.api import API
                 try:
-                    with service() as api:
-                        api.runs().update_run(
-                            run_id=run_id,
-                            state=wf_state
-                        )
+                    db = DB()
+                    API(db=db).runs().update_run(
+                        run_id=run_id,
+                        state=wf_state
+                    )
+                    db.session.commit()
+                    db.session.close()
                 except Exception as ex:
                     logging.error(ex)
                     # Simulate an error response from the API
@@ -304,22 +310,17 @@ def run_workflow(run_id, rundir, workflow_id, state, output_files, client):
             # Download the result files. The wf_state object is not expected
             # to contain the resource file information.
             files = list()
-            for resource_name in output_files:
-                # Download the respective result file first
-                target = os.path.join(rundir, resource_name)
-                client.download_file(workflow_id, resource_name, target)
-                f = WorkflowResource(
-                    resource_id=util.get_unique_identifier(),
-                    key=resource_name
-                )
-                files.append(f)
+            for relative_path in output_files:
+                target = os.path.join(rundir, relative_path)
+                client.download_file(workflow_id, relative_path, target)
+                files.append(relative_path)
             # Create a modified workflow state handle that contains the wrkflow
             # result resources.
             wf_state = StateSuccess(
                 created_at=wf_state.created_at,
                 started_at=wf_state.started_at,
                 finished_at=wf_state.finished_at,
-                resources=files
+                files=files
             )
     except Exception as ex:
         logging.error(ex)

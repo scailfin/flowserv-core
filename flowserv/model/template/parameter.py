@@ -12,7 +12,7 @@ specifications within workflow templates.
 
 import os
 
-from flowserv.files import FileHandle, InputFile
+from flowserv.model.parameter.base import InputFile
 from flowserv.model.parameter.value import TemplateArgument
 
 import flowserv.error as err
@@ -120,26 +120,23 @@ def get_upload_files(template, basedir, files, arguments):
             if arg is None:
                 if para.default_value is None:
                     raise err.MissingArgumentError(var)
+                # Set argument to file handle using the default value
+                # (assuming that the default points to a file in the
+                # template base directory).
+                if para.has_constant() and not para.as_input():
+                    target_path = para.get_constant()
                 else:
-                    # Set argument to file handle using the default value
-                    # (assuming that the default points to a file in the
-                    # template base directory).
-                    if para.has_constant() and not para.as_input():
-                        target_path = para.get_constant()
-                    else:
-                        target_path = para.default_value
-                    arg = TemplateArgument(
-                        parameter=para,
-                        value=InputFile(
-                            f_handle=FileHandle(
-                                filename=os.path.join(
-                                    basedir,
-                                    para.default_value
-                                )
-                            ),
-                            target_path=target_path
-                        )
+                    target_path = para.default_value
+                arg = TemplateArgument(
+                    parameter=para,
+                    value=InputFile(
+                        filename=os.path.join(
+                            basedir,
+                            para.default_value
+                        ),
+                        target_path=target_path
                     )
+                )
             # Get path to source file and the target path from the input
             # file handle
             source = arg.value.source()
@@ -148,6 +145,8 @@ def get_upload_files(template, basedir, files, arguments):
             source = os.path.join(basedir, val)
             target = val
         # Upload source file
+        assert source is not None, 'source cannot be None'
+        assert target is not None, 'target cannot be None'
         result.append((source, target))
     return result
 

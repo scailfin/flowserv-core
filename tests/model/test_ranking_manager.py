@@ -10,19 +10,18 @@
 
 import os
 
-from flowserv.model.base import User, WorkflowHandle
-from flowserv.model.group import WorkflowGroupManager
 from flowserv.model.ranking import RankingManager
+from flowserv.model.workflow.fs import WorkflowFileSystem
+from flowserv.model.workflow.manager import WorkflowManager
 from flowserv.model.run import RunManager
 from flowserv.model.template.schema import (
     ResultSchema, ResultColumn, SortColumn
 )
-from flowserv.model.workflow.fs import WorkflowFileSystem
-from flowserv.model.workflow.resource import ResourceSet, WorkflowResource
 
 import flowserv.model.parameter.declaration as pd
 import flowserv.model.workflow.state as st
 import flowserv.util as util
+import flowserv.tests.model as model
 
 
 """Result schema for the test workflows."""
@@ -48,147 +47,127 @@ SCHEMA_2 = ResultSchema(
 )
 
 
-def init(db, basedir):
+def init(database, basedir):
     """Create a fresh database with one user, two workflows, and four groups
-    for each workflow. Each group has two successful runs and one error run.
-    Returns the ranking manager, run manager, and workflows with their groups
-    and runs.
+    for each workflow. Each group has three active runs. Returns a a list of
+    tuples with workflow_id, groups, and runs.
     """
-    user_id = 'U0000'
-    user = User(user_id=user_id, name=user_id, secret=user_id, active=True)
-    db.session.add(user)
-    # Add two workflow templates.
-    workflows = list()
-    for i, schema in enumerate([SCHEMA_1, SCHEMA_2]):
-        w_id = 'W{}'.format(i)
-        wf = WorkflowHandle(
-            workflow_id=w_id,
-            name=w_id,
-            workflow_spec='{}',
-            result_schema=schema
-        )
-        db.session.add(wf)
-        workflows.append(wf)
-    db.session.commit()
-    # Add four groups for each workflow.
-    fs = WorkflowFileSystem(os.path.join(str(basedir), 'workflows'))
-    group_manager = WorkflowGroupManager(db=db, fs=fs)
-    run_manager = RunManager(db=db, fs=fs)
-    objects = list()
-    for wf in workflows:
-        groups = list()
-        for i in range(4):
-            g = group_manager.create_group(
-                workflow_id=wf.workflow_id,
-                name='G{}'.format(i),
-                user_id=user_id,
-                parameters=dict(),
-                workflow_spec=dict()
-            )
-            runs = list()
-            for j in range(3):
-                r = run_manager.create_run(
-                    workflow_id=wf.workflow_id,
-                    group_id=g.group_id
+    with database.session() as session:
+        user_id = model.create_user(session, active=True)
+        # Add two workflow templates.
+        workflows = list()
+        for i, schema in enumerate([SCHEMA_1, SCHEMA_2]):
+            workflow_id = model.create_workflow(session, result_schema=schema)
+            workflows.append(workflow_id)
+        objects = list()
+        for workflow_id in workflows:
+            groups = list()
+            for i in range(4):
+                group_id = model.create_group(
+                    session,
+                    workflow_id,
+                    users=[user_id]
                 )
-                runs.append(r)
-            groups.append((g, runs))
-        objects.append((wf, groups))
-    return RankingManager(db=db), run_manager, objects
+                runs = list()
+                for j in range(3):
+                    run_id = model.create_run(session, workflow_id, group_id)
+                    runs.append(run_id)
+                groups.append((group_id, runs))
+            objects.append((workflow_id, groups))
+        return objects
 
 
-def run_success(run_manager, run, values):
+def run_success(run_manager, run_id, rundir, values):
     """Set given run into success state with the given result data."""
-    rundir = run_manager.fs.run_basedir(
-        workflow_id=run.workflow_id,
-        group_id=run.group_id,
-        run_id=run.run_id
-    )
+    util.create_dir(rundir)
     filename = os.path.join(rundir, RESULT_FILE_ID)
     util.write_object(filename=filename, obj=values)
     ts = util.utc_now()
     run_manager.update_run(
-        run_id=run.run_id,
+        run_id=run_id,
         state=st.StateSuccess(
             created_at=ts,
             started_at=ts,
             finished_at=ts,
-            resources=ResourceSet([
-                WorkflowResource(
-                    resource_id=util.get_unique_identifier(),
-                    key=RESULT_FILE_ID
-                )
-            ])
+            files=[RESULT_FILE_ID]
         )
     )
 
 
-def test_empty_rankings(database, tmpdir):
+def test_empty_ranking(database, tmpdir):
     """The rankings for workflows without completed runs are empty."""
-    manager, _, workflows = init(database, tmpdir)
-    for wf, _ in workflows:
-        assert len(manager.get_ranking(wf)) == 0
+    # -- Setup ----------------------------------------------------------------
+    workflows = init(database, tmpdir)
+    fs = WorkflowFileSystem(tmpdir)
+    # -- Test empty listing with no successful runs ---------------------------
+    with database.session() as session:
+        wfrepo = WorkflowManager(session=session, fs=fs)
+        rankings = RankingManager(session=session)
+        for workflow_id, _ in workflows:
+            wf = wfrepo.get_workflow(workflow_id)
+            assert len(rankings.get_ranking(wf)) == 0
 
 
-def test_multi_success_runs_for_one(database, tmpdir):
+def test_multi_success_runs(database, tmpdir):
     """Test rankings for workflows where each group has multiple successful
     runs.
     """
-    manager, run_manager, workflows = init(database, tmpdir)
-    # Set all runs for the first workflow to success. Increase the value for
-    # a counter.
-    wf, groups = workflows[0]
+    # -- Setup ----------------------------------------------------------------
+    # Create database with two workflows and four grous each. Each group has
+    # three active runs. Then set all runs for the first workflow into success
+    # state. Increase a counter for the avg_len value as we update runs.
+    workflows = init(database, tmpdir)
+    fs = WorkflowFileSystem(tmpdir)
+    workflow_id, groups = workflows[0]
     count = 0
     asc_order = list()
-    desc_order = list()
-    for g, runs in groups:
-        for i, r in enumerate(runs):
-            run_success(
-                run_manager=run_manager,
-                run=r,
-                values={'count': count, 'avg': 1.0, 'name': r.run_id}
-            )
-            count += 1
-            if i == 0:
-                asc_order.append(r.run_id)
-        desc_order.append(r.run_id)
-    ranking = manager.get_ranking(wf)
-    rank_order = [e.run_id for e in ranking]
-    assert rank_order == desc_order[::-1]
-    ranking = manager.get_ranking(
-        wf,
-        order_by=[SortColumn(identifier='count', sort_desc=False)]
-    )
-    rank_order = [e.run_id for e in ranking]
-    assert rank_order == asc_order
-
-
-def test_multi_success_runs_for_all(database, tmpdir):
-    """Test rankings for workflows where each group has multiple successful
-    runs.
-    """
-    manager, run_manager, workflows = init(database, tmpdir)
-    # Set all runs for the first workflow to success. Increase the value for
-    # a counter.
-    wf, groups = workflows[0]
-    count = 0
     count_order = list()
-    for g, runs in groups:
-        for r in runs:
-            run_success(
-                run_manager=run_manager,
-                run=r,
-                values={'count': count, 'avg': 1.0, 'name': r.run_id}
-            )
-            count_order.append(r.run_id)
-            count += 1
-    ranking = manager.get_ranking(wf, include_all=True)
-    rank_order = [e.run_id for e in ranking]
-    assert rank_order == count_order[::-1]
-    ranking = manager.get_ranking(
-        wf,
-        order_by=[SortColumn(identifier='count', sort_desc=False)],
-        include_all=True
-    )
-    rank_order = [e.run_id for e in ranking]
-    assert rank_order == count_order
+    desc_order = list()
+    with database.session() as session:
+        for group_id, runs in groups:
+            for i, run_id in enumerate(runs):
+                rundir = fs.run_basedir(
+                    workflow_id=workflow_id,
+                    group_id=group_id,
+                    run_id=run_id
+                )
+                run_success(
+                    run_manager=RunManager(session=session, fs=fs),
+                    run_id=run_id,
+                    rundir=rundir,
+                    values={'count': count, 'avg': 1.0, 'name': run_id}
+                )
+                count += 1
+                if i == 0:
+                    asc_order.append(run_id)
+                count_order.append(run_id)
+            desc_order.append(run_id)
+    # -- Test get ranking with one result per group ---------------------------
+    with database.session() as session:
+        wfrepo = WorkflowManager(session=session, fs=fs)
+        rankings = RankingManager(session=session)
+        wf = wfrepo.get_workflow(workflow_id)
+        ranking = rankings.get_ranking(wf)
+        rank_order = [e.run_id for e in ranking]
+        assert rank_order == desc_order[::-1]
+        ranking = rankings.get_ranking(
+            wf,
+            order_by=[SortColumn(identifier='count', sort_desc=False)]
+        )
+        rank_order = [e.run_id for e in ranking]
+        assert rank_order == asc_order
+    # -- Test get ranking with all results per group --------------------------
+    with database.session() as session:
+        wfrepo = WorkflowManager(session=session, fs=fs)
+        rankings = RankingManager(session=session)
+        wf = wfrepo.get_workflow(workflow_id)
+        ranking = rankings.get_ranking(wf, include_all=True)
+        rank_order = [e.run_id for e in ranking]
+        assert rank_order == count_order[::-1]
+        ranking = rankings.get_ranking(
+            wf,
+            order_by=[SortColumn(identifier='count', sort_desc=False)],
+            include_all=True
+        )
+        rank_order = [e.run_id for e in ranking]
+        assert rank_order == count_order

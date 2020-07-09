@@ -13,7 +13,7 @@ given user can execute a requested action.
 
 from abc import ABCMeta, abstractmethod
 
-from flowserv.model.base import APIKey, User
+from flowserv.model.base import APIKey, GroupHandle, RunHandle, User
 
 import datetime as dt
 import dateutil.parser
@@ -25,15 +25,15 @@ class Auth(metaclass=ABCMeta):
     """Base class for authentication and authorization methods. Different
     authorization policies should override the methods of this class.
     """
-    def __init__(self, db):
+    def __init__(self, session):
         """Initialize the database connection.
 
         Parameters
         ----------
-        db: flowserv.model.db.DB
+        session: sqlalchemy.orm.session.Session
             Database session.
         """
-        self.db = db
+        self.session = session
 
     def authenticate(self, api_key):
         """Get the unique user identifier that is associated with the given
@@ -59,7 +59,7 @@ class Auth(metaclass=ABCMeta):
         # Get information for user that that is associated with the API key
         # together with the expiry date of the key. If the API key is unknown
         # or expired raise an error.
-        query = self.db.session.query(User)\
+        query = self.session.query(User)\
             .filter(User.user_id == APIKey.user_id)\
             .filter(APIKey.value == api_key)
         user = query.one_or_none()
@@ -130,29 +130,34 @@ class Auth(metaclass=ABCMeta):
         # Depending on which of the parameters is given, check whether the
         # group or the run exists. Raise an error if either does not exist.
         if group_id is not None:
-            sql = 'SELECT group_id FROM workflow_group WHERE group_id = ?'
-            if self.con.execute(sql, (group_id,)).fetchone() is None:
+            group = self.session\
+                .query(GroupHandle)\
+                .filter(GroupHandle.group_id == group_id)\
+                .one_or_none()
+            if group is None:
                 raise err.UnknownWorkflowGroupError(group_id)
             return group_id
         else:
-            sql = 'SELECT run_id, group_id FROM workflow_run WHERE run_id = ?'
-            row = self.con.execute(sql, (run_id,)).fetchone()
-            if row is None:
+            run = self.session\
+                .query(RunHandle)\
+                .filter(RunHandle.run_id == run_id)\
+                .one_or_none()
+            if run is None:
                 raise err.UnknownRunError(run_id)
-            return row['group_id']
+            return run.group_id
 
 
 class DefaultAuthPolicy(Auth):
     """Default implementation for the API's authorization methods."""
-    def __init__(self, db):
+    def __init__(self, session):
         """Initialize the database connection.
 
         Parameters
         ----------
-        db: flowserv.model.db.DB
+        session: sqlalchemy.orm.session.Session
             Database session.
         """
-        super(DefaultAuthPolicy, self).__init__(db)
+        super(DefaultAuthPolicy, self).__init__(session)
 
     def is_group_member(self, user_id, group_id=None, run_id=None):
         """Verify that the given user is member of a workflow group. The group
@@ -187,31 +192,30 @@ class DefaultAuthPolicy(Auth):
             group_id=group_id,
             run_id=run_id
         )
-        if run_group is None:
-            return True
         # Check if the user is a member of the run group.
-        sql = (
-            'SELECT group_id '
-            'FROM group_member '
-            'WHERE group_id = ? AND user_id = ?'
-        )
-        params = (run_group, user_id)
-        return self.con.execute(sql, params).fetchone() is not None
+        group = self.session\
+            .query(GroupHandle)\
+            .filter(GroupHandle.group_id == run_group)\
+            .one_or_none()
+        for member in group.members:
+            if member.user_id == user_id:
+                return True
+        return False
 
 
 class OpenAccessAuth(Auth):
     """Implementation for the API's authorization policy that gives full access
     to any registered user.
     """
-    def __init__(self, db):
+    def __init__(self, session):
         """Initialize the database connection.
 
         Parameters
         ----------
-        db: flowserv.model.db.DB
+        session: sqlalchemy.orm.session.Session
             Database session.
         """
-        super(OpenAccessAuth, self).__init__(db)
+        super(OpenAccessAuth, self).__init__(session)
 
     def is_group_member(self, user_id, group_id=None, run_id=None):
         """Anyone has access to a workflow group. This method still ensures

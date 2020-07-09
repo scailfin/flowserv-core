@@ -60,7 +60,7 @@ class UserService(object):
         -------
         dict
         """
-        users = self.manager.list_users(query=query)
+        users = self.manager.list_users(prefix=query)
         return self.serialize.user_listing(users)
 
     def login_user(self, username, password):

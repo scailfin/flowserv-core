@@ -49,8 +49,8 @@ class RemoteTestClient(RemoteClient):
         run: flowserv.model.base.RunHandle
             Handle for the run that is being executed.
         template: flowserv.model.template.base.WorkflowTemplate
-            Workflow template containing the parameterized specification and the
-            parameter declarations.
+            Workflow template containing the parameterized specification and
+            the parameter declarations.
         arguments: dict(flowserv.model.parameter.value.TemplateArgument)
             Dictionary of argument values for parameters in the template.
 
@@ -61,17 +61,20 @@ class RemoteTestClient(RemoteClient):
         # Assume a serial workflow template. Copy all input files to the run
         # directory.
         wf = SerialWorkflow(template, arguments)
-        util.copy_files(files=wf.upload_files, target_dir=run.rundir)
+        util.copy_files(files=wf.upload_files, target_dir=run.get_rundir())
         # Create top-level folder for all expected result files.
-        util.create_directories(basedir=run.rundir, files=wf.output_files)
+        util.create_directories(
+            basedir=run.get_rundir(),
+            files=wf.output_files
+        )
         self.serial_wf = wf
         self.run = run
         # Create a workflow handle but to not execute the workflow yet.
         # Execution starts when the get_workflow_state method is called for the
         # first time.
         self.workflow = RemoteWorkflowHandle(
-            identifier=run.identifier,
-            state=run.state,
+            workflow_id=run.run_id,
+            state=run.state(),
             output_files=wf.output_files
         )
         return self.workflow
@@ -119,8 +122,8 @@ class RemoteTestClient(RemoteClient):
             self.workflow.state = state.start()
         else:
             _, state_dict = run_workflow(
-                run_id=self.run.identifier,
-                rundir=self.run.rundir,
+                run_id=self.run.run_id,
+                rundir=self.run.get_rundir(),
                 state=state,
                 output_files=self.serial_wf.output_files,
                 steps=self.serial_wf.commands,

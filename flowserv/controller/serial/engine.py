@@ -21,7 +21,6 @@ from multiprocessing import Lock, Pool
 from flowserv.controller.base import WorkflowController
 from flowserv.controller.serial.workflow import SerialWorkflow
 from flowserv.model.template.base import WorkflowTemplate
-from flowserv.model.workflow.resource import WorkflowResource
 
 import flowserv.util as util
 import flowserv.model.template.parameter as tp
@@ -147,17 +146,17 @@ class SerialWorkflowEngine(WorkflowController):
         # Get the run state. Ensure that the run is in pending state
         if not run.is_pending():
             raise RuntimeError("invalid run state '{}'".format(run.state))
-        state = run.state
+        state = run.state()
         # Expand template parameters. Get (i) list of files that need to be
         # copied, (ii) the expanded commands that represent the workflow steps,
         # and (iii) the list of output files.
         wf = SerialWorkflow(template, arguments)
         try:
             # Copy all necessary files to the run folder
-            util.copy_files(files=wf.upload_files, target_dir=run.rundir)
+            util.copy_files(files=wf.upload_files, target_dir=run.get_rundir())
             # Create top-level folder for all expected result files.
             util.create_directories(
-                basedir=run.rundir,
+                basedir=run.get_rundir(),
                 files=wf.output_files
             )
             # Get list of commands to execute.
@@ -174,12 +173,12 @@ class SerialWorkflowEngine(WorkflowController):
                     tasks=self.tasks
                 )
                 with self.lock:
-                    self.tasks[run.identifier] = pool
+                    self.tasks[run.run_id] = pool
                 pool.apply_async(
                     self.exec_func,
                     args=(
-                        run.identifier,
-                        run.rundir,
+                        run.run_id,
+                        run.get_rundir(),
                         state,
                         wf.output_files,
                         commands,
@@ -191,8 +190,8 @@ class SerialWorkflowEngine(WorkflowController):
             else:
                 # Run steps synchronously and block the controller until done
                 _, state_dict = self.exec_func(
-                    run.identifier,
-                    run.rundir,
+                    run.run_id,
+                    run.get_rundir(),
                     state,
                     wf.output_files,
                     commands,
@@ -284,13 +283,12 @@ def callback_function(result, lock, tasks):
             pool.close()
             del tasks[run_id]
     # Get an instance of the API to update the run state.
-    from flowserv.service.api import service
+    from flowserv.service.api import API
     try:
-        with service() as api:
-            api.runs().update_run(
-                run_id=run_id,
-                state=result_state
-            )
+        API().runs().update_run(
+            run_id=run_id,
+            state=result_state
+        )
     except Exception as ex:
         logging.error(ex)
 
@@ -363,16 +361,13 @@ def run_workflow(run_id, rundir, state, output_files, steps, verbose):
                     logging.error(ex)
                     result_state = state.error(messages=util.stacktrace(ex))
                     return run_id, serialize.serialize_state(result_state)
-        # Create dictionary of output files
+        # Create list of output files that were generated.
         files = list()
-        for resource_name in output_files:
-            f = WorkflowResource(
-                resource_id=util.get_unique_identifier(),
-                key=resource_name
-            )
-            files.append(f)
+        for relative_path in output_files:
+            if os.path.exists(os.path.join(rundir, relative_path)):
+                files.append(relative_path)
         # Workflow executed successfully
-        result_state = state.success(resources=files)
+        result_state = state.success(files=files)
     except Exception as ex:
         logging.error(ex)
         result_state = state.error(messages=util.stacktrace(ex))

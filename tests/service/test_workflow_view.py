@@ -10,27 +10,19 @@
 
 import os
 
-from flowserv.service.api import API
-from flowserv.tests.controller import StateEngine
-
-import flowserv.tests.db as db
-
 import flowserv.tests.serialize as serialize
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))
-TEMPLATE_DIR = os.path.join(DIR, '../.files/benchmark/helloworld')
 INSTRUCTION_FILE = os.path.join(DIR, '../.files/benchmark/instructions.txt')
 
 
-def test_workflow_view(tmpdir):
+def test_workflow_view(api_factory, hello_world):
     """Test serialization for created workflows and workflow listings."""
     # Get an API instance that uses the StateEngine as the backend
-    con = db.init_db(str(tmpdir)).connect()
-    engine = StateEngine()
-    api = API(con=con, engine=engine, basedir=str(tmpdir))
+    api = api_factory()
     # Create two copies of the same workflow
-    r = api.workflows().create_workflow(name='W1', sourcedir=TEMPLATE_DIR)
+    r = hello_world(api, name='W1')
     serialize.validate_workflow_handle(doc=r, has_optional=False)
     r = api.workflows().get_workflow(r['id'])
     serialize.validate_workflow_handle(doc=r, has_optional=False)
@@ -39,11 +31,11 @@ def test_workflow_view(tmpdir):
     assert len(r['parameters']) == 3
     for para in r['parameters']:
         serialize.validate_parameter(para)
-    r = api.workflows().create_workflow(
+    r = hello_world(
+        api=api,
         name='W2',
         description='ABC',
-        instructions=INSTRUCTION_FILE,
-        sourcedir=TEMPLATE_DIR
+        instructions=INSTRUCTION_FILE
     )
     serialize.validate_workflow_handle(doc=r, has_optional=True)
     assert r['description'] == 'ABC'

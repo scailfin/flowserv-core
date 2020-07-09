@@ -13,9 +13,8 @@ manipulate workflow runs and their results.
 import logging
 import shutil
 
-from flowserv.files import FileHandle, InputFile
+from flowserv.model.parameter.base import InputFile
 from flowserv.model.parameter.value import TemplateArgument
-from flowserv.model.base import RunHandle
 from flowserv.model.template.base import WorkflowTemplate
 
 import flowserv.error as err
@@ -36,8 +35,8 @@ class RunService(object):
     workflow runs and their resources.
     """
     def __init__(
-        self, run_manager, group_manager, workflow_repo, ranking_manager,
-        backend, auth, serializer
+        self, run_manager, group_manager, ranking_manager, backend, auth,
+        serializer
     ):
         """Initialize the internal reference to the workflow controller, the
         runa and group managers, and to the serializer.
@@ -48,9 +47,7 @@ class RunService(object):
             Manager for workflow runs
         group_manager: flowserv.model.group..GroupManager
             Manager for workflow groups
-        workflow_repo: flowserv.model.workflow.manager.WorkflowManager
-            Repository for workflow templates
-        ranking_manager: flowserv.model.ranking.manager.RankingManager
+        ranking_manager: flowserv.model.ranking.RankingManager
             Manager for workflow evaluation rankings
         backend: flowserv.controller.base.WorkflowController
             Workflow engine controller
@@ -61,7 +58,6 @@ class RunService(object):
         """
         self.run_manager = run_manager
         self.group_manager = group_manager
-        self.workflow_repo = workflow_repo
         self.ranking_manager = ranking_manager
         self.backend = backend
         self.auth = auth
@@ -108,15 +104,9 @@ class RunService(object):
         messages = None
         if reason is not None:
             messages = list([reason])
-        state = run.state.cancel(messages=messages)
-        self.run_manager.update_run(
-            run_id=run_id,
-            state=state
-        )
-        return self.serialize.run_handle(
-            run=run.update_state(state),
-            group=self.group_manager.get_group(run.group_id)
-        )
+        state = run.state().cancel(messages=messages)
+        run = self.run_manager.update_run(run_id=run_id, state=state)
+        return self.serialize.run_handle(run=run, group=run.group)
 
     def delete_run(self, run_id, user_id):
         """Delete the run with the given identifier.
@@ -173,7 +163,7 @@ class RunService(object):
         ------
         flowserv.error.UnauthorizedAccessError
         flowserv.error.UnknownRunError
-        flowserv.error.UnknownResourceError
+        flowserv.error.UnknownFileError
         """
         # Raise an error if the user does not have rights to access files for
         # the workflow run or if the run does not exist (only if the user
@@ -191,9 +181,9 @@ class RunService(object):
         run = self.run_manager.get_run(run_id)
         if not run.is_success():
             raise err.UnknownRunError(run_id)
-        return run.resources.targz()
+        return run.archive()
 
-    def get_result_file(self, run_id, resource_id, user_id=None):
+    def get_result_file(self, run_id, file_id, user_id=None):
         """Get file handle for a resource file that was generated as the result
         of a successful workflow run.
 
@@ -203,21 +193,21 @@ class RunService(object):
         Parameters
         ----------
         run_id: string
-            Unique run identifier
-        resource_id: string
-            Unique resource file identifier
+            Unique run identifier.
+        file_id: string
+            Unique result file identifier.
         user_id: string, optional
-            Unique user identifier
+            Unique user identifier.
 
         Returns
         -------
-        flowserv.files.FileHandle
+        flowserv.model.base.RunFile
 
         Raises
         ------
         flowserv.error.UnauthorizedAccessError
         flowserv.error.UnknownRunError
-        flowserv.error.UnknownResourceError
+        flowserv.error.UnknownFileError
         """
         # Raise an error if the user does not have rights to access files for
         # the workflow run or if the run does not exist (only if the user
@@ -232,11 +222,11 @@ class RunService(object):
         # Get the run handle to retrieve the resource. Raise error if the
         # resource does not exist
         run = self.run_manager.get_run(run_id)
-        resource = run.resources.get_resource(identifier=resource_id)
-        if resource is None:
-            raise err.UnknownResourceError(resource_id)
+        fh = run.get_file(by_id=file_id)
+        if fh is None:
+            raise err.UnknownFileError(file_id)
         # Return file handle for resource file
-        return resource
+        return fh
 
     def get_run(self, run_id, user_id):
         """Get handle for the given run.
@@ -267,10 +257,7 @@ class RunService(object):
         # Get the run and the workflow group it belongs to. The group is needed
         # to serialize the result.
         run = self.run_manager.get_run(run_id)
-        return self.serialize.run_handle(
-            run=run,
-            group=self.group_manager.get_group(run.group_id)
-        )
+        return self.serialize.run_handle(run=run, group=run.group)
 
     def list_runs(self, group_id, user_id):
         """Get a listing of all run handles for the given workflow group.
@@ -378,8 +365,7 @@ class RunService(object):
         # Get the template from the workflow that the workflow group belongs
         # to. Get a modified copy of the template based on  the (potentially)
         # modified workflow specification and parameters of the workflow group.
-        workflow = self.workflow_repo.get_workflow(group.workflow_id)
-        template = workflow.get_template(
+        template = group.workflow.get_template(
             workflow_spec=group.workflow_spec,
             parameters=group.parameters
         )
@@ -409,13 +395,16 @@ class RunService(object):
             if para.is_file():
                 # The argument value is expected to be the identifier of an
                 # previously uploaded file. This will raise an exception if the
-                # file identifier is unknown
-                fh = group.get_file(arg_val)
-                if ARG_AS in arg:
-                    # Convert the file handle to an input file handle if a
-                    # target path is given
-                    fh = InputFile(fh, target_path=arg[ARG_AS])
-                val = TemplateArgument(parameter=para, value=fh, validate=True)
+                # file identifier is unknown.
+                fh = self.group_manager.get_file(
+                    group_id=group_id,
+                    file_id=arg_val
+                )
+                val = TemplateArgument(
+                    parameter=para,
+                    value=fh.to_input(para, target_path=arg.get(ARG_AS)),
+                    validate=True
+                )
             elif para.is_list() or para.is_record():
                 raise err.InvalidArgumentError('unsupported parameter type')
             else:
@@ -431,11 +420,10 @@ class RunService(object):
         template.validate_arguments(run_args)
         # Start the run and return the serialized run handle.
         run = self.run_manager.create_run(
-            workflow_id=group.workflow_id,
-            group_id=group_id,
+            group=group,
             arguments=run_args
         )
-        run_id = run.identifier
+        run_id = run.run_id
         # Execute the benchmark workflow for the given set of arguments.
         state = self.backend.exec_workflow(
             run=run,
@@ -450,17 +438,10 @@ class RunService(object):
                 run_id=run_id,
                 state=state
             )
-        run = RunHandle(
-            identifier=run_id,
-            workflow_id=workflow.identifier,
-            group_id=group_id,
-            state=state,
-            arguments=run.arguments,
-            rundir=run.rundir
-        )
+            run = self.run_manager.get_run(run_id)
         return self.serialize.run_handle(run, group)
 
-    def update_run(self, run_id, state, commit_changes=True):
+    def update_run(self, run_id, state):
         """Update the state of the given run. For runs that are in a SUCCESS
         state the workflow evaluation ranking is updated (if a result schema
         is defined for the corresponding template). If the ranking results
@@ -474,8 +455,6 @@ class RunService(object):
             Unique identifier for the run
         state: flowserv.model.workflow.state.WorkflowState
             New workflow state
-        commit_changes: bool, optional
-            Commit all changes to the database if true
 
         Raises
         ------
@@ -496,9 +475,9 @@ class RunService(object):
                 # Run post-processing task synchronously if the current
                 # post-processing resources where generated for a different
                 # set of runs than those in the ranking.
-                if runs != workflow.get_postproc_key():
+                if runs != workflow.postproc_ranking_key:
                     msg = 'Run post-processing workflow for {}'
-                    logging.debug(msg.format(workflow.identifier))
+                    logging.debug(msg.format(workflow.workflow_id))
                     run_postproc_workflow(
                         postproc_spec=postproc_spec,
                         workflow=workflow,
@@ -507,8 +486,6 @@ class RunService(object):
                         run_manager=self.run_manager,
                         backend=self.backend
                     )
-        else:
-            self.run_manager.update_run(run_id=run_id, state=state)
 
 
 # -- Helper functions ---------------------------------------------------------
@@ -535,7 +512,7 @@ def run_postproc_workflow(
             postbase.PARA_RUNS: TemplateArgument(
                 parameter=postbase.PARAMETERS[0],
                 value=InputFile(
-                    f_handle=FileHandle(filename=datadir),
+                    filename=datadir,
                     target_path=pp_inputs.get(
                         tmpl.PPLBL_RUNS,
                         postbase.RUNS_DIR
@@ -549,23 +526,18 @@ def run_postproc_workflow(
         postproc_arguments = dict()
     # Create a new run for the workflow. The identifier for the run group is
     # None.
+    workflow.postproc_ranking_key = runs
     run = run_manager.create_run(
-        workflow_id=workflow.identifier,
-        group_id=None,
+        workflow=workflow,
         arguments=postproc_arguments,
-        commit_changes=False
-    )
-    # Set the new run as the current post-processing run and enter the run keys
-    workflow.update_postproc(
-        run_id=run.identifier,
         runs=runs
     )
     if strace is not None:
         # If there were data preparation errors set the created run into an
         # error state and return.
         run_manager.update_run(
-            run_id=run.identifier,
-            state=run.state.error(messages=strace)
+            run_id=run.run_id,
+            state=run.state().error(messages=strace)
         )
     else:
         # Execute the post-processing workflow asynchronously if
@@ -583,7 +555,7 @@ def run_postproc_workflow(
         # no longer pending for execution.
         if not postproc_state.is_pending():
             run_manager.update_run(
-                run_id=run.identifier,
+                run_id=run.run_id,
                 state=postproc_state
             )
         # Remove the temporary input folder

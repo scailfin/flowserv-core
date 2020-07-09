@@ -22,7 +22,8 @@ def main(rundir, outputfile):
     # Read avg_count for all runs in the ranking
     results = list()
     for run in Runs(rundir):
-        doc = util.read_object(filename=run.get_file('results/analytics.json'))
+        filename = run.get_file(name='results/analytics.json')
+        doc = util.read_object(filename=filename)
         results.append(doc)
         # Delay execution to allow for testing running post-processing
         # workflows

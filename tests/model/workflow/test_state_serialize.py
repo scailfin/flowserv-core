@@ -11,8 +11,6 @@
 import os
 import pytest
 
-from flowserv.model.workflow.resource import WorkflowResource
-
 import flowserv.util as util
 import flowserv.model.workflow.state as state
 
@@ -98,18 +96,13 @@ def test_success_state(tmpdir):
         created_at=util.to_datetime(CREATED_AT),
         started_at=util.to_datetime(STARTED_AT),
         finished_at=util.to_datetime(FINISHED_AT),
-        resources=[
-            WorkflowResource(resource_id='0', key='myfile1',),
-            WorkflowResource(resource_id='1', key='myfile2')
-        ]
+        files=['myfile1', 'myfile2']
     )
     s = state.deserialize_state(state.serialize_state(s))
     assert s.is_success()
-    assert s.get_resource(key='myfile1').resource_id == '0'
-    assert s.get_resource(key='myfile2').resource_id == '1'
-    assert s.get_resource(identifier='0').key == 'myfile1'
-    assert s.get_resource(identifier='1').key == 'myfile2'
-    assert len(s.resources) == 2
+    assert len(s.files) == 2
+    assert 'myfile1' in s.files
+    assert 'myfile2' in s.files
     validate_date(s.created_at, util.to_datetime(CREATED_AT))
     validate_date(s.started_at, util.to_datetime(STARTED_AT))
     validate_date(s.finished_at, util.to_datetime(FINISHED_AT))

@@ -12,16 +12,13 @@ enable users to login and logout.
 
 import pytest
 
-from flowserv.service.api import API
-
 import flowserv.error as err
-import flowserv.tests.db as db
 import flowserv.tests.serialize as serialize
 
 
-def test_authenticate_user(tmpdir):
+def test_authenticate_user(api_factory):
     """Test login and logout via API."""
-    api = API(con=db.init_db(str(tmpdir)).connect(), basedir=str(tmpdir))
+    api = api_factory()
     users = api.users()
     # Register a new user that is automatically activated
     r = users.register_user(username='myuser', password='mypwd', verify=False)
@@ -37,9 +34,9 @@ def test_authenticate_user(tmpdir):
     serialize.validate_user_handle(doc=r, login=False)
 
 
-def test_list_users(tmpdir):
+def test_list_users(api_factory):
     """Test user listings and queries."""
-    api = API(con=db.init_db(str(tmpdir)).connect(), basedir=str(tmpdir))
+    api = api_factory()
     users = api.users()
     # Register three active users
     users.register_user(username='a@user', password='mypwd', verify=False)
@@ -56,9 +53,9 @@ def test_list_users(tmpdir):
     assert len(r['users']) == 1
 
 
-def test_register_user(tmpdir):
+def test_register_user(api_factory):
     """Test new user registration via API."""
-    api = API(con=db.init_db(str(tmpdir)).connect(), basedir=str(tmpdir))
+    api = api_factory()
     users = api.users()
     # Register a new user without activating the user
     r = users.register_user(
@@ -79,9 +76,9 @@ def test_register_user(tmpdir):
     serialize.validate_user_handle(doc=r, login=False)
 
 
-def test_reset_password(tmpdir):
+def test_reset_password(api_factory):
     """Test requesting a reset and resetting the password for a user."""
-    api = API(con=db.init_db(str(tmpdir)).connect(), basedir=str(tmpdir))
+    api = api_factory()
     users = api.users()
     # Register a new user
     users.register_user(username='myuser', password='mypwd', verify=False)

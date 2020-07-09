@@ -8,36 +8,15 @@
 
 """Unit test for the API service descriptor view."""
 
-import os
-
-from flowserv.service.api import API
-
 import flowserv.config.api as config
-import flowserv.tests.db as db
 import flowserv.tests.serialize as serialize
 import flowserv.version as version
 from flowserv.view.factory import DefaultView
 
 
-"""API environment variables that control the base url."""
-API_VARS = [
-    config.FLOWSERV_API_NAME,
-    config.FLOWSERV_API_HOST,
-    config.FLOWSERV_API_PORT,
-    config.FLOWSERV_API_PROTOCOL,
-    config.FLOWSERV_API_PATH
-]
-
-
-def test_service_descriptor(tmpdir):
+def test_default_service_descriptor(api_factory):
     """Test the service descriptor serialization."""
-    # Clear environment variables if set
-    for var in API_VARS:
-        if var in os.environ:
-            del os.environ[var]
-    os.environ[config.FLOWSERV_API_PORT] = '80'
-    con = db.init_db(str(tmpdir)).connect()
-    api = API(con=con, basedir=str(tmpdir))
+    api = api_factory()
     r = api.server().service_descriptor()
     serialize.validate_service_descriptor(r)
     assert r['name'] == config.DEFAULT_NAME
@@ -51,6 +30,12 @@ def test_service_descriptor(tmpdir):
     assert r['version'] == version.__version__
     assert r['validToken']
     assert r['username'] == 'alice'
+
+
+def test_service_descriptor_with_custom_labels(api_factory):
+    """Test serialization for a service descriptor with a custom set of view
+    labels.
+    """
     # Test initialization with a different set of labels
     labels = {
         'SERVER': {
@@ -59,7 +44,7 @@ def test_service_descriptor(tmpdir):
             'UNK': None
         }
     }
-    api = API(con=con, basedir=str(tmpdir), view=DefaultView(labels=labels))
+    api = api_factory(view=DefaultView(labels=labels))
     r = api.server().service_descriptor()
     assert r['serviceName'] == config.DEFAULT_NAME
     assert r['serviceVersion'] == version.__version__

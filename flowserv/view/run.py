@@ -18,15 +18,15 @@ class RunSerializer(Serializer):
 
         Parameters
         ----------
-        labels: object, optional
-            Object instance that contains the values for serialization labels
+        labels: object, default=None
+            Object instance that contains the values for serialization labels.
         """
         super(RunSerializer, self).__init__(
             labels={
                 'ARG_ID': 'id',
                 'ARG_VALUE': 'value',
-                'RESOURCE_ID': 'id',
-                'RESOURCE_NAME': 'name',
+                'FILE_ID': 'id',
+                'FILE_NAME': 'name',
                 'RUN_ARGUMENTS': 'arguments',
                 'RUN_CREATED': 'createdAt',
                 'RUN_ERRORS': 'messages',
@@ -35,7 +35,7 @@ class RunSerializer(Serializer):
                 'RUN_ID': 'id',
                 'RUN_LIST': 'runs',
                 'RUN_PARAMETERS': 'parameters',
-                'RUN_RESOURCES': 'resources',
+                'RUN_FILES': 'files',
                 'RUN_STARTED': 'startedAt',
                 'RUN_STATE': 'state',
                 'RUN_WORKFLOW': 'workflowId'
@@ -74,9 +74,9 @@ class RunSerializer(Serializer):
         """
         LABELS = self.labels
         doc = {
-            LABELS['RUN_ID']: run.identifier,
-            LABELS['RUN_STATE']: run.state_type_id,
-            LABELS['RUN_CREATED']: run.created_at.isoformat()
+            LABELS['RUN_ID']: run.run_id,
+            LABELS['RUN_STATE']: run.state_type,
+            LABELS['RUN_CREATED']: run.created_at
         }
         return doc
 
@@ -117,20 +117,20 @@ class RunSerializer(Serializer):
             doc[LABELS['RUN_PARAMETERS']] = [p.to_dict() for p in parameters]
         # Add additional information from the run state
         if not run.is_pending():
-            doc[LABELS['RUN_STARTED']] = run.state.started_at.isoformat()
+            doc[LABELS['RUN_STARTED']] = run.state().started_at
         if run.is_canceled() or run.is_error():
-            doc[LABELS['RUN_FINISHED']] = run.state.stopped_at.isoformat()
-            doc[LABELS['RUN_ERRORS']] = run.state.messages
+            doc[LABELS['RUN_FINISHED']] = run.state().stopped_at
+            doc[LABELS['RUN_ERRORS']] = run.state().messages
         elif run.is_success():
-            doc[LABELS['RUN_FINISHED']] = run.state.finished_at.isoformat()
+            doc[LABELS['RUN_FINISHED']] = run.state().finished_at
             # Serialize file resources
-            resources = list()
-            for res in run.resources:
-                resources.append({
-                    LABELS['RESOURCE_ID']: res.identifier,
-                    LABELS['RESOURCE_NAME']: res.name
+            files = list()
+            for f in run.files:
+                files.append({
+                    LABELS['FILE_ID']: f.file_id,
+                    LABELS['FILE_NAME']: f.name
                 })
-            doc[LABELS['RUN_RESOURCES']] = resources
+            doc[LABELS['RUN_FILES']] = files
         return doc
 
     def run_listing(self, runs, group_id):

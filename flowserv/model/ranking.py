@@ -83,15 +83,15 @@ class RankingManager(object):
     schema of thoses tables is defined by the result schema of the respective
     workflow template.
     """
-    def __init__(self, db):
+    def __init__(self, session):
         """Initialize the connection to the underlying database.
 
         Parameters
         ----------
-        db: flowserv.model.db.DB
+        session: sqlalchemy.orm.session.Session
             Database session.
         """
-        self.db = db
+        self.session = session
 
     def get_ranking(self, workflow, order_by=None, include_all=False):
         """Query the underlying database to retrieve a result ranking for a
@@ -112,7 +112,7 @@ class RankingManager(object):
         list(flowserv.model.ranking.RunResult)
         """
         # Get results for all successful runs of the workflow.
-        rs = self.db.session.query(GroupHandle, RunHandle)\
+        rs = self.session.query(GroupHandle, RunHandle)\
             .filter(GroupHandle.group_id == RunHandle.group_id)\
             .filter(GroupHandle.workflow_id == workflow.workflow_id)\
             .filter(RunHandle.state_type == st.STATE_SUCCESS)\

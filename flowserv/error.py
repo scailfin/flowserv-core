@@ -335,24 +335,6 @@ class UnknownParameterError(UnknownObjectError):
         )
 
 
-class UnknownResourceError(UnknownObjectError):
-    """Exception indicating that a given run resource file identifier does not
-    reference an existing run resource.
-    """
-    def __init__(self, identifier):
-        """Initialize error message for unknown run resource identifier.
-
-        Parameters
-        ----------
-        identifier: string
-            Unique run resource identifier
-        """
-        super(UnknownResourceError, self).__init__(
-            type_name='resource',
-            obj_id=identifier
-        )
-
-
 class UnknownRequestError(UnknownObjectError):
     """Exception indicating that a given password reset request identifier is
     unknown.

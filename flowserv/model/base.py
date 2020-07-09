@@ -8,18 +8,23 @@
 
 """Define the classes in the Object-Relational Mapping."""
 
+import io
 import json
+import mimetypes
+import os
+import shutil
+import tarfile
 
+from datetime import datetime
 from sqlalchemy import Boolean, Integer, String, Text
 from sqlalchemy import Column, ForeignKey, UniqueConstraint, Table
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.types import TypeDecorator, Unicode
 
-from flowserv.files import InputFile
-from flowserv.model.parameter.base import ParameterGroup
+from flowserv.model.parameter.base import InputFile, ParameterGroup
+from flowserv.model.template.base import WorkflowTemplate
 from flowserv.model.template.schema import ResultSchema
-from flowserv.model.workflow.resource import WorkflowResource
 
 import flowserv.model.workflow.state as st
 import flowserv.model.parameter.base as pb
@@ -111,6 +116,109 @@ class WorkflowResultSchema(TypeDecorator):
             return ResultSchema.from_dict(json.loads(value))
 
 
+# -- Files --------------------------------------------------------------------
+
+class FileHandle(Base):
+    """The file handle base class provides additional methods to access a file
+    and its properties."""
+
+    __abstract__ = True
+    _path = None
+
+    @property
+    def created_at(self):
+        """Datetime timestamp for file creation.
+
+        Returns
+        -------
+        string
+        """
+        assert self._path is not None
+        ts = os.path.getmtime(self._path)
+        ts = util.from_utc_datetime(datetime.utcfromtimestamp(ts))
+        return ts.isoformat()
+
+    def created_at_local_time(self):
+        """Get string representation of the creation timestamp in the local
+        timezone.
+
+        Returns
+        -------
+        string
+        """
+        assert self._path is not None
+        ts = os.path.getmtime(self._path)
+        ts = util.from_utc_datetime(datetime.utcfromtimestamp(ts))
+        return ts.isoformat()[:-7]
+
+    def delete(self):
+        """Remove the associated file or directory on disk (if it exists)."""
+        assert self._path is not None
+        if os.path.isfile(self._path):
+            os.remove(self._path)
+        elif os.path.isdir(self._path):
+            shutil.rmtree(self._path)
+
+    @property
+    def filename(self):
+        """Get path to file on disk."""
+        assert self._path is not None
+        return self._path
+
+    @property
+    def mimetype(self):
+        """Get mimetype for file. The type is guessed from the fname."""
+        mimetype, _ = mimetypes.guess_type(url=self.name)
+        return mimetype
+
+    def set_filename(self, path):
+        """Set path to file on disk."""
+        self._path = path
+        return self
+
+    @property
+    def size(self):
+        """Get size of file in bytes.
+
+        Returns
+        -------
+        int
+        """
+        assert self._path is not None
+        return os.stat(self._path).st_size
+
+    def to_input(self, parameter, target_path=None):
+        """Get input file object for this file handle. If the target_path is
+        not given a constant target definition is expected to be included in
+        the parameter declaration.
+
+        Parameters
+        ----------
+        parameter: flowserv.model.parameter.base.TemplateParameter
+            Template parameter declaration.
+        target_path: string, default=None
+            Target path for the input file.
+
+        Returns
+        -------
+        flowserv.model.parameter.base.InputFile
+        """
+        assert self._path is not None
+        if target_path is None:
+            if parameter.has_constant():
+                if not parameter.as_input():
+                    target_path = parameter.get_constant()
+            if target_path is None:
+                msg = "no target path given for '{}'"
+                raise ValueError(msg.format(parameter.identifier))
+        return InputFile(
+            filename=self._path,
+            target_path=target_path,
+            file_id=self.file_id,
+            name=self.name
+        )
+
+
 # -- Association Tables -------------------------------------------------------
 
 group_member = Table(
@@ -141,11 +249,7 @@ class User(Base):
     # -- Schema ---------------------------------------------------------------
     __tablename__ = 'api_user'
 
-    user_id = Column(
-        String(32),
-        default=util.get_unique_identifier,
-        primary_key=True
-    )
+    user_id = Column(String(32), primary_key=True)
     secret = Column(String(512), nullable=False)
     name = Column(String(256), nullable=False)
     active = Column(Boolean, nullable=False, default=False)
@@ -189,7 +293,7 @@ class APIKey(Base):
         primary_key=True
     )
     value = Column(String(32), default=util.get_unique_identifier, unique=True)
-    expires = Column(String(26), nullable=False)
+    expires = Column(String(32), nullable=False)
 
 
 class PasswordRequest(Base):
@@ -206,7 +310,7 @@ class PasswordRequest(Base):
         default=util.get_unique_identifier,
         unique=True
     )
-    expires = Column(String(26), nullable=False)
+    expires = Column(String(32), nullable=False)
 
 
 # -- Workflow Template --------------------------------------------------------
@@ -217,15 +321,18 @@ post-processing step over a set of workflow run results are maintained.
 
 
 class WorkflowHandle(Base):
-    """Each workflow has a unique name, an optional short descriptor and set of
-    instructions. The five main components of the template are (i) the workflow
-    specification, (ii) the list of parameter declarations, (iii) a optional
-    post-processing workflow, (iv) the optional grouping of parameters into
-    modules, and (v) the result schema for workflows that generate metrics for
-    individual workflow runs.
+    """Each workflow has a unique name, an optional short descriptor and long
+    instruction text. The five main components of the template are (i) the
+    workflow specification, (ii) the list of parameter declarations, (iii) an
+    optional post-processing workflow specification, (iv) the optional grouping
+    of parameters into modules, and (v) the result schema for workflows that
+    generate metrics for individual workflow runs.
+
     With each workflow a reference to the latest run containing post-processing
     results is maintained. The value is NULL if no post-porcessing workflow is
-    defined for the template or if it has not been executed yet.
+    defined for the template or if it has not been executed yet. The post-
+    processing key contains the sorted list of identifier for the runs that
+    were used as input to generate the post-processing results.
     """
     # -- Schema ---------------------------------------------------------------
     __tablename__ = 'workflow_template'
@@ -241,8 +348,16 @@ class WorkflowHandle(Base):
     workflow_spec = Column(JsonObject, nullable=False)
     parameters = Column(WorkflowParameters)
     modules = Column(WorkflowModules)
+    postproc_ranking_key = Column(JsonObject)
+    # Omit foreign key here to avaoid circular dependencies. The run will
+    # reference the workflow to ensure integrity with respect to deleting
+    # the workflow and all dependend runs.
+    postproc_run_id = Column(String(32), nullable=True)
     postproc_spec = Column(JsonObject)
     result_schema = Column(WorkflowResultSchema)
+
+    # -- Internal variables ---------------------------------------------------
+    _staticdir = None
 
     # -- Relationships --------------------------------------------------------
     groups = relationship(
@@ -255,6 +370,41 @@ class WorkflowHandle(Base):
         back_populates='workflow',
         cascade='all, delete, delete-orphan'
     )
+
+    def get_template(self, workflow_spec=None, parameters=None):
+        """Get template for the workflow. The optional parameters allow to
+        override the default values with group-specific values.
+
+        Parameters
+        ----------
+        workflow_spec: dict, default=None
+            Modified workflow specification.
+        parameters: dict(flowserv.model.parameter.base.TemplateParameter)
+            Modified wokflow parameter list.
+
+        Returns
+        -------
+        flowserv.model.template.base.WorkflowTemplate
+        """
+        assert self._staticdir is not None
+        return WorkflowTemplate(
+            workflow_spec=self.workflow_spec if workflow_spec is None else workflow_spec,  # noqa: E501
+            sourcedir=self._staticdir,
+            parameters=self.parameters if parameters is None else parameters,
+            modules=self.modules,
+            postproc_spec=self.postproc_spec,
+            result_schema=self.result_schema
+        )
+
+    def set_staticdir(self, dirname):
+        """Set the path to the directory containing static template files.
+
+        Parameters
+        ----------
+        dirname: string
+            Path to directory for staic workflow files.
+        """
+        self._staticdir = dirname
 
 
 # -- Workflow Groups ----------------------------------------------------------
@@ -318,7 +468,7 @@ class GroupHandle(Base):
     workflow = relationship('WorkflowHandle', back_populates='groups')
 
 
-class UploadFile(Base):
+class UploadFile(FileHandle):
     """Uploaded files are assigned to individual workflow groups. Each file is
     assigned a unique identifier.
     """
@@ -355,7 +505,6 @@ class RunHandle(Base):
 
     run_id = Column(
         String(32),
-        default=util.get_unique_identifier,
         primary_key=True
     )
     workflow_id = Column(
@@ -367,18 +516,141 @@ class RunHandle(Base):
         ForeignKey('workflow_group.group_id'),
         nullable=True
     )
-    state_type = Column(String(8), default=st.STATE_PENDING, nullable=False)
-    created_at = Column(String(26), default=util.utc_now(), nullable=False)
-    started_at = Column(String(26))
-    ended_at = Column(String(26))
+    state_type = Column(String(8), nullable=False)
+    created_at = Column(String(32), default=util.utc_now(), nullable=False)
+    started_at = Column(String(32))
+    ended_at = Column(String(32))
     arguments = Column(JsonObject)
     result = Column(JsonObject)
+
+    # -- Internal variables ---------------------------------------------------
+    _rundir = None
 
     # -- Relationships --------------------------------------------------------
     files = relationship('RunFile', cascade='all, delete, delete-orphan')
     group = relationship('GroupHandle', back_populates='runs')
     log = relationship('RunMessage', cascade='all, delete, delete-orphan')
     workflow = relationship('WorkflowHandle', back_populates='runs')
+
+    def archive(self):
+        """Create a gzipped tar file containing all files in the given resource
+        set.
+
+        Returns
+        -------
+        io.BytesIO
+        """
+        file_out = io.BytesIO()
+        tar_handle = tarfile.open(fileobj=file_out, mode='w:gz')
+        for r in self.files:
+            tar_handle.add(name=r.filename, arcname=r.name)
+        tar_handle.close()
+        file_out.seek(0)
+        return file_out
+
+    def get_file(self, by_id=None, by_name=None):
+        """Get handle for identified file. A file can either be identified by
+        the unique identifier or the unique relative path (name). Returns None
+        if the file is not found.
+
+        Raises a ValueError if an invalid combination of parameters is given.
+
+        Patameters
+        ----------
+        relative_path: string
+            Relative path to the file in the run directory.
+
+        Returns
+        -------
+        flowserv.model.base.RunFile
+        """
+        if by_id is None and by_name is None:
+            raise ValueError('invalid argument combination')
+        if by_id is not None and by_name is not None:
+            raise ValueError('invalid argument combination')
+        if by_id is not None:
+            for f in self.files:
+                if f.file_id == by_id:
+                    f.set_filename(os.path.join(self._rundir, f.relative_path))
+                    return f
+        if by_name is not None:
+            for f in self.files:
+                if f.name == by_name:
+                    f.set_filename(os.path.join(self._rundir, f.relative_path))
+                    return f
+
+    def get_rundir(self):
+        """Get the path to the base directory for run files.
+
+        Returns
+        -------
+        string
+        """
+        return self._rundir
+
+    def is_active(self):
+        """A run is in active state if it is either pending or running.
+
+        Returns
+        --------
+        bool
+        """
+        return self.state_type in st.ACTIVE_STATES
+
+    def is_canceled(self):
+        """Returns True if the run state is of type CANCELED.
+
+        Returns
+        -------
+        bool
+        """
+        return self.state_type == st.STATE_CANCELED
+
+    def is_error(self):
+        """Returns True if the run state is of type ERROR.
+
+        Returns
+        -------
+        bool
+        """
+        return self.state_type == st.STATE_ERROR
+
+    def is_pending(self):
+        """Returns True if the run state is of type PENDING.
+
+        Returns
+        -------
+        bool
+        """
+        return self.state_type == st.STATE_PENDING
+
+    def is_running(self):
+        """Returns True if the run state is of type RUNNING.
+
+        Returns
+        -------
+        bool
+        """
+        return self.state_type == st.STATE_RUNNING
+
+    def is_success(self):
+        """Returns True if the run state is of type SUCCESS.
+
+        Returns
+        -------
+        bool
+        """
+        return self.state_type == st.STATE_SUCCESS
+
+    def set_rundir(self, dirname):
+        """Set the path to the base directory for run files.
+
+        Parameters
+        ----------
+        dirname: string
+            Path to directory for run files and folders.
+        """
+        self._rundir = dirname
 
     def state(self):
         """Get an instance of the workflow state for the given run.
@@ -409,29 +681,20 @@ class RunHandle(Base):
                 messages=[m.message for m in sorted(self.log, key=by_pos)]
             )
         else:  # self.state_type == st.STATE_SUCCESS:
-            # Create resource objects.
-            resources = list()
-            for resource in self.files:
-                resource_name = resource.name
-                f = WorkflowResource(
-                    resource_id=resource.resource_id,
-                    key=resource_name
-                )
-                resources.append(f)
             return st.StateSuccess(
                 created_at=self.created_at,
                 started_at=self.started_at,
                 finished_at=self.ended_at,
-                resources=resources
+                files=[f.relative_path for f in self.files]
             )
 
 
-class RunFile(Base):
+class RunFile(FileHandle):
     """File resources that are created by successful workflow runs."""
     # -- Schema ---------------------------------------------------------------
     __tablename__ = 'run_file'
 
-    resource_id = Column(
+    file_id = Column(
         String(32),
         default=util.get_unique_identifier,
         primary_key=True
@@ -440,12 +703,17 @@ class RunFile(Base):
         String(32),
         ForeignKey('workflow_run.run_id')
     )
-    name = Column(Text, nullable=False)
+    relative_path = Column(Text, nullable=False)
 
     UniqueConstraint('run_id', 'name')
 
     # Relationships -----------------------------------------------------------
     run = relationship('RunHandle', back_populates='files')
+
+    @property
+    def name(self):
+        """Implement file handle property 'name'."""
+        return self.relative_path
 
 
 class RunMessage(Base):
@@ -477,7 +745,7 @@ class ArgumentEncoder(json.JSONEncoder):
         if isinstance(obj, InputFile):
             return {
                 'file': {
-                    'id': obj.identifier,
+                    'id': obj.file_id,
                     'name': obj.name,
                 },
                 'target': obj.target_path

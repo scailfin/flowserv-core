@@ -40,7 +40,7 @@ class UploadFileSerializer(Serializer):
         ----------
         group_id: string
             Unique workflow group identifier
-        fh: flowserv.files.FileHandle
+        fh: flowserv.model.base.FileHandle
             File handle
 
         Returns
@@ -49,9 +49,9 @@ class UploadFileSerializer(Serializer):
         """
         LABELS = self.labels
         return {
-            LABELS['FILE_ID']: fh.identifier,
+            LABELS['FILE_ID']: fh.file_id,
             LABELS['FILE_NAME']: fh.name,
-            LABELS['FILE_DATE']: fh.created_at.isoformat(),
+            LABELS['FILE_DATE']: fh.created_at,
             LABELS['FILE_SIZE']: fh.size
         }
 
@@ -63,7 +63,7 @@ class UploadFileSerializer(Serializer):
         ----------
         group_id: string
             Unique workflow group identifier
-        files: list(flowserv.files.FileHandle)
+        files: list(flowserv.model.base.FileHandle)
             List of file handle
 
         Returns

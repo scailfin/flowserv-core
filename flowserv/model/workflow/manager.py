@@ -41,10 +41,10 @@ DEFAULT_TEMPLATES = list()
 for name in DEFAULT_SPECNAMES:
     for suffix in DEFAULT_SPECSUFFIXES:
         DEFAULT_TEMPLATES.append(name + suffix)
-# List of default project description files
-DESCRIPTION_FILES = list()
+# List of default configuration file names.
+CONFIG_FILES = list()
 for suffix in DEFAULT_SPECSUFFIXES:
-    DESCRIPTION_FILES.append('flowserv' + suffix)
+    CONFIG_FILES.append('flowserv' + suffix)
 
 """Labels for the project description file."""
 DESCRIPTION = 'description'
@@ -61,7 +61,9 @@ class WorkflowManager(object):
     """The workflow manager maintains information that is associated with
     workflow templates in a workflow repository.
     """
-    def __init__(self, db, fs, idfunc=None, attempts=None, tmpl_names=None):
+    def __init__(
+        self, session, fs, idfunc=None, attempts=None, tmpl_names=None
+    ):
         """Initialize the database connection, and the generator for workflow
         related file names and directory paths. The optional parameters are
         used to configure the identifier function that is used to generate
@@ -72,7 +74,7 @@ class WorkflowManager(object):
 
         Parameters
         ----------
-        db: flowserv.model.db.DB
+        session: sqlalchemy.orm.session.Session
             Database session.
         fs: flowserv.model.workflow.fs.WorkflowFileSystem
             Generattor for file names and directory paths
@@ -84,7 +86,7 @@ class WorkflowManager(object):
         tmpl_names: list(string), optional
             List of default names for template specification files
         """
-        self.db = db
+        self.session = session
         self.fs = fs
         # Initialize the identifier function and the max. number of attempts
         # that are made to generate a unique identifier.
@@ -98,7 +100,7 @@ class WorkflowManager(object):
 
     def create_workflow(
         self, name=None, description=None, instructions=None, sourcedir=None,
-        repourl=None, specfile=None, commit_changes=True
+        repourl=None, specfile=None
     ):
         """Add new workflow to the repository. The associated workflow template
         is created in the template repository from either the given source
@@ -139,8 +141,6 @@ class WorkflowManager(object):
         specfile: string, optional
             Path to the workflow template specification file (absolute or
             relative to the workflow directory)
-        commit_changes: bool, optional
-            Commit changes to database only if True
 
         Returns
         -------
@@ -225,8 +225,7 @@ class WorkflowManager(object):
                 projectdir=projectdir if repourl is not None else None
             )
             raise ex
-        # Insert workflow into database and return descriptor. Database changes
-        # are only commited if the respective flag is True.
+        # Insert workflow into database and return the workflow handle.
         workflow = WorkflowHandle(
             workflow_id=workflow_id,
             name=projectmeta.get(NAME),
@@ -238,8 +237,9 @@ class WorkflowManager(object):
             postproc_spec=template.postproc_spec,
             result_schema=template.result_schema
         )
-        self.db.session.add(workflow)
-        self.db.session.commit()
+        self.session.add(workflow)
+        # Set the static directory for the workflow handle.
+        workflow.set_staticdir(staticdir)
         return workflow
 
     def create_folder(self, dirfunc):
@@ -292,19 +292,13 @@ class WorkflowManager(object):
                     raise RuntimeError('could not create unique folder')
         return identifier, subfolder
 
-    def delete_workflow(self, workflow_id, commit_changes=True):
+    def delete_workflow(self, workflow_id):
         """Delete the workflow with the given identifier.
-
-        The changes to the underlying database are only commited if the
-        commit_changes flag is True. Note that the deletion of files and
-        directories cannot be rolled back.
 
         Parameters
         ----------
         workflow_id: string
             Unique workflow identifier
-        commit_changes: bool, optional
-            Commit changes to database only if True
 
         Raises
         ------
@@ -314,43 +308,13 @@ class WorkflowManager(object):
         # the workflow does not exist.
         workflow = self.get_workflow(workflow_id)
         workflowdir = self.fs.workflow_basedir(workflow_id)
-        # Delete the workflow from the database.
-        self.db.session.delete(workflow)
-        self.db.session.commit()
+        # Delete the workflow from the database and commit changes.
+        self.session.delete(workflow)
+        self.session.commit()
         # Delete all files that are associated with the workflow if the changes
         # to the database were successful.
         if os.path.isdir(workflowdir):
             shutil.rmtree(workflowdir)
-
-    def get_template(self, workflow_id):
-        """Get template for the workflow with the given identifier. Raises
-        an error if no workflow with the identifier exists.
-
-        Parameters
-        ----------
-        workflow_id: string
-            Unique workflow identifier
-
-        Returns
-        -------
-        flowserv.model.template.base.WorkflowTemplate
-
-        Raises
-        ------
-        flowserv.error.UnknownWorkflowError
-        """
-        # Get the workflow from the database. This will raise an error if the
-        # workflow does not exist.
-        workflow = self.get_workflow(workflow_id)
-        # Retuen template handle for the workflow.
-        return WorkflowTemplate(
-            workflow_spec=workflow.workflow_spec,
-            sourcedir=self.fs.workflow_staticdir(workflow_id),
-            parameters=workflow.parameters,
-            modules=workflow.modules,
-            postproc_spec=workflow.postproc_spec,
-            result_schema=workflow.result_schema
-        )
 
     def get_workflow(self, workflow_id):
         """Get handle for the workflow with the given identifier. Raises
@@ -371,11 +335,14 @@ class WorkflowManager(object):
         """
         # Get workflow information from database. If the result is empty an
         # error is raised
-        workflow = self.db.session.query(WorkflowHandle)\
+        workflow = self.session\
+            .query(WorkflowHandle)\
             .filter(WorkflowHandle.workflow_id == workflow_id)\
             .one_or_none()
         if workflow is None:
             raise err.UnknownWorkflowError(workflow_id)
+        # Set the static directory for the workflow handle.
+        workflow.set_staticdir(self.fs.workflow_staticdir(workflow_id))
         return workflow
 
     def list_workflows(self):
@@ -385,7 +352,12 @@ class WorkflowManager(object):
         -------
         list(flowserv.model.base.WorkflowHandle)
         """
-        return self.db.session.query(WorkflowHandle).all()
+        workflows = list()
+        for wf in self.session.query(WorkflowHandle).all():
+            # Set the static directory for the workflow handle.
+            wf.set_staticdir(self.fs.workflow_staticdir(wf.workflow_id))
+            workflows.append(wf)
+        return workflows
 
     def update_workflow(
         self, workflow_id, name=None, description=None, instructions=None
@@ -423,7 +395,8 @@ class WorkflowManager(object):
             # Ensure that the name is a valid name.
             constraint.validate_name(name)
             # Ensure that the name is unique.
-            wf = self.db.session.query(WorkflowHandle)\
+            wf = self.session\
+                .query(WorkflowHandle)\
                 .filter(WorkflowHandle.name == name)\
                 .one_or_none()
             if wf is not None and wf.workflow_id != workflow_id:
@@ -434,8 +407,6 @@ class WorkflowManager(object):
             workflow.description = description
         if instructions is not None:
             workflow.instructions = instructions
-        # Commit changes and return workflow handle.
-        self.db.session.commit()
         return workflow
 
 
@@ -602,7 +573,7 @@ def read_description(projectdir, name, description, instructions, specfile):
     IOError, OSError, ValueError
     """
     doc = dict()
-    for filename in DESCRIPTION_FILES:
+    for filename in CONFIG_FILES:
         filename = os.path.join(projectdir, filename)
         if os.path.isfile(filename):
             doc = util.read_object(filename)

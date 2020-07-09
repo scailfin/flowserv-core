@@ -28,8 +28,8 @@ def read(parameters, scanner=None, files=None):
         List of workflow template parameter declarations
     scanner: flowserv.scanner.Scanner
         Input scanner to read parameter values
-    files: list()
-        List of (idenifier, name ) pairs
+    files: list
+        List of (file_id, name, timestamp) pairs
 
     Returns
     -------
@@ -68,9 +68,11 @@ def read_parameter(para, scanner, prompt_prefix='', files=None):
     para: flowserv.model.parameter.TemplateParameter
         Workflow template parameter declaration
     scanner: flowserv.scanner.Scanner
-    prompt_prefix: string, optional
-    files: list(flowserv.files.FileDescriptor)
-        List of file descriptors
+        Input scanner.
+    prompt_prefix: string, default=''
+        Optional input prompt prefix.
+    files: list
+        List of (file_id, name, timestamp) pairs
 
     Returns
     -------
@@ -83,21 +85,17 @@ def read_parameter(para, scanner, prompt_prefix='', files=None):
                 return scanner.next_bool(default_value=para.default_value)
             elif para.is_file():
                 # The scanner is primarily intended for the client command line
-                # interface to the web API. On the client side, when submitting
-                # a run with file parameters we only need to read the identifier
-                # of a previously uploaded file. If the optional target path is
-                # defined as 'variable' we also need to read the target path.
-                # Therefore, the result here is a tuple of filename and target
-                # path. The target path may be None.
+                # interface. When submitting a run with file parameters we only
+                # need to read the identifier of a previously uploaded file. If
+                # the optional target path is defined as 'variable' we also
+                # need to read the target path. Therefore, the result here is a
+                # tuple of filename and target path. The target path may be
+                # None.
                 if files is not None:
                     print('\n\nAvailable files')
                     print('---------------')
-                    for fh in files:
-                        print('{}\t{} ({})'.format(
-                            fh.identifier,
-                            fh.name,
-                            fh.created_at_local_time())
-                        )
+                    for file_id, name, ts in files:
+                        print('{}\t{} ({})'.format(file_id, name, ts))
                     print('\n{}: '.format(para.name), end='')
                 filename = scanner.next_file(default_value=para.default_value)
                 target_path = None

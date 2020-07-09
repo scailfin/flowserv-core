@@ -62,11 +62,11 @@ class UserSerializer(Serializer):
         dict
         """
         doc = {
-            self.labels['USER_ID']: user.identifier,
+            self.labels['USER_ID']: user.user_id,
             self.labels['USER_NAME']: user.name
         }
         if include_token and user.is_logged_in():
-            doc[self.labels['USER_TOKEN']] = user.api_key
+            doc[self.labels['USER_TOKEN']] = user.api_key.value
         return doc
 
     def user_listing(self, users):

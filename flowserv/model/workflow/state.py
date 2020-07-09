@@ -16,8 +16,6 @@ different possible states of a workflow run. There are four different states:
 Contains default methods to (de-)serialize workflow state.
 """
 
-from flowserv.model.workflow.resource import ResourceSet, WorkflowResource
-
 from flowserv.util import utc_now
 
 
@@ -289,14 +287,13 @@ class StatePending(WorkflowState):
         """
         return StateRunning(created_at=self.created_at)
 
-    def success(self, resources=None):
+    def success(self, files=None):
         """Get instance of success state for a competed wokflow.
 
         Parameters
         ----------
-        resources: list(flowserv.model.workflow.resource.WorkflowResource),
-                default=None
-            Optional dictionary of created resources
+        files: list(string), default=None
+            Optional list of created files (relative path).
 
         Returns
         -------
@@ -305,7 +302,7 @@ class StatePending(WorkflowState):
         return StateSuccess(
             created_at=self.created_at,
             started_at=self.created_at,
-            resources=resources
+            files=files
         )
 
 
@@ -368,14 +365,13 @@ class StateRunning(WorkflowState):
             messages=messages
         )
 
-    def success(self, resources=None):
+    def success(self, files=None):
         """Get instance of success state for a competed wokflow.
 
         Parameters
         ----------
-        resources: list(flowserv.model.workflow.resource.WorkflowResource),
-                default=None
-            Optional dictionary of created resources
+        files: list(string), default=None
+            Optional list of created files (relative path).
 
         Returns
         -------
@@ -384,7 +380,7 @@ class StateRunning(WorkflowState):
         return StateSuccess(
             created_at=self.created_at,
             started_at=self.started_at,
-            resources=resources
+            files=files
         )
 
 
@@ -392,16 +388,13 @@ class StateSuccess(WorkflowState):
     """Success state representation for a workflow run. The workflow has three
     timestamps: the workflow creation time, workflow run start time and the
     time when the workflow execution finished. The state also maintains handles
-    to any resources that were created by the workflow run.
+    to any files that were created by the workflow run.
     """
     def __init__(
-        self, created_at, started_at, finished_at=None, resources=None
+        self, created_at, started_at, finished_at=None, files=None
     ):
         """Initialize the timestamps that are associated with the workflow
-        state and the list of created resources.
-
-        Raises a ValueError if the names of the created resources are not
-        unique.
+        state and the list of created files.
 
         Parameters
         ----------
@@ -411,13 +404,8 @@ class StateSuccess(WorkflowState):
             Timestamp when the workflow started running
         finished_at: string, optional
             Timestamp when workflow execution completed
-        resources: list(flowserv.model.workflow.resource.WorkflowResource),
-                default=None
-            Optional list of created resources
-
-        Raises
-        ------
-        ValueError
+        files: list(fstring), default=None
+            Optional list of created files (relative path).
         """
         super(StateSuccess, self).__init__(
             type_id=STATE_SUCCESS,
@@ -425,32 +413,16 @@ class StateSuccess(WorkflowState):
         )
         self.started_at = started_at
         self.finished_at = finished_at if finished_at is not None else utc_now()  # noqa: E501
-        self.resources = ResourceSet(resources)
-
-    def get_resource(self, identifier=None, key=None):
-        """Get the file resource with the given identifier or name.
-
-        Parameters
-        ----------
-        identifier: string, default=None
-            Unique resource version identifier.
-        key: string, default=None
-            Unique resource key.
-
-        Returns
-        -------
-        flowserv.model.workflow.resource.WorkflowResource
-        """
-        return self.resources.get_resource(identifier=identifier, key=key)
+        self.files = files if files is not None else list()
 
 
 # -- Serialization/Deserialization helper methods -----------------------------
 
 """Labels for serialization."""
 LABEL_CREATED_AT = 'createdAt'
+LABEL_FILES = 'files'
 LABEL_FINISHED_AT = 'finishedAt'
 LABEL_MESSAGES = 'messages'
-LABEL_RESOURCES = 'resources'
 LABEL_STARTED_AT = 'startedAt'
 LABEL_STATE_TYPE = 'type'
 LABEL_STOPPED_AT = 'stoppedAt'
@@ -498,14 +470,11 @@ def deserialize_state(doc):
             messages=doc[LABEL_MESSAGES]
         )
     elif type_id == STATE_SUCCESS:
-        resources = list()
-        for obj in doc[LABEL_RESOURCES]:
-            resources.append(WorkflowResource.from_dict(obj))
         return StateSuccess(
             created_at=created_at,
             started_at=doc[LABEL_STARTED_AT],
             finished_at=doc[LABEL_FINISHED_AT],
-            resources=resources
+            files=doc[LABEL_FILES]
         )
     else:
         raise ValueError('invalid state type \'{}\''.format(type_id))
@@ -536,5 +505,5 @@ def serialize_state(state):
     elif state.is_success():
         doc[LABEL_STARTED_AT] = state.started_at
         doc[LABEL_FINISHED_AT] = state.finished_at
-        doc[LABEL_RESOURCES] = [r.to_dict() for r in state.resources]
+        doc[LABEL_FILES] = state.files
     return doc
