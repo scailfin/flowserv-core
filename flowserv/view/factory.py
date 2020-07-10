@@ -27,7 +27,7 @@ class ViewFactory(metaclass=ABCMeta):
     """Abstract factory class for serializers of the different API components.
     """
     @abstractmethod
-    def files(self):
+    def files(self):  # pragma: no cover
         """Serializer for uploaded files.
 
         Returns
@@ -37,7 +37,7 @@ class ViewFactory(metaclass=ABCMeta):
         raise NotImplementedError()
 
     @abstractmethod
-    def groups(self):
+    def groups(self):  # pragma: no cover
         """Serializer for workflow groups.
 
         Returns
@@ -47,7 +47,7 @@ class ViewFactory(metaclass=ABCMeta):
         raise NotImplementedError()
 
     @abstractmethod
-    def runs(self):
+    def runs(self):  # pragma: no cover
         """Serializer for workflow runs.
 
         Returns
@@ -57,7 +57,7 @@ class ViewFactory(metaclass=ABCMeta):
         raise NotImplementedError()
 
     @abstractmethod
-    def server(self):
+    def server(self):  # pragma: no cover
         """Serializer for the service descriptor.
 
         Returns
@@ -67,7 +67,7 @@ class ViewFactory(metaclass=ABCMeta):
         raise NotImplementedError()
 
     @abstractmethod
-    def users(self):
+    def users(self):  # pragma: no cover
         """Serializer for users.
 
         Returns
@@ -77,7 +77,7 @@ class ViewFactory(metaclass=ABCMeta):
         raise NotImplementedError()
 
     @abstractmethod
-    def workflows(self):
+    def workflows(self):  # pragma: no cover
         """Serializer for workflow templates.
 
         Returns

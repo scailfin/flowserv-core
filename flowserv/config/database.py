@@ -23,16 +23,17 @@ FLOWSERV_DB = 'FLOWSERV_DATABASE'
 
 # -- Public helper method to access configuration values ----------------------
 
-def DB_CONNECT(raise_error=False):
+def DB_CONNECT(value=None):
     """Get the database connect string from the environment variable
-    'FLOWSERV_DATABASE'. Raises a MissingConfigurationError if the raise_error
-    flag is True.
+    'FLOWSERV_DATABASE'.  If a connect string was given (e.g., by the user)
+    that value will be returned. Otherwise, the value is retrieved from the
+    respective environment variable. If the environment variable is not set a
+    MissingConfigurationError is raised.
 
     Parameters
     ----------
-    raise_error: bool, default=False
-        Flag indicating whether an error is raised if the environment variable
-        is not set (i.e., None or and empty string '')
+    value: bool, default=None
+        User-provided value.
 
     Returns
     -------
@@ -42,7 +43,9 @@ def DB_CONNECT(raise_error=False):
     ------
     flowserv.error.MissingConfigurationError
     """
+    if value is not None:
+        return value
     return config.get_variable(
         name=FLOWSERV_DB,
-        raise_error=raise_error
+        raise_error=True
     )

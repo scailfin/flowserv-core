@@ -56,3 +56,5 @@ def test_invalid_config():
     os.environ[config.FLOWSERV_BACKEND_CLASS] = 'class'
     with pytest.raises(err.MissingConfigurationError):
         service.init_backend()
+    assert service.init_backend(raise_error=False) is None
+    del os.environ[config.FLOWSERV_BACKEND_CLASS]

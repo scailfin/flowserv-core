@@ -6,7 +6,7 @@
 # flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
-"""Helper methods to initialize the API service object for test purposes."""
+"""Helper methods to initialize the database state via the service API."""
 
 import os
 
@@ -145,7 +145,25 @@ def start_hello_world(api, group_id, user_id):
     return run_id, file_id
 
 
-def start_run(api, group_id, user_id, arguments=None):
+def start_run(api, group_id, user_id, arguments=list()):
+    """Start a new workflow run for a given group. Returns the identifier of
+    the started run.
+
+    Parameters
+    ----------
+    api: flowserv.service.api.API
+        Service API manager.
+    group_id: string
+        Unique group identifier.
+    user_id: string
+        Unique user identifier.
+    arguments: list, default=None
+        Optional arguments to run the workflow.
+
+    Returns
+    -------
+    string
+    """
     return api.runs().start_run(
         group_id=group_id,
         arguments=arguments,
@@ -154,6 +172,23 @@ def start_run(api, group_id, user_id, arguments=None):
 
 
 def upload_file(api, group_id, user_id, file):
+    """Upload an input file for a workflow run. returns the file identifier.
+
+    Parameters
+    ----------
+    api: flowserv.service.api.API
+        Service API manager.
+    group_id: string
+        Unique group identifier.
+    user_id: string
+        Unique user identifier.
+    file: FileObject
+        Uploaded file.
+
+    Returns
+    -------
+    string
+    """
     return api.uploads().upload_file(
         group_id=group_id,
         file=file,

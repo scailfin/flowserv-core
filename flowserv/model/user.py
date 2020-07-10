@@ -48,11 +48,7 @@ class UserManager(object):
             tokens are valid.
         """
         self.session = session
-        if token_timeout is not None:
-            self.token_timeout = token_timeout
-        else:
-            # Get value from the respective environment variable
-            self.token_timeout = config.AUTH_LOGINTTL()
+        self.token_timeout = config.AUTH_LOGINTTL(value=token_timeout)
 
     def activate_user(self, user_id):
         """Activate the user with the given identifier. A user is active if the

@@ -586,6 +586,7 @@ class RunHandle(Base):
         -------
         string
         """
+        assert self._rundir is not None
         return self._rundir
 
     def is_active(self):

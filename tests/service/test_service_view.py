@@ -8,15 +8,20 @@
 
 """Unit test for the API service descriptor view."""
 
+import os
+
+from flowserv.view.factory import DefaultView
+
 import flowserv.config.api as config
 import flowserv.tests.serialize as serialize
 import flowserv.version as version
 
-from flowserv.view.factory import DefaultView
-
 
 def test_default_service_descriptor_view(service):
     """Test the service descriptor serialization."""
+    # Ensure that the FLOWSERV_API_NAME variable is not set.
+    if config.FLOWSERV_API_NAME in os.environ:
+        del os.environ[config.FLOWSERV_API_NAME]
     # -- Test service descriptor without information for logged-in user -------
     with service() as api:
         r = api.server().service_descriptor()
@@ -44,6 +49,9 @@ def test_service_descriptor_with_custom_labels_view(service):
     """Test serialization for a service descriptor with a custom set of view
     labels.
     """
+    # Ensure that the FLOWSERV_API_NAME variable is not set.
+    if config.FLOWSERV_API_NAME in os.environ:
+        del os.environ[config.FLOWSERV_API_NAME]
     labels = {
         'SERVER': {
             'SERVICE_NAME': 'serviceName',

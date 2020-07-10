@@ -14,7 +14,6 @@ from flowserv.model.template.schema import ResultColumn, ResultSchema
 from flowserv.controller.base import WorkflowController
 from flowserv.controller.serial.engine import SerialWorkflowEngine
 
-import flowserv.error as err
 import flowserv.model.parameter.declaration as pd
 import flowserv.model.workflow.state as st
 
@@ -46,15 +45,11 @@ class StateEngine(WorkflowController):
         ----------
         run_id: string
             Unique run identifier.
-
-        Raises
-        ------
-        flowserv.error.UnknownRunError
         """
-        if run_id not in self.runs:
-            raise err.UnknownRunError(run_id)
+        state = self.runs[run_id].cancel()
+        self.runs[run_id] = state
 
-    def configuration(self):
+    def configuration(self):  # pragma: no cover
         """Get a list of tuples with the names of additional configuration
         variables and their current values.
 
@@ -82,7 +77,7 @@ class StateEngine(WorkflowController):
         self.runs[run_id] = state
         return state
 
-    def exec_workflow(self, run, template, arguments):
+    def exec_workflow(self, run, template, arguments, service=None):
         """Fake execute method that returns the workflow state that the was
         provided when the object was instantiated. Ignores all given arguments.
 
@@ -95,6 +90,8 @@ class StateEngine(WorkflowController):
             the parameter declarations.
         arguments: dict(flowserv.model.parameter.value.TemplateArgument)
             Dictionary of argument values for parameters in the template.
+        service: contextlib,contextmanager, default=None
+            Ignored. Included for API completeness.
 
         Returns
         -------
@@ -103,27 +100,6 @@ class StateEngine(WorkflowController):
         state = st.StatePending()
         self.runs[run.run_id] = state
         return state
-
-    def get_run(self, run_id):
-        """Get the status of the workflow with the given identifier.
-
-        Parameters
-        ----------
-        run_id: string
-            Unique run identifier
-
-        Returns
-        -------
-        flowserv.model.workflow.state.WorkflowState
-
-        Raises
-        ------
-        flowserv.error.UnknownRunError
-        """
-        if run_id in self.runs:
-            return self.runs[run_id]
-        else:
-            raise err.UnknownRunError(run_id)
 
     def modify_template(self, template, parameters):
         """Modify a the workflow specification in a given template by adding

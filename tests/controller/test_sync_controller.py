@@ -38,40 +38,40 @@ TEMPLATE_WITH_INVALID_CMD = os.path.join(TEMPLATE_DIR, INVALID_TEMPLATE)
         (TEMPLATE_WITH_INVALID_CMD, st.STATE_ERROR)
     ]
 )
-def test_run_helloworld_sync(api_factory, specfile, state):
+def test_run_helloworld_sync(service, specfile, state):
     """Execute the helloworld example."""
-    api = api_factory(engine=SerialWorkflowEngine(is_async=False))
+    # -- Setup ----------------------------------------------------------------
+    #
     # Start a new run for the workflow template.
-    workflow_id = create_workflow(
-        api,
-        sourcedir=TEMPLATE_DIR,
-        specfile=specfile
-    )
-    user_id = create_user(api)
-    group_id = create_group(api, workflow_id, [user_id])
-    names = FakeStream(data=['Alice', 'Bob'], format='plain/text')
-    file_id = upload_file(api, group_id, user_id, names)
-    run_id = start_run(
-        api,
-        group_id,
-        user_id,
-        arguments=[
+    engine = SerialWorkflowEngine(is_async=False)
+    with service(engine=engine) as api:
+        workflow_id = create_workflow(
+            api,
+            sourcedir=TEMPLATE_DIR,
+            specfile=specfile
+        )
+        user_id = create_user(api)
+        group_id = create_group(api, workflow_id, [user_id])
+        names = FakeStream(data=['Alice', 'Bob'], format='plain/text')
+        file_id = upload_file(api, group_id, user_id, names)
+        args = [
             {ARG_ID: 'names', ARG_VALUE: file_id, ARG_AS: 'data/names.txt'},
             {ARG_ID: 'sleeptime', ARG_VALUE: 3}
         ]
-    )
-    # Validate the run handle against the expected state.
-    doc = api.runs().get_run(run_id, user_id)
-    serialize.validate_run_handle(doc, state=state)
-    if state == st.STATE_SUCCESS:
-        # The run should have the greetings.txt file as a result.
-        files = dict()
-        for obj in doc['files']:
-            files[obj['name']] = obj['id']
-        assert len(files) == 1
-        fh = api.runs().get_result_file(
-            run_id=run_id,
-            file_id=files['results/greetings.txt'],
-            user_id=user_id
-        )
-        assert util.read_object(fh.filename) == 'Hello Alice! Hello Bob!'
+        run_id = start_run(api, group_id, user_id, arguments=args)
+    # -- Validate the run handle against the expected state -------------------
+    with service(engine=engine) as api:
+        r = api.runs().get_run(run_id, user_id)
+        serialize.validate_run_handle(r, state=state)
+        if state == st.STATE_SUCCESS:
+            # The run should have the greetings.txt file as a result.
+            files = dict()
+            for obj in r['files']:
+                files[obj['name']] = obj['id']
+            assert len(files) == 1
+            fh = api.runs().get_result_file(
+                run_id=run_id,
+                file_id=files['results/greetings.txt'],
+                user_id=user_id
+            )
+            assert util.read_object(fh.filename) == 'Hello Alice! Hello Bob!'

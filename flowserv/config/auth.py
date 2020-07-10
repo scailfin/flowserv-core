@@ -29,42 +29,31 @@ DEFAULT_LOGINTTL = 24 * 60 * 60
 # -- Public helper methods to access configuration values ---------------------
 
 
-def AUTH_LOGINTTL(default_value=None, raise_error=False):
+def AUTH_LOGINTTL(value=None):
     """Get the connect string for the database from the respective environment
-    variable 'FLOWSERV_AUTH_LOGINTTL'. Raises a MissingConfigurationError if the
-    raise_error flag is True and 'FLOWSERV_AUTH_LOGINTTL' is not set. If the
-    raise_error flag is False and 'FLOWSERV_AUTH_LOGINTTL' is not set the default
-    value is returned.
+    variable 'FLOWSERV_AUTH_LOGINTTL'. If a user-provided value is given it
+    will be returned. If the environment variable is not set the default value
+    will be returned.
 
     Parameters
     ----------
-    default_value: string, optional
-        Default value if 'FLOWSERV_AUTH_LOGINTTL' is not set and raise_error flag is
-        False
-    raise_error: bool, optional
-        Flag indicating whether an error is raised if the environment variable
-        is not set (i.e., None or and empty string '')
+    value: int, default=None
+        User-provided value for the property.
 
     Returns
     -------
-    string
-
-    Raises
-    ------
-    flowserv.error.MissingConfigurationError
+    int
     """
+    if value is not None:
+        return value
+    # Ensure that the value can be converted to int. If not, the default value
+    # is returned.
     val = config.get_variable(
         name=FLOWSERV_AUTH_LOGINTTL,
-        default_value=default_value,
-        raise_error=raise_error
+        default_value=DEFAULT_LOGINTTL,
+        raise_error=False
     )
-    # If the environment variable is not set and no default value was given
-    # return the defined default value
-    if val is None:
-        val = DEFAULT_LOGINTTL
-    else:
-        try:
-            val = int(val)
-        except ValueError:
-            val = DEFAULT_LOGINTTL
-    return val
+    try:
+        return int(val)
+    except ValueError:
+        return DEFAULT_LOGINTTL

@@ -14,9 +14,9 @@ import pytest
 from sqlalchemy.exc import IntegrityError
 
 from flowserv.model.base import User
-from flowserv.model.db import DB, TEST_URL
+from flowserv.model.database import DB, TEST_URL
 
-import flowserv.config.db as config
+import flowserv.config.database as config
 import flowserv.error as err
 
 

@@ -16,7 +16,7 @@ workflow execution, get workflow status, and to download workflow result files.
 from abc import ABCMeta, abstractmethod
 
 
-class RemoteClient(metaclass=ABCMeta):
+class RemoteClient(metaclass=ABCMeta):  # pragma: no cover
     """The remote client class is an abstract interface that defines the
     methods that are required by the remote workflow controller to execute and
     monitor remote workflows. Different workflow engies will implement their

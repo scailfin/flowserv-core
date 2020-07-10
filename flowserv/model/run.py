@@ -105,6 +105,8 @@ class RunManager(object):
         if workflow is not None:
             workflow.postproc_ranking_key = runs
             workflow.postproc_run_id = run_id
+        # Commit changes in case run monitors need to access the run state.
+        self.session.commit()
         # Set run base directory.
         run.set_rundir(rundir)
         return run
@@ -159,15 +161,14 @@ class RunManager(object):
         if run is None:
             raise err.UnknownRunError(run_id)
         # Set run base directory.
-        rundir = self.fs.run_basedir(run.workflow_id, run.group_id, run_id)
-        run.set_rundir(rundir)
         workflow = run.workflow
         workflow_id = workflow.workflow_id
         workflow.set_staticdir(self.fs.workflow_staticdir(workflow_id))
+        rundir = self.fs.run_basedir(run.workflow_id, run.group_id, run_id)
         set_files(run, rundir)
         return run
 
-    def list_runs(self, group_id):
+    def list_runs(self, group_id, state=None):
         """Get list of run handles for all runs that are associated with a
         given workflow group.
 
@@ -175,15 +176,25 @@ class RunManager(object):
         ----------
         group_id: string, optional
             Unique workflow group identifier
+        state: string or list(string), default=None
+            Run state query. If given, only those runs that are in the given
+            state(s) will be returned.
 
         Returns
         -------
         list(flowserv.model.base.RunHandle)
         """
-        rs = self.session\
+        # Generate query that returns the handles of all runs. If the state
+        # conditions are given, we add further filters.
+        query = self.session\
             .query(RunHandle)\
-            .filter(RunHandle.group_id == group_id)\
-            .all()
+            .filter(RunHandle.group_id == group_id)
+        if state is not None:
+            if isinstance(state, list):
+                query = query.filter(RunHandle.state_type.in_(state))
+            else:
+                query = query.filter(RunHandle.state_type == state)
+        rs = query.all()
         # Set run directory for all elements in the query result.
         runs = list()
         for run in rs:
@@ -212,19 +223,12 @@ class RunManager(object):
 
         Returns
         -------
-        list(string)
+        list(flowserv.model.base.RunHandle)
         """
-        # Generate query that returns the handles of all runs in a given group
-        # and state. If no state constraint is given the active runs are
-        # returned.
-        query = self.session\
-            .query(RunHandle)\
-            .filter(RunHandle.group_id == group_id)
         if state is not None:
-            query = query.filter(RunHandle.state_type == state)
+            return self.list_runs(group_id=group_id, state=state)
         else:
-            query = query.filter(RunHandle.state_type.in_(st.ACTIVE_STATES))
-        return [r.run_id for r in query.all()]
+            return self.list_runs(group_id=group_id, state=st.ACTIVE_STATES)
 
     def update_run(self, run_id, state):
         """Update the state of the given run. This method does check if the

@@ -14,10 +14,7 @@ closed properly after every API request has been handled.
 
 from contextlib import contextmanager
 
-import logging
-
 from flowserv.model.auth import DefaultAuthPolicy
-from flowserv.model.db import DB
 from flowserv.model.group import WorkflowGroupManager
 from flowserv.model.ranking import RankingManager
 from flowserv.model.run import RunManager
@@ -85,9 +82,8 @@ class API(object):
         # Use the global backend if no engine is specified
         self.engine = engine if engine is not None else backend
         # Ensure that the API base directory exists
-        fsdir = basedir if basedir is not None else config.API_BASEDIR()
+        fsdir = config.API_BASEDIR(value=basedir)
         self.fs = WorkflowFileSystem(util.create_dir(fsdir, abs=True))
-        logging.info('API base directory {}'.format(fsdir))
         # Set the serializer factory
         self.view = view if view is not None else DefaultView()
         # Keep an instance of objects that may be used by multiple components
@@ -317,7 +313,7 @@ def service(db=None, engine=None, basedir=None, auth=None, view=None):
 
     Parameters
     ----------
-    db: flowserv.model.db.DB, default=None
+    db: flowserv.model.database.DB, default=None
         Database manager.
     engine: flowserv.controller.base.WorkflowController, optional
         Workflow controller used by the API for workflow execution
@@ -327,7 +323,9 @@ def service(db=None, engine=None, basedir=None, auth=None, view=None):
     flowserv.service.api.API
     """
     if db is None:
-        db = DB()
+        # Use the default database object if no database is given.
+        from flowserv.service.database import database
+        db = database
     with db.session() as session:
         yield API(
             session=session,

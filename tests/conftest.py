@@ -12,7 +12,7 @@
 import os
 import pytest
 
-from flowserv.model.db import DB, TEST_URL
+from flowserv.model.database import DB, TEST_URL
 from flowserv.service.api import service as serviceapi
 from flowserv.tests.controller import StateEngine
 

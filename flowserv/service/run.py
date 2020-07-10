@@ -320,7 +320,7 @@ class RunService(object):
         if not self.auth.is_group_member(group_id=group_id, user_id=user_id):
             raise err.UnauthorizedAccessError()
         runs = self.run_manager.poll_runs(group_id=group_id, state=state)
-        return self.serialize.runid_listing(runs)
+        return self.serialize.runid_listing([r.run_id for r in runs])
 
     def start_run(self, group_id, arguments, user_id):
         """Start a new workflow run for the given group. The user provided
@@ -418,17 +418,19 @@ class RunService(object):
         # there are values for all template parameters (either in the arguments
         # dictionary or set as default values)
         template.validate_arguments(run_args)
-        # Start the run and return the serialized run handle.
+        # Start the run.
         run = self.run_manager.create_run(
             group=group,
             arguments=run_args
         )
         run_id = run.run_id
         # Execute the benchmark workflow for the given set of arguments.
+        from flowserv.service.api import service
         state = self.backend.exec_workflow(
             run=run,
             template=template,
-            arguments=run_args
+            arguments=run_args,
+            service=service
         )
         # Update the run state if it is no longer pending for execution. Make
         # sure to call the update run method for the server to ensure that
@@ -438,7 +440,7 @@ class RunService(object):
                 run_id=run_id,
                 state=state
             )
-            run = self.run_manager.get_run(run_id)
+            return self.get_run(run_id, user_id)
         return self.serialize.run_handle(run, group)
 
     def update_run(self, run_id, state):
@@ -463,6 +465,7 @@ class RunService(object):
         # Commit new run state.
         run = self.run_manager.update_run(run_id=run_id, state=state)
         if state.is_success():
+            logging.info('run {} is a success'.format(run_id))
             result_schema = run.workflow.result_schema
             postproc_spec = run.workflow.postproc_spec
             if result_schema is not None and postproc_spec is not None:
@@ -477,7 +480,7 @@ class RunService(object):
                 # set of runs than those in the ranking.
                 if runs != workflow.postproc_ranking_key:
                     msg = 'Run post-processing workflow for {}'
-                    logging.debug(msg.format(workflow.workflow_id))
+                    logging.info(msg.format(workflow.workflow_id))
                     run_postproc_workflow(
                         postproc_spec=postproc_spec,
                         workflow=workflow,
@@ -486,6 +489,8 @@ class RunService(object):
                         run_manager=self.run_manager,
                         backend=self.backend
                     )
+            else:
+                logging.info('schema: {}; postproc_spec: {}'.format(result_schema, postproc_spec))
 
 
 # -- Helper functions ---------------------------------------------------------
@@ -542,6 +547,7 @@ def run_postproc_workflow(
     else:
         # Execute the post-processing workflow asynchronously if
         # there were no data preparation errors.
+        from flowserv.service.api import service
         postproc_state = backend.exec_workflow(
             run=run,
             template=WorkflowTemplate(
@@ -549,9 +555,10 @@ def run_postproc_workflow(
                 sourcedir=workflow.get_template().sourcedir,
                 parameters=postbase.PARAMETERS
             ),
-            arguments=postproc_arguments
+            arguments=postproc_arguments,
+            service=service
         )
-        # Update the rpost-processing workflow run state if it is
+        # Update the post-processing workflow run state if it is
         # no longer pending for execution.
         if not postproc_state.is_pending():
             run_manager.update_run(

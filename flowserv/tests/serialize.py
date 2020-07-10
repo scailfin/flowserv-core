@@ -162,7 +162,7 @@ def validate_run_handle(doc, state):
         labels.append('startedAt')
         labels.append('finishedAt')
         labels.append('messages')
-    elif state == st.STATE_SUCCESS:
+    else:  # state == st.STATE_SUCCESS:
         labels.append('startedAt')
         labels.append('finishedAt')
         labels.append('files')

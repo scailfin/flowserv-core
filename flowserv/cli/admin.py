@@ -18,11 +18,11 @@ from flowserv.config.auth import FLOWSERV_AUTH_LOGINTTL, AUTH_LOGINTTL
 from flowserv.config.backend import (
     FLOWSERV_BACKEND_CLASS, FLOWSERV_BACKEND_MODULE)
 from flowserv.cli.workflow import workflowcli
-from flowserv.model.db import DB
+from flowserv.model.database import DB
 from flowserv.service.backend import init_backend
 
 import flowserv.config.api as api
-import flowserv.config.db as db
+import flowserv.config.database as db
 import flowserv.error as err
 import flowserv.util as util
 
@@ -96,7 +96,11 @@ def configuration(
     # Configuration for the underlying database
     if database or all:
         click.echo(comment.format('Database'))
-        click.echo(envvar.format(db.FLOWSERV_DB, db.DB_CONNECT()))
+        try:
+            connect_url = db.DB_CONNECT()
+        except err.MissingConfigurationError:
+            connect_url = 'None'
+        click.echo(envvar.format(db.FLOWSERV_DB, connect_url))
     # Configuration for the workflow execution backend
     if backend or all:
         click.echo(comment.format('Workflow Controller'))

@@ -81,7 +81,7 @@ def create_dir(directory, abs=False):
     if not os.path.exists(directory):
         try:
             os.makedirs(directory)
-        except OSError as e:
+        except OSError as e:  # pragma: no cover
             if e.errno != errno.EEXIST:
                 raise
     if abs:
@@ -104,11 +104,10 @@ def create_directories(basedir, files):
     """
     for filename in files:
         dirname = os.path.dirname(filename)
-        if dirname:
-            # Create the directory if it does not exist
-            parentdir = os.path.join(basedir, dirname)
-            if not os.path.isdir(parentdir):
-                os.makedirs(parentdir)
+        # Create the directory if it does not exist
+        parentdir = os.path.join(basedir, dirname)
+        if not os.path.isdir(parentdir):
+            os.makedirs(parentdir)
 
 
 def get_unique_identifier():
@@ -232,7 +231,7 @@ def stacktrace(ex):
     """
     try:
         st = traceback.format_exception(type(ex), ex, ex.__traceback__)
-    except (AttributeError, TypeError):
+    except (AttributeError, TypeError):  # pragma: no cover
         st = [str(ex)]
     return [line.strip() for line in st]
 
@@ -250,9 +249,6 @@ def to_datetime(timestamp):
     datetime.datetime
         Datetime object
     """
-    # Do nothing if the timestamp is None
-    if timestamp is None:
-        return None
     # Assumes a string in ISO format (with or without milliseconds)
     try:
         return datetime.datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%f')
@@ -270,7 +266,7 @@ def utc_now():
     return datetime.datetime.now(UTC).isoformat()
 
 
-def validate_doc(doc, mandatory=None, optional=None):
+def validate_doc(doc, mandatory, optional=None):
     """Raises error if a dictionary contains labels that are not in the given
     label lists or if there are labels in the mandatory list that are not in
     the dictionary. Returns the given dictionary (if valid).
@@ -293,10 +289,9 @@ def validate_doc(doc, mandatory=None, optional=None):
     ValueError
     """
     # Ensure that all mandatory labels are present in the dictionary
-    if mandatory is not None:
-        for key in mandatory:
-            if key not in doc:
-                raise ValueError("missing element '{}'".format(key))
+    for key in mandatory:
+        if key not in doc:
+            raise ValueError("missing element '{}'".format(key))
     # Raise error if additional elements are present in the dictionary
     labels = mandatory if mandatory is not None else list()
     if optional is not None:

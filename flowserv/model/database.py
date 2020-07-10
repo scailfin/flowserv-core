@@ -15,7 +15,7 @@ from sqlalchemy.orm import sessionmaker, scoped_session
 
 from flowserv.model.base import Base
 
-import flowserv.config.db as config
+import flowserv.config.database as config
 
 
 """Database connection Url for test purposes."""
@@ -44,8 +44,8 @@ class DB(object):
         ------
         flowserv.error.MissingConfigurationError
         """
-        if connect_url is None:
-            connect_url = config.DB_CONNECT(raise_error=True)
+        # Ensure that the connection URL is set.
+        connect_url = config.DB_CONNECT(value=connect_url)
         if echo:
             import logging
             logging.info('Connect to database Url %s' % (connect_url))
@@ -69,7 +69,7 @@ class DB(object):
 
         Returns
         -------
-        flowserv.model.db.SessionScope
+        flowserv.model.database.SessionScope
         """
         return SessionScope(self._session())
 
@@ -84,7 +84,7 @@ class SessionScope(object):
         Parameters
         ----------
         session: sqlalchemy.orm.session.Session
-            Database sessin.
+            Database session.
         """
         self.session = session
 
