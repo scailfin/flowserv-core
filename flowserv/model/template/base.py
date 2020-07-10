@@ -73,7 +73,10 @@ class WorkflowTemplate(object):
             Workflow specification object
         sourcedir: string
             Path to the base directory that contains the static workflow files
-        parameters: list or dict(flowserv.model.parameter.base.TemplateParameter), optional
+        parameters: (
+                list, or
+                dict(flowserv.model.parameter.base.TemplateParameter)
+            ), default=None
             Dictionary of workflow template parameter declarations keyed by
             their unique identifier.
         modules: list(flowserv.module.parameter.base.ParameterGroup), optional

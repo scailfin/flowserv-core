@@ -489,8 +489,6 @@ class RunService(object):
                         run_manager=self.run_manager,
                         backend=self.backend
                     )
-            else:
-                logging.info('schema: {}; postproc_spec: {}'.format(result_schema, postproc_spec))
 
 
 # -- Helper functions ---------------------------------------------------------

@@ -30,8 +30,8 @@ class SerialWorkflow(object):
         Parameters
         ----------
         template: flowserv.model.template.base.WorkflowTemplate
-            Workflow template containing the parameterized specification and the
-            parameter declarations
+            Workflow template containing the parameterized specification and
+            the parameter declarations
         arguments: dict(flowserv.model.parameter.value.TemplateArgument)
             Dictionary of argument values for parameters in the template
         """

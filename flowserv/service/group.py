@@ -17,7 +17,9 @@ class WorkflowGroupService(object):
     """API component that provides methods to access and manipulate workflow
     groups.
     """
-    def __init__(self, group_manager, workflow_repo, backend, auth, serializer):
+    def __init__(
+        self, group_manager, workflow_repo, backend, auth, serializer
+    ):
         """Initialize the internal reference to the group manager, the workflow
         repository, and the serializer.
 
@@ -58,9 +60,10 @@ class WorkflowGroupService(object):
             Unique team name
         user_id: string
             unique identifier for the user that is the group owner
-        parameters: dict(flowserv.model.parameter.base.TemplateParameter), optional
+        parameters: dict(flowserv.model.parameter.base.TemplateParameter),
+                default=None
             Workflow template parameter declarations
-        members: list(string), optional
+        members: list(string), default=None
             List of user identifier for group members
 
         Returns
