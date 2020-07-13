@@ -19,4 +19,4 @@
 
 ### 0.2.0 - 2020-07-??
 
-* Use SQLAlchemy as ORM for database model.
+* Use SQLAlchemy as ORM for the database model.

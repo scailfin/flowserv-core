@@ -11,8 +11,9 @@ workflow templates in the repository.
 """
 
 import click
+import sys
 
-from flowserv.service.api import API
+from flowserv.service.api import service
 
 import flowserv.error as err
 
@@ -73,17 +74,19 @@ def add_workflow(
         # Use the workflow service component to create the workflow. This
         # ensures that the result table is also created if the template
         # specifies a result schema.
-        wf = API().workflows().create_workflow(
-            name=name,
-            description=description,
-            instructions=instructions,
-            sourcedir=src,
-            repourl=url,
-            specfile=specfile
-        )
+        with service() as api:
+            wf = api.workflows().create_workflow(
+                name=name,
+                description=description,
+                instructions=read_instructions(instructions),
+                sourcedir=src,
+                repourl=url,
+                specfile=specfile
+            )
         click.echo('export FLOWSERV_WORKFLOW={}'.format(wf['id']))
     except (err.ConstraintViolationError, ValueError) as ex:
         click.echo(str(ex))
+        sys.exit(-1)
 
 
 # -- Delete workflow ----------------------------------------------------------
@@ -93,10 +96,12 @@ def add_workflow(
 def delete_workflow(identifier):
     """Delete a given workflow."""
     try:
-        API().workflows().delete_workflow(identifier)
+        with service() as api:
+            api.workflows().delete_workflow(identifier)
         click.echo('deleted workflow {}'.format(identifier))
     except err.UnknownObjectError as ex:
         click.echo(str(ex))
+        sys.exit(-1)
 
 
 # -- List workflows -----------------------------------------------------------
@@ -105,21 +110,19 @@ def delete_workflow(identifier):
 def list_workflows():
     """List all workflows."""
     count = 0
-    api = API()
-    for wf in api.workflows().list_workflows()['workflows']:
-        if count != 0:
+    with service() as api:
+        for wf in api.workflows().list_workflows()['workflows']:
+            if count != 0:
+                click.echo()
+            count += 1
+            title = 'Benchmark {}'.format(count)
+            click.echo(title)
+            click.echo('-' * len(title))
             click.echo()
-        count += 1
-        title = 'Benchmark {}'.format(count)
-        click.echo(title)
-        click.echo('-' * len(title))
-        click.echo()
-        click.echo('ID          : {}'.format(wf['id']))
-        click.echo('Name        : {}'.format(wf['name']))
-        if 'description' in wf:
-            click.echo('Description : {}'.format(wf['description']))
-        if 'instructions' in wf:
-            click.echo('Instructions: {}'.format(wf['instructions']))
+            click.echo('ID          : {}'.format(wf['id']))
+            click.echo('Name        : {}'.format(wf['name']))
+            click.echo('Description : {}'.format(wf.get('description')))
+            click.echo('Instructions: {}'.format(wf.get('instructions')))
 
 
 # -- Update workflow ----------------------------------------------------------
@@ -151,15 +154,17 @@ def update_workflow(
         click.echo('nothing to update')
     else:
         try:
-            API().workflows().update_workflow(
-                workflow_id=identifier,
-                name=name,
-                description=description,
-                instructions=read_instructions(instructions)
-            )
+            with service() as api:
+                api.workflows().update_workflow(
+                    workflow_id=identifier,
+                    name=name,
+                    description=description,
+                    instructions=read_instructions(instructions)
+                )
             click.echo('updated workflow {}'.format(identifier))
         except (err.UnknownObjectError, err.ConstraintViolationError) as ex:
             click.echo(str(ex))
+            sys.exit(-1)
 
 
 # -- Command Group ------------------------------------------------------------

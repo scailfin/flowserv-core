@@ -13,6 +13,7 @@ workflows in the repository.
 
 import click
 import os
+import sys
 
 from flowserv.config.auth import FLOWSERV_AUTH_LOGINTTL, AUTH_LOGINTTL
 from flowserv.config.backend import (
@@ -137,16 +138,17 @@ def init(dir=None, force=False):
         click.confirm('Continue?', default=True, abort=True)
     # Create a new instance of the database
     try:
+        print('init database')
         DB().init()
     except err.MissingConfigurationError as ex:
         click.echo(str(ex))
+        sys.exit(-1)
     # If the base directory is given ensure that the directory exists
     if dir is not None:
         base_dir = dir
     else:
         base_dir = api.API_BASEDIR()
-    if base_dir is not None:
-        util.create_dir(base_dir)
+    util.create_dir(base_dir)
 
 
 # Workflows

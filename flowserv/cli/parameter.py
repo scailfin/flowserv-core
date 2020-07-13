@@ -49,12 +49,10 @@ def read(parameters, scanner=None, files=None):
             # of the children directly to the arguments dictionary
             for child in para.children:
                 val = read_parameter(child, sc, prompt_prefix='  ')
-                if val is not None:
-                    arguments[child.identifier] = val
+                arguments[child.identifier] = val
         else:
             val = read_parameter(para, sc, files=files)
-            if val is not None:
-                arguments[para.identifier] = val
+            arguments[para.identifier] = val
     return arguments
 
 
@@ -109,7 +107,6 @@ def read_parameter(para, scanner, prompt_prefix='', files=None):
                 return scanner.next_float(default_value=para.default_value)
             elif para.is_int():
                 return scanner.next_int(default_value=para.default_value)
-            else:
-                return scanner.next_string(default_value=para.default_value)
+            return scanner.next_string(default_value=para.default_value)
         except ValueError as ex:
             print(ex)
