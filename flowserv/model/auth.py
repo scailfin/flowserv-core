@@ -192,6 +192,8 @@ class DefaultAuthPolicy(Auth):
             group_id=group_id,
             run_id=run_id
         )
+        if run_group is None:
+            return True
         # Check if the user is a member of the run group.
         group = self.session\
             .query(GroupHandle)\

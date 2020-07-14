@@ -11,6 +11,7 @@ workflow groups. All information about groups is maintained in the underlying
 database.
 """
 
+import os
 import shutil
 
 from flowserv.model.base import UploadFile, GroupHandle, WorkflowHandle
@@ -145,13 +146,7 @@ class WorkflowGroupManager(object):
         for i, file in enumerate(group.uploads):
             if file.file_id == file_id:
                 del group.uploads[i]
-                fh = file.set_filename(
-                    self.fs.group_uploadfile(
-                        workflow_id=group.workflow_id,
-                        group_id=group.group_id,
-                        file_id=file_id
-                    )
-                )
+                fh = file
         # No file with matching identifier was found.
         if fh is None:
             raise err.UnknownFileError(file_id)
@@ -204,13 +199,7 @@ class WorkflowGroupManager(object):
         group = self.get_group(group_id)
         for file in group.uploads:
             if file.file_id == file_id:
-                return file.set_filename(
-                    self.fs.group_uploadfile(
-                        workflow_id=group.workflow_id,
-                        group_id=group.group_id,
-                        file_id=file_id
-                    )
-                )
+                return file
         # No file with matching identifier was found.
         raise err.UnknownFileError(file_id)
 
@@ -239,6 +228,15 @@ class WorkflowGroupManager(object):
         workflow = group.workflow
         workflow_id = workflow.workflow_id
         workflow.set_staticdir(self.fs.workflow_staticdir(workflow_id))
+        # Set filenames for uploaded files.
+        for file in group.uploads:
+            file.set_filename(
+                self.fs.group_uploadfile(
+                    workflow_id=group.workflow_id,
+                    group_id=group.group_id,
+                    file_id=file.file_id
+                )
+            )
         return group
 
     def list_files(self, group_id):
@@ -258,20 +256,7 @@ class WorkflowGroupManager(object):
         ------
         flowserv.error.UnknownWorkflowGroupError
         """
-        # Get the group object to ensure that the group exists.
-        group = self.get_group(group_id)
-        # Convert file objects to file handles.
-        files = list()
-        for file in group.uploads:
-            fh = file.set_filename(
-                self.fs.group_uploadfile(
-                    workflow_id=group.workflow_id,
-                    group_id=group.group_id,
-                    file_id=file.file_id
-                )
-            )
-            files.append(fh)
-        return files
+        return self.get_group(group_id).uploads
 
     def list_groups(self, workflow_id=None, user_id=None):
         """Get a listing of group descriptors. If the user identifier is given,
@@ -387,7 +372,11 @@ class WorkflowGroupManager(object):
             group_id=group.group_id,
             file_id=file_id
         )
-        file.save(output_file)
+        util.create_dir(os.path.dirname(output_file))
+        if isinstance(file, str):
+            shutil.copy(src=file, dst=output_file)
+        else:
+            file.save(output_file)
         # Insert information into database.
         fileobj = UploadFile(file_id=file_id, name=name, file_type=file_type)
         group.uploads.append(fileobj)

@@ -21,7 +21,6 @@ from flowserv.model.run import RunManager
 from flowserv.model.user import UserManager
 from flowserv.model.workflow.fs import WorkflowFileSystem
 from flowserv.model.workflow.manager import WorkflowManager
-from flowserv.service.backend import init_backend
 from flowserv.service.files import UploadFileService
 from flowserv.service.group import WorkflowGroupService
 from flowserv.service.run import RunService
@@ -37,13 +36,6 @@ import flowserv.util as util
 
 """Name of the header element that contains the access token."""
 HEADER_TOKEN = 'api_key'
-
-
-"""Define the workflow backend as a global variable. This is necessary for the
-multi-porcess backend to be able to maintain process state in between API
-requests.
-"""
-backend = init_backend()
 
 
 class API(object):
@@ -80,7 +72,10 @@ class API(object):
         """
         self.session = session
         # Use the global backend if no engine is specified
-        self.engine = engine if engine is not None else backend
+        if engine is None:
+            from flowserv.service.backend import backend
+            engine = backend
+        self.engine = engine
         # Ensure that the API base directory exists
         fsdir = config.API_BASEDIR(value=basedir)
         self.fs = WorkflowFileSystem(util.create_dir(fsdir, abs=True))

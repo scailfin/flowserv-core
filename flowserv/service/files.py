@@ -145,7 +145,7 @@ class UploadFileService(object):
             Name of the file
         user_id: string
             Unique user identifier
-        file_type: string, optional
+        file_type: string, default=None
             Identifier for the file type (e.g., the file MimeType). This could
             also by the identifier of a content handler.
 

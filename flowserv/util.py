@@ -266,7 +266,7 @@ def utc_now():
     return datetime.datetime.now(UTC).isoformat()
 
 
-def validate_doc(doc, mandatory, optional=None):
+def validate_doc(doc, mandatory=None, optional=None):
     """Raises error if a dictionary contains labels that are not in the given
     label lists or if there are labels in the mandatory list that are not in
     the dictionary. Returns the given dictionary (if valid).
@@ -275,7 +275,7 @@ def validate_doc(doc, mandatory, optional=None):
     ----------
     doc: dict
         Dictionary serialization of an object
-    mandatory: list(string)
+    mandatory: list(string), default=None
         List of mandatory labels for the dictionary serialization
     optional: list(string), optional
         List of optional labels for the dictionary serialization
@@ -289,11 +289,11 @@ def validate_doc(doc, mandatory, optional=None):
     ValueError
     """
     # Ensure that all mandatory labels are present in the dictionary
-    for key in mandatory:
+    labels = mandatory if mandatory is not None else list()
+    for key in labels:
         if key not in doc:
             raise ValueError("missing element '{}'".format(key))
     # Raise error if additional elements are present in the dictionary
-    labels = mandatory if mandatory is not None else list()
     if optional is not None:
         labels = labels + optional
     for key in doc:
