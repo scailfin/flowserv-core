@@ -17,7 +17,9 @@ dynamically.
 
 import logging
 
-import flowserv.config as config
+from flowserv.config.base import get_variable
+
+import flowserv.config.backend as config
 import flowserv.error as err
 
 
@@ -42,8 +44,8 @@ def init_backend(raise_error=True):
     ------
     flowserv.error.MissingConfigurationError
     """
-    module_name = config.get_variable(name=config.FLOWSERV_BACKEND_MODULE)
-    class_name = config.get_variable(name=config.FLOWSERV_BACKEND_CLASS)
+    module_name = get_variable(name=config.FLOWSERV_BACKEND_MODULE)
+    class_name = get_variable(name=config.FLOWSERV_BACKEND_CLASS)
     # If both environment variables are None return the default controller.
     # Otherwise, import the specified module and return an instance of the
     # controller class. An error is raised if only one of the two environment

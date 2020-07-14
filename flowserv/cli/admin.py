@@ -18,16 +18,23 @@ import sys
 import tempfile
 
 from flowserv.cli.parameter import read
+from flowserv.config.api import (
+    API_BASEDIR, API_HOST, API_NAME, API_PATH, API_PORT, API_PROTOCOL,
+    FLOWSERV_API_BASEDIR, FLOWSERV_API_HOST, FLOWSERV_API_NAME,
+    FLOWSERV_API_PATH, FLOWSERV_API_PORT, FLOWSERV_API_PROTOCOL
+)
 from flowserv.config.auth import FLOWSERV_AUTH_LOGINTTL, AUTH_LOGINTTL
 from flowserv.config.backend import (
-    FLOWSERV_BACKEND_CLASS, FLOWSERV_BACKEND_MODULE)
+    FLOWSERV_BACKEND_CLASS, FLOWSERV_BACKEND_MODULE
+)
+from flowserv.config.controller import FLOWSERV_ASYNC
+from flowserv.config.database import FLOWSERV_DB, DB_CONNECT
 from flowserv.cli.workflow import workflowcli
 from flowserv.model.database import DB, TEST_URL
 from flowserv.model.parameter.base import create_parameter_index
 from flowserv.service.api import service
 from flowserv.service.run import ARG_AS, ARG_ID, ARG_VALUE
 
-import flowserv.config as config
 import flowserv.error as err
 import flowserv.util as util
 
@@ -84,13 +91,12 @@ def configuration(
     if service or all:
         click.echo(comment.format('Web Service API'))
         conf = list()
-        conf.append((config.FLOWSERV_API_BASEDIR, config.API_BASEDIR()))
-        api_name = config.API_NAME()
-        conf.append((config.FLOWSERV_API_NAME, '"{}"'.format(api_name)))
-        conf.append((config.FLOWSERV_API_HOST, config.API_HOST()))
-        conf.append((config.FLOWSERV_API_PORT, config.API_PORT()))
-        conf.append((config.FLOWSERV_API_PROTOCOL, config.API_PROTOCOL()))
-        conf.append((config.FLOWSERV_API_PATH, config.API_PATH()))
+        conf.append((FLOWSERV_API_BASEDIR, API_BASEDIR()))
+        conf.append((FLOWSERV_API_NAME, '"{}"'.format(API_NAME())))
+        conf.append((FLOWSERV_API_HOST, API_HOST()))
+        conf.append((FLOWSERV_API_PORT, API_PORT()))
+        conf.append((FLOWSERV_API_PROTOCOL, API_PROTOCOL()))
+        conf.append((FLOWSERV_API_PATH, API_PATH()))
         for var, val in conf:
             click.echo(envvar.format(var, val))
     # Configuration for user authentication
@@ -103,10 +109,10 @@ def configuration(
     if database or all:
         click.echo(comment.format('Database'))
         try:
-            connect_url = config.DB_CONNECT()
+            connect_url = DB_CONNECT()
         except err.MissingConfigurationError:
             connect_url = 'None'
-        click.echo(envvar.format(config.FLOWSERV_DB, connect_url))
+        click.echo(envvar.format(FLOWSERV_DB, connect_url))
     # Configuration for the workflow execution backend
     if backend or all:
         from flowserv.service.backend import init_backend
@@ -153,7 +159,7 @@ def init(dir=None, force=False):
     if dir is not None:
         base_dir = dir
     else:
-        base_dir = config.API_BASEDIR()
+        base_dir = API_BASEDIR()
     util.create_dir(base_dir)
 
 
@@ -190,9 +196,9 @@ def run_workflow(src, specfile, output):
     root.addHandler(handler)
     # -- Setup ----------------------------------------------------------------
     tmpdir = tempfile.mkdtemp()
-    os.environ[config.FLOWSERV_API_BASEDIR] = tmpdir
-    os.environ[config.FLOWSERV_ASYNC] = 'False'
-    os.environ[config.FLOWSERV_DB] = TEST_URL
+    os.environ[FLOWSERV_API_BASEDIR] = tmpdir
+    os.environ[FLOWSERV_ASYNC] = 'False'
+    os.environ[FLOWSERV_DB] = TEST_URL
     from flowserv.service.database import database
     database.init()
     # -- Add workflow template to repository ----------------------------------

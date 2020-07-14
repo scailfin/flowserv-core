@@ -316,7 +316,9 @@ def run_workflow(run_id, rundir, state, output_files, steps):
         for cmd in statements:
             logging.info('{}'.format(cmd))
             # Each command is expected to be a shell command that is executed
-            # using the subprocess package.
+            # using the subprocess package. The subprocess.run() method is
+            # preferred for capturing output to STDERR but it does not exist
+            # in Python3.6.
             try:
                 proc = subprocess.run(
                     cmd,
@@ -330,10 +332,18 @@ def run_workflow(run_id, rundir, state, output_files, steps):
                     messages.append(proc.stderr.decode('utf-8'))
                     result_state = state.error(messages=messages)
                     return run_id, serialize.serialize_state(result_state)
-            except Exception as ex:
-                logging.error(ex)
-                result_state = state.error(messages=util.stacktrace(ex))
-                return run_id, serialize.serialize_state(result_state)
+            except (AttributeError, TypeError):
+                try:
+                    subprocess.check_output(
+                        cmd,
+                        cwd=rundir,
+                        shell=True,
+                        stderr=subprocess.STDOUT
+                    )
+                except subprocess.CalledProcessError as ex:
+                    logging.error(ex)
+                    result_state = state.error(messages=util.stacktrace(ex))
+                    return run_id, serialize.serialize_state(result_state)
         # Create list of output files that were generated.
         files = list()
         for relative_path in output_files:

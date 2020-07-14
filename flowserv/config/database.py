@@ -14,7 +14,7 @@ are in upper case to emphasize that they access configuration values that are
 expected to remain constant throughout the lifespan of a running application.
 """
 
-import flowserv.config.base as config
+from flowserv.config.base import get_variable
 
 
 """Environment variable that contains the database connection string."""
@@ -45,7 +45,7 @@ def DB_CONNECT(value=None):
     """
     if value is not None:
         return value
-    return config.get_variable(
+    return get_variable(
         name=FLOWSERV_DB,
         raise_error=True
     )

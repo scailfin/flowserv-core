@@ -6,7 +6,7 @@
 # flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
-import flowserv.config.base as config
+from flowserv.config.base import get_variable
 
 """Environment variables that control the configuration of the workflow
 controllers.
@@ -33,7 +33,7 @@ def ENGINE_ASYNC(value=None):
     """
     if value is not None:
         return value
-    flag = config.get_variable(
+    flag = get_variable(
         name=FLOWSERV_ASYNC,
         default_value=DEFAULT_ASYNC,
         raise_error=False

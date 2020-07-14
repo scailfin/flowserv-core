@@ -11,7 +11,7 @@ used to configure the API. In addition, the module provides methods to access
 the configuration values in the environment variables.
 """
 
-import flowserv.config.base as config
+from flowserv.config.base import get_variable
 
 
 """Names of environment variables that are used to configure the API."""
@@ -59,7 +59,7 @@ def API_BASEDIR(value=None):
     """
     if value is not None:
         return value
-    return config.get_variable(
+    return get_variable(
         name=FLOWSERV_API_BASEDIR,
         default_value=DEFAULT_DIR,
         raise_error=False
@@ -75,7 +75,7 @@ def API_HOST():
     -------
     string
     """
-    return config.get_variable(
+    return get_variable(
         name=FLOWSERV_API_HOST,
         default_value=DEFAULT_HOST,
         raise_error=False
@@ -91,7 +91,7 @@ def API_NAME():
     -------
     string
     """
-    return config.get_variable(
+    return get_variable(
         name=FLOWSERV_API_NAME,
         default_value=DEFAULT_NAME,
         raise_error=False
@@ -107,7 +107,7 @@ def API_PATH():
     -------
     string
     """
-    return config.get_variable(
+    return get_variable(
         name=FLOWSERV_API_PATH,
         default_value=DEFAULT_PATH,
         raise_error=False
@@ -130,7 +130,7 @@ def API_PORT():
     ------
     ValueError
     """
-    val = config.get_variable(
+    val = get_variable(
         name=FLOWSERV_API_PORT,
         default_value=DEFAULT_PORT,
         raise_error=False
@@ -151,7 +151,7 @@ def API_PROTOCOL():
     ------
     ValueError
     """
-    return config.get_variable(
+    return get_variable(
         name=FLOWSERV_API_PROTOCOL,
         default_value=DEFAULT_PROTOCOL,
         raise_error=False

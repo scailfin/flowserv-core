@@ -19,4 +19,5 @@
 
 ### 0.2.0 - 2020-07-??
 
-* Use SQLAlchemy as ORM for the database model.
+* Use SQLAlchemy as ORM for the database model
+* Run workflow templates from command-line for test purposes

@@ -14,7 +14,7 @@ are in upper case to emphasize that they access configuration values that are
 expected to remain constant throughout the lifespan of a running application.
 """
 
-import flowserv.config.base as config
+from flowserv.config.base import get_variable
 
 
 """Names of environment variables that are used to configure the authentication
@@ -48,7 +48,7 @@ def AUTH_LOGINTTL(value=None):
         return value
     # Ensure that the value can be converted to int. If not, the default value
     # is returned.
-    val = config.get_variable(
+    val = get_variable(
         name=FLOWSERV_AUTH_LOGINTTL,
         default_value=DEFAULT_LOGINTTL,
         raise_error=False
