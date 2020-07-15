@@ -100,7 +100,7 @@ class WorkflowManager(object):
 
     def create_workflow(
         self, name=None, description=None, instructions=None, sourcedir=None,
-        repourl=None, specfile=None
+        repourl=None, specfile=None, ignore_postproc=False
     ):
         """Add new workflow to the repository. The associated workflow template
         is created in the template repository from either the given source
@@ -141,6 +141,8 @@ class WorkflowManager(object):
         specfile: string, optional
             Path to the workflow template specification file (absolute or
             relative to the workflow directory)
+        ignore_postproc: bool, default=False
+            Ignore post-processing workflow specification if True.
 
         Returns
         -------
@@ -226,6 +228,7 @@ class WorkflowManager(object):
             )
             raise ex
         # Insert workflow into database and return the workflow handle.
+        postproc_spec = template.postproc_spec if not ignore_postproc else None
         workflow = WorkflowHandle(
             workflow_id=workflow_id,
             name=projectmeta.get(NAME),
@@ -234,7 +237,7 @@ class WorkflowManager(object):
             workflow_spec=template.workflow_spec,
             parameters=template.parameters,
             modules=template.modules,
-            postproc_spec=template.postproc_spec,
+            postproc_spec=postproc_spec,
             result_schema=template.result_schema
         )
         self.session.add(workflow)

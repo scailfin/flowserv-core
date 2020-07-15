@@ -179,12 +179,18 @@ def init(dir=None, force=False):
     help='Optional path to workflow specification file.'
 )
 @click.option(
+    '-i', '--ignorepp',
+    is_flag=True,
+    default=False,
+    help='Ignore post-processing workflow'
+)
+@click.option(
     '-o', '--output',
     type=click.Path(exists=False, file_okay=False, readable=True),
     required=False,
     help='Directory for output files.'
 )
-def run_workflow(src, specfile, output):
+def run_workflow(src, specfile, ignorepp, output):
     """Run a workflow template for test purposes."""
     # -- Logging --------------------------------------------------------------
     root = logging.getLogger()
@@ -206,7 +212,8 @@ def run_workflow(src, specfile, output):
         workflow = api.workflows().create_workflow(
             name=util.get_short_identifier(),
             sourcedir=src,
-            specfile=specfile
+            specfile=specfile,
+            ignore_postproc=ignorepp
         )
         workflow_id = workflow['id']
     # -- Create user ----------------------------------------------------------

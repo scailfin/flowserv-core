@@ -16,6 +16,7 @@ from click.testing import CliRunner
 from flowserv.cli.admin import cli
 from flowserv.config.api import FLOWSERV_API_BASEDIR
 from flowserv.config.database import FLOWSERV_DB
+from flowserv.config.backend import CLEAR_BACKEND
 from flowserv.model.base import WorkflowHandle
 
 
@@ -26,6 +27,7 @@ def cli_runner(tmpdir):
     runner = CliRunner()
     os.environ[FLOWSERV_API_BASEDIR] = basedir
     os.environ[FLOWSERV_DB] = 'sqlite:///{}/flowserv.db'.format(basedir)
+    CLEAR_BACKEND()
     runner = CliRunner()
     runner.invoke(cli, ['init', '-f'])
     yield runner

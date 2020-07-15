@@ -12,6 +12,7 @@ import os
 import time
 
 from flowserv.config.api import FLOWSERV_API_BASEDIR
+from flowserv.config.backend import CLEAR_BACKEND, DEFAULT_BACKEND
 from flowserv.config.database import FLOWSERV_DB
 from flowserv.controller.serial.engine import SerialWorkflowEngine
 from flowserv.service.api import service
@@ -45,6 +46,7 @@ def test_postproc_workflow(tmpdir):
     # Start a new run for the workflow template.
     os.environ[FLOWSERV_DB] = 'sqlite:///{}/flowserv.db'.format(str(tmpdir))
     os.environ[FLOWSERV_API_BASEDIR] = str(tmpdir)
+    DEFAULT_BACKEND()
     from flowserv.service.database import database
     database.init()
     engine = SerialWorkflowEngine(is_async=True)
@@ -97,6 +99,7 @@ def test_postproc_workflow(tmpdir):
     # Clean-up environment variables
     del os.environ[FLOWSERV_DB]
     del os.environ[FLOWSERV_API_BASEDIR]
+    CLEAR_BACKEND()
 
 
 def test_postproc_workflow_errors(tmpdir):
@@ -106,6 +109,7 @@ def test_postproc_workflow_errors(tmpdir):
     # Start a new run for the workflow template.
     os.environ[FLOWSERV_DB] = 'sqlite:///{}/flowserv.db'.format(str(tmpdir))
     os.environ[FLOWSERV_API_BASEDIR] = str(tmpdir)
+    DEFAULT_BACKEND()
     from flowserv.service.database import database
     database.init()
     engine = SerialWorkflowEngine(is_async=True)
@@ -116,6 +120,7 @@ def test_postproc_workflow_errors(tmpdir):
     # Clean-up environment variables
     del os.environ[FLOWSERV_DB]
     del os.environ[FLOWSERV_API_BASEDIR]
+    CLEAR_BACKEND()
 
 
 # -- Helper functions ---------------------------------------------------------
