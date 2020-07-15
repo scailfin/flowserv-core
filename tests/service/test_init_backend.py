@@ -17,7 +17,7 @@ from flowserv.controller.serial.engine import SerialWorkflowEngine
 from flowserv.tests.controller import StateEngine
 
 import flowserv.config.backend as config
-import flowserv.core.error as err
+import flowserv.error as err
 import flowserv.service.backend as service
 
 
@@ -56,3 +56,5 @@ def test_invalid_config():
     os.environ[config.FLOWSERV_BACKEND_CLASS] = 'class'
     with pytest.raises(err.MissingConfigurationError):
         service.init_backend()
+    assert service.init_backend(raise_error=False) is None
+    del os.environ[config.FLOWSERV_BACKEND_CLASS]

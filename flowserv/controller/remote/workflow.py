@@ -21,19 +21,19 @@ class RemoteWorkflowHandle(object):
     that are relative to the root directory of the remote environment that
     executes the workflow.
     """
-    def __init__(self, identifier, state, output_files):
+    def __init__(self, workflow_id, state, output_files):
         """Initialize thw remote workflow identifier and the last reported
         workflow state.
 
         Parameters
         ----------
-        identifier: string
-            UNique identifier for the remote workflow.
+        workflow_id: string
+            Unique identifier for the remote workflow.
         state: flowserv.model.workflow.state.WorkflowState
             Last reported state of the remote forkflow.
         output_files: list(string)
             Identifier (relative paths) of the generated output files
         """
-        self.identifier = identifier
+        self.workflow_id = workflow_id
         self.state = state
         self.output_files = output_files

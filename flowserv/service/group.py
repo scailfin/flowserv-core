@@ -10,26 +10,28 @@
 and manipulate workflow groups.
 """
 
-import flowserv.core.error as err
+import flowserv.error as err
 
 
 class WorkflowGroupService(object):
     """API component that provides methods to access and manipulate workflow
     groups.
     """
-    def __init__(self, group_manager, workflow_repo, backend, auth, serializer):
+    def __init__(
+        self, group_manager, workflow_repo, backend, auth, serializer
+    ):
         """Initialize the internal reference to the group manager, the workflow
         repository, and the serializer.
 
         Parameters
         ----------
-        group_manager: flowserv.model.group.manager.GroupManager
+        group_manager: flowserv.model.group..GroupManager
             Manager for workflow groups
-        workflow_repo: flowserv.model.workflow.repo.WorkflowRepository
+        workflow_repo: flowserv.model.workflow.manager.WorkflowManager
             Repository for workflow templates
         backend: flowserv.controller.base.WorkflowController
             Workflow engine controller
-        auth: flowserv.model.user.auth.Auth
+        auth: flowserv.model.auth.Auth
             Implementation of the authorization policy for the API
         serializer: flowserv.view.group.WorkflowGroupSerialize
             Override the default serializer
@@ -58,9 +60,10 @@ class WorkflowGroupService(object):
             Unique team name
         user_id: string
             unique identifier for the user that is the group owner
-        parameters: dict(flowserv.model.parameter.base.TemplateParameter), optional
+        parameters: dict(flowserv.model.parameter.base.TemplateParameter),
+                default=None
             Workflow template parameter declarations
-        members: list(string), optional
+        members: list(string), default=None
             List of user identifier for group members
 
         Returns
@@ -69,8 +72,8 @@ class WorkflowGroupService(object):
 
         Raises
         ------
-        flowserv.core.error.ConstraintViolationError
-        flowserv.core.error.UnknownWorkflowError
+        flowserv.error.ConstraintViolationError
+        flowserv.error.UnknownWorkflowError
         """
         # Get the handle for for the given workflow. This will raise an
         # exception if the workflow is unknown.
@@ -105,8 +108,8 @@ class WorkflowGroupService(object):
 
         Raises
         ------
-        flowserv.core.error.UnauthorizedAccessError
-        flowserv.core.error.UnknownWorkflowGroupError
+        flowserv.error.UnauthorizedAccessError
+        flowserv.error.UnknownWorkflowGroupError
         """
         # Raise an error if the user does not have rights to delete the
         # workflow group or if the workflow group does not exist.
@@ -128,7 +131,7 @@ class WorkflowGroupService(object):
 
         Raises
         ------
-        flowserv.core.error.UnknownWorkflowGroupError
+        flowserv.error.UnknownWorkflowGroupError
         """
         group = self.group_manager.get_group(group_id)
         return self.serialize.group_handle(group)
@@ -176,9 +179,9 @@ class WorkflowGroupService(object):
 
         Raises
         ------
-        flowserv.core.error.ConstraintViolationError
-        flowserv.core.error.UnauthorizedAccessError
-        flowserv.core.error.UnknownWorkflowGroupError
+        flowserv.error.ConstraintViolationError
+        flowserv.error.UnauthorizedAccessError
+        flowserv.error.UnknownWorkflowGroupError
         """
         # Raise an error if the user does not have rights to update the
         # workflow group or if the workflow group does not exist.

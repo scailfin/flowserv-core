@@ -11,13 +11,12 @@
 import os
 import pytest
 
-from flowserv.core.files import FileHandle
 from flowserv.model.parameter.base import TemplateParameter
 from flowserv.model.parameter.value import TemplateArgument
 from flowserv.model.template.base import WorkflowTemplate
 
-import flowserv.core.error as err
-import flowserv.core.util as util
+import flowserv.error as err
+import flowserv.util as util
 import flowserv.model.parameter.base as pb
 import flowserv.model.parameter.declaration as pd
 import flowserv.model.parameter.value as pr
@@ -26,15 +25,15 @@ import flowserv.model.template.parameter as tp
 import flowserv.model.template.schema as schema
 
 
-DIR = os.path.dirname(os.path.realpath(__file__))
-PREDICTOR_YAML_FILE = os.path.join(DIR, '../../.files/benchmark/predictor.yaml')
-TEMPLATE_JSON_FILE = os.path.join(DIR, '../../.files/template/template.json')
-TEMPLATE_YAML_FILE = os.path.join(DIR, '../../.files/template/template.yaml')
-TOPTAGGER_YAML_FILE = os.path.join(DIR, '../../.files/benchmark/top-tagger.yaml')
-CODE_FILE = os.path.join(DIR, '../../.files/template/code/helloworld.py')
-DATA_FILE = os.path.join(DIR, '../../.files/template/inputs/short-names.txt')
+DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../../.files')
+PREDICTOR_YAML_FILE = os.path.join(DIR, 'benchmark/predictor.yaml')
+TEMPLATE_JSON_FILE = os.path.join(DIR, 'template/template.json')
+TEMPLATE_YAML_FILE = os.path.join(DIR, 'template/template.yaml')
+TOPTAGGER_YAML_FILE = os.path.join(DIR, 'benchmark/top-tagger.yaml')
+CODE_FILE = os.path.join(DIR, 'template/code/helloworld.py')
+DATA_FILE = os.path.join(DIR, 'template/inputs/short-names.txt')
 # Benchmark templates with errors
-BENCHMARK_DIR = os.path.join(DIR, '../../.files/benchmark')
+BENCHMARK_DIR = os.path.join(DIR, 'benchmark')
 BENCHMARK_ERR_1 = 'ERROR1.json'
 BENCHMARK_ERR_2 = 'ERROR2.json'
 BENCHMARK_ERR_3 = 'ERROR3.json'
@@ -108,7 +107,7 @@ def test_file_args():
         spec=spec,
         parameters=parameters,
         arguments=pr.parse_arguments(
-            arguments={'codeFile': FileHandle(filename=CODE_FILE)},
+            arguments={'codeFile': CODE_FILE},
             parameters=parameters
         )
     )
@@ -118,6 +117,7 @@ def test_file_args():
         {
             'id': 'codeFile',
             'datatype': 'file',
+            'as': 'src/helloworld.py',
             'defaultValue': 'src/helloworld.py'
         }
     ])
@@ -132,11 +132,11 @@ def test_file_args():
         spec=spec,
         parameters=parameters,
         arguments=pr.parse_arguments(
-            arguments={'codeFile': FileHandle(filename=CODE_FILE)},
+            arguments={'codeFile': CODE_FILE},
             parameters=parameters
         )
     )
-    assert wf['input'] == ['helloworld.py']
+    assert wf['input'] == ['src/helloworld.py']
 
 
 def test_scalar_args():
@@ -408,11 +408,11 @@ def test_simple_replace():
         arguments = {
             'code': TemplateArgument(
                 parameter=template.get_parameter('code'),
-                value=FileHandle(CODE_FILE)
+                value=CODE_FILE
             ),
             'names': TemplateArgument(
                 parameter=template.get_parameter('names'),
-                value=FileHandle(DATA_FILE)
+                value=DATA_FILE
             ),
             'sleeptime': TemplateArgument(
                 parameter=template.get_parameter('sleeptime'),
@@ -424,9 +424,9 @@ def test_simple_replace():
             arguments=arguments,
             parameters=template.parameters
         )
-        assert spec['inputs']['files'][0] == 'helloworld.py'
+        assert spec['inputs']['files'][0] == 'code/helloworld.py'
         assert spec['inputs']['files'][1] == 'data/names.txt'
-        assert spec['inputs']['parameters']['helloworld'] == 'code/helloworld.py'
+        assert spec['inputs']['parameters']['helloworld'] == 'code/helloworld.py'  # noqa: E501
         assert spec['inputs']['parameters']['inputfile'] == 'data/names.txt'
         assert spec['inputs']['parameters']['sleeptime'] == 10
         assert spec['inputs']['parameters']['waittime'] == 5

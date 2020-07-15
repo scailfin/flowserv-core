@@ -10,60 +10,89 @@
 
 import os
 
-from flowserv.service.api import API
-from flowserv.tests.controller import StateEngine
-
-import flowserv.tests.db as db
-
 import flowserv.tests.serialize as serialize
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))
-TEMPLATE_DIR = os.path.join(DIR, '../.files/benchmark/helloworld')
 INSTRUCTION_FILE = os.path.join(DIR, '../.files/benchmark/instructions.txt')
 
 
-def test_workflow_view(tmpdir):
-    """Test serialization for created workflows and workflow listings."""
-    # Get an API instance that uses the StateEngine as the backend
-    con = db.init_db(str(tmpdir)).connect()
-    engine = StateEngine()
-    api = API(con=con, engine=engine, basedir=str(tmpdir))
-    # Create two copies of the same workflow
-    r = api.workflows().create_workflow(name='W1', sourcedir=TEMPLATE_DIR)
-    serialize.validate_workflow_handle(doc=r, has_optional=False)
-    r = api.workflows().get_workflow(r['id'])
-    serialize.validate_workflow_handle(doc=r, has_optional=False)
-    assert len(r['modules']) == 1
-    serialize.validate_para_module(r['modules'][0])
-    assert len(r['parameters']) == 3
-    for para in r['parameters']:
-        serialize.validate_parameter(para)
-    r = api.workflows().create_workflow(
-        name='W2',
-        description='ABC',
-        instructions=INSTRUCTION_FILE,
-        sourcedir=TEMPLATE_DIR
-    )
-    serialize.validate_workflow_handle(doc=r, has_optional=True)
-    assert r['description'] == 'ABC'
-    assert r['instructions'] == 'How to run Hello World'
-    workflow_id = r['id']
-    # -- Update workflow ------------------------------------------------------
-    r = api.workflows().update_workflow(
-        workflow_id=workflow_id,
-        name='Hello World',
-        description='Simple Hello World Demo',
-        instructions='Just run it'
-    )
-    assert r['name'] == 'Hello World'
-    assert r['description'] == 'Simple Hello World Demo'
-    assert r['instructions'] == 'Just run it'
+def test_delete_workflow_view(service, hello_world):
+    """Test deleting a workflow from the repository."""
+    # -- Setup ----------------------------------------------------------------
+    #
+    # Create two instances of the 'Hello World' workflow.
+    with service() as api:
+        r = hello_world(api, name='W1')
+        workflow_id = r['id']
+        hello_world(api, name='W2')
+    # -- Delete the first workflow --------------------------------------------
+    with service() as api:
+        api.workflows().delete_workflow(workflow_id)
+        # After deletion one workflow is left.
+        r = api.workflows().list_workflows()
+        assert len(r['workflows']) == 1
+
+
+def test_get_workflow_view(service, hello_world):
+    """Test serialization for created workflows."""
+    # -- Create workflow with minimal metadata --------------------------------
+    with service() as api:
+        r = hello_world(api, name='W1')
+        serialize.validate_workflow_handle(doc=r, has_optional=False)
+        r = api.workflows().get_workflow(r['id'])
+        serialize.validate_workflow_handle(doc=r, has_optional=False)
+        assert len(r['modules']) == 1
+        serialize.validate_para_module(r['modules'][0])
+        assert len(r['parameters']) == 3
+        for para in r['parameters']:
+            serialize.validate_parameter(para)
+    # -- Create workflow with description and instructions --------------------
+    with service() as api:
+        r = hello_world(
+            api=api,
+            name='W2',
+            description='ABC',
+            instructions=INSTRUCTION_FILE
+        )
+        serialize.validate_workflow_handle(doc=r, has_optional=True)
+        assert r['description'] == 'ABC'
+        assert r['instructions'] == 'How to run Hello World'
+
+
+def test_list_workflows_view(service, hello_world):
+    """Test serialization for workflow listings."""
+    # -- Setup ----------------------------------------------------------------
+    #
+    # Create two instances of the 'Hello World' workflow.
+    with service() as api:
+        hello_world(api, name='W1')
+        hello_world(api, name='W2')
     # -- Workflow Listing -----------------------------------------------------
-    r = api.workflows().list_workflows()
-    serialize.validate_workflow_listing(doc=r)
-    assert len(r['workflows']) == 2
-    # -- Delete workflow ------------------------------------------------------
-    api.workflows().delete_workflow(workflow_id)
-    r = api.workflows().list_workflows()
-    assert len(r['workflows']) == 1
+    with service() as api:
+        r = api.workflows().list_workflows()
+        serialize.validate_workflow_listing(doc=r)
+        assert len(r['workflows']) == 2
+
+
+def test_update_workflow_view(service, hello_world):
+    """Test updating workflow properties."""
+    # -- Setup ----------------------------------------------------------------
+    #
+    # Create one instances of the 'Hello World' workflow with minimal metadata.
+    with service() as api:
+        r = hello_world(api, name='W1')
+        workflow_id = r['id']
+        assert 'description' not in r
+        assert 'instructions' not in r
+    # -- Update workflow ------------------------------------------------------
+    with service() as api:
+        r = api.workflows().update_workflow(
+            workflow_id=workflow_id,
+            name='Hello World',
+            description='Simple Hello World Demo',
+            instructions='Just run it'
+        )
+        assert r['name'] == 'Hello World'
+        assert r['description'] == 'Simple Hello World Demo'
+        assert r['instructions'] == 'Just run it'

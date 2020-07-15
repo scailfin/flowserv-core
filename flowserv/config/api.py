@@ -11,7 +11,7 @@ used to configure the API. In addition, the module provides methods to access
 the configuration values in the environment variables.
 """
 
-import flowserv.config.base as config
+from flowserv.config.base import get_variable
 
 
 """Names of environment variables that are used to configure the API."""
@@ -41,40 +41,29 @@ DEFAULT_PROTOCOL = 'http'
 # -- Public helper methods to access configuration values ---------------------
 
 
-def API_BASEDIR(default_value=None, raise_error=False):
+def API_BASEDIR(value=None):
     """Get the base directory that is used by the API to store benchmark
     templates and benchmark runs from the respective environment variable
-    'FLOWSERV_API_DIR'. Raises a MissingConfigurationError if the raise_error
-    flag is True and 'FLOWSERV_API_DIR' is not set. If the raise_error flag is
-    False and 'FLOWSERV_API_DIR' is not set the default name is returned.
+    'FLOWSERV_API_DIR'. If a user-provided base directory is given, that value
+    is returned. If the environment variable is not set, the default directory
+    is returned.
 
     Parameters
     ----------
-    default_value: string, optional
-        Default value if 'FLOWSERV_API_DIR' is not set and raise_error flag is
-        False
-    raise_error: bool, optional
-        Flag indicating whether an error is raised if the environment variable
-        is not set (i.e., None or and empty string '')
+    value: string, default=None
+        User-provided value for the API base directory.
 
     Returns
     -------
     string
-
-    Raises
-    ------
-    flowserv.core.error.MissingConfigurationError
     """
-    val = config.get_variable(
+    if value is not None:
+        return value
+    return get_variable(
         name=FLOWSERV_API_BASEDIR,
-        default_value=default_value,
-        raise_error=raise_error
+        default_value=DEFAULT_DIR,
+        raise_error=False
     )
-    # If the environment variable is not set and no default value was given
-    # return the defined default value
-    if val is None:
-        val = DEFAULT_DIR
-    return val
 
 
 def API_HOST():
@@ -86,7 +75,7 @@ def API_HOST():
     -------
     string
     """
-    return config.get_variable(
+    return get_variable(
         name=FLOWSERV_API_HOST,
         default_value=DEFAULT_HOST,
         raise_error=False
@@ -94,14 +83,15 @@ def API_HOST():
 
 
 def API_NAME():
-    """Get the service name for the API from the respective environment variable
-    'FLOWSERV_API_NAME'. If the variable is not set the default name is returned.
+    """Get the service name for the API from the respective environment
+    variable 'FLOWSERV_API_NAME'. If the variable is not set the default name
+    is returned.
 
     Returns
     -------
     string
     """
-    return config.get_variable(
+    return get_variable(
         name=FLOWSERV_API_NAME,
         default_value=DEFAULT_NAME,
         raise_error=False
@@ -109,15 +99,15 @@ def API_NAME():
 
 
 def API_PATH():
-    """Get the application path name for the API from the respective environment
-    variable 'FLOWSERV_API_PATH'. If the variable is not set the default application
-    path is returned.
+    """Get the application path name for the API from the respective
+    environment variable 'FLOWSERV_API_PATH'. If the variable is not set the
+    default application path is returned.
 
     Returns
     -------
     string
     """
-    return config.get_variable(
+    return get_variable(
         name=FLOWSERV_API_PATH,
         default_value=DEFAULT_PATH,
         raise_error=False
@@ -140,7 +130,7 @@ def API_PORT():
     ------
     ValueError
     """
-    val = config.get_variable(
+    val = get_variable(
         name=FLOWSERV_API_PORT,
         default_value=DEFAULT_PORT,
         raise_error=False
@@ -161,7 +151,7 @@ def API_PROTOCOL():
     ------
     ValueError
     """
-    return config.get_variable(
+    return get_variable(
         name=FLOWSERV_API_PROTOCOL,
         default_value=DEFAULT_PROTOCOL,
         raise_error=False

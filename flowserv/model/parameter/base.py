@@ -11,10 +11,12 @@ properties that are used to (i) identify the parameter, (ii) define a nested
 parameter structure, and (iii) render UI forms to collect parameter values.
 """
 
-from flowserv.core.error import InvalidParameterError
+import os
 
-import flowserv.core.error as err
-import flowserv.core.util as util
+from flowserv.error import InvalidParameterError
+
+import flowserv.error as err
+import flowserv.util as util
 import flowserv.model.parameter.declaration as pd
 
 
@@ -48,7 +50,7 @@ class ParameterBase(object):
 
         Raises
         ------
-        flowserv.core.error.InvalidParameterError
+        flowserv.error.InvalidParameterError
         """
         if data_type not in pd.DATA_TYPES:
             msg = "invalid data type '{}'"
@@ -196,7 +198,8 @@ class TemplateParameter(ParameterBase):
         ----------
         obj: dict
             Dictionary containing the template parameter declaration properties
-        children: list(flowserv.model.parameter.base.TemplateParameter), optional
+        children: list(flowserv.model.parameter.base.TemplateParameter),
+                default=None
             Optional list of parameter children for parameter lists or records
         """
         super(TemplateParameter, self).__init__(
@@ -331,6 +334,60 @@ class TemplateParameter(ParameterBase):
         return self.obj
 
 
+class InputFile(object):
+    """The InputFile represents the value for a template parameter of type
+    'file'. This class contains the file identifier and name for an uploaded
+    file with an optional target path that the user may have provided.
+    """
+    def __init__(self, filename, target_path=None, file_id=None, name=None):
+        """Initialize the object properties.
+
+        Parameters
+        ----------
+        filename: string
+            Path to file on disk.
+        target_path: string, default=None
+            Optional target path. Use the file name as default if None.
+        file_id: string, default=None
+            Unique file identifier
+        name: string, default=None
+            Name of the file (unique human-readable identifier).
+
+        Raises
+        ------
+        flowserv.error.UnknownFileError
+        """
+        assert filename is not None, 'no source file given'
+        assert name is not None or target_path is not None, 'no target given'
+        if not os.path.exists(filename):
+            raise err.UnknownFileError(filename)
+        self.file_id = file_id
+        self.name = name
+        self.filename = filename
+        self.target_path = target_path
+
+    def source(self):
+        """Shortcut to get the source path for the file.
+
+        Returns
+        -------
+        string
+        """
+        return self.filename
+
+    def target(self):
+        """Shortcut to get the target path for the file.
+
+        Returns
+        -------
+        string
+        """
+        if self.target_path is not None:
+            return self.target_path
+        else:
+            return self.name
+
+
 # -- Helper Functions ---------------------------------------------------------
 
 def create_parameter_index(parameters, validate=True):
@@ -352,8 +409,8 @@ def create_parameter_index(parameters, validate=True):
 
     Raises
     ------
-    flowserv.core.error.InvalidTemplateError
-    flowserv.core.error.UnknownParameterError
+    flowserv.error.InvalidTemplateError
+    flowserv.error.UnknownParameterError
     """
     result = dict()
     for para in parameters:

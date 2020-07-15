@@ -10,7 +10,7 @@
 
 import os
 
-import flowserv.core.util as util
+import flowserv.util as util
 
 
 class FakeStream(object):
@@ -35,10 +35,8 @@ class FakeStream(object):
 
     def save(self, filename):
         """Write simple text to given file."""
-        # Ensure that the directory for the file exists
-        dirname = os.path.dirname(filename)
-        if dirname:
-            util.create_dir(dirname)
+        # Ensure that the directory for the file exists.
+        util.create_dir(os.path.dirname(filename))
         if self.format == util.FORMAT_JSON:
             util.write_object(
                 filename=filename,

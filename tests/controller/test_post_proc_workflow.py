@@ -11,13 +11,19 @@
 import os
 import time
 
-from flowserv.service.api import API
+from flowserv.config.api import FLOWSERV_API_BASEDIR
+from flowserv.config.backend import CLEAR_BACKEND, DEFAULT_BACKEND
+from flowserv.config.database import FLOWSERV_DB
+from flowserv.controller.serial.engine import SerialWorkflowEngine
+from flowserv.service.api import service
+from flowserv.service.run import ARG_ID, ARG_VALUE
 from flowserv.tests.files import FakeStream
+from flowserv.tests.service import (
+    create_group, create_user, create_workflow, start_run, upload_file
+)
 
-import flowserv.config.api as config
-import flowserv.core.util as util
+import flowserv.util as util
 import flowserv.model.workflow.state as st
-import flowserv.tests.db as db
 import flowserv.tests.serialize as serialize
 
 
@@ -29,9 +35,6 @@ SPEC_FILE_ERR_2 = os.path.join(DIR, '../.files/benchmark/postproc/error2.yaml')
 TEMPLATE_DIR = os.path.join(DIR, '../.files/benchmark/helloworld')
 
 
-# Default users
-UID = '0000'
-
 # List of names for input files
 NAMES = ['Alice', 'Bob', 'Gabriel', 'William']
 
@@ -39,136 +42,133 @@ NAMES = ['Alice', 'Bob', 'Gabriel', 'William']
 def test_postproc_workflow(tmpdir):
     """Execute the modified helloworld example."""
     # -- Setup ----------------------------------------------------------------
-    # Create the database and service API with a serial workflow engine in
-    # asynchronous mode
-    os.environ[config.FLOWSERV_API_BASEDIR] = os.path.abspath(str(tmpdir))
-    api = API(con=db.init_db(str(tmpdir), users=[UID]).connect())
-    # Create workflow template
-    wh = api.workflows().create_workflow(
-        name='W1',
-        sourcedir=TEMPLATE_DIR,
-        specfile=SPEC_FILE
-    )
-    w_id = wh['id']
+    #
+    # Start a new run for the workflow template.
+    os.environ[FLOWSERV_DB] = 'sqlite:///{}/flowserv.db'.format(str(tmpdir))
+    os.environ[FLOWSERV_API_BASEDIR] = str(tmpdir)
+    DEFAULT_BACKEND()
+    from flowserv.service.database import database
+    database.init()
+    engine = SerialWorkflowEngine(is_async=True)
+    with service(engine=engine) as api:
+        workflow_id = create_workflow(
+            api,
+            sourcedir=TEMPLATE_DIR,
+            specfile=SPEC_FILE
+        )
+        user_id = create_user(api)
     # Create four groups and run the workflow with a slightly different input
     # file
     for i in range(4):
-        name = 'G{}'.format(i)
-        gh = api.groups().create_group(
-            workflow_id=w_id,
-            name=name,
-            user_id=UID
-        )
-        g_id = gh['id']
-        # Upload the names file
-        fh = api.uploads().upload_file(
-            group_id=g_id,
-            file=FakeStream(data=NAMES[:(i+1)], format='txt/plain'),
-            name='names.txt',
-            user_id=UID
-        )
-        file_id = fh['id']
-        # Set the template argument values
-        arguments = [
-            {'id': 'names', 'value': file_id},
-            {'id': 'greeting', 'value': 'Hi'}
-        ]
-        # Run the workflow
-        run = api.runs().start_run(
-            group_id=g_id,
-            arguments=arguments,
-            user_id=UID
-        )
-        r_id = run['id']
+        with service(engine=engine) as api:
+            group_id = create_group(api, workflow_id, [user_id])
+            names = FakeStream(data=NAMES[:(i+1)], format='plain/text')
+            file_id = upload_file(api, group_id, user_id, names)
+            # Set the template argument values
+            arguments = [
+                {ARG_ID: 'names', ARG_VALUE: file_id},
+                {ARG_ID: 'greeting', ARG_VALUE: 'Hi'}
+            ]
+            run_id = start_run(api, group_id, user_id, arguments=arguments)
         # Poll workflow state every second.
-        while run['state'] in st.ACTIVE_STATES:
-            time.sleep(1)
-            run = api.runs().get_run(run_id=r_id, user_id=UID)
+        run = poll_run(service, engine, run_id, user_id)
         assert run['state'] == st.STATE_SUCCESS
-        wh = api.workflows().get_workflow(workflow_id=w_id)
+        with service(engine=engine) as api:
+            wh = api.workflows().get_workflow(workflow_id=workflow_id)
         while 'postproc' not in wh:
             time.sleep(1)
-            wh = api.workflows().get_workflow(workflow_id=w_id)
+            with service(engine=engine) as api:
+                wh = api.workflows().get_workflow(workflow_id=workflow_id)
         serialize.validate_workflow_handle(wh)
         while wh['postproc']['state'] in st.ACTIVE_STATES:
             time.sleep(1)
-            wh = api.workflows().get_workflow(workflow_id=w_id)
+            with service(engine=engine) as api:
+                wh = api.workflows().get_workflow(workflow_id=workflow_id)
         serialize.validate_workflow_handle(wh)
-        for res in wh['postproc']['resources']:
-            if res['name'] == 'results/compare.json':
-                res_id = res['id']
-        fh = api.runs().get_result_file(
-            run_id=wh['postproc']['id'],
-            resource_id=res_id,
-            user_id=None
-        )
+        for fobj in wh['postproc']['files']:
+            if fobj['name'] == 'results/compare.json':
+                file_id = fobj['id']
+        with service(engine=engine) as api:
+            fh = api.runs().get_result_file(
+                run_id=wh['postproc']['id'],
+                file_id=file_id,
+                user_id=None
+            )
         compare = util.read_object(fh.filename)
         assert len(compare) == (i + 1)
-    del os.environ[config.FLOWSERV_API_BASEDIR]
+    # Clean-up environment variables
+    del os.environ[FLOWSERV_DB]
+    del os.environ[FLOWSERV_API_BASEDIR]
+    CLEAR_BACKEND()
 
 
 def test_postproc_workflow_errors(tmpdir):
     """Execute the modified helloworld example."""
-    # Create the database and service API with a serial workflow engine in
-    # asynchronous mode
-    os.environ[config.FLOWSERV_API_BASEDIR] = os.path.abspath(str(tmpdir))
-    api = API(con=db.init_db(str(tmpdir), users=[UID]).connect())
+    # -- Setup ----------------------------------------------------------------
+    #
+    # Start a new run for the workflow template.
+    os.environ[FLOWSERV_DB] = 'sqlite:///{}/flowserv.db'.format(str(tmpdir))
+    os.environ[FLOWSERV_API_BASEDIR] = str(tmpdir)
+    DEFAULT_BACKEND()
+    from flowserv.service.database import database
+    database.init()
+    engine = SerialWorkflowEngine(is_async=True)
     # Error during data preparation
-    run_erroneous_workflow(api, SPEC_FILE_ERR_1)
+    run_erroneous_workflow(service, engine, SPEC_FILE_ERR_1)
     # Erroneous specification
-    run_erroneous_workflow(api, SPEC_FILE_ERR_2)
-    del os.environ[config.FLOWSERV_API_BASEDIR]
+    run_erroneous_workflow(service, engine, SPEC_FILE_ERR_2)
+    # Clean-up environment variables
+    del os.environ[FLOWSERV_DB]
+    del os.environ[FLOWSERV_API_BASEDIR]
+    CLEAR_BACKEND()
 
 
 # -- Helper functions ---------------------------------------------------------
 
-def run_erroneous_workflow(api, specfile):
-    """Execute the modified helloworld example."""
-    # Create workflow template
-    wh = api.workflows().create_workflow(
-        name=util.get_unique_identifier(),
-        sourcedir=TEMPLATE_DIR,
-        specfile=specfile
-    )
-    w_id = wh['id']
-    # Create one group and run the workflow
-    gh = api.groups().create_group(workflow_id=w_id, name='G', user_id=UID)
-    g_id = gh['id']
-    # Upload the names file
-    fh = api.uploads().upload_file(
-        group_id=g_id,
-        file=FakeStream(data=NAMES, format='txt/plain'),
-        name='names.txt',
-        user_id=UID
-    )
-    file_id = fh['id']
-    # Set the template argument values
-    arguments = [
-        {'id': 'names', 'value': file_id},
-        {'id': 'greeting', 'value': 'Hi'}
-    ]
-    # Run the workflow
-    run = api.runs().start_run(
-        group_id=g_id,
-        arguments=arguments,
-        user_id=UID
-    )
-    r_id = run['id']
-    # Poll workflow state every second.
+def poll_run(service, engine, run_id, user_id):
+    """Poll workflow run while in active state."""
+    with service(engine=engine) as api:
+        run = api.runs().get_run(run_id=run_id, user_id=user_id)
     while run['state'] in st.ACTIVE_STATES:
-        print('active run')
         time.sleep(1)
-        run = api.runs().get_run(run_id=r_id, user_id=UID)
+        with service(engine=engine) as api:
+            run = api.runs().get_run(run_id=run_id, user_id=user_id)
+    return run
+
+
+def run_erroneous_workflow(service, engine, specfile):
+    """Execute the modified helloworld example."""
+    with service(engine=engine) as api:
+        # Create workflow template, user, and the workflow group.
+        workflow_id = create_workflow(
+            api,
+            sourcedir=TEMPLATE_DIR,
+            specfile=specfile
+        )
+        user_id = create_user(api)
+        group_id = create_group(api, workflow_id, [user_id])
+        # Upload the names file.
+        names = FakeStream(data=NAMES, format='txt/plain')
+        file_id = upload_file(api, group_id, user_id, names)
+        # Run the workflow.
+        arguments = [
+            {'id': 'names', 'value': file_id},
+            {'id': 'greeting', 'value': 'Hi'}
+        ]
+        run_id = start_run(api, group_id, user_id, arguments=arguments)
+    # Poll workflow state every second.
+    run = poll_run(service, engine, run_id, user_id)
     assert run['state'] == st.STATE_SUCCESS
-    wh = api.workflows().get_workflow(workflow_id=w_id)
+    with service(engine=engine) as api:
+        wh = api.workflows().get_workflow(workflow_id=workflow_id)
     while 'postproc' not in wh:
-        print('wait for postproc run to start')
         time.sleep(1)
-        wh = api.workflows().get_workflow(workflow_id=w_id)
+        with service(engine=engine) as api:
+            wh = api.workflows().get_workflow(workflow_id=workflow_id)
     serialize.validate_workflow_handle(wh)
     while wh['postproc']['state'] in st.ACTIVE_STATES:
-        print('postproc run active')
         time.sleep(1)
-        wh = api.workflows().get_workflow(workflow_id=w_id)
+        with service(engine=engine) as api:
+            wh = api.workflows().get_workflow(workflow_id=workflow_id)
     serialize.validate_workflow_handle(wh)
     assert wh['postproc']['state'] == st.STATE_ERROR

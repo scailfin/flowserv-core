@@ -30,8 +30,8 @@ class SerialWorkflow(object):
         Parameters
         ----------
         template: flowserv.model.template.base.WorkflowTemplate
-            Workflow template containing the parameterized specification and the
-            parameter declarations
+            Workflow template containing the parameterized specification and
+            the parameter declarations
         arguments: dict(flowserv.model.parameter.value.TemplateArgument)
             Dictionary of argument values for parameters in the template
         """
@@ -51,8 +51,8 @@ class SerialWorkflow(object):
 
         Raises
         ------
-        flowserv.core.error.InvalidTemplateError
-        flowserv.core.error.MissingArgumentError
+        flowserv.error.InvalidTemplateError
+        flowserv.error.MissingArgumentError
         """
         workflow_spec = self.template.workflow_spec
         # Get the input/parameters dictionary from the workflow specification
@@ -96,8 +96,8 @@ class SerialWorkflow(object):
 
         Raises
         ------
-        flowserv.core.error.InvalidTemplateError
-        flowserv.core.error.MissingArgumentError
+        flowserv.error.InvalidTemplateError
+        flowserv.error.MissingArgumentError
         """
         workflow_spec = self.template.workflow_spec
         return tp.replace_args(
@@ -126,9 +126,9 @@ class SerialWorkflow(object):
 
         Raises
         ------
-        flowserv.core.error.InvalidTemplateError
-        flowserv.core.error.MissingArgumentError
-        flowserv.core.error.UnknownParameterError
+        flowserv.error.InvalidTemplateError
+        flowserv.error.MissingArgumentError
+        flowserv.error.UnknownParameterError
         """
         workflow_spec = self.template.workflow_spec
         return tp.get_upload_files(

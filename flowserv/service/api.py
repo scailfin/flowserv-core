@@ -14,17 +14,13 @@ closed properly after every API request has been handled.
 
 from contextlib import contextmanager
 
-import logging
-
-from flowserv.core.db.driver import DatabaseDriver
-from flowserv.model.group.manager import WorkflowGroupManager
-from flowserv.model.ranking.manager import RankingManager
-from flowserv.model.run.manager import RunManager
-from flowserv.model.user.manager import UserManager
-from flowserv.model.user.auth import DefaultAuthPolicy
+from flowserv.model.auth import DefaultAuthPolicy
+from flowserv.model.group import WorkflowGroupManager
+from flowserv.model.ranking import RankingManager
+from flowserv.model.run import RunManager
+from flowserv.model.user import UserManager
 from flowserv.model.workflow.fs import WorkflowFileSystem
-from flowserv.model.workflow.repo import WorkflowRepository
-from flowserv.service.backend import init_backend
+from flowserv.model.workflow.manager import WorkflowManager
 from flowserv.service.files import UploadFileService
 from flowserv.service.group import WorkflowGroupService
 from flowserv.service.run import RunService
@@ -34,19 +30,12 @@ from flowserv.service.workflow import WorkflowService
 from flowserv.view.factory import DefaultView
 
 import flowserv.config.api as config
-import flowserv.core.error as err
-import flowserv.core.util as util
+import flowserv.error as err
+import flowserv.util as util
 
 
 """Name of the header element that contains the access token."""
 HEADER_TOKEN = 'api_key'
-
-
-"""Define the workflow backend as a global variable. This is necessary for the
-multi-porcess backend to be able to maintain process state in between API
-requests.
-"""
-backend = init_backend()
 
 
 class API(object):
@@ -61,15 +50,17 @@ class API(object):
     - users()
     - workflows()
     """
-    def __init__(self, con, engine=None, basedir=None, auth=None, view=None):
+    def __init__(
+        self, session, engine=None, basedir=None, auth=None, view=None
+    ):
         """Initialize the database connection, URL factory, and the file system
         path generator. All other internal components are created when they are
         acccessed for the first time
 
         Parameters
         ----------
-        con: DB-API 2.0 database connection
-            Connection to underlying database
+        session: sqlalchemy.orm.session.Session
+            Database session.
         engine: flowserv.controller.base.WorkflowController, optional
             Workflow controller used by the API for workflow execution
         basedir: string, optional
@@ -79,13 +70,15 @@ class API(object):
         view: flowserv.view.factory.ViewFactory, optional
             Factory pattern for resource serializers
         """
-        self.con = con
+        self.session = session
         # Use the global backend if no engine is specified
-        self.engine = engine if engine is not None else backend
+        if engine is None:
+            from flowserv.service.backend import backend
+            engine = backend
+        self.engine = engine
         # Ensure that the API base directory exists
-        fsdir = basedir if basedir is not None else config.API_BASEDIR()
+        fsdir = config.API_BASEDIR(value=basedir)
         self.fs = WorkflowFileSystem(util.create_dir(fsdir, abs=True))
-        logging.info('API base directory {}'.format(fsdir))
         # Set the serializer factory
         self.view = view if view is not None else DefaultView()
         # Keep an instance of objects that may be used by multiple components
@@ -97,6 +90,7 @@ class API(object):
         self._ranking_manager = None
         self._run_manager = None
         self._workflow_repo = None
+        self._user_manager = None
         self._users = None
 
     @property
@@ -105,10 +99,10 @@ class API(object):
 
         Returns
         -------
-        flowserv.model.user.auth.Auth
+        flowserv.model.auth.Auth
         """
         if self._auth is None:
-            self._auth = DefaultAuthPolicy(con=self.con)
+            self._auth = DefaultAuthPolicy(session=self.session)
         return self._auth
 
     def authenticate(self, access_token):
@@ -125,11 +119,11 @@ class API(object):
 
         Returns
         -------
-        flowserv.model.user.base.UserHandle
+        flowserv.model.base.User
 
         Raises
         ------
-        flowserv.core.error.UnauthenticatedAccessError
+        flowserv.error.UnauthenticatedAccessError
         """
         return self.auth.authenticate(access_token)
 
@@ -140,12 +134,13 @@ class API(object):
 
         Returns
         --------
-        flowserv.model.group.manager.WorkflowGroupManager
+        flowserv.model.group..WorkflowGroupManager
         """
         if self._group_manager is None:
             self._group_manager = WorkflowGroupManager(
-                con=self.con,
-                fs=self.fs
+                session=self.session,
+                fs=self.fs,
+                users=self.user_manager
             )
         return self._group_manager
 
@@ -172,10 +167,10 @@ class API(object):
 
         Returns
         --------
-        flowserv.model.ranking.manager.RankingManager
+        flowserv.model.ranking.RankingManager
         """
         if self._ranking_manager is None:
-            self._ranking_manager = RankingManager(con=self.con)
+            self._ranking_manager = RankingManager(session=self.session)
         return self._ranking_manager
 
     @property
@@ -185,11 +180,11 @@ class API(object):
 
         Returns
         --------
-        flowserv.model.run.manager.RunManager
+        flowserv.model.run.RunManager
         """
         if self._run_manager is None:
             self._run_manager = RunManager(
-                con=self.con,
+                session=self.session,
                 fs=self.fs
             )
         return self._run_manager
@@ -205,7 +200,6 @@ class API(object):
         return RunService(
             run_manager=self.run_manager,
             group_manager=self.group_manager,
-            workflow_repo=self.workflow_repository,
             ranking_manager=self.ranking_manager,
             backend=self.engine,
             auth=self.auth,
@@ -245,6 +239,19 @@ class API(object):
             serializer=self.view.files()
         )
 
+    @property
+    def user_manager(self):
+        """Get the user manager instance. The object is created when the
+        manager is accessed for the first time.
+
+        Returns
+        --------
+        flowserv.model.user.UserManager
+        """
+        if self._user_manager is None:
+            self._user_manager = UserManager(session=self.session)
+        return self._user_manager
+
     def users(self):
         """Get instance of the user service component.
 
@@ -254,7 +261,8 @@ class API(object):
         """
         if self._users is None:
             self._users = UserService(
-                manager=UserManager(con=self.con),
+                manager=self.user_manager,
+                auth=self.auth,
                 serializer=self.view.users()
             )
         return self._users
@@ -266,11 +274,11 @@ class API(object):
 
         Returns
         --------
-        flowserv.model.workflow.repo.WorkflowRepository
+        flowserv.model.workflow.manager.WorkflowManager
         """
         if self._workflow_repo is None:
-            self._workflow_repo = WorkflowRepository(
-                con=self.con,
+            self._workflow_repo = WorkflowManager(
+                session=self.session,
                 fs=self.fs
             )
         return self._workflow_repo
@@ -286,19 +294,22 @@ class API(object):
         return WorkflowService(
             workflow_repo=self.workflow_repository,
             ranking_manager=self.ranking_manager,
+            run_manager=self.run_manager,
             serializer=self.view.workflows()
         )
 
 
 @contextmanager
-def service(engine=None):
+def service(db=None, engine=None, basedir=None, auth=None, view=None):
     """The local service function is a context manager for an open database
     connection that is used to instantiate the API service class. The context
-    manager ensures that the database conneciton in closed after an API request
+    manager ensures that the database connection is closed after an API request
     has been processed.
 
     Parameters
     ----------
+    db: flowserv.model.database.DB, default=None
+        Database manager.
     engine: flowserv.controller.base.WorkflowController, optional
         Workflow controller used by the API for workflow execution
 
@@ -306,6 +317,15 @@ def service(engine=None):
     -------
     flowserv.service.api.API
     """
-    con = DatabaseDriver.get_connector().connect()
-    yield API(con, engine=engine)
-    con.close()
+    if db is None:
+        # Use the default database object if no database is given.
+        from flowserv.service.database import database
+        db = database
+    with db.session() as session:
+        yield API(
+            session=session,
+            engine=engine,
+            basedir=basedir,
+            auth=auth,
+            view=view
+        )

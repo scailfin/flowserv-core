@@ -1,0 +1,28 @@
+workflow:
+    version: 0.3.0
+    inputs:
+      files:
+        - code/analyze.py
+        - code/helloworld.py
+      parameters:
+        inputfile: data/names.txt
+        outputfile: results/greetings.txt
+        sleeptime: 0
+        greeting: Hi
+    workflow:
+      type: serial
+      specification:
+        steps:
+          - environment: 'python:3.7'
+            commands:
+              - python code/helloworld.py
+                  --inputfile "${inputfile}"
+                  --outputfile "${outputfile}"
+                  --sleeptime ${sleeptime}
+                  --greeting ${greeting}
+              - python code/analyze.py
+                  --inputfile "${outputfile}"
+                  --outputfile results/analytics.json
+    outputs:
+      files:
+       - results/data.txt

@@ -2,8 +2,6 @@
 intend is for testing of the simple multi process backend.
 """
 
-from __future__ import absolute_import, print_function
-
 import argparse
 import errno
 import os

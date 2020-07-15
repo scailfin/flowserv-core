@@ -11,9 +11,8 @@ view factory class as well as the default implementation for the flowServ
 view.
 """
 
-from abc import abstractmethod
+from abc import ABCMeta, abstractmethod
 
-from flowserv.core.util import ABC
 from flowserv.view.files import UploadFileSerializer
 from flowserv.view.group import WorkflowGroupSerializer
 from flowserv.view.run import RunSerializer
@@ -24,11 +23,11 @@ from flowserv.view.workflow import WorkflowSerializer
 
 # -- Abstract class -----------------------------------------------------------
 
-class ViewFactory(ABC):
+class ViewFactory(metaclass=ABCMeta):
     """Abstract factory class for serializers of the different API components.
     """
     @abstractmethod
-    def files(self):
+    def files(self):  # pragma: no cover
         """Serializer for uploaded files.
 
         Returns
@@ -38,7 +37,7 @@ class ViewFactory(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def groups(self):
+    def groups(self):  # pragma: no cover
         """Serializer for workflow groups.
 
         Returns
@@ -48,7 +47,7 @@ class ViewFactory(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def runs(self):
+    def runs(self):  # pragma: no cover
         """Serializer for workflow runs.
 
         Returns
@@ -58,7 +57,7 @@ class ViewFactory(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def server(self):
+    def server(self):  # pragma: no cover
         """Serializer for the service descriptor.
 
         Returns
@@ -68,7 +67,7 @@ class ViewFactory(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def users(self):
+    def users(self):  # pragma: no cover
         """Serializer for users.
 
         Returns
@@ -78,7 +77,7 @@ class ViewFactory(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def workflows(self):
+    def workflows(self):  # pragma: no cover
         """Serializer for workflow templates.
 
         Returns

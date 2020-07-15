@@ -8,137 +8,97 @@
 
 """Unit test for uploaded files that are associated with workflow groups."""
 
-import json
-import os
 import pytest
 
-from flowserv.service.api import API
-from flowserv.tests.controller import StateEngine
 from flowserv.tests.files import FakeStream
+from flowserv.tests.service import create_group, create_user, upload_file
 
-import flowserv.core.error as err
-import flowserv.core.util as util
-import flowserv.tests.db as db
+import flowserv.error as err
 import flowserv.tests.serialize as serialize
 
 
-DIR = os.path.dirname(os.path.realpath(__file__))
-TEMPLATE_DIR = os.path.join(DIR, '../.files/benchmark/helloworld')
-
-# Default users
-USER_1 = util.get_unique_identifier()
-USER_2 = util.get_unique_identifier()
-
-
-def test_workflow_group_file_upload(tmpdir):
-    """Test lift cycle for uploaded files."""
-    # Initialize the API
-    con = db.init_db(str(tmpdir), users=[USER_1, USER_2]).connect()
-    engine = StateEngine()
-    api = API(con=con, engine=engine, basedir=str(tmpdir))
-    # Create two workflows with two groups each
-    r = api.workflows().create_workflow(name='W1', sourcedir=TEMPLATE_DIR)
-    wf1 = r['id']
-    r = api.workflows().create_workflow(name='W2', sourcedir=TEMPLATE_DIR)
-    wf2 = r['id']
-    # Create two groups for each workflow
-    r = api.groups().create_group(workflow_id=wf1, name='G1', user_id=USER_1)
-    w1g1 = r['id']
-    r = api.groups().create_group(workflow_id=wf1, name='G2', user_id=USER_2)
-    w1g2 = r['id']
-    r = api.groups().create_group(workflow_id=wf2, name='G1', user_id=USER_1)
-    w2g1 = r['id']
-    r = api.groups().create_group(workflow_id=wf2, name='G2', user_id=USER_2)
-    w2g2 = r['id']
-    # Upload increasing number of files for each of the groups
-    groups = [w1g1, w1g2, w2g1, w2g2]
-    users = USER_1, USER_2, USER_1, USER_2
-    files = list()
-    for i in range(len(groups)):
-        g_id = groups[i]
-        u_id = users[i]
-        for j in range(i+1):
-            stream = FakeStream(data={'i': i, 'j': j})
-            name = 'i{}-j{}.json'.format(i, j)
-            r = api.uploads().upload_file(
-                group_id=g_id,
-                file=stream,
-                name=name,
-                user_id=u_id
-            )
-            serialize.validate_file_handle(r)
-            assert r['name'] == name
-            f_id = r['id']
-            files.append((f_id, g_id, u_id, stream.data))
-            fh, r = api.uploads().get_file(
-                group_id=g_id,
-                file_id=f_id,
-                user_id=u_id
-            )
-            assert r['name'] == name
-            assert fh.name == name
-            gh = api.groups().get_group(group_id=g_id)
-            serialize.validate_group_handle(gh)
-    # Error when trying to upload file as no-member
-    with pytest.raises(err.UnauthorizedAccessError):
-        api.uploads().upload_file(
-            group_id=w1g1,
-            file=FakeStream(data={'a': 1}),
-            name='f',
-            user_id=USER_2
+def test_delete_group_file_view(service, hello_world):
+    """Test deleting an uploaded file for a workflow group."""
+    # -- Setup ----------------------------------------------------------------
+    #
+    # Upload one file for a workflow group.
+    with service() as api:
+        user_id = create_user(api)
+        r = hello_world(api, name='W1')
+        workflow_id = r['id']
+        group_id = create_group(api, workflow_id=workflow_id, users=[user_id])
+        file_id = upload_file(
+            api=api,
+            group_id=group_id,
+            file=FakeStream(data={'group': 1, 'file': 1}),
+            user_id=user_id
         )
-    # Get file listings for individual groups
-    for i in range(len(groups)):
-        g_id = groups[i]
-        u_id = users[i]
-        r = api.uploads().list_files(group_id=g_id, user_id=u_id)
-        serialize.validate_file_listing(r, count=i+1)
-    # Error when trying to get listing as non-member
-    with pytest.raises(err.UnauthorizedAccessError):
-        api.uploads().list_files(group_id=w1g1, user_id=USER_2)
-    # Check file content
-    for f_id, g_id, u_id, data in files:
-        fh, r = api.uploads().get_file(
-            group_id=g_id,
-            file_id=f_id,
-            user_id=u_id
+    # -- Error when unknown user attempts to delete the file ------------------
+    with service() as api:
+        with pytest.raises(err.UnauthorizedAccessError):
+            api.uploads().delete_file(group_id, file_id, 'UNKNNOWN')
+    # -- Delete the uploaded file ---------------------------------------------
+    with service() as api:
+        api.uploads().delete_file(group_id, file_id, user_id)
+    # After deletion the file cannot be accessed anymore.
+    with service() as api:
+        with pytest.raises(err.UnknownFileError):
+            api.uploads().get_file(group_id, file_id, user_id)
+
+
+def test_list_group_files_view(service, hello_world):
+    """Test getting a listing of uploaded files for a workflow group."""
+    # -- Setup ----------------------------------------------------------------
+    #
+    # Upload two files for a workflow group.
+    with service() as api:
+        user_id = create_user(api)
+        r = hello_world(api, name='W1')
+        workflow_id = r['id']
+        group_id = create_group(api, workflow_id=workflow_id, users=[user_id])
+        for i in range(2):
+            upload_file(
+                api=api,
+                group_id=group_id,
+                file=FakeStream(data={'group': 1, 'file': i}),
+                user_id=user_id
+            )
+    # -- Get file listing -----------------------------------------------------
+    with service() as api:
+        files = api.uploads().list_files(group_id=group_id, user_id=user_id)
+        serialize.validate_file_listing(files, 2)
+    # -- Error when listing files as unknonw user -----------------------------
+    with service() as api:
+        with pytest.raises(err.UnauthorizedAccessError):
+            api.uploads().list_files(group_id=group_id, user_id='UNKNOWN')
+
+
+def test_upload_group_file_view(service, hello_world):
+    """Test uploading files for a workflow group."""
+    # -- Setup ----------------------------------------------------------------
+    #
+    # Create one group with minimal metadata for the 'Hello World' workflow.
+    with service() as api:
+        user_id = create_user(api)
+        r = hello_world(api, name='W1')
+        workflow_id = r['id']
+        group_id = create_group(api, workflow_id=workflow_id, users=[user_id])
+    # -- Upload first file for the group --------------------------------------
+    with service() as api:
+        r = api.uploads().upload_file(
+            group_id=group_id,
+            file=FakeStream(data={'group': 1, 'file': 1}),
+            name='group1.json',
+            user_id=user_id
         )
+        file_id = r['id']
         serialize.validate_file_handle(r)
-        with open(fh.filename, 'r') as f:
-            assert json.load(f) == data
-    # Error trying to access file as non-member
-    with pytest.raises(err.UnauthorizedAccessError):
-        api.uploads().get_file(
-            group_id=w1g1,
-            file_id=files[0][0],
-            user_id=USER_2
-        )
-    # Delete one file for eacg group
-    deleted_files = list()
-    j = 0
-    for i in range(len(groups)):
-        g_id = groups[i]
-        u_id = users[i]
-        f_id = files[j][0]
-        api.uploads().delete_file(
-            group_id=g_id,
-            file_id=f_id,
-            user_id=u_id
-        )
-        deleted_files.append((f_id, g_id, u_id))
-        j += (i + 1)
-    for i in range(len(groups)):
-        g_id = groups[i]
-        u_id = users[i]
-        r = api.uploads().list_files(group_id=g_id, user_id=u_id)
-        serialize.validate_file_listing(r, count=i)
-    # Errors when accessing or deleting unknown files
-    for f_id, g_id, u_id in deleted_files:
-        with pytest.raises(err.UnknownFileError):
-            api.uploads().get_file(group_id=g_id, file_id=f_id, user_id=u_id)
-        with pytest.raises(err.UnknownFileError):
-            api.uploads().delete_file(
-                group_id=g_id,
-                file_id=f_id,
-                user_id=u_id
-            )
+        assert r['name'] == 'group1.json'
+    # -- Get serialized handle for the file and the group ---------------------
+    for uid in [user_id, None]:
+        with service() as api:
+            fh, r = api.uploads().get_file(group_id, file_id, uid)
+            assert r['name'] == 'group1.json'
+            assert fh.name == 'group1.json'
+            gh = api.groups().get_group(group_id=group_id)
+            serialize.validate_group_handle(gh)

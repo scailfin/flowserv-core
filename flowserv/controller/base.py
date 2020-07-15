@@ -26,14 +26,12 @@ The controller is also responsible for retrieving output files and for
 providing access to these files.
 """
 
-from abc import abstractmethod
-
-import flowserv.core.util as util
+from abc import ABCMeta, abstractmethod
 
 
 # -- Controller Interface -----------------------------------------------------
 
-class WorkflowController(util.ABC):
+class WorkflowController(metaclass=ABCMeta):  # pragma: no cover
     """The workflow controller is used to start execution of workflow templates
     for a given set of template parameter arguments, as well as to poll the
     state of workflow execution and to cancel execution.
@@ -55,9 +53,9 @@ class WorkflowController(util.ABC):
 
         Raises
         ------
-        flowserv.core.error.UnknownRunError
+        flowserv.error.UnknownRunError
         """
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
     @abstractmethod
     def configuration(self):
@@ -68,10 +66,10 @@ class WorkflowController(util.ABC):
         -------
         list((string, string))
         """
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
     @abstractmethod
-    def exec_workflow(self, run, template, arguments, run_async=True):
+    def exec_workflow(self, run, template, arguments, service=None):
         """Initiate the execution of a given workflow template for a set of
         argument values. Returns the state of the workflow.
 
@@ -82,22 +80,23 @@ class WorkflowController(util.ABC):
 
         Parameters
         ----------
-        run: flowserv.model.run.base.RunHandle
+        run: flowserv.model.base.RunHandle
             Handle for the run that is being executed.
         template: flowserv.model.template.base.WorkflowTemplate
             Workflow template containing the parameterized specification and
             the parameter declarations.
         arguments: dict(flowserv.model.parameter.value.TemplateArgument)
             Dictionary of argument values for parameters in the template.
-        run_async: bool, optional
-            Flag to determine whether the worklfow execution will block the
-            workflow controller or run asynchronously.
+        service: contextlib,contextmanager, default=None
+            Context manager to create an instance of the service API. The
+            context manager is only used when executing workflows
+            asynchronously.
 
         Returns
         -------
         flowserv.model.workflow.state.WorkflowState
         """
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
     @abstractmethod
     def modify_template(self, template, parameters):
@@ -120,7 +119,7 @@ class WorkflowController(util.ABC):
 
         Raises
         ------
-        flowserv.core.error.DuplicateParameterError
-        flowserv.core.error.InvalidTemplateError
+        flowserv.error.DuplicateParameterError
+        flowserv.error.InvalidTemplateError
         """
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover

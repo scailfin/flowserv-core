@@ -22,7 +22,7 @@ RUNS_FILE = 'runs.json'
 """Labels for metadata objects in the run listing."""
 LABEL_ID = 'id'
 LABEL_NAME = 'name'
-LABEL_RESOURCES = 'resources'
+LABEL_FILES = 'files'
 
 
 """Fixed set of parameter declarations for post-processing workflows. Contains

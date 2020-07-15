@@ -8,9 +8,7 @@
 
 """Helper methods for reading workflow template parameters."""
 
-from __future__ import print_function
-
-from flowserv.core.scanner import Scanner
+from flowserv.scanner import Scanner
 
 
 def read(parameters, scanner=None, files=None):
@@ -28,10 +26,10 @@ def read(parameters, scanner=None, files=None):
     ----------
     parameters: list(flowserv.model.parameter.base.TemplateParameter)
         List of workflow template parameter declarations
-    scanner: flowserv.core.scanner.Scanner
+    scanner: flowserv.scanner.Scanner
         Input scanner to read parameter values
-    files: list()
-        List of (idenifier, name ) pairs
+    files: list
+        List of (file_id, name, timestamp) pairs
 
     Returns
     -------
@@ -51,12 +49,10 @@ def read(parameters, scanner=None, files=None):
             # of the children directly to the arguments dictionary
             for child in para.children:
                 val = read_parameter(child, sc, prompt_prefix='  ')
-                if val is not None:
-                    arguments[child.identifier] = val
+                arguments[child.identifier] = val
         else:
             val = read_parameter(para, sc, files=files)
-            if val is not None:
-                arguments[para.identifier] = val
+            arguments[para.identifier] = val
     return arguments
 
 
@@ -69,10 +65,12 @@ def read_parameter(para, scanner, prompt_prefix='', files=None):
     ----------
     para: flowserv.model.parameter.TemplateParameter
         Workflow template parameter declaration
-    scanner: flowserv.core.scanner.Scanner
-    prompt_prefix: string, optional
-    files: list(flowserv.core.files.FileDescriptor)
-        List of file descriptors
+    scanner: flowserv.scanner.Scanner
+        Input scanner.
+    prompt_prefix: string, default=''
+        Optional input prompt prefix.
+    files: list
+        List of (file_id, name, timestamp) pairs
 
     Returns
     -------
@@ -85,21 +83,17 @@ def read_parameter(para, scanner, prompt_prefix='', files=None):
                 return scanner.next_bool(default_value=para.default_value)
             elif para.is_file():
                 # The scanner is primarily intended for the client command line
-                # interface to the web API. On the client side, when submitting
-                # a run with file parameters we only need to read the identifier
-                # of a previously uploaded file. If the optional target path is
-                # defined as 'variable' we also need to read the target path.
-                # Therefore, the result here is a tuple of filename and target
-                # path. The target path may be None.
+                # interface. When submitting a run with file parameters we only
+                # need to read the identifier of a previously uploaded file. If
+                # the optional target path is defined as 'variable' we also
+                # need to read the target path. Therefore, the result here is a
+                # tuple of filename and target path. The target path may be
+                # None.
                 if files is not None:
                     print('\n\nAvailable files')
                     print('---------------')
-                    for fh in files:
-                        print('{}\t{} ({})'.format(
-                            fh.identifier,
-                            fh.name,
-                            fh.created_at_local_time())
-                        )
+                    for file_id, name, ts in files:
+                        print('{}\t{} ({})'.format(file_id, name, ts))
                     print('\n{}: '.format(para.name), end='')
                 filename = scanner.next_file(default_value=para.default_value)
                 target_path = None
@@ -113,7 +107,6 @@ def read_parameter(para, scanner, prompt_prefix='', files=None):
                 return scanner.next_float(default_value=para.default_value)
             elif para.is_int():
                 return scanner.next_int(default_value=para.default_value)
-            else:
-                return scanner.next_string(default_value=para.default_value)
+            return scanner.next_string(default_value=para.default_value)
         except ValueError as ex:
             print(ex)

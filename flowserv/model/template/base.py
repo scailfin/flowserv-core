@@ -25,8 +25,8 @@ have been replaced by parameter values.
 from flowserv.model.parameter.base import ParameterGroup
 from flowserv.model.template.schema import ResultSchema
 
-import flowserv.core.error as err
-import flowserv.core.util as util
+import flowserv.error as err
+import flowserv.util as util
 import flowserv.model.parameter.base as pb
 import flowserv.model.template.parameter as tp
 
@@ -73,7 +73,10 @@ class WorkflowTemplate(object):
             Workflow specification object
         sourcedir: string
             Path to the base directory that contains the static workflow files
-        parameters: list or dict(flowserv.model.parameter.base.TemplateParameter), optional
+        parameters: (
+                list, or
+                dict(flowserv.model.parameter.base.TemplateParameter)
+            ), default=None
             Dictionary of workflow template parameter declarations keyed by
             their unique identifier.
         modules: list(flowserv.module.parameter.base.ParameterGroup), optional
@@ -85,7 +88,7 @@ class WorkflowTemplate(object):
 
         Raises
         ------
-        flowserv.core.error.InvalidTemplateError
+        flowserv.error.InvalidTemplateError
         """
         # Workflow specification. Interpretation of the specification is left
         # to the different implementations of the workflow engine.
@@ -140,8 +143,8 @@ class WorkflowTemplate(object):
 
         Raises
         ------
-        flowserv.core.error.InvalidTemplateError
-        flowserv.core.error.UnknownParameterError
+        flowserv.error.InvalidTemplateError
+        flowserv.error.UnknownParameterError
         """
         # Ensure that the mandatory elements are present. At this point, only
         # the workflow specification is mandatory.
@@ -287,7 +290,7 @@ class WorkflowTemplate(object):
 
         Raises
         ------
-        flowserv.core.error.MissingArgumentError
+        flowserv.error.MissingArgumentError
         """
         for para in self.parameters.values():
             if para.is_required and para.default_value is None:

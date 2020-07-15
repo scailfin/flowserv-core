@@ -46,7 +46,7 @@ class WorkflowGroupSerializer(Serializer):
 
         Parameters
         ----------
-        group: flowserv.model.group.base.WorkflowGroupDescriptor
+        group: flowserv.model.base.GroupHandle
             Workflow group handle
 
         Returns
@@ -55,7 +55,7 @@ class WorkflowGroupSerializer(Serializer):
         """
         LABELS = self.labels
         return {
-            LABELS['GROUP_ID']: group.identifier,
+            LABELS['GROUP_ID']: group.group_id,
             LABELS['GROUP_NAME']: group.name,
             LABELS['WORKFLOW_ID']: group.workflow_id
         }
@@ -65,7 +65,7 @@ class WorkflowGroupSerializer(Serializer):
 
         Parameters
         ----------
-        group: flowserv.model.group.base.WorkflowGroupHandle
+        group: flowserv.model.base.GroupHandle
             Workflow group handle
 
         Returns
@@ -77,7 +77,7 @@ class WorkflowGroupSerializer(Serializer):
         members = list()
         for u in group.members:
             members.append({
-                LABELS['USER_ID']: u.identifier,
+                LABELS['USER_ID']: u.user_id,
                 LABELS['USER_NAME']: u.name
             })
         doc[LABELS['GROUP_MEMBERS']] = members
@@ -86,9 +86,9 @@ class WorkflowGroupSerializer(Serializer):
         doc[LABELS['GROUP_PARAMETERS']] = [p.to_dict() for p in parameters]
         # Include handles for all uploaded files
         files = list()
-        for file in group.list_files():
+        for file in group.uploads:
             f = self.files.file_handle(
-                group_id=group.identifier,
+                group_id=group.group_id,
                 fh=file
             )
             files.append(f)
@@ -101,7 +101,7 @@ class WorkflowGroupSerializer(Serializer):
 
         Parameters
         ----------
-        groups: list(flowserv.model.group.base.WorkflowGroupDescriptor)
+        groups: list(flowserv.model.base.GroupHandle)
             List of descriptors for workflow groups
 
         Returns

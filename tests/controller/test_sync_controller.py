@@ -12,14 +12,15 @@ import os
 import pytest
 
 from flowserv.controller.serial.engine import SerialWorkflowEngine
-from flowserv.core.files import FileHandle
-from flowserv.model.template.base import WorkflowTemplate
-from flowserv.model.parameter.value import TemplateArgument
-from flowserv.model.run.base import RunHandle
+from flowserv.service.run import ARG_ID, ARG_VALUE, ARG_AS
+from flowserv.tests.files import FakeStream
+from flowserv.tests.service import (
+    create_group, create_user, create_workflow, start_run, upload_file
+)
 
-import flowserv.core.error as err
-import flowserv.core.util as util
+import flowserv.util as util
 import flowserv.model.workflow.state as st
+import flowserv.tests.serialize as serialize
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))
@@ -28,152 +29,49 @@ TEMPLATE_DIR = os.path.join(DIR, '../.files/template')
 TEMPLATE_HELLOWORLD = os.path.join(TEMPLATE_DIR, './hello-world.yaml')
 INVALID_TEMPLATE = './template-invalid-cmd.yaml'
 TEMPLATE_WITH_INVALID_CMD = os.path.join(TEMPLATE_DIR, INVALID_TEMPLATE)
-MISSING_FILE_TEMPLATE = './template-missing-file.yaml'
-TEMPLATE_WITH_MISSING_FILE = os.path.join(TEMPLATE_DIR, MISSING_FILE_TEMPLATE)
-# Input files
-NAMES_FILE = os.path.join(TEMPLATE_DIR, './inputs/short-names.txt')
-UNKNOWN_FILE = os.path.join(TEMPLATE_DIR, './tmp/no/file/here')
 
 
-def test_run_helloworld_sync(tmpdir):
+@pytest.mark.parametrize(
+    'specfile,state',
+    [
+        (TEMPLATE_HELLOWORLD, st.STATE_SUCCESS),
+        (TEMPLATE_WITH_INVALID_CMD, st.STATE_ERROR)
+    ]
+)
+def test_run_helloworld_sync(service, specfile, state):
     """Execute the helloworld example."""
-    # Read the workflow template
-    doc = util.read_object(filename=TEMPLATE_HELLOWORLD)
-    template = WorkflowTemplate.from_dict(doc, sourcedir=TEMPLATE_DIR)
-    # Set the template argument values
-    arguments = {
-        'names': TemplateArgument(
-            parameter=template.get_parameter('names'),
-            value=FileHandle(NAMES_FILE)
-        ),
-        'sleeptime': TemplateArgument(
-            parameter=template.get_parameter('sleeptime'),
-            value=3
-        )
-    }
-    # Run the workflow
+    # -- Setup ----------------------------------------------------------------
+    #
+    # Start a new run for the workflow template.
     engine = SerialWorkflowEngine(is_async=False)
-    run_id = util.get_short_identifier()
-    rundir = os.path.join(str(tmpdir), run_id)
-    run = RunHandle(
-        identifier=run_id,
-        workflow_id='0001',
-        group_id='0001',
-        state=st.StatePending(),
-        arguments=dict(),
-        rundir=rundir
-    )
-    state = engine.exec_workflow(
-        run=run,
-        template=template,
-        arguments=arguments
-    )
-    # For completeness. Cancel run should have no effect
-    engine.cancel_run(run_id)
-    # Expect the result to be success
-    assert state.is_success()
-    # The base directory for the run will have been created by the engine
-    assert os.path.isdir(run.rundir)
-    # There is exactly one result file
-    assert len(state.resources) == 1
-    greetings_file = state.resources.get_resource(name='results/greetings.txt')
-    greetings = list()
-    with open(greetings_file.filename, 'r') as f:
-        for line in f:
-            greetings.append(line.strip())
-    assert len(greetings) == 2
-    assert greetings[0] == 'Hello Alice!'
-    assert greetings[1] == 'Hello Bob!'
-
-
-def test_run_with_invalid_cmd(tmpdir):
-    """Execute the helloworld example with an invalid shell command."""
-    # Read the workflow template
-    doc = util.read_object(filename=TEMPLATE_WITH_INVALID_CMD)
-    template = WorkflowTemplate.from_dict(doc, sourcedir=TEMPLATE_DIR)
-    # Set the template argument values
-    arguments = {
-        'names': TemplateArgument(
-            parameter=template.get_parameter('names'),
-            value=FileHandle(NAMES_FILE)
-        ),
-        'sleeptime': TemplateArgument(
-            parameter=template.get_parameter('sleeptime'),
-            value=3
+    with service(engine=engine) as api:
+        workflow_id = create_workflow(
+            api,
+            sourcedir=TEMPLATE_DIR,
+            specfile=specfile
         )
-    }
-    # Run workflow syncronously
-    engine = SerialWorkflowEngine(is_async=True)
-    run_id = util.get_short_identifier()
-    rundir = os.path.join(str(tmpdir), run_id)
-    run = RunHandle(
-        identifier=run_id,
-        workflow_id='0001',
-        group_id='0001',
-        state=st.StatePending(),
-        arguments=dict(),
-        rundir=rundir
-    )
-    state = engine.exec_workflow(
-        run=run,
-        template=template,
-        arguments=arguments,
-        run_async=False
-    )
-    assert state.is_error()
-    assert len(state.messages) > 0
-
-
-def test_run_with_missing_file(tmpdir):
-    """Execute the helloworld example with a reference to a missing file.
-    """
-    # Read the workflow template
-    doc = util.read_object(filename=TEMPLATE_WITH_MISSING_FILE)
-    template = WorkflowTemplate.from_dict(doc, sourcedir=TEMPLATE_DIR)
-    # Set the template argument values
-    arguments = {
-        'names': TemplateArgument(
-            parameter=template.get_parameter('names'),
-            value=FileHandle(NAMES_FILE)
-        ),
-        'sleeptime': TemplateArgument(
-            parameter=template.get_parameter('sleeptime'),
-            value=3
-        )
-    }
-    # Run workflow syncronously
-    engine = SerialWorkflowEngine()
-    run_id = util.get_short_identifier()
-    rundir = os.path.join(str(tmpdir), run_id)
-    run = RunHandle(
-        identifier=run_id,
-        workflow_id='0001',
-        group_id='0001',
-        state=st.StatePending(),
-        arguments=dict(),
-        rundir=rundir
-    )
-    state = engine.exec_workflow(
-        run=run,
-        template=template,
-        arguments=arguments,
-        run_async=False
-    )
-    assert state.is_error()
-    assert len(state.messages) > 0
-    # An error is raised if the input file does not exist
-    with pytest.raises(err.UnknownFileError):
-        engine.exec_workflow(
-            run=run,
-            template=template,
-            arguments={
-                'names': TemplateArgument(
-                    parameter=template.get_parameter('names'),
-                    value=FileHandle(UNKNOWN_FILE)
-                ),
-                'sleeptime': TemplateArgument(
-                    parameter=template.get_parameter('sleeptime'),
-                    value=3
-                )
-            }
-        )
+        user_id = create_user(api)
+        group_id = create_group(api, workflow_id, [user_id])
+        names = FakeStream(data=['Alice', 'Bob'], format='plain/text')
+        file_id = upload_file(api, group_id, user_id, names)
+        args = [
+            {ARG_ID: 'names', ARG_VALUE: file_id, ARG_AS: 'data/names.txt'},
+            {ARG_ID: 'sleeptime', ARG_VALUE: 3}
+        ]
+        run_id = start_run(api, group_id, user_id, arguments=args)
+    # -- Validate the run handle against the expected state -------------------
+    with service(engine=engine) as api:
+        r = api.runs().get_run(run_id, user_id)
+        serialize.validate_run_handle(r, state=state)
+        if state == st.STATE_SUCCESS:
+            # The run should have the greetings.txt file as a result.
+            files = dict()
+            for obj in r['files']:
+                files[obj['name']] = obj['id']
+            assert len(files) == 1
+            fh = api.runs().get_result_file(
+                run_id=run_id,
+                file_id=files['results/greetings.txt'],
+                user_id=user_id
+            )
+            assert util.read_object(fh.filename) == 'Hello Alice! Hello Bob!'

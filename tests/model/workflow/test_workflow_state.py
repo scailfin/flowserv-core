@@ -10,14 +10,12 @@
 
 import datetime as dt
 import os
-import pytest
 
 from flowserv.model.workflow.state import (
     StateCanceled, StateError, StatePending, StateRunning, StateSuccess
 )
-from flowserv.model.workflow.resource import FSObject
 
-import flowserv.core.util as util
+import flowserv.util as util
 
 
 def test_cancel_state():
@@ -142,15 +140,7 @@ def test_running_state(tmpdir):
     # Set active run to success state
     filename = os.path.join(str(tmpdir), 'myfile.json')
     util.write_object(filename=filename, obj={'A': 1})
-    success = state.success(
-        resources=[
-            FSObject(
-                identifier='0',
-                name='results/myfile.json',
-                filename=filename
-            )
-        ]
-    )
+    success = state.success(files=['results/myfile.json'])
     assert success.is_success()
     assert not success.is_error()
     assert not success.is_pending()
@@ -158,9 +148,8 @@ def test_running_state(tmpdir):
     assert not success.is_active()
     assert success.created_at == state.created_at
     assert success.started_at == state.started_at
-    assert len(success.resources) == 1
-    r = success.get_resource(name='results/myfile.json')
-    assert r.name == 'results/myfile.json'
+    assert len(success.files) == 1
+    assert 'results/myfile.json' in success.files
 
 
 def test_success_state(tmpdir):
@@ -185,36 +174,16 @@ def test_success_state(tmpdir):
     assert state.created_at == created_at
     assert state.started_at == started_at
     assert state.finished_at == finished_at
-    assert len(state.resources) == 0
+    assert len(state.files) == 0
     # Create state instance with file resource
     state = StateSuccess(
         created_at=created_at,
         started_at=started_at,
         finished_at=finished_at,
-        resources=[
-            FSObject(identifier='0', name='myfile.json', filename=filename)
-        ]
+        files=['myfile.json']
     )
     assert state.created_at == created_at
     assert state.started_at == started_at
     assert state.finished_at == finished_at
-    assert len(state.resources) == 1
-    # Get the file resource
-    f = state.get_resource(name='myfile.json')
-    assert f.mimetype == 'application/json'
-    assert util.read_object(filename) == {'A': 1}
-    assert len(state.resources) == 1
-    # Invalid file resource lists
-    with pytest.raises(ValueError):
-        StateSuccess(
-            created_at=created_at,
-            started_at=started_at,
-            finished_at=finished_at,
-            resources=[
-                FSObject(identifier='0', name='my.json', filename=filename),
-                FSObject(identifier='1', name='my.json', filename=filename)
-            ]
-        )
-    # Delete the file resource
-    f.delete()
-    assert not os.path.exists(f.filename)
+    assert len(state.files) == 1
+    assert 'myfile.json' in state.files

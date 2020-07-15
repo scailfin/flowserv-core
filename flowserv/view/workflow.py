@@ -69,7 +69,7 @@ class WorkflowSerializer(Serializer):
 
         Parameters
         ----------
-        workflow: flowserv.model.workflow.base.WorkflowHDescriptor
+        workflow: flowserv.model.base.WorkflowHDescriptor
             Workflow descriptor
 
         Returns
@@ -78,23 +78,25 @@ class WorkflowSerializer(Serializer):
         """
         LABELS = self.labels
         obj = {
-            LABELS['WORKFLOW_ID']: workflow.identifier,
+            LABELS['WORKFLOW_ID']: workflow.workflow_id,
             LABELS['WORKFLOW_NAME']: workflow.name
         }
-        if workflow.has_description():
+        if workflow.description is not None:
             obj[LABELS['WORKFLOW_DESCRIPTION']] = workflow.description
-        if workflow.has_instructions():
+        if workflow.instructions is not None:
             obj[LABELS['WORKFLOW_INSTRUCTIONS']] = workflow.instructions
         return obj
 
-    def workflow_handle(self, workflow):
+    def workflow_handle(self, workflow, postproc=None):
         """Get dictionary serialization containing the handle of a workflow
         resource.
 
         Parameters
         ----------
-        workflow: flowserv.model.workflow.base.WorkflowHandle
+        workflow: flowserv.model.base.WorkflowHandle
             Workflow handle
+        postproc: flowserv.model.base.RunHandle
+            Handle for workflow post-porcessing run.
 
         Returns
         -------
@@ -102,12 +104,11 @@ class WorkflowSerializer(Serializer):
         """
         LABELS = self.labels
         obj = self.workflow_descriptor(workflow)
-        template = workflow.get_template()
         # Add parameter declarations to the serialized workflow descriptor
-        parameters = template.parameters.values()
+        parameters = workflow.parameters.values()
         obj[LABELS['WORKFLOW_PARAMETERS']] = [p.to_dict() for p in parameters]
         # Add module definitions if given
-        modules = template.modules
+        modules = workflow.modules
         if modules is not None:
             obj[LABELS['WORKFLOW_MODULES']] = [
                 {
@@ -116,24 +117,25 @@ class WorkflowSerializer(Serializer):
                     LABELS['MODULE_INDEX']: m.index
                 } for m in modules]
         # Add serialization for post-processing workflow (if present).
-        if workflow.postproc_run is not None:
-            postproc_run = self.runs.run_handle(run=workflow.postproc_run)
-            obj[LABELS['POSTPROC_RUN']] = postproc_run
+        if postproc is not None:
+            obj[LABELS['POSTPROC_RUN']] = self.runs.run_handle(run=postproc)
             # Add output descriptors (if given)
-            if tmpl.PPLBL_OUTPUTS in template.postproc_spec:
-                postproc_outputs = template.postproc_spec[tmpl.PPLBL_OUTPUTS]
+            if tmpl.PPLBL_OUTPUTS in workflow.postproc_spec:
+                postproc_outputs = workflow.postproc_spec[tmpl.PPLBL_OUTPUTS]
                 obj[LABELS['POSTPROC_OUTPUTS']] = postproc_outputs
         return obj
 
-    def workflow_leaderboard(self, workflow, ranking):
+    def workflow_leaderboard(self, workflow, ranking, postproc=None):
         """Get dictionary serialization for a workflow evaluation leaderboard.
 
         Parameters
         ----------
-        workflow: flowserv.model.workflow.base.WorkflowHandle
+        workflow: flowserv.model.base.WorkflowHandle
             Workflow handle
         leaderboard: flowserv.model.ranking.ResultRanking
             List of entries in the workflow evaluation leaderboard
+        postproc: flowserv.model.base.RunHandle
+            Handle for workflow post-porcessing run.
 
         Returns
         -------
@@ -142,7 +144,7 @@ class WorkflowSerializer(Serializer):
         LABELS = self.labels
         # Serialize ranking entries
         entries = list()
-        for run in ranking.entries:
+        for run in ranking:
             results = list()
             for key in run.values:
                 results.append({
@@ -152,9 +154,9 @@ class WorkflowSerializer(Serializer):
             entries.append({
                 LABELS['WORKFLOW_RUN']: {
                     LABELS['RUN_ID']: run.run_id,
-                    LABELS['RUN_CREATED']: run.created_at.isoformat(),
-                    LABELS['RUN_STARTED']: run.started_at.isoformat(),
-                    LABELS['RUN_FINISHED']: run.finished_at.isoformat()
+                    LABELS['RUN_CREATED']: run.created_at,
+                    LABELS['RUN_STARTED']: run.started_at,
+                    LABELS['RUN_FINISHED']: run.finished_at
                 },
                 LABELS['WORKFLOW_GROUP']: {
                     LABELS['GROUP_ID']: run.group_id,
@@ -167,14 +169,15 @@ class WorkflowSerializer(Serializer):
                     LABELS['COLUMN_ID']: c.identifier,
                     LABELS['COLUMN_NAME']: c.name,
                     LABELS['COLUMN_TYPE']: c.data_type
-                } for c in ranking.columns
+                } for c in workflow.result_schema.columns
             ],
             LABELS['RANKING']: entries
         }
         # Add serialization for optional workflow post-processing run handle
-        if workflow.postproc_run is not None:
-            postproc_run = self.runs.run_handle(run=workflow.postproc_run)
-            obj[self.labels['POSTPROC_RUN']] = postproc_run
+        if postproc is not None:
+            obj[self.labels['POSTPROC_RUN']] = self.runs.run_handle(
+                run=postproc
+            )
             # Add output descriptors (if given)
             template = workflow.get_template()
             if tmpl.PPLBL_OUTPUTS in template.postproc_spec:
@@ -187,7 +190,7 @@ class WorkflowSerializer(Serializer):
 
         Parameters
         ----------
-        workflows: list(flowserv.model.workflow.base.WorkflowDescriptor)
+        workflows: list(flowserv.model.base.WorkflowHandle)
             List of workflow descriptors
 
         Returns

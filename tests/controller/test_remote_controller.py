@@ -12,90 +12,134 @@ import os
 import pytest
 import time
 
-from flowserv.service.api import API
-from flowserv.tests.files import FakeStream
-from flowserv.tests.remote import RemoteTestController
+from flowserv.config.api import FLOWSERV_API_BASEDIR
+from flowserv.config.database import FLOWSERV_DB
+from flowserv.service.api import service
+from flowserv.tests.remote import RemoteTestClient, RemoteTestController
+from flowserv.tests.service import (
+    create_group, create_user, create_workflow, start_run
+)
 
-import flowserv.config.api as config
-import flowserv.core.error as err
 import flowserv.model.workflow.state as st
-import flowserv.tests.db as db
+import flowserv.tests.serialize as serialize
 
 
 # Template directory
 DIR = os.path.dirname(os.path.realpath(__file__))
-TEMPLATE_DIR = os.path.join(DIR, '../.files/benchmark/helloworld')
+TEMPLATE_DIR = os.path.join(DIR, '../.files/benchmark/remote')
 
 
-# Default users
-UID = '0000'
-
-
-def test_run_remote_workflow(tmpdir):
-    """Execute the helloworld example."""
+def test_cancel_remote_workflow(tmpdir):
+    """Cancel the execution of a remote workflow."""
     # -- Setup ----------------------------------------------------------------
-    # Create the database and service API with a serial workflow engine in
-    # asynchronous mode
-    os.environ[config.FLOWSERV_API_BASEDIR] = os.path.abspath(str(tmpdir))
-    api = API(
-        con=db.init_db(str(tmpdir), users=[UID]).connect(),
-        engine=RemoteTestController()
+    #
+    # Start a new run for the workflow template.
+    os.environ[FLOWSERV_DB] = 'sqlite:///{}/flowserv.db'.format(str(tmpdir))
+    os.environ[FLOWSERV_API_BASEDIR] = str(tmpdir)
+    from flowserv.service.database import database
+    database.init()
+    engine = RemoteTestController(
+        client=RemoteTestClient(runcount=100),
+        poll_interval=1,
+        is_async=True
     )
-    # Create workflow template and run group
-    wh = api.workflows().create_workflow(name='W1', sourcedir=TEMPLATE_DIR)
-    w_id = wh['id']
-    gh = api.groups().create_group(workflow_id=w_id, name='G', user_id=UID)
-    g_id = gh['id']
-    # Upload the names file
-    fh = api.uploads().upload_file(
-        group_id=g_id,
-        file=FakeStream(data=['Alice', 'Bob', 'Zoe'], format='txt/plain'),
-        name='names.txt',
-        user_id=UID
-    )
-    file_id = fh['id']
-    # -- Test successful run --------------------------------------------------
-    # Set the template argument values
-    arguments = [
-        {'id': 'names', 'value': file_id},
-        {'id': 'sleeptime', 'value': 3},
-        {'id': 'greeting', 'value': 'Hi'}
-    ]
-    # Run the workflow
-    run = api.runs().start_run(
-        group_id=g_id,
-        arguments=arguments,
-        user_id=UID
-    )
-    r_id = run['id']
+    with service(engine=engine) as api:
+        workflow_id = create_workflow(api, sourcedir=TEMPLATE_DIR)
+        user_id = create_user(api)
+        group_id = create_group(api, workflow_id, [user_id])
+        run_id = start_run(api, group_id, user_id)
     # Poll workflow state every second.
+    with service(engine=engine) as api:
+        run = api.runs().get_run(run_id=run_id, user_id=user_id)
+    while run['state'] == st.STATE_PENDING:
+        time.sleep(1)
+        with service(engine=engine) as api:
+            run = api.runs().get_run(run_id=run_id, user_id=user_id)
+    serialize.validate_run_handle(run, state=st.STATE_RUNNING)
+    with service(engine=engine) as api:
+        api.runs().cancel_run(run_id=run_id, user_id=user_id, reason='test')
+    # Sleep to ensure that the workflow monitor polls the state and makes an
+    # attempt to update the run state. This should raise an error for the
+    # monitor. The error is not propagated here or to the run.
+    time.sleep(3)
+    with service(engine=engine) as api:
+        run = api.runs().get_run(run_id=run_id, user_id=user_id)
+    serialize.validate_run_handle(run, state=st.STATE_CANCELED)
+    assert run['messages'][0] == 'test'
+
+
+@pytest.mark.parametrize('is_async', [False, True])
+def test_run_remote_workflow(tmpdir, is_async):
+    """Execute the remote workflow example synchronized and in asynchronous
+    mode.
+    """
+    # -- Setup ----------------------------------------------------------------
+    #
+    # Start a new run for the workflow template.
+    os.environ[FLOWSERV_DB] = 'sqlite:///{}/flowserv.db'.format(str(tmpdir))
+    os.environ[FLOWSERV_API_BASEDIR] = str(tmpdir)
+    from flowserv.service.database import database
+    database.init()
+    engine = RemoteTestController(
+        client=RemoteTestClient(runcount=3, data=['success']),
+        poll_interval=1,
+        is_async=is_async
+    )
+    with service(engine=engine) as api:
+        workflow_id = create_workflow(api, sourcedir=TEMPLATE_DIR)
+        user_id = create_user(api)
+        group_id = create_group(api, workflow_id, [user_id])
+        run_id = start_run(api, group_id, user_id)
+        print('started run {}'.format(run_id))
+    # Poll workflow state every second.
+    with service(engine=engine) as api:
+        run = api.runs().get_run(run_id=run_id, user_id=user_id)
     while run['state'] in st.ACTIVE_STATES:
         time.sleep(1)
-        run = api.runs().get_run(run_id=r_id, user_id=UID)
-    assert run['state'] == st.STATE_SUCCESS
-    resources = dict()
-    for r in run['resources']:
-        resources[r['name']] = r['id']
-    f_id = resources['results/greetings.txt']
-    fh = api.runs().get_result_file(run_id=r_id, resource_id=f_id, user_id=UID)
+        with service(engine=engine) as api:
+            run = api.runs().get_run(run_id=run_id, user_id=user_id)
+    serialize.validate_run_handle(run, state=st.STATE_SUCCESS)
+    files = dict()
+    for obj in run['files']:
+        files[obj['name']] = obj['id']
+    f_id = files['results/data.txt']
+    fh = api.runs().get_result_file(
+        run_id=run_id,
+        file_id=f_id,
+        user_id=user_id
+    )
     with open(fh.filename) as f:
-        greetings = f.read()
-        assert 'Hi Alice' in greetings
-        assert 'Hi Bob' in greetings
-        assert 'Hi Zoe' in greetings
-    f_id = resources['results/analytics.json']
-    fh = api.runs().get_result_file(run_id=r_id, resource_id=f_id, user_id=UID)
-    assert os.path.isfile(fh.filename)
-    # -- Test running workflow with unknown file ------------------------------
-    arguments = [
-        {'id': 'names', 'value': 'UNK'},
-        {'id': 'sleeptime', 'value': 1},
-        {'id': 'greeting', 'value': 'Hi'}
-    ]
-    with pytest.raises(err.UnknownFileError):
-        run = api.runs().start_run(
-            group_id=g_id,
-            arguments=arguments,
-            user_id=UID
-        )
-    del os.environ[config.FLOWSERV_API_BASEDIR]
+        data = f.read()
+        assert 'success' in data
+
+
+def test_run_remote_workflow_with_error(tmpdir):
+    """Execute the remote workflow example that will end in an error state in
+    asynchronous mode.
+    """
+    # -- Setup ----------------------------------------------------------------
+    #
+    # Start a new run for the workflow template.
+    os.environ[FLOWSERV_DB] = 'sqlite:///{}/flowserv.db'.format(str(tmpdir))
+    os.environ[FLOWSERV_API_BASEDIR] = str(tmpdir)
+    from flowserv.service.database import database
+    database.init()
+    engine = RemoteTestController(
+        client=RemoteTestClient(runcount=3, error='some error'),
+        poll_interval=1,
+        is_async=True
+    )
+    with service(engine=engine) as api:
+        workflow_id = create_workflow(api, sourcedir=TEMPLATE_DIR)
+        user_id = create_user(api)
+        group_id = create_group(api, workflow_id, [user_id])
+        run_id = start_run(api, group_id, user_id)
+    # Poll workflow state every second.
+    with service(engine=engine) as api:
+        run = api.runs().get_run(run_id=run_id, user_id=user_id)
+    while run['state'] in st.ACTIVE_STATES:
+        time.sleep(1)
+        with service(engine=engine) as api:
+            run = api.runs().get_run(run_id=run_id, user_id=user_id)
+    serialize.validate_run_handle(run, state=st.STATE_ERROR)
+    assert run['messages'][0] == 'some error'

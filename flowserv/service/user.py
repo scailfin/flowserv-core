@@ -15,18 +15,21 @@ class UserService(object):
     """Implement methods that handle user login and logout as well as
     registration and activation of new users.
     """
-    def __init__(self, manager, serializer):
+    def __init__(self, manager, auth, serializer):
         """Initialize the user manager that maintains all registered users and
         the resource serializer.
 
         Parameters
         ----------
-        manager: flowserv.model.user.manager.UserManager
+        manager: flowserv.model.user.UserManager
             Manager for registered users
+        auth: flowserv.model.auth.Auth
+            Authentication manager.
         serializer: flowserv.view.user.UserSerializer
             Override the default serializer
         """
         self.manager = manager
+        self.auth = auth
         self.serialize = serializer
 
     def activate_user(self, user_id):
@@ -43,7 +46,7 @@ class UserService(object):
 
         Raises
         ------
-        flowserv.model.user.base.error.UnknownUserError
+        flowserv.model.base.error.UnknownUserError
         """
         return self.serialize.user(self.manager.activate_user(user_id))
 
@@ -60,7 +63,7 @@ class UserService(object):
         -------
         dict
         """
-        users = self.manager.list_users(query=query)
+        users = self.manager.list_users(prefix=query)
         return self.serialize.user_listing(users)
 
     def login_user(self, username, password):
@@ -80,17 +83,17 @@ class UserService(object):
 
         Raises
         ------
-        flowserv.model.user.base.error.UnknownUserError
+        flowserv.model.base.error.UnknownUserError
         """
         return self.serialize.user(self.manager.login_user(username, password))
 
-    def logout_user(self, user):
+    def logout_user(self, api_key):
         """Logout given user.
 
         Parameters
         ----------
-        user: flowserv.model.user.base.UserHandle
-            Handle for user that is being logged out
+        api_key: string
+            API key for user that is being logged out.
 
         Returns
         -------
@@ -98,9 +101,9 @@ class UserService(object):
 
         Raises
         ------
-        flowserv.core.error.UnauthenticatedAccessError
+        flowserv.error.UnauthenticatedAccessError
         """
-        return self.serialize.user(self.manager.logout_user(user))
+        return self.serialize.user(self.manager.logout_user(api_key))
 
     def register_user(self, username, password, verify=False):
         """Create a new user for the given username and password. Raises an
@@ -124,8 +127,8 @@ class UserService(object):
 
         Raises
         ------
-        flowserv.core.error.ConstraintViolationError
-        flowserv.core.error.DuplicateUserError
+        flowserv.error.ConstraintViolationError
+        flowserv.error.DuplicateUserError
         """
         user = self.manager.register_user(
             username=username,
@@ -171,8 +174,8 @@ class UserService(object):
 
         Raises
         ------
-        flowserv.core.error.ConstraintViolationError
-        flowserv.core.error.UnknownRequestError
+        flowserv.error.ConstraintViolationError
+        flowserv.error.UnknownRequestError
         """
         user = self.manager.reset_password(
             request_id=request_id,
@@ -180,16 +183,16 @@ class UserService(object):
         )
         return self.serialize.user(user)
 
-    def whoami_user(self, user):
+    def whoami_user(self, api_key):
         """Get serialization of the given user.
 
         Parameters
         ----------
-        user: flowserv.model.user.base.UserHandle
-            User access token
+        api_key: string
+            API key for a logged-in user.
 
         Returns
         -------
         dict
         """
-        return self.serialize.user(user)
+        return self.serialize.user(self.auth.authenticate(api_key))

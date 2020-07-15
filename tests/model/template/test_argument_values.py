@@ -13,8 +13,7 @@ argument values for parameterized workflow templates.
 import os
 import pytest
 
-from flowserv.core.files import FileHandle, InputFile
-from flowserv.model.parameter.base import TemplateParameter
+from flowserv.model.parameter.base import InputFile, TemplateParameter
 from flowserv.model.template.base import WorkflowTemplate
 
 import flowserv.model.parameter.base as pbase
@@ -50,6 +49,7 @@ def test_flat_parse():
                 pd.parameter_declaration(
                     identifier='E',
                     data_type=pd.DT_FILE,
+                    as_const='file.txt',
                     required=False
                 )
             ),
@@ -64,10 +64,9 @@ def test_flat_parse():
     )
     params = template.parameters
     in_fh = InputFile(
-        f_handle=FileHandle(filename=LOCAL_FILE),
+        filename=LOCAL_FILE,
         target_path='/dev/null'
     )
-    fh = FileHandle(filename=LOCAL_FILE)
     # Valid argument set
     args = values.parse_arguments(
         arguments={
@@ -75,7 +74,7 @@ def test_flat_parse():
             'B': True,
             'C': 12.5,
             'D': in_fh,
-            'E': fh,
+            'E': LOCAL_FILE,
             'F': 'ABC'
         },
         parameters=params,
@@ -275,5 +274,5 @@ def test_validate():
                     as_const=pbase.AS_INPUT
                 )
             ),
-            value=FileHandle(filename=LOCAL_FILE)
+            value=LOCAL_FILE
         )

@@ -10,48 +10,48 @@
 
 import os
 
-from flowserv.service.api import API
-
-import flowserv.config.api as config
-import flowserv.tests.db as db
-import flowserv.tests.serialize as serialize
-import flowserv.version as version
 from flowserv.view.factory import DefaultView
 
-
-"""API environment variables that control the base url."""
-API_VARS = [
-    config.FLOWSERV_API_NAME,
-    config.FLOWSERV_API_HOST,
-    config.FLOWSERV_API_PORT,
-    config.FLOWSERV_API_PROTOCOL,
-    config.FLOWSERV_API_PATH
-]
+import flowserv.config.api as config
+import flowserv.tests.serialize as serialize
+import flowserv.version as version
 
 
-def test_service_descriptor(tmpdir):
+def test_default_service_descriptor_view(service):
     """Test the service descriptor serialization."""
-    # Clear environment variables if set
-    for var in API_VARS:
-        if var in os.environ:
-            del os.environ[var]
-    os.environ[config.FLOWSERV_API_PORT] = '80'
-    con = db.init_db(str(tmpdir)).connect()
-    api = API(con=con, basedir=str(tmpdir))
-    r = api.server().service_descriptor()
-    serialize.validate_service_descriptor(r)
-    assert r['name'] == config.DEFAULT_NAME
-    assert r['version'] == version.__version__
-    assert not r['validToken']
-    api.users().register_user(username='alice', password='abc')
-    token = api.users().login_user(username='alice', password='abc')['token']
-    r = api.server(access_token=token).service_descriptor()
-    serialize.validate_service_descriptor(r)
-    assert r['name'] == config.DEFAULT_NAME
-    assert r['version'] == version.__version__
-    assert r['validToken']
-    assert r['username'] == 'alice'
-    # Test initialization with a different set of labels
+    # Ensure that the FLOWSERV_API_NAME variable is not set.
+    if config.FLOWSERV_API_NAME in os.environ:
+        del os.environ[config.FLOWSERV_API_NAME]
+    # -- Test service descriptor without information for logged-in user -------
+    with service() as api:
+        r = api.server().service_descriptor()
+        serialize.validate_service_descriptor(r)
+        assert r['name'] == config.DEFAULT_NAME
+        assert r['version'] == version.__version__
+        assert not r['validToken']
+    # -- Test service descriptor with user information ------------------------
+    username = 'alice'
+    pwd = 'abc'
+    with service() as api:
+        api.users().register_user(username=username, password=pwd)
+        r = api.users().login_user(username=username, password=pwd)
+        serialize.validate_user_handle(r, login=True)
+        api_key = r['token']
+        r = api.server(access_token=api_key).service_descriptor()
+        serialize.validate_service_descriptor(r)
+        assert r['name'] == config.DEFAULT_NAME
+        assert r['version'] == version.__version__
+        assert r['validToken']
+        assert r['username'] == username
+
+
+def test_service_descriptor_with_custom_labels_view(service):
+    """Test serialization for a service descriptor with a custom set of view
+    labels.
+    """
+    # Ensure that the FLOWSERV_API_NAME variable is not set.
+    if config.FLOWSERV_API_NAME in os.environ:
+        del os.environ[config.FLOWSERV_API_NAME]
     labels = {
         'SERVER': {
             'SERVICE_NAME': 'serviceName',
@@ -59,8 +59,9 @@ def test_service_descriptor(tmpdir):
             'UNK': None
         }
     }
-    api = API(con=con, basedir=str(tmpdir), view=DefaultView(labels=labels))
-    r = api.server().service_descriptor()
-    assert r['serviceName'] == config.DEFAULT_NAME
-    assert r['serviceVersion'] == version.__version__
-    assert 'UNK' not in r
+    # -- Test initialization with a different set of labels -------------------
+    with service(view=DefaultView(labels=labels)) as api:
+        r = api.server().service_descriptor()
+        assert r['serviceName'] == config.DEFAULT_NAME
+        assert r['serviceVersion'] == version.__version__
+        assert 'UNK' not in r

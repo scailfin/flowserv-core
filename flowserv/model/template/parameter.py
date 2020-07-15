@@ -10,14 +10,12 @@
 specifications within workflow templates.
 """
 
-from past.builtins import basestring
-
 import os
 
-from flowserv.core.files import FileHandle, InputFile
+from flowserv.model.parameter.base import InputFile
 from flowserv.model.parameter.value import TemplateArgument
 
-import flowserv.core.error as err
+import flowserv.error as err
 
 
 def get_parameter_references(spec, parameters=None):
@@ -38,14 +36,14 @@ def get_parameter_references(spec, parameters=None):
 
     Raises
     ------
-    flowserv.core.error.InvalidTemplateError
+    flowserv.error.InvalidTemplateError
     """
     # The new object will contain the modified workflow specification
     if parameters is None:
         parameters = set()
     for key in spec:
         val = spec[key]
-        if isinstance(val, basestring):
+        if isinstance(val, str):
             # If the value is of type string we test whether the string is a
             # reference to a template parameter
             if is_parameter(val):
@@ -56,7 +54,7 @@ def get_parameter_references(spec, parameters=None):
             get_parameter_references(val, parameters=parameters)
         elif isinstance(val, list):
             for list_val in val:
-                if isinstance(list_val, basestring):
+                if isinstance(list_val, str):
                     # Get potential references to template parameters in
                     # list elements of type string.
                     if is_parameter(list_val):
@@ -67,7 +65,7 @@ def get_parameter_references(spec, parameters=None):
                     get_parameter_references(list_val, parameters=parameters)
                 elif isinstance(list_val, list):
                     # We currently do not support lists of lists
-                    raise err.InvalidTemplateError('nested lists not supported')
+                    raise err.InvalidTemplateError('nested lists not allowed')
     return parameters
 
 
@@ -102,9 +100,9 @@ def get_upload_files(template, basedir, files, arguments):
 
     Raises
     ------
-    flowserv.core.error.InvalidTemplateError
-    flowserv.core.error.MissingArgumentError
-    flowserv.core.error.UnknownParameterError
+    flowserv.error.InvalidTemplateError
+    flowserv.error.MissingArgumentError
+    flowserv.error.UnknownParameterError
     """
     result = list()
     for val in files:
@@ -122,26 +120,23 @@ def get_upload_files(template, basedir, files, arguments):
             if arg is None:
                 if para.default_value is None:
                     raise err.MissingArgumentError(var)
+                # Set argument to file handle using the default value
+                # (assuming that the default points to a file in the
+                # template base directory).
+                if para.has_constant() and not para.as_input():
+                    target_path = para.get_constant()
                 else:
-                    # Set argument to file handle using the default value
-                    # (assuming that the default points to a file in the
-                    # template base directory).
-                    if para.has_constant() and not para.as_input():
-                        target_path = para.get_constant()
-                    else:
-                        target_path = para.default_value
-                    arg = TemplateArgument(
-                        parameter=para,
-                        value=InputFile(
-                            f_handle=FileHandle(
-                                filename=os.path.join(
-                                    basedir,
-                                    para.default_value
-                                )
-                            ),
-                            target_path=target_path
-                        )
+                    target_path = para.default_value
+                arg = TemplateArgument(
+                    parameter=para,
+                    value=InputFile(
+                        filename=os.path.join(
+                            basedir,
+                            para.default_value
+                        ),
+                        target_path=target_path
                     )
+                )
             # Get path to source file and the target path from the input
             # file handle
             source = arg.value.source()
@@ -150,6 +145,8 @@ def get_upload_files(template, basedir, files, arguments):
             source = os.path.join(basedir, val)
             target = val
         # Upload source file
+        assert source is not None, 'source cannot be None'
+        assert target is not None, 'target cannot be None'
         result.append((source, target))
     return result
 
@@ -192,8 +189,8 @@ def replace_args(spec, arguments, parameters):
 
     Raises
     ------
-    flowserv.core.error.InvalidTemplateError
-    flowserv.core.error.MissingArgumentError
+    flowserv.error.InvalidTemplateError
+    flowserv.error.MissingArgumentError
     """
     if isinstance(spec, dict):
         # The new object will contain the modified workflow specification
@@ -207,7 +204,7 @@ def replace_args(spec, arguments, parameters):
                 # We currently do not support lists of lists
                 raise err.InvalidTemplateError('nested lists not supported')
             obj.append(replace_args(val, arguments, parameters))
-    elif isinstance(spec, basestring):
+    elif isinstance(spec, str):
         obj = replace_value(spec, arguments, parameters)
     else:
         obj = spec
@@ -237,7 +234,7 @@ def replace_value(value, arguments, parameters):
 
     Raises
     ------
-    flowserv.core.error.MissingArgumentError
+    flowserv.error.MissingArgumentError
     """
     # Check if the value matches the template parameter reference pattern
     if is_parameter(value):

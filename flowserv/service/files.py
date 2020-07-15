@@ -10,7 +10,7 @@
 delete, and upload files for workflow groups.
 """
 
-import flowserv.core.error as err
+import flowserv.error as err
 
 
 class UploadFileService(object):
@@ -23,9 +23,9 @@ class UploadFileService(object):
 
         Parameters
         ----------
-        group_manager: flowserv.model.group.manager.GroupManager
+        group_manager: flowserv.model.group..GroupManager
             Manager for workflow groups
-        auth: flowserv.model.user.auth.Auth
+        auth: flowserv.model.auth.Auth
             Implementation of the authorization policy for the API
         serializer: flowserv.view.files.UploadFileSerializer
             Resource serializer
@@ -51,15 +51,15 @@ class UploadFileService(object):
 
         Raises
         ------
-        flowserv.core.error.UnauthorizedAccessError
-        flowserv.core.error.UnknownFileError
+        flowserv.error.UnauthorizedAccessError
+        flowserv.error.UnknownFileError
         """
         # Raise an error if the user does not have rights to delete files for
         # the workflow group or if the workflow group does not exist.
         if not self.auth.is_group_member(group_id=group_id, user_id=user_id):
             raise err.UnauthorizedAccessError()
         # Delete the file using the workflow group handle
-        self.group_manager.get_group(group_id).delete_file(file_id)
+        self.group_manager.delete_file(group_id=group_id, file_id=file_id)
 
     def get_file(self, group_id, file_id, user_id=None):
         """Get handle for file with given identifier that was uploaded to the
@@ -80,13 +80,13 @@ class UploadFileService(object):
 
         Returns
         -------
-        flowserv.core.files.FileHandle, dict
+        flowserv.model.base.FileHandle, dict
 
         Raises
         ------
-        flowserv.core.error.UnauthorizedAccessError
-        flowserv.core.error.UnknownFileError
-        flowserv.core.error.UnknownWorkflowGroupError
+        flowserv.error.UnauthorizedAccessError
+        flowserv.error.UnknownFileError
+        flowserv.error.UnknownWorkflowGroupError
         """
         # Raise an error if the user does not have rights to access files for
         # the workflow group or if the workflow group does not exist (only if
@@ -99,7 +99,7 @@ class UploadFileService(object):
             if not is_member:
                 raise err.UnauthorizedAccessError()
         # Return the file handle and a serialization of tit
-        fh = self.group_manager.get_group(group_id).get_file(file_id)
+        fh = self.group_manager.get_file(group_id=group_id, file_id=file_id)
         doc = self.serialize.file_handle(group_id=group_id, fh=fh)
         return fh, doc
 
@@ -120,8 +120,8 @@ class UploadFileService(object):
 
         Raises
         ------
-        flowserv.core.error.UnauthorizedAccessError
-        flowserv.core.error.UnknownWorkflowGroupError
+        flowserv.error.UnauthorizedAccessError
+        flowserv.error.UnknownWorkflowGroupError
         """
         # Raise an error if the user does not have rights to access files for
         # the workflow group or if the workflow group does not exist.
@@ -129,7 +129,7 @@ class UploadFileService(object):
             raise err.UnauthorizedAccessError()
         return self.serialize.file_listing(
             group_id=group_id,
-            files=self.group_manager.get_group(group_id).list_files()
+            files=self.group_manager.list_files(group_id)
         )
 
     def upload_file(self, group_id, file, name, user_id, file_type=None):
@@ -145,7 +145,7 @@ class UploadFileService(object):
             Name of the file
         user_id: string
             Unique user identifier
-        file_type: string, optional
+        file_type: string, default=None
             Identifier for the file type (e.g., the file MimeType). This could
             also by the identifier of a content handler.
 
@@ -155,16 +155,17 @@ class UploadFileService(object):
 
         Raises
         ------
-        flowserv.core.error.ConstraintViolationError
-        flowserv.core.error.UnauthorizedAccessError
-        flowserv.core.error.UnknownWorkflowGroupError
+        flowserv.error.ConstraintViolationError
+        flowserv.error.UnauthorizedAccessError
+        flowserv.error.UnknownWorkflowGroupError
         """
         # Raise an error if the user does not have rights to upload files for
         # the workflow group or if the workflow group does not exist.
         if not self.auth.is_group_member(group_id=group_id, user_id=user_id):
             raise err.UnauthorizedAccessError()
         # Return serialization of the uploaded file
-        fh = self.group_manager.get_group(group_id).upload_file(
+        fh = self.group_manager.upload_file(
+            group_id=group_id,
             file=file,
             name=name,
             file_type=file_type

@@ -27,6 +27,7 @@ parameters:
     - id: code
       name: 'Code file'
       datatype: file
+      as: 'code/helloworld.py'
     - id: names
       name: 'Input file'
       datatype: file

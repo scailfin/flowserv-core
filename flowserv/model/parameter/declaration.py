@@ -16,7 +16,7 @@ declarations from within Python scripts.
 
 from jsonschema import validate, ValidationError
 
-from flowserv.core.error import InvalidParameterError
+from flowserv.error import InvalidParameterError
 
 
 # ------------------------------------------------------------------------------
@@ -175,7 +175,7 @@ def parameter_declaration(
 
     Raises
     ------
-    flowserv.core.error.InvalidParameterError
+    flowserv.error.InvalidParameterError
     """
     if identifier is None:
         raise InvalidParameterError('missing identifier')
@@ -268,7 +268,7 @@ def validate_parameter(param_declaration):
 
     Raises
     ------
-    flowserv.core.error.InvalidParameterError
+    flowserv.error.InvalidParameterError
     """
     # Make sure that the given package declaration matches the schema
     try:

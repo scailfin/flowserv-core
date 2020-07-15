@@ -8,7 +8,7 @@
 
 """Helper methods to test object serialization."""
 
-import flowserv.core.util as util
+import flowserv.util as util
 import flowserv.model.workflow.state as st
 
 
@@ -162,10 +162,10 @@ def validate_run_handle(doc, state):
         labels.append('startedAt')
         labels.append('finishedAt')
         labels.append('messages')
-    elif state == st.STATE_SUCCESS:
+    else:  # state == st.STATE_SUCCESS:
         labels.append('startedAt')
         labels.append('finishedAt')
-        labels.append('resources')
+        labels.append('files')
     util.validate_doc(
         doc=doc,
         mandatory=labels,
@@ -175,14 +175,8 @@ def validate_run_handle(doc, state):
         for p in doc['parameters']:
             validate_parameter(p)
     assert doc['state'] == state
-    keys = ['self']
-    if state in st.ACTIVE_STATES:
-        keys.append('self:cancel')
-    else:
-        keys.append('self:delete')
     if state == st.STATE_SUCCESS:
-        keys.append('results')
-        for r in doc['resources']:
+        for r in doc['files']:
             util.validate_doc(doc=r, mandatory=['id', 'name'])
 
 

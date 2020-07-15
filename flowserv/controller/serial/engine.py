@@ -11,8 +11,6 @@ serial workflow specification. This controller allows execution in workflow
 steps within separate sub-processes.
 """
 
-from __future__ import print_function
-
 import logging
 import os
 import subprocess
@@ -20,20 +18,14 @@ import subprocess
 from functools import partial
 from multiprocessing import Lock, Pool
 
+from flowserv.config.controller import ENGINE_ASYNC, FLOWSERV_ASYNC
 from flowserv.controller.base import WorkflowController
 from flowserv.controller.serial.workflow import SerialWorkflow
 from flowserv.model.template.base import WorkflowTemplate
-from flowserv.model.workflow.resource import FSObject
 
-import flowserv.core.util as util
+import flowserv.util as util
 import flowserv.model.template.parameter as tp
 import flowserv.model.workflow.state as serialize
-
-
-"""Additional environment variables that control the configuration of the
-serial workflow controller.
-"""
-SERIAL_ENGINE_ASYNC = 'SERIAL_ENGINE_ASYNC'
 
 
 class SerialWorkflowEngine(WorkflowController):
@@ -41,7 +33,7 @@ class SerialWorkflowEngine(WorkflowController):
     set of arguments. Each workflow is executed as a serial workflow. The
     individual workflow steps can be executed in a separate process on request.
     """
-    def __init__(self, exec_func=None, is_async=None, verbose=False):
+    def __init__(self, exec_func=None, is_async=None):
         """Initialize the function that is used to execute individual workflow
         steps. The run workflow function in this module executes all steps
         within sub-processes in the same environment as the workflow
@@ -58,22 +50,14 @@ class SerialWorkflowEngine(WorkflowController):
 
         Parameters
         ----------
-        run_workflow: func, optional
+        run_workflow: func, default=None
             Function that is used to execute the workflow commands
-        is_async: bool, optional
+        is_async: bool, default=None
             Flag that determines whether workflows execution is synchronous or
             asynchronous by default.
-        verbose: bool, optional
-            Print command strings to STDOUT during workflow execution
         """
         self.exec_func = exec_func if exec_func is not None else run_workflow
-        # Set the is_async flag. If no value is given the default value is set
-        # from the respective environment variable
-        if is_async is not None:
-            self.is_async = is_async
-        else:
-            self.is_async = bool(os.environ.get(SERIAL_ENGINE_ASYNC, 'True'))
-        self.verbose = verbose
+        self.is_async = is_async if is_async is not None else ENGINE_ASYNC()
         # Dictionary of all running tasks
         self.tasks = dict()
         # Lock to manage asynchronous access to the task dictionary
@@ -93,7 +77,7 @@ class SerialWorkflowEngine(WorkflowController):
         with self.lock:
             # Ensure that the run has not been removed already
             if run_id in self.tasks:
-                pool = self.tasks[run_id]
+                pool, _ = self.tasks[run_id]
                 # Close the pool and terminate any running processes
                 if pool is not None:
                     pool.close()
@@ -111,9 +95,9 @@ class SerialWorkflowEngine(WorkflowController):
         -------
         list((string, string))
         """
-        return [(SERIAL_ENGINE_ASYNC, str(self.is_async))]
+        return [(FLOWSERV_ASYNC, str(self.is_async))]
 
-    def exec_workflow(self, run, template, arguments, run_async=None):
+    def exec_workflow(self, run, template, arguments, service=None):
         """Initiate the execution of a given workflow template for a set of
         argument values. This will start a new process that executes a serial
         workflow asynchronously. Returns the state of the workflow after the
@@ -127,16 +111,15 @@ class SerialWorkflowEngine(WorkflowController):
 
         Parameters
         ----------
-        run: flowserv.model.run.base.RunHandle
+        run: flowserv.model.base.RunHandle
             Handle for the run that is being executed.
         template: flowserv.model.template.base.WorkflowTemplate
             Workflow template containing the parameterized specification and
             the parameter declarations.
         arguments: dict(flowserv.model.parameter.value.TemplateArgument)
             Dictionary of argument values for parameters in the template.
-        run_async: bool, optional
-            Flag to determine whether the worklfow execution will block the
-            workflow controller or run asynchronously.
+        service: contextlib,contextmanager, default=None
+            Context manager to create an instance of the service API.
 
         Returns
         -------
@@ -144,22 +127,22 @@ class SerialWorkflowEngine(WorkflowController):
 
         Raises
         ------
-        flowserv.core.error.DuplicateRunError
+        flowserv.error.DuplicateRunError
         """
         # Get the run state. Ensure that the run is in pending state
         if not run.is_pending():
             raise RuntimeError("invalid run state '{}'".format(run.state))
-        state = run.state
+        state = run.state()
         # Expand template parameters. Get (i) list of files that need to be
         # copied, (ii) the expanded commands that represent the workflow steps,
         # and (iii) the list of output files.
         wf = SerialWorkflow(template, arguments)
         try:
             # Copy all necessary files to the run folder
-            util.copy_files(files=wf.upload_files, target_dir=run.rundir)
+            util.copy_files(files=wf.upload_files, target_dir=run.get_rundir())
             # Create top-level folder for all expected result files.
             util.create_directories(
-                basedir=run.rundir,
+                basedir=run.get_rundir(),
                 files=wf.output_files
             )
             # Get list of commands to execute.
@@ -167,25 +150,28 @@ class SerialWorkflowEngine(WorkflowController):
             # Start a new process to run the workflow. Make sure to catch all
             # exceptions to set the run state properly
             state = state.start()
-            if RUN_ASYNC(run_async=run_async, is_async=self.is_async):
+            if self.is_async:
+                # Raise an error if the service manager is not given.
+                if service is None:
+                    raise ValueError('service manager not given')
                 # Run steps asynchronously in a separate process
                 pool = Pool(processes=1)
                 task_callback_function = partial(
                     callback_function,
                     lock=self.lock,
-                    tasks=self.tasks
+                    tasks=self.tasks,
+                    service=service
                 )
                 with self.lock:
-                    self.tasks[run.identifier] = pool
+                    self.tasks[run.run_id] = (pool, state)
                 pool.apply_async(
                     self.exec_func,
                     args=(
-                        run.identifier,
-                        run.rundir,
+                        run.run_id,
+                        run.get_rundir(),
                         state,
                         wf.output_files,
-                        commands,
-                        self.verbose
+                        commands
                     ),
                     callback=task_callback_function
                 )
@@ -193,12 +179,11 @@ class SerialWorkflowEngine(WorkflowController):
             else:
                 # Run steps synchronously and block the controller until done
                 _, state_dict = self.exec_func(
-                    run.identifier,
-                    run.rundir,
+                    run.run_id,
+                    run.get_rundir(),
                     state,
                     wf.output_files,
-                    commands,
-                    self.verbose
+                    commands
                 )
                 return serialize.deserialize_state(state_dict)
         except Exception as ex:
@@ -229,7 +214,7 @@ class SerialWorkflowEngine(WorkflowController):
 
         Raises
         ------
-        flowserv.core.error.InvalidTemplateError
+        flowserv.error.InvalidTemplateError
         """
         # Get a copy of the files and parameters sections of the inputs
         # declaration
@@ -243,8 +228,8 @@ class SerialWorkflowEngine(WorkflowController):
             if para.identifier in para_merge:
                 para = para_merge[para.identifier].merge(para)
             para_merge[para.identifier] = para
-            # Depending on whether the type of the parameter is a file or not we
-            # add a parameter reference to the respective input section
+            # Depending on whether the type of the parameter is a file or not
+            # we add a parameter reference to the respective input section.
             if para.is_file():
                 in_files.append(tp.VARIABLE(para.identifier))
             else:
@@ -264,7 +249,7 @@ class SerialWorkflowEngine(WorkflowController):
 
 # -- Helper Methods -----------------------------------------------------------
 
-def callback_function(result, lock, tasks):
+def callback_function(result, lock, tasks, service):
     """Callback function for executed tasks.Removes the task from the task
     index and updates the run state in the underlying database.
 
@@ -276,28 +261,26 @@ def callback_function(result, lock, tasks):
         Lock for concurrency control
     tasks: dict
         Task index of the backend
+        service: contextlib,contextmanager
+            Context manager to create an instance of the service API.
     """
     run_id, state_dict = result
+    logging.info('finished run {} with {}'.format(run_id, state_dict))
     with lock:
         if run_id in tasks:
-            result_state = serialize.deserialize_state(state_dict)
             # Close the pool and remove the entry from the task index
-            pool = tasks[run_id]
+            pool, _ = tasks[run_id]
             pool.close()
             del tasks[run_id]
-    # Get an instance of the API to update the run state.
-    from flowserv.service.api import service
+    state = serialize.deserialize_state(state_dict)
     try:
         with service() as api:
-            api.runs().update_run(
-                run_id=run_id,
-                state=result_state
-            )
+            api.runs().update_run(run_id, state)
     except Exception as ex:
         logging.error(ex)
 
 
-def run_workflow(run_id, rundir, state, output_files, steps, verbose):
+def run_workflow(run_id, rundir, state, output_files, steps):
     """Execute a list of workflow steps synchronously. This is the worker
     function for asynchronous workflow executions. Starts by copying input
     files and then executes the workflow synchronously.
@@ -317,14 +300,12 @@ def run_workflow(run_id, rundir, state, output_files, steps, verbose):
         Relative path of output files that are generated by the workflow run
     steps: list(flowserv.model.template.step.Step)
         List of expanded workflow steps from a template workflow specification
-    verbose: bool, optional
-        Output executed command statements if flag is True
 
     Returns
     -------
     (string, dict)
     """
-    logging.debug('start run {}'.format(run_id))
+    logging.info('start run {}'.format(run_id))
     try:
         # The serial controller ignores the command environments. We start by
         # creating a list of all command statements
@@ -333,13 +314,11 @@ def run_workflow(run_id, rundir, state, output_files, steps, verbose):
             statements.extend(step.commands)
         # Run workflow step-by-step
         for cmd in statements:
-            # Print command if verbose
-            if verbose:
-                print('{}'.format(cmd))
+            logging.info('{}'.format(cmd))
             # Each command is expected to be a shell command that is executed
             # using the subprocess package. The subprocess.run() method is
             # preferred for capturing output to STDERR but it does not exist
-            # in Python2.
+            # in Python3.6.
             try:
                 proc = subprocess.run(
                     cmd,
@@ -365,48 +344,15 @@ def run_workflow(run_id, rundir, state, output_files, steps, verbose):
                     logging.error(ex)
                     result_state = state.error(messages=util.stacktrace(ex))
                     return run_id, serialize.serialize_state(result_state)
-        # Create dictionary of output files
+        # Create list of output files that were generated.
         files = list()
-        for resource_name in output_files:
-            f = FSObject(
-                identifier=util.get_unique_identifier(),
-                name=resource_name,
-                filename=os.path.join(rundir, resource_name)
-            )
-            files.append(f)
+        for relative_path in output_files:
+            if os.path.exists(os.path.join(rundir, relative_path)):
+                files.append(relative_path)
         # Workflow executed successfully
-        result_state = state.success(resources=files)
+        result_state = state.success(files=files)
     except Exception as ex:
         logging.error(ex)
         result_state = state.error(messages=util.stacktrace(ex))
-    logging.debug('finished run {} = {}'.format(run_id, result_state.type_id))
+    logging.info('finished run {}: {}'.format(run_id, result_state.type_id))
     return run_id, serialize.serialize_state(result_state)
-
-
-def RUN_ASYNC(run_async, is_async):
-    """Determine whether to run a workflow synchronously or asynchronously
-    based on the value of the run_async flag and the default is_async value.
-    Either value may be None.
-
-    By default, workflows are run asynchronously.
-
-    Parameters
-    ----------
-    run_async: bool
-        Run async flag provided to the execute method
-    is_async: bool
-        Default value if the run_async flag is None
-
-    Returns
-    -------
-    bool
-    """
-    # If the run_async parameter was provided the value determines the running
-    # mode.
-    if run_async is not None:
-        return run_async
-    # Use the provided default value (if given)
-    if is_async is not None:
-        return is_async
-    # By default all workflows are being run asynchronously
-    return True

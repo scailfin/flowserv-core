@@ -43,7 +43,8 @@
         {
             "id": "code",
             "name": "Code file",
-            "datatype": "file"
+            "datatype": "file",
+            "as": "code/helloworld.py"
         },
         {
             "id": "sleeptime",

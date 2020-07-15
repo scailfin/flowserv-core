@@ -11,169 +11,158 @@
 import os
 import pytest
 
-from flowserv.model.group.manager import WorkflowGroupManager
+from flowserv.model.group import WorkflowGroupManager
 from flowserv.model.workflow.fs import WorkflowFileSystem
 from flowserv.tests.files import FakeStream
 
-import flowserv.core.error as err
-import flowserv.core.util as util
-import flowserv.tests.db as db
+import flowserv.error as err
+import flowserv.tests.model as model
+import flowserv.util as util
 
 
-"""Unique identifier for users and workflow templates."""
-USER_1 = '0000'
-WORKFLOW_1 = '0000'
-
-
-def init(basedir):
-    """Create a fresh database with one user and one workflow. For the
-    workflow, two groups are created and their group handles returned.
-    """
-    # Create new database with three users
-    connector = db.init_db(
-        str(basedir),
-        workflows=[WORKFLOW_1],
-        users=[USER_1]
-    )
-    con = connector.connect()
-    manager = WorkflowGroupManager(
-        con=con,
-        fs=WorkflowFileSystem(os.path.join(str(basedir), 'workflows'))
-    )
-    g1 = manager.create_group(
-        workflow_id=WORKFLOW_1,
-        name='Group 1',
-        user_id=USER_1,
-        parameters=dict(),
-        workflow_spec=dict()
-    )
-    g2 = manager.create_group(
-        workflow_id=WORKFLOW_1,
-        name='Group 2',
-        user_id=USER_1,
-        parameters=dict(),
-        workflow_spec=dict()
-    )
-    return g1, g2
-
-
-def test_delete_file(tmpdir):
+def test_delete_file(database, tmpdir):
     """Test deleting an uploaded file."""
-    # Get handles for workflow groups
-    g1, g2 = init(tmpdir)
-    # Upload one file for each group
-    fh1 = g1.upload_file(
-        file=FakeStream(data={'A': 1}),
-        name='A.json'
-    )
-    fh2 = g2.upload_file(
-        file=FakeStream(data={'B': 2}),
-        name='A.json'
-    )
-    fh1 = g1.get_file(fh1.identifier)
-    assert os.path.isfile(fh1.path)
-    fh2 = g2.get_file(fh2.identifier)
-    assert os.path.isfile(fh2.path)
-    assert fh1.path != fh2.path
-    # Deleting a submission will delete all associated files
-    g1.delete_file(fh1.identifier)
-    assert not os.path.isfile(fh1.path)
-    assert os.path.isfile(fh2.path)
-    # Error cases
-    # - Delete unknown file
-    with pytest.raises(err.UnknownFileError):
-        g1.delete_file(fh1.identifier)
+    # -- Setup ----------------------------------------------------------------
+    #
+    # Create a database with two groups for a single workflow. Upload one file
+    # for each group.
+    file = FakeStream(data={'A': 1})
+    fn = 'data.json'
+    fs = WorkflowFileSystem(tmpdir)
+    with database.session() as session:
+        user_1 = model.create_user(session, active=True)
+        workflow_id = model.create_workflow(session)
+        group_1 = model.create_group(session, workflow_id, users=[user_1])
+        group_2 = model.create_group(session, workflow_id, users=[user_1])
+        manager = WorkflowGroupManager(session=session, fs=fs)
+        fh = manager.upload_file(group_id=group_1, file=file, name=fn)
+        file_1 = fh.file_id
+        fh = manager.upload_file(group_id=group_2, file=file, name=fn)
+        file_2 = fh.file_id
+    # -- Test delete file -----------------------------------------------------
+    with database.session() as session:
+        manager = WorkflowGroupManager(session=session, fs=fs)
+        fh = manager.get_file(group_id=group_1, file_id=file_1)
+        assert os.path.isfile(fh.filename)
+        manager.delete_file(group_id=group_1, file_id=file_1)
+        assert not os.path.isfile(fh.filename)
+        # File 1 can no longer be accessed while file 2 is still present.
+        with pytest.raises(err.UnknownFileError):
+            manager.get_file(group_id=group_1, file_id=file_1)
+        fh = manager.get_file(group_id=group_2, file_id=file_2)
+        assert os.path.isfile(fh.filename)
+    # -- Error cases ----------------------------------------------------------
+    with database.session() as session:
+        # - Delete unknown file
+        manager = WorkflowGroupManager(session=session, fs=fs)
+        with pytest.raises(err.UnknownFileError):
+            manager.delete_file(group_id=group_1, file_id=file_1)
 
 
-def test_get_file(tmpdir):
+def test_get_file(database, tmpdir):
     """Test accessing uploaded files."""
-    # Get handles for workflow groups
-    g1, g2 = init(tmpdir)
-    # Upload one file for each group
-    fh1 = g1.upload_file(
-        file=FakeStream(data={'A': 1}),
-        name='A.json'
-    )
-    fh2 = g2.upload_file(
-        file=FakeStream(data={'B': 2}),
-        name='A.txt'
-    )
-    fh1 = g1.get_file(fh1.identifier)
-    fh2 = g2.get_file(fh2.identifier)
-    assert fh1.name == 'A.json'
-    assert fh1.mimetype == 'application/json'
-    assert os.path.isfile(fh1.path)
-    assert fh2.name == 'A.txt'
-    assert fh2.mimetype == 'text/plain'
-    assert os.path.isfile(fh2.path)
-    # Check file contents
-    assert util.read_object(filename=fh1.filename) == {'A': 1}
-    assert util.read_object(filename=fh2.filename) == {'B': 2}
-    # Error situations
+    # -- Setup ----------------------------------------------------------------
+    #
+    # Create a database with two groups for a single workflow. Upload one file
+    # for each group.
+    data_1 = {'A': 1}
+    data_2 = {'B': 2}
+    f1 = FakeStream(data=data_1)
+    f2 = FakeStream(data=data_2)
+    fn = 'data.json'
+    fs = WorkflowFileSystem(tmpdir)
+    with database.session() as session:
+        user_1 = model.create_user(session, active=True)
+        workflow_id = model.create_workflow(session)
+        group_1 = model.create_group(session, workflow_id, users=[user_1])
+        group_2 = model.create_group(session, workflow_id, users=[user_1])
+        mngr = WorkflowGroupManager(session=session, fs=fs)
+        file_1 = mngr.upload_file(group_id=group_1, file=f1, name=fn).file_id
+        file_2 = mngr.upload_file(group_id=group_2, file=f2, name=fn).file_id
+    files = [(group_1, file_1, data_1), (group_2, file_2, data_2)]
+    # -- Test get file --------------------------------------------------------
+    with database.session() as session:
+        manager = WorkflowGroupManager(session=session, fs=fs)
+        for g_id, f_id, data in files:
+            fh = manager.get_file(group_id=g_id, file_id=f_id)
+            assert fh.name == fn
+            assert fh.mimetype == 'application/json'
+            assert os.path.isfile(fh.filename)
+            assert util.read_object(filename=fh.filename) == data
+    # -- Test error cases -----------------------------------------------------
     # - File handle is unknown for s2
-    with pytest.raises(err.UnknownFileError):
-        g2.get_file(fh1.identifier)
-    # - Access file with unknown file identifier
-    with pytest.raises(err.UnknownFileError):
-        g1.get_file('UNK')
+    with database.session() as session:
+        manager = WorkflowGroupManager(session=session, fs=fs)
+        with pytest.raises(err.UnknownFileError):
+            manager.get_file(group_id=group_2, file_id=file_1)
+        # - Access file with unknown file identifier
+        with pytest.raises(err.UnknownFileError):
+            manager.get_file(group_id=group_1, file_id='UNK')
 
 
-def test_list_files(tmpdir):
+def test_list_files(database, tmpdir):
     """Test listing uploaded files."""
-    # Get handles for workflow groups
-    g1, g2 = init(tmpdir)
-    # Upload two files gor group 1 and one file for group 2
-    g1.upload_file(
-        file=FakeStream(data={'A': 1}),
-        name='A.json'
-    )
-    g1.upload_file(
-        file=FakeStream(data={'B': 2}),
-        name='B.json'
-    )
-    fh3 = g2.upload_file(
-        file=FakeStream(data={'C': 3}),
-        name='A.json'
-    )
-    # The file listing for group 1 should contain two files A.json and B.json
-    files = g1.list_files()
-    assert len(files) == 2
-    names = [f.name for f in files]
-    assert 'A.json' in names
-    assert 'B.json' in names
-    # The file listing for group 2 should only contain A.json
-    files = g2.list_files()
-    assert len(files) == 1
-    fh = files[0]
-    assert fh.name == 'A.json'
-    assert fh.identifier == fh3.identifier
+    # -- Setup ----------------------------------------------------------------
+    #
+    # Create a database with two groups for a single workflow. The first group
+    # has one uploaded file and the second group has one file.
+    file = FakeStream(data={'A': 1})
+    fn = 'data.json'
+    fs = WorkflowFileSystem(tmpdir)
+    with database.session() as session:
+        user_1 = model.create_user(session, active=True)
+        workflow_id = model.create_workflow(session)
+        group_1 = model.create_group(session, workflow_id, users=[user_1])
+        group_2 = model.create_group(session, workflow_id, users=[user_1])
+        manager = WorkflowGroupManager(session=session, fs=fs)
+        manager.upload_file(group_id=group_1, file=file, name=fn)
+        manager.upload_file(group_id=group_1, file=file, name=fn)
+        manager.upload_file(group_id=group_2, file=file, name=fn)
+    # -- Test list files for groups -------------------------------------------
+    with database.session() as session:
+        manager = WorkflowGroupManager(session=session, fs=fs)
+        files = manager.list_files(group_id=group_1)
+        assert len(files) == 2
+        files = manager.list_files(group_id=group_2)
+        assert len(files) == 1
 
 
-def test_upload_file(tmpdir):
+def test_upload_file(database, tmpdir):
     """Test uploading files."""
-    # Get handles for workflow groups
-    g1, g2 = init(tmpdir)
-    # Upload one file for each group
-    fh1 = g1.upload_file(
-        file=FakeStream(data={'A': 1}),
-        name='A.json'
-    )
-    fh2 = g2.upload_file(
-        file=FakeStream(data={'B': 2}),
-        name='A.txt'
-    )
-    assert fh1.name == 'A.json'
-    assert fh1.mimetype == 'application/json'
-    assert os.path.isfile(fh1.path)
-    assert fh2.name == 'A.txt'
-    assert fh2.mimetype == 'text/plain'
-    assert os.path.isfile(fh2.path)
-    assert util.read_object(filename=fh1.path) == {'A': 1}
-    assert util.read_object(filename=fh2.path) == {'B': 2}
-    # Test error cases
-    # - Invalid file name
-    with pytest.raises(err.ConstraintViolationError):
-        g1.upload_file(
+    # -- Setup ----------------------------------------------------------------
+    #
+    # Create a database with two groups for a single workflow. Upload one file
+    # for each group.
+    fs = WorkflowFileSystem(tmpdir)
+    with database.session() as session:
+        user_1 = model.create_user(session, active=True)
+        workflow_id = model.create_workflow(session)
+        group_1 = model.create_group(session, workflow_id, users=[user_1])
+    # -- Test upload file -----------------------------------------------------
+    data = {'A': 1}
+    with database.session() as session:
+        manager = WorkflowGroupManager(session=session, fs=fs)
+        fh = manager.upload_file(
+            group_id=group_1,
             file=FakeStream(data={'A': 1}),
-            name=' '
+            name='A.json'
         )
+        assert fh.name == 'A.json'
+        assert fh.mimetype == 'application/json'
+        assert os.path.isfile(fh.filename)
+        assert util.read_object(filename=fh.filename) == data
+    # -- Test error case ------------------------------------------------------
+    data = {'A': 1}
+    with database.session() as session:
+        with pytest.raises(err.ConstraintViolationError):
+            manager.upload_file(
+                group_id=group_1,
+                file=FakeStream(data={'A': 1}),
+                name=' '
+            )
+        with pytest.raises(err.UnknownWorkflowGroupError):
+            manager.upload_file(
+                group_id='UNKNOWN',
+                file=FakeStream(data={'A': 1}),
+                name=' '
+            )

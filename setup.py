@@ -16,13 +16,13 @@ from setuptools import setup, find_packages
 
 install_requires = [
     'docker',
-    'future',
     'gitpython',
     'jsonschema',
     'passlib',
     'psycopg2-binary',
     'python-dateutil',
     'pyyaml>=5.1',
+    'SQLAlchemy>=1.3.18',
     'Click'
 ]
 
@@ -88,10 +88,7 @@ setup(
     classifiers=[
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',

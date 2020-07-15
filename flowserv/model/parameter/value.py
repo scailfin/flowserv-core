@@ -11,10 +11,7 @@ workflow template parameters. The class is a simple wrapper that combines
 the value and the meta-data in the parameter declaration.
 """
 
-from past.builtins import basestring
-
-from flowserv.core.files import FileHandle, InputFile
-from flowserv.model.parameter.base import ParameterBase
+from flowserv.model.parameter.base import ParameterBase, InputFile
 
 
 class TemplateArgument(ParameterBase):
@@ -34,7 +31,7 @@ class TemplateArgument(ParameterBase):
         ----------
         parameter: flowserv.model.parameter.base.TemplateParameter
             Parameter declaration
-        value: list or dict or scalar or flowserv.core.files.InputFile
+        value: list, dict, scalar or flowserv.mode.parameter.value.InputFile
             Parameter value. the type depends on the parameter data type.
         validate: bool, optional
             Validate the argument value against the parameter declaration if
@@ -48,26 +45,25 @@ class TemplateArgument(ParameterBase):
             identifier=parameter.identifier,
             data_type=parameter.data_type
         )
-        # Modify the given argument value if it is not of type InputFile. In
-        # this case it is expected to be a FileHandle.
-        if parameter.is_file() and not isinstance(value, InputFile):
+        if parameter.is_file() and isinstance(value, str):
+            # Modify the given argument value if it is not of type InputFile.
+            # In this case it is expected to be the path to the source file.
+            # The target path is expected to be provided as part of the
+            # parameter declaration.
             if parameter.has_constant():
                 if parameter.as_input():
                     msg = 'expected input file for \'{}\''
                     raise ValueError(msg.format(self.identifier))
                 else:
                     target_path = parameter.get_constant()
-            elif isinstance(value, FileHandle):
-                target_path = value.name
             else:
                 msg = 'expected input file for \'{}\''
                 raise ValueError(msg.format(parameter.identifier))
-            self.value = InputFile(
-                f_handle=value,
+            value = InputFile(
+                filename=value,
                 target_path=target_path
             )
-        else:
-            self.value = value
+        self.value = value
         # Validate the argument value if the validate flag is set to True
         if validate:
             self.validate()
@@ -100,7 +96,10 @@ class TemplateArgument(ParameterBase):
                 msg = "expected bool for '{}'"
                 raise ValueError(msg.format(self.identifier))
         elif self.is_float():
-            if not isinstance(self.value, float) and not isinstance(self.value, int):
+            if (
+                not isinstance(self.value, float) and
+                not isinstance(self.value, int)
+            ):
                 msg = "expected float for '{}'"
                 raise ValueError(msg.format(self.identifier))
         elif self.is_int():
@@ -108,7 +107,7 @@ class TemplateArgument(ParameterBase):
                 msg = "expected int for '{}'"
                 raise ValueError(msg.format(self.identifier))
         elif self.is_string():
-            if not isinstance(self.value, basestring):
+            if not isinstance(self.value, str):
                 msg = "expected string for '{}'"
                 raise ValueError(msg.format(self.identifier))
         elif self.is_file():
@@ -133,9 +132,9 @@ class TemplateArgument(ParameterBase):
             raise ValueError("unknown data type '{}'".format(self.data_type))
 
 
-# ------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Helper Methods
-# ------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 def mandatory_arguments(parameters, parent=None):
     """Get a list of parameter names that are mandatory. The optional parent

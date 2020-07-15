@@ -2,8 +2,6 @@
 
 """REANA-Demo-HelloWorld is a minimal demonstration of REANA system."""
 
-from __future__ import absolute_import, print_function
-
 import argparse
 import errno
 import os
@@ -11,7 +9,10 @@ import sys
 import time
 
 
-def hello(inputfile="inputs/names.txt", outputfile="outputs/greetings.txt", sleeptime=1.0):
+def hello(
+    inputfile="inputs/names.txt", outputfile="outputs/greetings.txt",
+    sleeptime=1.0
+):
     """Say 'Hello' to given name and store the greeting to a file.
 
     Writes the greeting character by character. An optional waiting period

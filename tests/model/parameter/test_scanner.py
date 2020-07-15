@@ -12,7 +12,7 @@ parameter values from standard input.
 
 import pytest
 
-from flowserv.core.scanner import Scanner, ListReader
+from flowserv.scanner import Scanner, ListReader
 from flowserv.model.parameter.base import TemplateParameter
 
 import flowserv.model.parameter.declaration as pd

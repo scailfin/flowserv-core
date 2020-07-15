@@ -26,6 +26,7 @@ parameters:
     - id: names
       name: 'Input file'
       datatype: file
+      as: 'data/names.txt'
     - id: sleeptime
       datatype: int
       defaultValue: 10

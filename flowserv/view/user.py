@@ -52,7 +52,7 @@ class UserSerializer(Serializer):
         token if the user is logged in.
         Parameters
         ----------
-        user: flowserv.model.user.base.UserHandle
+        user: flowserv.model.base.User
             Handle for a registered user
         include_token: bool, optional
             Include API tokens for logged in users if True
@@ -62,11 +62,11 @@ class UserSerializer(Serializer):
         dict
         """
         doc = {
-            self.labels['USER_ID']: user.identifier,
+            self.labels['USER_ID']: user.user_id,
             self.labels['USER_NAME']: user.name
         }
         if include_token and user.is_logged_in():
-            doc[self.labels['USER_TOKEN']] = user.api_key
+            doc[self.labels['USER_TOKEN']] = user.api_key.value
         return doc
 
     def user_listing(self, users):
@@ -74,7 +74,7 @@ class UserSerializer(Serializer):
 
         Parameters
         ----------
-        users: list(flowserv.model.user.base.UserHandle)
+        users: list(flowserv.model.base.User)
             List of user handles
 
         Returns

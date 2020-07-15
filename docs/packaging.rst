@@ -18,14 +18,14 @@ Here is a sample layout based on the `Hello World Demo <https://github.com/scail
     workflow.yaml
 
 
-The `template` folder contains all the code and data files that are provided to the user to run the workflow. The `workflow.yaml` file contains the `template specification <https://github.com/scailfin/flowserv-core/blob/master/docs/workflow.rst>`_. User instructions for running the workflow are in the markdown file `instructions.md`. The `flowserv.yaml` file contains all the necessary meatadata that is required when adding the workflow template to a flowServ repository.
+The `template` folder contains all the code and data files that are provided to the user to run the workflow. The `workflow.yaml` file contains the `template specification <https://github.com/scailfin/flowserv-core/blob/master/docs/workflow.rst>`_. User instructions for running the workflow are in the markdown file `instructions.md`. The `flowserv.yaml` file contains all the necessary metadata that is required when adding the workflow template to a flowServ repository.
 
 
 
-Project Description File
--------------------------
+Project Manifest File
+---------------------
 
-The project description file contains the necessary information when adding a workflow template to a flowServ repository. A template is added to the flowServ repository by specifying the base folder or git repository for the project. The template loader will look for a description file with name `flowserv.json`, `flowserv.yaml`, or `flowserv.yml` (in that order) in the project folder. The structure of the description file is shown below:
+The project manifest file contains the necessary information when adding a workflow template to a flowServ repository. A template is added to the flowServ repository by specifying the base folder or git repository for the project. The template loader will look for a manifest with name `flowserv.json`, `flowserv.yaml`, or `flowserv.yml` (in that order) in the project folder. The structure of the manifest file is shown below:
 
 .. code-block:: yaml
 

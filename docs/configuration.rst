@@ -41,6 +41,16 @@ The **flowServ** API uses a workflow controller to handle execution of workflow 
 The specified controller module is imported dynamically. Each implementation of the workflow controller may define additional environment variables that are required for configuration.
 
 
+Docker Engine
+-------------
+
+The environment settings for the Docker engine are as follows:
+
+.. code-block:: console
+
+    export FLOWSERV_BACKEND_MODULE=flowserv.controller.docker
+    export FLOWSERV_BACKEND_CLASS=DockerWorkflowEngine
+
 
 --------
 Database

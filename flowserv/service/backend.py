@@ -17,9 +17,10 @@ dynamically.
 
 import logging
 
-import flowserv.config.backend as backend
-import flowserv.config.base as config
-import flowserv.core.error as err
+from flowserv.config.base import get_variable
+
+import flowserv.config.backend as config
+import flowserv.error as err
 
 
 def init_backend(raise_error=True):
@@ -41,10 +42,10 @@ def init_backend(raise_error=True):
 
     Raises
     ------
-    flowserv.core.error.MissingConfigurationError
+    flowserv.error.MissingConfigurationError
     """
-    module_name = config.get_variable(name=backend.FLOWSERV_BACKEND_MODULE)
-    class_name = config.get_variable(name=backend.FLOWSERV_BACKEND_CLASS)
+    module_name = get_variable(name=config.FLOWSERV_BACKEND_MODULE)
+    class_name = get_variable(name=config.FLOWSERV_BACKEND_CLASS)
     # If both environment variables are None return the default controller.
     # Otherwise, import the specified module and return an instance of the
     # controller class. An error is raised if only one of the two environment
@@ -60,6 +61,13 @@ def init_backend(raise_error=True):
         module = import_module(module_name)
         return getattr(module, class_name)()
     elif module_name is None and raise_error:
-        raise err.MissingConfigurationError(backend.FLOWSERV_BACKEND_MODULE)
+        raise err.MissingConfigurationError(config.FLOWSERV_BACKEND_MODULE)
     elif raise_error:
-        raise err.MissingConfigurationError(backend.FLOWSERV_BACKEND_CLASS)
+        raise err.MissingConfigurationError(config.FLOWSERV_BACKEND_CLASS)
+
+
+"""Define the workflow backend as a global variable. This is necessary for the
+multi-porcess backend to be able to maintain process state in between API
+requests.
+"""
+backend = init_backend()
