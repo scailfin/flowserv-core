@@ -145,7 +145,7 @@ class RemoteWorkflowController(WorkflowController):
                     rundir=run.get_rundir(),
                     state=wf.state,
                     workflow_id=workflow_id,
-                    output_files=wf.output_files,
+                    output_files=wf.output_files(),
                     client=self.client,
                     poll_interval=self.poll_interval,
                     service=service,
@@ -161,7 +161,7 @@ class RemoteWorkflowController(WorkflowController):
                     rundir=run.get_rundir(),
                     state=wf.state,
                     workflow_id=workflow_id,
-                    output_files=wf.output_files,
+                    output_files=wf.output_files(),
                     client=self.client,
                     poll_interval=self.poll_interval,
                     service=service

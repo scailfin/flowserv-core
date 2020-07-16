@@ -36,4 +36,13 @@ class RemoteWorkflowHandle(object):
         """
         self.workflow_id = workflow_id
         self.state = state
-        self.output_files = output_files
+        self._output_files = output_files
+
+    def output_files(self):
+        """Get list of output files.
+
+        Returns
+        -------
+        list(string)
+        """
+        return self._output_files

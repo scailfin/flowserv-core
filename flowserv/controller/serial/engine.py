@@ -139,14 +139,17 @@ class SerialWorkflowEngine(WorkflowController):
         wf = SerialWorkflow(template, arguments)
         try:
             # Copy all necessary files to the run folder
-            util.copy_files(files=wf.upload_files, target_dir=run.get_rundir())
+            util.copy_files(
+                files=wf.upload_files(),
+                target_dir=run.get_rundir()
+            )
             # Create top-level folder for all expected result files.
             util.create_directories(
                 basedir=run.get_rundir(),
-                files=wf.output_files
+                files=wf.output_files()
             )
             # Get list of commands to execute.
-            commands = wf.commands
+            commands = wf.commands()
             # Start a new process to run the workflow. Make sure to catch all
             # exceptions to set the run state properly
             state = state.start()
@@ -170,7 +173,7 @@ class SerialWorkflowEngine(WorkflowController):
                         run.run_id,
                         run.get_rundir(),
                         state,
-                        wf.output_files,
+                        wf.output_files(),
                         commands
                     ),
                     callback=task_callback_function
@@ -182,7 +185,7 @@ class SerialWorkflowEngine(WorkflowController):
                     run.run_id,
                     run.get_rundir(),
                     state,
-                    wf.output_files,
+                    wf.output_files(),
                     commands
                 )
                 return serialize.deserialize_state(state_dict)

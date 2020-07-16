@@ -62,7 +62,7 @@ class RemoteTestClient(RemoteClient):
         return RemoteWorkflowHandle(
             workflow_id=run.run_id,
             state=self.state,
-            output_files=wf.output_files
+            output_files=wf.output_files()
         )
 
     def download_file(self, workflow_id, source, target):
