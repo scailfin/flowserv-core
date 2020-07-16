@@ -545,7 +545,9 @@ def git_clone(repourl):
     return projectdir
 
 
-def read_description(projectdir, name, description, instructions, specfile):
+def read_description(
+    projectdir, name, description=None, instructions=None, specfile=None
+):
     """Read the project description file from the project folder. Looks for a
     file with the following names: flowserv.json, flowserv.yaml, flowserv.yml.
 

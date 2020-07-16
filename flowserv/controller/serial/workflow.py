@@ -38,7 +38,6 @@ class SerialWorkflow(object):
         self.template = template
         self.arguments = arguments
 
-    @property
     def commands(self):
         """Get expanded commands from template workflow specification. The
         commands within each step of the serial workflow specification are
@@ -85,7 +84,6 @@ class SerialWorkflow(object):
             result.append(script)
         return result
 
-    @property
     def output_files(self):
         """Replace references to template parameters in the list of output
         files in the workflow specification.
@@ -106,7 +104,6 @@ class SerialWorkflow(object):
             parameters=self.template.parameters
         )
 
-    @property
     def upload_files(self):
         """Get a list of all input files from the workflow specification that
         need to be uploaded for a new workflow run. This is a wrapper around
