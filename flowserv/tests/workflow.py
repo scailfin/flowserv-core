@@ -319,7 +319,7 @@ def read_template(sourcedir, rundir, specfile=None):
     flowserv.model.template.base.WorkflowTemplate
     """
     # Read project metadata from the manifest.
-    projectmeta = repo.read_description(
+    projectmeta = repo.read_manifest(
         projectdir=sourcedir,
         name=util.get_short_identifier(),
         specfile=specfile

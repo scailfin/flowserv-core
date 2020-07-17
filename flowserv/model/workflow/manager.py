@@ -46,7 +46,7 @@ CONFIG_FILES = list()
 for suffix in DEFAULT_SPECSUFFIXES:
     CONFIG_FILES.append('flowserv' + suffix)
 
-"""Labels for the project description file."""
+"""Labels for the project manifest file."""
 DESCRIPTION = 'description'
 FILES = 'files'
 INSTRUCTIONS = 'instructions'
@@ -166,7 +166,7 @@ class WorkflowManager(object):
         # Read project metadata from description file. Override with given
         # arguments
         try:
-            projectmeta = read_description(
+            projectmeta = read_manifest(
                 projectdir=projectdir,
                 name=name,
                 description=description,
@@ -442,7 +442,7 @@ def copy_files(projectmeta, projectdir, templatedir):
     Parameters
     ----------
     projectmeta: dict
-        Project metadata information from the project description file.
+        Project metadata information from the project manifest file.
     projectdir: string
         Path to the base directory containing the project resource files.
     templatedir: string
@@ -459,7 +459,7 @@ def copy_files(projectmeta, projectdir, templatedir):
         for filename in os.listdir(projectdir):
             files.append((os.path.join(projectdir, filename), filename))
     else:
-        for fspec in projectmeta.get(FILES, [{SOURCE: ''}]):
+        for fspec in projectmeta.get(FILES, []):
             source = os.path.join(projectdir, fspec[SOURCE])
             target = fspec.get(TARGET, '')
             if not os.path.isdir(source):
@@ -480,7 +480,7 @@ def get_unique_name(projectmeta, sourcedir, repourl, existing_names):
     Parameters
     ----------
     projectmeta: dict
-        Project metadata information from the project description file.
+        Project metadata information from the project manifest file.
     sourcedir: string
         Directory containing the workflow static files and the workflow
         template specification.
@@ -545,10 +545,10 @@ def git_clone(repourl):
     return projectdir
 
 
-def read_description(
+def read_manifest(
     projectdir, name, description=None, instructions=None, specfile=None
 ):
-    """Read the project description file from the project folder. Looks for a
+    """Read the project manifest file from the project folder. Looks for a
     file with the following names: flowserv.json, flowserv.yaml, flowserv.yml.
 
     Replaces properties with the given arguments. Raises a ValueError if no
@@ -615,7 +615,7 @@ def read_template(projectmeta, projectdir, templatedir, default_filenames):
     Parameters
     ----------
     projectmeta: dict
-        Project metadata information from the project description file.
+        Project metadata information from the project manifest file.
     projectdir: string
         Path to the base directory containing the project resource files.
     templatedir: string

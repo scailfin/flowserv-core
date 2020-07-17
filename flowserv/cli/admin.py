@@ -150,7 +150,6 @@ def init(dir=None, force=False):
         click.confirm('Continue?', default=True, abort=True)
     # Create a new instance of the database
     try:
-        print('init database')
         DB().init()
     except err.MissingConfigurationError as ex:
         click.echo(str(ex))
