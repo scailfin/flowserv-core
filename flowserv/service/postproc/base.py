@@ -8,9 +8,10 @@
 
 """Definitions of constants for post=processing workflows."""
 
-from flowserv.model.parameter.base import TemplateParameter
+import os
 
-import flowserv.model.parameter.declaration as pd
+from flowserv.model.parameter.files import FileParameter
+from flowserv.model.template.parameter import ParameterIndex
 
 
 """Names for files and folders that contain run result files and run metadata.
@@ -29,9 +30,11 @@ LABEL_FILES = 'files'
 only the declaration for the runs folder.
 """
 PARA_RUNS = 'runs'
-PARAMETERS = [
-    TemplateParameter(obj=pd.parameter_declaration(
-        identifier=PARA_RUNS,
-        data_type=pd.DT_FILE
-    ))
-]
+PARAMETER = FileParameter(
+    para_id=PARA_RUNS,
+    name=PARA_RUNS,
+    index=0,
+    target=os.path.join(RUNS_DIR, RUNS_FILE)
+)
+PARAMETERS = ParameterIndex()
+PARAMETERS[PARAMETER.para_id] = PARAMETER

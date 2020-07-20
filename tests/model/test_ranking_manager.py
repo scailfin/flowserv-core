@@ -10,6 +10,8 @@
 
 import os
 
+from flowserv.model.parameter.numeric import PARA_FLOAT, PARA_INT
+from flowserv.model.parameter.string import PARA_STRING
 from flowserv.model.ranking import RankingManager
 from flowserv.model.workflow.fs import WorkflowFileSystem
 from flowserv.model.workflow.manager import WorkflowManager
@@ -18,7 +20,6 @@ from flowserv.model.template.schema import (
     ResultSchema, ResultColumn, SortColumn
 )
 
-import flowserv.model.parameter.declaration as pd
 import flowserv.model.workflow.state as st
 import flowserv.util as util
 import flowserv.tests.model as model
@@ -30,20 +31,20 @@ RESULT_FILE_ID = 'results.json'
 SCHEMA_1 = ResultSchema(
     result_file=RESULT_FILE_ID,
     columns=[
-        ResultColumn('count', 'Total Count', pd.DT_INTEGER),
-        ResultColumn('avg', 'avg', pd.DT_DECIMAL),
-        ResultColumn('name', 'name', pd.DT_STRING, required=False)
+        ResultColumn('count', 'Total Count', PARA_INT),
+        ResultColumn('avg', 'avg', PARA_FLOAT),
+        ResultColumn('name', 'name', PARA_STRING, required=False)
     ],
-    order_by=[SortColumn(identifier='count')]
+    order_by=[SortColumn(column_id='count')]
 )
 
 SCHEMA_2 = ResultSchema(
     result_file=RESULT_FILE_ID,
     columns=[
-        ResultColumn('min', 'min', pd.DT_INTEGER, path='values/min'),
-        ResultColumn('max', 'max', pd.DT_INTEGER, path='max')
+        ResultColumn('min', 'min', PARA_INT, path='values/min'),
+        ResultColumn('max', 'max', PARA_INT, path='max')
     ],
-    order_by=[SortColumn(identifier='min', sort_desc=False)]
+    order_by=[SortColumn(column_id='min', sort_desc=False)]
 )
 
 
@@ -152,7 +153,7 @@ def test_multi_success_runs(database, tmpdir):
         assert rank_order == desc_order[::-1]
         ranking = rankings.get_ranking(
             wf,
-            order_by=[SortColumn(identifier='count', sort_desc=False)]
+            order_by=[SortColumn(column_id='count', sort_desc=False)]
         )
         rank_order = [e.run_id for e in ranking]
         assert rank_order == asc_order
@@ -166,7 +167,7 @@ def test_multi_success_runs(database, tmpdir):
         assert rank_order == count_order[::-1]
         ranking = rankings.get_ranking(
             wf,
-            order_by=[SortColumn(identifier='count', sort_desc=False)],
+            order_by=[SortColumn(column_id='count', sort_desc=False)],
             include_all=True
         )
         rank_order = [e.run_id for e in ranking]

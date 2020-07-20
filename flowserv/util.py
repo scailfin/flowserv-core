@@ -30,7 +30,7 @@ FORMAT_JSON = 'JSON'
 FORMAT_YAML = 'YAML'
 
 
-def copy_files(files, target_dir, overwrite=True):
+def copy_files(files, target_dir, overwrite=True, raise_error=False):
     """Copy list of files to a target directory. Expects a list of tuples that
     contain the path to the source file on local disk and the relative target
     path for the file in the given target directory.
@@ -44,6 +44,9 @@ def copy_files(files, target_dir, overwrite=True):
         workflow run)
     overwrite: bool, default=True
         Do not copy files if flag is False and the destination exists.
+    raise_error: bool, default=False
+        Raise an error when an existing target file is encountered if this flag
+        is true and overwrite is False.
     """
     for source, target in files:
         # The target path is relative to the target directory. Create the
@@ -52,8 +55,11 @@ def copy_files(files, target_dir, overwrite=True):
         dst = os.path.join(target_dir, target)
         while dst.endswith('/'):
             dst = dst[:-1]
-        # Skip if destination exists and overwrite flag is False.
+        # Skip or raise an error if the destination exists and the overwrite
+        # flag is False.
         if not overwrite and os.path.exists(dst):
+            if raise_error:
+                raise ValueError('{} exists'.format(dst))
             continue
         # Ensure that the parent directory of the target exists.
         dst_parent = os.path.dirname(dst)

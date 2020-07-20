@@ -10,14 +10,14 @@ import os
 import shutil
 import tempfile
 
-from flowserv.controller.serial.workflow import SerialWorkflow
 from flowserv.model.parameter.base import InputFile
 from flowserv.model.parameter.value import TemplateArgument
+from flowserv.model.template.base import WorkflowTemplate
+from flowserv.model.workflow.serial import SerialWorkflow
 from flowserv.model.workflow.state import StatePending
 
 import flowserv.controller.serial.engine as serial
 import flowserv.error as err
-import flowserv.model.template.base as tmpl
 import flowserv.model.workflow.manager as repo
 import flowserv.model.workflow.state as serialize
 import flowserv.service.postproc.base as postbase
@@ -56,14 +56,14 @@ def prepare_postproc_data(templatefile, runs):
     string
     """
     # Read workflow templatefrom the given file.
-    template = tmpl.WorkflowTemplate.from_dict(
+    template = WorkflowTemplate.from_dict(
         doc=util.read_object(templatefile),
         sourcedir=os.path.dirname(templatefile),
         validate=True
     )
     postproc_spec = template.postproc_spec
-    pp_inputs = postproc_spec.get(tmpl.PPLBL_INPUTS, {})
-    pp_files = pp_inputs.get(tmpl.PPLBL_FILES, [])
+    pp_inputs = postproc_spec.get('inputs', {})
+    pp_files = pp_inputs.get('files', [])
     # Prepare temporary directory with result files for all
     # runs in the ranking. The created directory is the only
     # run argument.
@@ -107,9 +107,9 @@ def run_postproc_workflow(sourcedir, runs, specfile=None, rundir=None):
         specfile=specfile
     )
     postproc_spec = template.postproc_spec
-    workflow_spec = postproc_spec.get(tmpl.PPLBL_WORKFLOW)
-    pp_inputs = postproc_spec.get(tmpl.PPLBL_INPUTS, {})
-    pp_files = pp_inputs.get(tmpl.PPLBL_FILES, [])
+    workflow_spec = postproc_spec.get('workflow')
+    pp_inputs = postproc_spec.get('inputs', {})
+    pp_files = pp_inputs.get('files', [])
     # Prepare temporary directory with result files for all
     # runs in the ranking. The created directory is the only
     # run argument.
@@ -122,20 +122,10 @@ def run_postproc_workflow(sourcedir, runs, specfile=None, rundir=None):
         ranking=ranking,
         run_manager=RunIndex(ranking)
     )
-    runargs = {
-        postbase.PARA_RUNS: TemplateArgument(
-            parameter=postbase.PARAMETERS[0],
-            value=InputFile(
-                filename=datadir,
-                target_path=pp_inputs.get(
-                    tmpl.PPLBL_RUNS,
-                    postbase.RUNS_DIR
-                )
-            )
-        )
-    }
+    dst = pp_inputs.get('runs', postbase.RUNS_DIR)
+    runargs = {postbase.PARA_RUNS: InputFile(source=datadir, target=dst)}
     wf = SerialWorkflow(
-        template=tmpl.WorkflowTemplate(
+        template=WorkflowTemplate(
             workflow_spec=workflow_spec,
             sourcedir=template.sourcedir,
             parameters=postbase.PARAMETERS
@@ -196,7 +186,7 @@ def run_workflow(sourcedir, arguments=dict(), specfile=None, rundir=None):
     )
     # Prepare arguments for workflow run.
     runargs = dict()
-    for para in template.list_parameters():
+    for para in template.parameters.values():
         if para.identifier in arguments:
             if para.is_file():
                 fname, target_path = arguments[para.identifier]

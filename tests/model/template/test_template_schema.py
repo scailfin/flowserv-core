@@ -10,197 +10,146 @@
 
 import pytest
 
+from flowserv.model.parameter.numeric import PARA_FLOAT, PARA_INT
+from flowserv.model.parameter.string import PARA_STRING
+from flowserv.model.template.schema import (
+    ResultColumn, ResultSchema, SortColumn
+)
+
 import flowserv.error as err
-import flowserv.model.parameter.declaration as pd
-import flowserv.model.template.schema as schema
 
 
-def test_column_serialization():
-    """Test serialization of column objects."""
-    # Ensure the required default value is set properly
-    col = schema.ResultColumn(
-        identifier='col_1',
-        name='Column 1',
-        data_type=pd.DT_INTEGER
-    )
-    assert col.identifier == 'col_1'
-    assert col.name == 'Column 1'
-    assert col.data_type == pd.DT_INTEGER
-    assert col.required
-    assert type(col.required) == bool
-    col = schema.ResultColumn.from_dict(col.to_dict())
-    assert col.identifier == 'col_1'
-    assert col.name == 'Column 1'
-    assert col.data_type == pd.DT_INTEGER
-    assert col.required
-    assert type(col.required) == bool
-    # Test serialization if required value is given
-    col = schema.ResultColumn(
-        identifier='col_1',
-        name='Column 1',
-        data_type=pd.DT_INTEGER,
-        required=False
-    )
-    assert col.identifier == 'col_1'
-    assert col.name == 'Column 1'
-    assert col.data_type == pd.DT_INTEGER
-    assert not col.required
-    assert type(col.required) == bool
-    col = schema.ResultColumn.from_dict(col.to_dict())
-    assert col.identifier == 'col_1'
-    assert col.name == 'Column 1'
-    assert col.data_type == pd.DT_INTEGER
-    assert not col.required
-    assert type(col.required) == bool
+def test_result_column_path():
+    """Test result column serialiations with optional query path."""
+    doc = {'id': '0', 'name': 'col0', 'type': PARA_STRING, 'path': 'x/y/z'}
+    col = ResultColumn.from_dict(ResultColumn.from_dict(doc).to_dict())
+    assert col.jpath() == ['x', 'y', 'z']
+    doc = {'id': '0', 'name': 'col0', 'type': PARA_STRING}
+    col = ResultColumn.from_dict(ResultColumn.from_dict(doc).to_dict())
+    assert col.jpath() == ['0']
+
+
+def test_result_column_type():
+    """Test data type and cast function for schema columns."""
+    col = ResultColumn(column_id='0', name='0', type_id=PARA_INT)
+    assert col.cast('3') == 3
+    col = ResultColumn(column_id='0', name='0', type_id=PARA_FLOAT)
+    assert col.cast('3.5') == 3.5
+    with pytest.raises(ValueError):
+        col.cast('XYZ')
+    # Error for invalid column type.
+    with pytest.raises(err.InvalidTemplateError):
+        ResultColumn(column_id='0', name='0', type_id='file')
+    col = ResultColumn(column_id='0', name='0', type_id=PARA_STRING)
+    assert col.cast('3.5') == '3.5'
+    assert col.cast('XYZ') == 'XYZ'
 
 
 def test_schema_serialization():
-    """Test creating schema objects from dictionaries and vice versa."""
-    columns = [
-        schema.ResultColumn(
-            identifier='col_1',
-            name='Column 1',
-            data_type=pd.DT_INTEGER
-        ).to_dict(),
-        schema.ResultColumn(
-            identifier='col_2',
-            name='Column 2',
-            data_type=pd.DT_DECIMAL,
-            required=True
-        ).to_dict(),
-        schema.ResultColumn(
-            identifier='col_3',
-            name='Column 3',
-            data_type=pd.DT_STRING,
-            required=False
-        ).to_dict()
-    ]
-    s = schema.ResultSchema.from_dict({
-        schema.SCHEMA_RESULTFILE: 'results.json',
-        schema.SCHEMA_COLUMNS: columns
-    })
-    validate_schema(s)
-    assert len(s.get_default_order()) == 1
-    assert s.get_default_order()[0].sort_desc
-    # Recreate the object from its serialization
-    s = schema.ResultSchema.from_dict(s.to_dict())
-    validate_schema(s)
-    # Schema with ORDER BY section
-    s = schema.ResultSchema.from_dict({
-        schema.SCHEMA_RESULTFILE: 'results.json',
-        schema.SCHEMA_COLUMNS: columns,
-        schema.SCHEMA_ORDERBY: [
-            schema.SortColumn(identifier='col_1').to_dict(),
-            schema.SortColumn(
-                identifier='col_2',
-                sort_desc=False
-            ).to_dict()
+    """Test creating a result schema from a valid serialization."""
+    # Schema without 'Order By' clause.
+    schema = ResultSchema.from_dict(ResultSchema.from_dict({
+        'file': 'results/analytics.json',
+        'schema': [
+            {'id': '0', 'name': 'col0', 'type': PARA_STRING},
+            {'id': '1', 'name': 'col1', 'type': PARA_STRING}
         ]
-    })
-    validate_schema(s)
-    assert len(s.order_by) == 2
-    assert s.order_by[0].identifier == 'col_1'
-    assert s.order_by[0].sort_desc
-    assert s.order_by[1].identifier == 'col_2'
-    assert not s.order_by[1].sort_desc
-    # Recreate the object from its serialization
-    s = schema.ResultSchema.from_dict(s.to_dict())
-    validate_schema(s)
-    assert len(s.order_by) == 2
-    assert s.order_by[0].identifier == 'col_1'
-    assert s.order_by[0].sort_desc
-    assert s.order_by[1].identifier == 'col_2'
-    assert not s.order_by[1].sort_desc
-    # Sort column with only the identifier
-    col = schema.SortColumn.from_dict({schema.SORT_ID: 'ABC'})
-    assert col.identifier == 'ABC'
-    assert col.sort_desc
-    # Test different error cases
-    # - Invalid element in dictionary
+    }).to_dict())
+    assert schema.result_file == 'results/analytics.json'
+    assert len(schema.columns) == 2
+    sort_col = schema.get_default_order()[0]
+    assert sort_col.to_dict() == {'id': '0', 'sortDesc': True}
+    # Schema with 'Order By' clause.
+    schema = ResultSchema.from_dict(ResultSchema.from_dict({
+        'file': 'results/analytics.json',
+        'schema': [
+            {'id': '0', 'name': 'col0', 'type': PARA_STRING},
+            {'id': '1', 'name': 'col1', 'type': PARA_STRING}
+        ],
+        'orderBy': [{'id': '1', 'sortDesc': False}]
+    }).to_dict())
+    assert schema.result_file == 'results/analytics.json'
+    assert len(schema.columns) == 2
+    sort_col = schema.get_default_order()[0]
+    assert sort_col.to_dict() == {'id': '1', 'sortDesc': False}
+    # Assert that None is returned if the serialization is None
+    assert ResultSchema.from_dict(None) is None
+    # Error for duplicate column names.
     with pytest.raises(err.InvalidTemplateError):
-        doc = s.to_dict()
-        doc['unknown'] = 'A'
-        schema.ResultSchema.from_dict(doc)
-    # - Invalid element in result column dictionary
-    doc = schema.ResultColumn(
-        identifier='col_1',
-        name='Column 1',
-        data_type=pd.DT_INTEGER
-    ).to_dict()
-    doc['sortOrder'] = 'DESC'
-    with pytest.raises(err.InvalidTemplateError):
-        schema.ResultColumn.from_dict(doc)
-    # - Invalid element in sort column dictionary
-    doc = schema.SortColumn(identifier='col_1').to_dict()
-    doc['sortOrder'] = 'DESC'
-    with pytest.raises(err.InvalidTemplateError):
-        schema.SortColumn.from_dict(doc)
-    # - Missing element in schema dictionary
-    with pytest.raises(err.InvalidTemplateError):
-        doc = s.to_dict()
-        del doc[schema.SCHEMA_RESULTFILE]
-        schema.ResultSchema.from_dict(doc)
-    # - Missing element in result column dictionary
-    doc = schema.ResultColumn(
-        identifier='col_1',
-        name='Column 1',
-        data_type=pd.DT_INTEGER
-    ).to_dict()
-    del doc[schema.COLUMN_NAME]
-    with pytest.raises(err.InvalidTemplateError):
-        schema.ResultColumn.from_dict(doc)
-    # - Missing element in sort column dictionary
-    with pytest.raises(err.InvalidTemplateError):
-        schema.SortColumn.from_dict({'name': 'ABC'})
-    # - Invalid data type for column
-    with pytest.raises(err.InvalidTemplateError):
-        schema.ResultColumn(
-            identifier='col_1',
-            name='Column 1',
-            data_type=pd.DT_LIST
-        )
-    # - Reference unknown attribute
-    with pytest.raises(err.InvalidTemplateError):
-        schema.ResultSchema.from_dict({
-            schema.SCHEMA_RESULTFILE: 'results.json',
-            schema.SCHEMA_COLUMNS: columns,
-            schema.SCHEMA_ORDERBY: [
-                schema.SortColumn(identifier='col_1').to_dict(),
-                schema.SortColumn(identifier='col_x').to_dict()
+        ResultSchema.from_dict({
+            'file': 'results/analytics.json',
+            'schema': [
+                {'id': '0', 'name': 'col0', 'type': PARA_STRING},
+                {'id': '1', 'name': 'col0', 'type': PARA_STRING}
             ]
+        })
+    # Error for duplicate column identifier.
+    with pytest.raises(err.InvalidTemplateError):
+        ResultSchema.from_dict({
+            'file': 'results/analytics.json',
+            'schema': [
+                {'id': '0', 'name': 'col0', 'type': PARA_STRING},
+                {'id': '0', 'name': 'col1', 'type': PARA_STRING}
+            ]
+        })
+    # Error when referencing unknown column in 'Order By' clause.
+    with pytest.raises(err.InvalidTemplateError):
+        ResultSchema.from_dict({
+            'file': 'results/analytics.json',
+            'schema': [
+                {'id': '0', 'name': 'col0', 'type': PARA_STRING},
+                {'id': '1', 'name': 'col1', 'type': PARA_STRING}
+            ],
+            'orderBy': [{'id': '2', 'sortDesc': False}]
+        })
+    # Invalid elemtn in specification.
+    ResultSchema.from_dict({
+        'file': 'results/analytics.json',
+        'schema': [{'id': '0', 'name': 'col0', 'type': PARA_STRING}],
+        'notValid': 1
+    }, validate=False)
+    # Ensure that the validate flag is passed through.
+    ResultSchema.from_dict({
+        'file': 'results/analytics.json',
+        'schema': [{
+            'id': '0',
+            'name': 'col0',
+            'type': PARA_STRING,
+            'notValid': True
+        }],
+        'orderBy': [{'id': '0', 'noSort': False}]
+    }, validate=False)
+    with pytest.raises(err.InvalidTemplateError):
+        ResultSchema.from_dict({
+            'file': 'results/analytics.json',
+            'schema': [{'id': '0', 'name': 'col0', 'type': PARA_STRING}],
+            'notValid': 1
+        })
+    with pytest.raises(err.InvalidTemplateError):
+        ResultSchema.from_dict({
+            'file': 'results/analytics.json',
+            'schema': [{
+                'id': '0',
+                'name': 'col0',
+                'type': PARA_STRING,
+                'notValid': True
+            }]
         })
 
 
-def validate_column(column, identifier, name, data_type, required):
-    """Ensure that the given column matches the respective arguments."""
-    assert column.identifier == identifier
-    assert column.name == name
-    assert column.data_type == data_type
-    assert column.required == required
-
-
-def validate_schema(schema):
-    """Validate that the given schema."""
-    assert len(schema.columns) == 3
-    assert not schema.is_empty()
-    validate_column(
-        column=schema.columns[0],
-        identifier='col_1',
-        name='Column 1',
-        data_type=pd.DT_INTEGER,
-        required=True
-    )
-    validate_column(
-        column=schema.columns[1],
-        identifier='col_2',
-        name='Column 2',
-        data_type=pd.DT_DECIMAL,
-        required=True
-    )
-    validate_column(
-        column=schema.columns[2],
-        identifier='col_3',
-        name='Column 3',
-        data_type=pd.DT_STRING,
-        required=False
-    )
+def test_sort_column_serialization():
+    """Test serailization of sore columns."""
+    doc = {'id': '0', 'sortDesc': False}
+    col = SortColumn.from_dict(SortColumn.from_dict(doc).to_dict())
+    assert col.column_id == '0'
+    assert not col.sort_desc
+    # Default sort order is desc.
+    doc = {'id': '0'}
+    col = SortColumn.from_dict(SortColumn.from_dict(doc).to_dict())
+    assert col.column_id == '0'
+    assert col.sort_desc
+    # Invalid column serialization.
+    with pytest.raises(KeyError):
+        SortColumn.from_dict({}, validate=False)
+    with pytest.raises(err.InvalidTemplateError):
+        SortColumn.from_dict({})

@@ -15,7 +15,7 @@ import os
 import flowserv.util as util
 
 
-DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../../.files')
+DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), './.files')
 INPUT_DIR = os.path.join(DIR, 'workflows/helloworld')
 INPUT_FILE = os.path.join(DIR, 'schema.json')
 

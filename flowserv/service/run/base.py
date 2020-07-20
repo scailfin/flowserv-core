@@ -13,21 +13,14 @@ manipulate workflow runs and their results.
 import logging
 import shutil
 
-from flowserv.model.parameter.base import InputFile
-from flowserv.model.parameter.value import TemplateArgument
+from flowserv.model.parameter.files import InputFile
 from flowserv.model.template.base import WorkflowTemplate
+from flowserv.service.run.argument import ARG, FILE, GET_ARG, GET_FILE, IS_FILE
 
 import flowserv.error as err
 import flowserv.util as util
-import flowserv.model.template.base as tmpl
 import flowserv.service.postproc.base as postbase
 import flowserv.service.postproc.util as postutil
-
-
-"""Labels for start run request bodies."""
-ARG_AS = 'as'
-ARG_ID = 'id'
-ARG_VALUE = 'value'
 
 
 class RunService(object):
@@ -338,7 +331,7 @@ class RunService(object):
         group_id: string
             Unique workflow group identifier
         arguments: list(dict)
-            List of user provided arguments for template parameters
+            List of user provided arguments for template parameters.
         user_id: string
             Unique user identifier
 
@@ -371,49 +364,32 @@ class RunService(object):
         )
         # Create instances of the template arguments from the given list of
         # values. At this point we only distinguish between scalar values and
-        # input files. Arguments of type record and list have to be added in a
-        # later version.
+        # input files. Also create a mapping from he argument list that is used
+        # stored in the database.
         run_args = dict()
         for arg in arguments:
-            # Validate the given argument
-            try:
-                util.validate_doc(
-                    doc=arg,
-                    mandatory=[ARG_ID, ARG_VALUE],
-                    optional=[ARG_AS]
-                )
-            except ValueError as ex:
-                raise err.InvalidArgumentError(str(ex))
-            arg_id = arg[ARG_ID]
-            arg_val = arg[ARG_VALUE]
+            arg_id, arg_val = GET_ARG(arg)
             # Raise an error if multiple values are given for the same argument
             if arg_id in run_args:
                 raise err.DuplicateArgumentError(arg_id)
-            para = template.get_parameter(arg_id)
+            para = template.parameters.get(arg_id)
             if para is None:
                 raise err.UnknownParameterError(arg_id)
-            if para.is_file():
+            if IS_FILE(arg_val):
+                file_id, target = GET_FILE(arg_val)
                 # The argument value is expected to be the identifier of an
                 # previously uploaded file. This will raise an exception if the
                 # file identifier is unknown.
                 fh = self.group_manager.get_file(
                     group_id=group_id,
-                    file_id=arg_val
+                    file_id=file_id
                 )
-                val = TemplateArgument(
-                    parameter=para,
-                    value=fh.to_input(para, target_path=arg.get(ARG_AS)),
-                    validate=True
+                run_args[arg_id] = para.to_argument(
+                    value=fh.filename,
+                    target=target
                 )
-            elif para.is_list() or para.is_record():
-                raise err.InvalidArgumentError('unsupported parameter type')
             else:
-                val = TemplateArgument(
-                    parameter=para,
-                    value=arg_val,
-                    validate=True
-                )
-            run_args[arg_id] = val
+                run_args[arg_id] = para.to_argument(arg_val)
         # Before we start creating directories and copying files make sure that
         # there are values for all template parameters (either in the arguments
         # dictionary or set as default values)
@@ -421,7 +397,7 @@ class RunService(object):
         # Start the run.
         run = self.run_manager.create_run(
             group=group,
-            arguments=run_args
+            arguments=arguments
         )
         run_id = run.run_id
         # Execute the benchmark workflow for the given set of arguments.
@@ -498,9 +474,9 @@ def run_postproc_workflow(
 ):
     """Run post-processing workflow for a workflow template.
     """
-    workflow_spec = postproc_spec.get(tmpl.PPLBL_WORKFLOW)
-    pp_inputs = postproc_spec.get(tmpl.PPLBL_INPUTS, {})
-    pp_files = pp_inputs.get(tmpl.PPLBL_FILES, [])
+    workflow_spec = postproc_spec.get('workflow')
+    pp_inputs = postproc_spec.get('inputs', {})
+    pp_files = pp_inputs.get('files', [])
     # Prepare temporary directory with result files for all
     # runs in the ranking. The created directory is the only
     # run argument
@@ -511,28 +487,20 @@ def run_postproc_workflow(
             ranking=ranking,
             run_manager=run_manager
         )
-        postproc_arguments = {
-            postbase.PARA_RUNS: TemplateArgument(
-                parameter=postbase.PARAMETERS[0],
-                value=InputFile(
-                    filename=datadir,
-                    target_path=pp_inputs.get(
-                        tmpl.PPLBL_RUNS,
-                        postbase.RUNS_DIR
-                    )
-                )
-            )
-        }
+        dst = pp_inputs.get('runs', postbase.RUNS_DIR)
+        run_args = {postbase.PARA_RUNS: InputFile(source=datadir, target=dst)}
+        arg_list = [ARG(postbase.PARA_RUNS, FILE(datadir, dst))]
     except (AttributeError, OSError, IOError) as ex:
         logging.error(ex)
         strace = util.stacktrace(ex)
-        postproc_arguments = dict()
+        run_args = dict()
+        arg_list = []
     # Create a new run for the workflow. The identifier for the run group is
     # None.
     workflow.postproc_ranking_key = runs
     run = run_manager.create_run(
         workflow=workflow,
-        arguments=postproc_arguments,
+        arguments=arg_list,
         runs=runs
     )
     if strace is not None:
@@ -553,7 +521,7 @@ def run_postproc_workflow(
                 sourcedir=workflow.get_template().sourcedir,
                 parameters=postbase.PARAMETERS
             ),
-            arguments=postproc_arguments,
+            arguments=run_args,
             service=service
         )
         # Update the post-processing workflow run state if it is

@@ -31,13 +31,15 @@ workflow:
 parameters:
     - id: names
       name: 'Input file'
-      datatype: file
-      as: data/names.txt
+      type: file
+      target: data/names.txt
     - id: sleeptime
-      datatype: int
+      name: 'Sleep time (s)'
+      type: int
       defaultValue: 10
     - id: greeting
-      datatype: string
+      name: 'Greeting'
+      type: string
       defaultValue: 'Hello'
 modules:
     - id: 'main'
@@ -48,10 +50,10 @@ results:
     schema:
         - id: avg_count
           name: 'Avg. Characters per Line'
-          type: decimal
+          type: float
         - id: max_len
           name: 'Max. Output Line Length'
-          type: decimal
+          type: float
         - id: max_line
           name: 'Longest Output Line'
           type: string

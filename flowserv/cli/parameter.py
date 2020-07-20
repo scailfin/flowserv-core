@@ -8,10 +8,16 @@
 
 """Helper methods for reading workflow template parameters."""
 
+from flowserv.model.parameter.boolean import PARA_BOOL
+from flowserv.model.parameter.files import InputFile, PARA_FILE
+from flowserv.model.parameter.numeric import PARA_FLOAT, PARA_INT
+
 from flowserv.scanner import Scanner
 
+import flowserv.error as err
 
-def read(parameters, scanner=None, files=None):
+
+def read(parameters, scanner=None):
     """Read values for each of the template parameters using a given input
     scanner. If no scanner is given, values are read from standard input.
 
@@ -38,25 +44,11 @@ def read(parameters, scanner=None, files=None):
     sc = scanner if scanner is not None else Scanner()
     arguments = dict()
     for para in parameters:
-        # Skip nested parameter
-        if para.parent is not None:
-            continue
-        if para.is_list():
-            raise ValueError('lists are not supported yet')
-        elif para.is_record():
-            # A record can only appear once and all record children have
-            # global unique identifier. Thus, we can add values for each
-            # of the children directly to the arguments dictionary
-            for child in para.children:
-                val = read_parameter(child, sc, prompt_prefix='  ')
-                arguments[child.identifier] = val
-        else:
-            val = read_parameter(para, sc, files=files)
-            arguments[para.identifier] = val
+        arguments[para.para_id] = read_parameter(para, sc)
     return arguments
 
 
-def read_parameter(para, scanner, prompt_prefix='', files=None):
+def read_parameter(para, scanner):
     """Read value for a given template parameter declaration. Prompts the
     user to enter a value for the given parameter and returns the converted
     value that was entered by the user.
@@ -67,46 +59,31 @@ def read_parameter(para, scanner, prompt_prefix='', files=None):
         Workflow template parameter declaration
     scanner: flowserv.scanner.Scanner
         Input scanner.
-    prompt_prefix: string, default=''
-        Optional input prompt prefix.
-    files: list
-        List of (file_id, name, timestamp) pairs
 
     Returns
     -------
     bool or float or int or string or tuple(string, string)
     """
     while True:
-        print(prompt_prefix + para.prompt(), end='')
+        print(para.prompt(), end='')
         try:
-            if para.is_bool():
+            if para.type_id == PARA_BOOL:
                 return scanner.next_bool(default_value=para.default_value)
-            elif para.is_file():
-                # The scanner is primarily intended for the client command line
-                # interface. When submitting a run with file parameters we only
-                # need to read the identifier of a previously uploaded file. If
-                # the optional target path is defined as 'variable' we also
-                # need to read the target path. Therefore, the result here is a
-                # tuple of filename and target path. The target path may be
-                # None.
-                if files is not None:
-                    print('\n\nAvailable files')
-                    print('---------------')
-                    for file_id, name, ts in files:
-                        print('{}\t{} ({})'.format(file_id, name, ts))
-                    print('\n{}: '.format(para.name), end='')
-                filename = scanner.next_file(default_value=para.default_value)
+            elif para.type_id == PARA_FILE:
+                filename = scanner.next_file()
                 target_path = None
-                if para.has_constant() and para.as_input():
+                if para.target is None:
                     print('Target Path:', end='')
                     target_path = scanner.next_string()
                     if target_path == '':
                         target_path = para.default_value
-                return (filename, target_path)
-            elif para.is_float():
+                else:
+                    target_path = para.target
+                return InputFile(filename, target_path)
+            elif para.type_id == PARA_FLOAT:
                 return scanner.next_float(default_value=para.default_value)
-            elif para.is_int():
+            elif para.type_id == PARA_INT:
                 return scanner.next_int(default_value=para.default_value)
             return scanner.next_string(default_value=para.default_value)
-        except ValueError as ex:
+        except (ValueError, err.UnknownFileError) as ex:
             print(ex)

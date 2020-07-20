@@ -138,7 +138,7 @@ class RankingManager(object):
         if order_by is None:
             order_by = result_schema.get_default_order()
         for sort_col in order_by[::-1]:
-            sort_key = sort_col.identifier
+            sort_key = sort_col.column_id
             entries = sorted(
                 entries,
                 key=lambda e: e.get(sort_key),

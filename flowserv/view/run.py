@@ -105,12 +105,7 @@ class RunSerializer(Serializer):
         if run.group_id is not None:
             doc[LABELS['RUN_GROUP']] = run.group_id
         # Add run arguments
-        doc[LABELS['RUN_ARGUMENTS']] = [
-            {
-                LABELS['ARG_ID']: key,
-                LABELS['ARG_VALUE']: run.arguments[key]
-            } for key in run.arguments
-        ]
+        doc[LABELS['RUN_ARGUMENTS']] = run.arguments
         # Add group specific parameters
         if group is not None:
             parameters = group.parameters.values()

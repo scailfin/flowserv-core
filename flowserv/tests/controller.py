@@ -10,11 +10,12 @@
 modules.
 """
 
+from flowserv.model.parameter.numeric import PARA_FLOAT, PARA_INT
+from flowserv.model.parameter.string import PARA_STRING
 from flowserv.model.template.schema import ResultColumn, ResultSchema
 from flowserv.controller.base import WorkflowController
 from flowserv.controller.serial.engine import SerialWorkflowEngine
 
-import flowserv.model.parameter.declaration as pd
 import flowserv.model.workflow.state as st
 
 
@@ -23,9 +24,9 @@ RESULT_FILE_ID = 'results.json'
 BENCHMARK_SCHEMA = ResultSchema(
     result_file=RESULT_FILE_ID,
     columns=[
-        ResultColumn('col1', 'col1', pd.DT_INTEGER),
-        ResultColumn('col2', 'col2', pd.DT_DECIMAL),
-        ResultColumn('col3', 'col3', pd.DT_STRING, required=False)
+        ResultColumn('col1', 'col1', PARA_INT),
+        ResultColumn('col2', 'col2', PARA_FLOAT),
+        ResultColumn('col3', 'col3', PARA_STRING, required=False)
     ]
 )
 
@@ -88,7 +89,7 @@ class StateEngine(WorkflowController):
         template: flowserv.model.template.base.WorkflowTemplate
             Workflow template containing the parameterized specification and
             the parameter declarations.
-        arguments: dict(flowserv.model.parameter.value.TemplateArgument)
+        arguments: dict
             Dictionary of argument values for parameters in the template.
         service: contextlib,contextmanager, default=None
             Ignored. Included for API completeness.
@@ -100,33 +101,6 @@ class StateEngine(WorkflowController):
         state = st.StatePending()
         self.runs[run.run_id] = state
         return state
-
-    def modify_template(self, template, parameters):
-        """Modify a the workflow specification in a given template by adding
-        the a set of parameters. If a parameter in the added parameters set
-        already exists in the template the name, index, default value, the
-        value list and the required flag of the existing parameter are replaced
-        by the values of the given parameter.
-
-        Returns a modified workflow template. Raises an error if the parameter
-        identifier in the resulting template are no longer unique.
-
-        Parameters
-        ----------
-        template: flowserv.model.template.base.WorkflowTemplate
-            Workflow template handle.
-        parameters: dict(flowserv.model.parameter.base.TemplateParameter)
-            Additional template parameters
-
-        Returns
-        -------
-        flowserv.model.template.base.WorkflowTemplate
-
-        Raises
-        ------
-        flowserv.error.InvalidTemplateError
-        """
-        return SerialWorkflowEngine().modify_template(template, parameters)
 
     def start(self, run_id):
         """Set the run with the given identifier into running state. Returns

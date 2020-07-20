@@ -16,7 +16,7 @@ from flowserv.config.backend import CLEAR_BACKEND, DEFAULT_BACKEND
 from flowserv.config.database import FLOWSERV_DB
 from flowserv.controller.serial.engine import SerialWorkflowEngine
 from flowserv.service.api import service
-from flowserv.service.run import ARG_ID, ARG_VALUE
+from flowserv.service.run.argument import ARG, FILE
 from flowserv.tests.files import FakeStream
 from flowserv.tests.service import (
     create_group, create_user, create_workflow, start_run, upload_file
@@ -66,8 +66,8 @@ def test_postproc_workflow(tmpdir):
             file_id = upload_file(api, group_id, user_id, names)
             # Set the template argument values
             arguments = [
-                {ARG_ID: 'names', ARG_VALUE: file_id},
-                {ARG_ID: 'greeting', ARG_VALUE: 'Hi'}
+                ARG('names', FILE(file_id)),
+                ARG('greeting', 'Hi')
             ]
             run_id = start_run(api, group_id, user_id, arguments=arguments)
         # Poll workflow state every second.
@@ -152,8 +152,8 @@ def run_erroneous_workflow(service, engine, specfile):
         file_id = upload_file(api, group_id, user_id, names)
         # Run the workflow.
         arguments = [
-            {'id': 'names', 'value': file_id},
-            {'id': 'greeting', 'value': 'Hi'}
+            ARG('names', FILE(file_id)),
+            ARG('greeting', 'Hi')
         ]
         run_id = start_run(api, group_id, user_id, arguments=arguments)
     # Poll workflow state every second.

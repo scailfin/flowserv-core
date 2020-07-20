@@ -10,10 +10,46 @@
 REANA serial workflow specifications.
 """
 
+import os
+
 from string import Template
 
-from flowserv.controller.serial.step import Step
+import flowserv.error as err
 import flowserv.model.template.parameter as tp
+
+
+class Step(object):
+    """List of command line statements that are executed in a given
+    environment. The environment can, for example, specify a Docker image.
+    """
+    def __init__(self, env, commands=None):
+        """Initialize the object properties.
+
+        Parameters
+        ----------
+        env: string
+            Execution environment name
+        commands: list(string), optional
+            List of command line statements
+        """
+        self.env = env
+        self.commands = commands if commands is not None else list()
+
+    def add(self, cmd):
+        """Append a given command line statement to the list of commands in the
+        workflow step.
+
+        Parameters
+        ----------
+        cmd: string
+            Command line statement
+
+        Returns
+        -------
+        flowserv.model.template.step.Step
+        """
+        self.commands.append(cmd)
+        return self
 
 
 class SerialWorkflow(object):
@@ -32,8 +68,9 @@ class SerialWorkflow(object):
         template: flowserv.model.template.base.WorkflowTemplate
             Workflow template containing the parameterized specification and
             the parameter declarations
-        arguments: dict(flowserv.model.parameter.value.TemplateArgument)
-            Dictionary of argument values for parameters in the template
+        arguments: dict
+            Dictionary of argument values for parameters in the template. Maps
+            the parameter identifier to the provided argument value.
         """
         self.template = template
         self.arguments = arguments
@@ -67,7 +104,7 @@ class SerialWorkflow(object):
         # replacement.
         for key in self.arguments:
             if key not in workflow_parameters:
-                workflow_parameters[key] = self.arguments[key].get_value()
+                workflow_parameters[key] = str(self.arguments[key])
         # Add all command stings in workflow steps to result after replacing
         # references to parameters
         result = list()
@@ -106,16 +143,13 @@ class SerialWorkflow(object):
 
     def upload_files(self):
         """Get a list of all input files from the workflow specification that
-        need to be uploaded for a new workflow run. This is a wrapper around
-        the generic get_upload_files function, specific to the workflow
-        template syntax that is supported for serial workflows.
+        need to be uploaded for a new workflow run.
 
         Returns a list of tuples containing the full path to the source file on
         local disk and the relative target path for the uploaded file.
 
-        Raises errors if (i) an unknown parameter is referenced or (ii) if the
-        type of a referenced parameter in the input files section is not of
-        type file.
+        Raises errors if a parameter value is missing or if an unknown source
+        file is referenced.
 
         Returns
         -------
@@ -123,14 +157,37 @@ class SerialWorkflow(object):
 
         Raises
         ------
-        flowserv.error.InvalidTemplateError
         flowserv.error.MissingArgumentError
-        flowserv.error.UnknownParameterError
+        flowserv.error.UnknownFileError
         """
         workflow_spec = self.template.workflow_spec
-        return tp.get_upload_files(
-            template=self.template,
-            basedir=self.template.sourcedir,
-            files=workflow_spec.get('inputs', {}).get('files', []),
-            arguments=self.arguments,
-        )
+        basedir = self.template.sourcedir
+        files = workflow_spec.get('inputs', {}).get('files', [])
+        result = list()
+        for val in files:
+            # Set source and target values depending on whether the list
+            # entry references a template parameter or not.
+            if tp.is_parameter(val):
+                # If the value in the files listing is a parameter it is
+                # assumed that this is a file parameter. If no argument value
+                # is given for the parameter a default value will be used as
+                # source and target path.
+                var = tp.NAME(val)
+                para = self.template.parameters.get(var)
+                arg = self.arguments.get(var)
+                if arg is None:
+                    if para.default_value is None:
+                        raise err.MissingArgumentError(var)
+                    source = os.path.join(basedir, para.default_value)
+                    target = para.default_value
+                else:
+                    # Get path to source file and the target path from the
+                    # input file handle.
+                    source = arg.source()
+                    target = arg.target()
+            else:
+                source = os.path.join(basedir, val)
+                target = val
+            # Add upload file source and target path to the result list.
+            result.append((source, target))
+        return result

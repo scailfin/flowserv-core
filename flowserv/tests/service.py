@@ -10,6 +10,7 @@
 
 import os
 
+from flowserv.service.run.argument import FILE
 from flowserv.tests.files import FakeStream
 
 import flowserv.util as util
@@ -138,7 +139,7 @@ def start_hello_world(api, group_id, user_id):
     )['id']
     run_id = api.runs().start_run(
         group_id=group_id,
-        arguments=[{'id': 'names', 'value': file_id}],
+        arguments=[{'id': 'names', 'value': FILE(file_id=file_id)}],
         user_id=user_id
     )['id']
     api.engine.start(run_id)

@@ -8,94 +8,99 @@
 
 """Unit test for reading arguments for serial workflow templates."""
 
-import pytest
-
-from flowserv.scanner import Scanner, ListReader
-from flowserv.model.parameter.base import (
-    TemplateParameter, AS_INPUT, create_parameter_index
+from flowserv.model.parameter.boolean import BoolParameter
+from flowserv.model.parameter.files import FileParameter
+from flowserv.model.parameter.numeric import (
+    NumericParameter, PARA_FLOAT, PARA_INT
 )
+from flowserv.model.parameter.string import StringParameter
+from flowserv.scanner import Scanner, ListReader
 
 import flowserv.cli.parameter as cli
-import flowserv.model.parameter.declaration as pd
 
 
-# -- Helper functions ---------------------------------------------------------
-
-def PARA(data_type, default_value=None, as_const=None):
-    return TemplateParameter(
-        pd.parameter_declaration(
-            identifier='XXX',
-            data_type=data_type,
-            default_value=default_value,
-            as_const=as_const
-        )
-    )
-
-
-def test_read_list_error():
-    """Error for parameter of type list."""
-    para = PARA(pd.DT_LIST)
-    with pytest.raises(ValueError):
-        cli.read([para])
-
-
-def test_read_parameters():
-    """Test reading lists of parameters."""
-    # -- Empty parameter list -------------------------------------------------
-    assert cli.read([]) == dict()
-    # -- List with record -----------------------------------------------------
-    parameters = create_parameter_index([
-        pd.parameter_declaration(
-            identifier='P1',
-            data_type=pd.DT_RECORD
-        ),
-        pd.parameter_declaration(
-            identifier='P2',
-            data_type=pd.DT_INTEGER,
-            parent='P1'
-        ),
-        pd.parameter_declaration(
-            identifier='P3',
-            data_type=pd.DT_INTEGER
-        )
-    ])
-    sc = Scanner(reader=ListReader(['1', '2']))
-    arguments = cli.read(parameters.values(), sc)
-    assert set(arguments.values()) == {1, 2}
-
-
-def test_read_parameter_error():
-    """Test value error when reading parameter values."""
-    para = PARA(pd.DT_INTEGER)
-    sc = Scanner(reader=ListReader(['ABC', '1']))
-    cli.read_parameter(para, scanner=sc) == 1
-
-
-@pytest.mark.parametrize(
-    'para,value,result',
-    [
-        (PARA(pd.DT_BOOL), 'True', True),
-        (PARA(pd.DT_BOOL), 'False', False),
-        (PARA(pd.DT_INTEGER), '1', 1),
-        (PARA(pd.DT_DECIMAL), '2.3', 2.3),
-        (PARA(pd.DT_STRING), 'ABC', 'ABC'),
-        (PARA(pd.DT_FILE), 'f.txt', ('f.txt', None)),
-        (PARA(pd.DT_FILE, default_value='f.txt'), '', ('f.txt', None)),
-        (PARA(pd.DT_FILE, as_const=AS_INPUT), ['A', 'f.txt'], ('A', 'f.txt')),
-        (PARA(pd.DT_FILE, default_value='f.txt', as_const=AS_INPUT), ['A', ''], ('A', 'f.txt'))  # noqa: E501
+def test_read_boolean_parameters():
+    """Test reading lists of boolean parameters."""
+    parameters = [
+        BoolParameter(para_id='A', name='A', index=0),
+        BoolParameter(para_id='B', name='B', index=1, default_value=False),
+        BoolParameter(para_id='C', name='C', index=2, default_value=False),
     ]
-)
-def test_read_parameter_value(para, value, result):
-    """Test reading values for individual parameter types."""
-    if not isinstance(value, list):
-        value = [value]
-    sc = Scanner(reader=ListReader(value))
-    assert cli.read_parameter(para, scanner=sc) == result
+    sc = Scanner(reader=ListReader(['true', 'xyz', '', 'True']))
+    arguments = cli.read(parameters, sc)
+    assert len(arguments) == 3
+    assert arguments['A']
+    assert not arguments['B']
+    assert arguments['C']
 
 
-@pytest.mark.parametrize('files', [None, [], [('A', 'B', 'C')]])
-def test_read_file_parameter(files):
-    """Test reading file parameter with various."""
-    para = PARA(pd.DT_FILE)
-    sc = Scanner(reader=ListReader(['ABC']))
-    cli.read_parameter(para, scanner=sc, files=files) == 'ABC'
+def test_read_empty_list():
+    """Test reading empty lists of parameter declarations."""
+    assert cli.read([]) == dict()
+
+
+def test_read_file_parameters(tmpdir):
+    """Test reading lists of file parameters."""
+    parameters = [
+        FileParameter(para_id='A', name='A', index=0, target='target1'),
+        FileParameter(para_id='B', name='B', index=1, default_value='target2'),
+        FileParameter(para_id='C', name='C', index=2),
+    ]
+    sc = Scanner(reader=ListReader([
+        'file1',
+        tmpdir,
+        tmpdir,
+        '',
+        tmpdir,
+        'target3'
+    ]))
+    arguments = cli.read(parameters, sc)
+    assert len(arguments) == 3
+    assert arguments['A'].source() == tmpdir
+    assert arguments['A'].target() == 'target1'
+    assert arguments['B'].source() == tmpdir
+    assert arguments['B'].target() == 'target2'
+    assert arguments['C'].source() == tmpdir
+    assert arguments['C'].target() == 'target3'
+
+
+def test_read_numeric_parameters():
+    """Test reading lists of numeric parameters."""
+    parameters = [
+        NumericParameter(para_id='A', type_id=PARA_INT, name='A', index=0),
+        NumericParameter(
+            para_id='B',
+            type_id=PARA_INT,
+            name='B',
+            index=1,
+            default_value=10
+        ),
+        NumericParameter(para_id='C', type_id=PARA_FLOAT, name='C', index=2),
+        NumericParameter(
+            para_id='D',
+            type_id=PARA_FLOAT,
+            name='D',
+            index=3,
+            default_value=1.23
+        )
+    ]
+    sc = Scanner(reader=ListReader(['1', 'xyz', '', 'True', '3.4', '']))
+    arguments = cli.read(parameters, sc)
+    assert len(arguments) == 4
+    assert arguments['A'] == 1
+    assert arguments['B'] == 10
+    assert arguments['C'] == 3.4
+    assert arguments['D'] == 1.23
+
+
+def test_read_string_parameters():
+    """Test reading lists of string parameters."""
+    parameters = [
+        StringParameter(para_id='A', name='A', index=0),
+        StringParameter(para_id='B', name='B', index=1, default_value='ABC')
+    ]
+    sc = Scanner(reader=ListReader(['true', '']))
+    arguments = cli.read(parameters, sc)
+    assert len(arguments) == 2
+    assert arguments['A'] == 'true'
+    assert arguments['B'] == 'ABC'

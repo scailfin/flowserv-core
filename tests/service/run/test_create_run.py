@@ -10,6 +10,7 @@
 
 import pytest
 
+from flowserv.service.run.argument import IS_FILE
 from flowserv.tests.service import (
     create_group, create_user, start_hello_world, write_results
 )
@@ -51,11 +52,7 @@ def test_create_successful_run_view(service, hello_world):
     with service() as api:
         r = api.runs().get_run(run_id=run_id, user_id=user_1)
         serialize.validate_run_handle(r, st.STATE_SUCCESS)
-        # The input argument should be a serialized input file with file id and
-        # name.
-        file_arg = r['arguments'][0]['value']['file']
-        assert 'id' in file_arg
-        assert 'name' in file_arg
+        assert IS_FILE(r['arguments'][0]['value'])
     # -- Error when non-member attempts to access run -------------------------
     with service() as api:
         with pytest.raises(err.UnauthorizedAccessError):

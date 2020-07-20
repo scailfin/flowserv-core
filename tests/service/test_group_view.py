@@ -10,7 +10,6 @@
 
 import pytest
 
-from flowserv.tests.parameter import StringParameter
 from flowserv.tests.service import create_user
 
 import flowserv.error as err
@@ -96,18 +95,14 @@ def test_get_group_view(service, hello_world):
             name='G2',
             user_id=user_1,
             members=[user_2],
-            parameters={
-                'A': StringParameter('A'),
-                'B': StringParameter('B')
-            }
         )
         serialize.validate_group_handle(r)
-        assert len(r['parameters']) == 5
+        assert len(r['parameters']) == 3
         assert len(r['members']) == 2
     with service() as api:
         r = api.groups().get_group(r['id'])
         serialize.validate_group_handle(r)
-        assert len(r['parameters']) == 5
+        assert len(r['parameters']) == 3
         assert len(r['members']) == 2
 
 

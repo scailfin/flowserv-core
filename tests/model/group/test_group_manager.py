@@ -12,6 +12,7 @@ import os
 import pytest
 
 from flowserv.model.group import WorkflowGroupManager
+from flowserv.model.template.parameter import ParameterIndex
 from flowserv.model.workflow.fs import WorkflowFileSystem
 
 import flowserv.error as err
@@ -34,7 +35,7 @@ def test_create_group(database, tmpdir):
             workflow_id=workflow_id,
             name='Group 1',
             user_id=user_id,
-            parameters=dict(),
+            parameters=ParameterIndex(),
             workflow_spec=dict()
         )
         assert group.name == 'Group 1'
@@ -60,7 +61,7 @@ def test_create_group(database, tmpdir):
             workflow_id=workflow_id,
             name='Group 2',
             user_id=user_id,
-            parameters=dict(),
+            parameters=ParameterIndex(),
             workflow_spec=dict(),
             members=[user_id, user_id, user_id]
         )
@@ -77,7 +78,7 @@ def test_create_group(database, tmpdir):
                 workflow_id=workflow_id,
                 name='A' * 513,
                 user_id=user_id,
-                parameters=dict(),
+                parameters=ParameterIndex(),
                 workflow_spec=dict()
             )
         # - Duplicate name
@@ -86,7 +87,7 @@ def test_create_group(database, tmpdir):
                 workflow_id=workflow_id,
                 name='Group 1',
                 user_id=user_id,
-                parameters=dict(),
+                parameters=ParameterIndex(),
                 workflow_spec=dict()
             )
         # - Unknown user
@@ -95,7 +96,7 @@ def test_create_group(database, tmpdir):
                 workflow_id=workflow_id,
                 name='D',
                 user_id=user_id,
-                parameters=dict(),
+                parameters=ParameterIndex(),
                 workflow_spec=dict(),
                 members=[user_id, 'not a user']
             )
@@ -111,8 +112,20 @@ def test_delete_group(database, tmpdir):
         user_id = model.create_user(session, active=True)
         wf_id = model.create_workflow(session)
         manager = WorkflowGroupManager(session=session, fs=fs)
-        group_1 = manager.create_group(wf_id, 'A', user_id, {}, []).group_id
-        group_2 = manager.create_group(wf_id, 'B', user_id, {}, []).group_id
+        group_1 = manager.create_group(
+            workflow_id=wf_id,
+            name='A',
+            user_id=user_id,
+            parameters=ParameterIndex(),
+            workflow_spec=dict()
+        ).group_id
+        group_2 = manager.create_group(
+            workflow_id=wf_id,
+            name='B',
+            user_id=user_id,
+            parameters=ParameterIndex(),
+            workflow_spec=dict()
+        ).group_id
     # -- Delete group ---------------------------------------------------------
     with database.session() as session:
         # Ensure that group directores are deleted.

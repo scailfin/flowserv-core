@@ -35,8 +35,9 @@ def test_create_workflow_with_config(database, tmpdir):
         assert wf.description == 'Dummy example for test purposes'
         assert wf.instructions == '# How to run'
         template = wf.get_template()
-        assert not template.has_schema()
+        assert template.result_schema is None
         templatedir = template.sourcedir
+        assert wf.parameters.get('code').target is None
     # -- Ensure that only those files have been copied that are listed in the
     #    config file ----------------------------------------------------------
     assert not os.path.isfile(os.path.join(templatedir, 'code/dont-copy.py'))
@@ -57,6 +58,6 @@ def test_create_workflow_with_config(database, tmpdir):
         assert wf.name == 'My Name'
         assert wf.description == 'My Description'
         assert wf.instructions == 'My Instructions'
+        assert wf.parameters.get('code').target == 'code/script.py'
         assert len(wf.result_schema.columns) == 2
         template = wf.get_template()
-        assert template.has_schema()

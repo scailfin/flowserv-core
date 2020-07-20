@@ -38,12 +38,12 @@ class RemoteClient(metaclass=ABCMeta):  # pragma: no cover
         template: flowserv.model.template.base.WorkflowTemplate
             Workflow template containing the parameterized specification and
             the parameter declarations.
-        arguments: dict(flowserv.model.parameter.value.TemplateArgument)
+        arguments: dict
             Dictionary of argument values for parameters in the template.
 
         Returns
         -------
-        flowserv.controller.remote.workflow.RemoteWorkflowHandle
+        flowserv.model.workflow.remote.RemoteWorkflowHandle
         """
         raise NotImplementedError()
 

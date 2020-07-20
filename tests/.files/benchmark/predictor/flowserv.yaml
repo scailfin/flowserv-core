@@ -38,4 +38,4 @@ workflowSpec:
     parameters:
         - id: code
           name: 'Code file'
-          datatype: file
+          type: file

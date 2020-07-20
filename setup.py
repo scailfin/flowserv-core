@@ -17,7 +17,6 @@ from setuptools import setup, find_packages
 install_requires = [
     'docker',
     'gitpython',
-    'jsonschema',
     'passlib',
     'psycopg2-binary',
     'python-dateutil',

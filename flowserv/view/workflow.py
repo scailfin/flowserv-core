@@ -10,8 +10,6 @@
 
 from flowserv.view.base import Serializer
 
-import flowserv.model.template.base as tmpl
-
 
 class WorkflowSerializer(Serializer):
     """Default serializer for workflow resource objects. Defines the methods
@@ -112,7 +110,7 @@ class WorkflowSerializer(Serializer):
         if modules is not None:
             obj[LABELS['WORKFLOW_MODULES']] = [
                 {
-                    LABELS['MODULE_ID']: m.identifier,
+                    LABELS['MODULE_ID']: m.module_id,
                     LABELS['MODULE_NAME']: m.name,
                     LABELS['MODULE_INDEX']: m.index
                 } for m in modules]
@@ -120,8 +118,8 @@ class WorkflowSerializer(Serializer):
         if postproc is not None:
             obj[LABELS['POSTPROC_RUN']] = self.runs.run_handle(run=postproc)
             # Add output descriptors (if given)
-            if tmpl.PPLBL_OUTPUTS in workflow.postproc_spec:
-                postproc_outputs = workflow.postproc_spec[tmpl.PPLBL_OUTPUTS]
+            if 'outputs' in workflow.postproc_spec:
+                postproc_outputs = workflow.postproc_spec['outputs']
                 obj[LABELS['POSTPROC_OUTPUTS']] = postproc_outputs
         return obj
 
@@ -166,9 +164,9 @@ class WorkflowSerializer(Serializer):
             })
         obj = {
             LABELS['WORKFLOW_SCHEMA']: [{
-                    LABELS['COLUMN_ID']: c.identifier,
+                    LABELS['COLUMN_ID']: c.column_id,
                     LABELS['COLUMN_NAME']: c.name,
-                    LABELS['COLUMN_TYPE']: c.data_type
+                    LABELS['COLUMN_TYPE']: c.type_id
                 } for c in workflow.result_schema.columns
             ],
             LABELS['RANKING']: entries
@@ -180,8 +178,8 @@ class WorkflowSerializer(Serializer):
             )
             # Add output descriptors (if given)
             template = workflow.get_template()
-            if tmpl.PPLBL_OUTPUTS in template.postproc_spec:
-                postproc_outputs = template.postproc_spec[tmpl.PPLBL_OUTPUTS]
+            if 'outputs' in template.postproc_spec:
+                postproc_outputs = template.postproc_spec['outputs']
                 obj[LABELS['POSTPROC_OUTPUTS']] = postproc_outputs
         return obj
 

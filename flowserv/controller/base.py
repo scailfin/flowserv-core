@@ -85,7 +85,7 @@ class WorkflowController(metaclass=ABCMeta):  # pragma: no cover
         template: flowserv.model.template.base.WorkflowTemplate
             Workflow template containing the parameterized specification and
             the parameter declarations.
-        arguments: dict(flowserv.model.parameter.value.TemplateArgument)
+        arguments: dict
             Dictionary of argument values for parameters in the template.
         service: contextlib,contextmanager, default=None
             Context manager to create an instance of the service API. The
@@ -95,31 +95,5 @@ class WorkflowController(metaclass=ABCMeta):  # pragma: no cover
         Returns
         -------
         flowserv.model.workflow.state.WorkflowState
-        """
-        raise NotImplementedError()  # pragma: no cover
-
-    @abstractmethod
-    def modify_template(self, template, parameters):
-        """Modify the workflow specification in the given template by adding a
-        set of parameters to the existing template parameter set.
-
-        Returns a modified workflow template. Raises an error if the parameter
-        identifier in the resulting template are no longer unique.
-
-        Parameters
-        ----------
-        template: flowserv.model.template.base.WorkflowTemplate
-            Workflow template handle.
-        parameters: dict(flowserv.model.parameter.base.TemplateParameter)
-            Additional template parameters
-
-        Returns
-        -------
-        flowserv.model.template.base.WorkflowTemplate
-
-        Raises
-        ------
-        flowserv.error.DuplicateParameterError
-        flowserv.error.InvalidTemplateError
         """
         raise NotImplementedError()  # pragma: no cover

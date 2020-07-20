@@ -18,6 +18,7 @@ import sys
 import tempfile
 
 from flowserv.cli.parameter import read
+from flowserv.cli.workflow import workflowcli
 from flowserv.config.api import (
     API_BASEDIR, API_HOST, API_NAME, API_PATH, API_PORT, API_PROTOCOL,
     FLOWSERV_API_BASEDIR, FLOWSERV_API_HOST, FLOWSERV_API_NAME,
@@ -29,11 +30,8 @@ from flowserv.config.backend import (
 )
 from flowserv.config.controller import FLOWSERV_ASYNC
 from flowserv.config.database import FLOWSERV_DB, DB_CONNECT
-from flowserv.cli.workflow import workflowcli
 from flowserv.model.database import DB, TEST_URL
-from flowserv.model.parameter.base import create_parameter_index
 from flowserv.service.api import service
-from flowserv.service.run import ARG_AS, ARG_ID, ARG_VALUE
 
 import flowserv.error as err
 import flowserv.util as util

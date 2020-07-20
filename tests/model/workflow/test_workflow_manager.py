@@ -49,7 +49,7 @@ def test_create_workflow(database, tmpdir):
         assert wf.description is None
         assert wf.instructions is None
         template = wf.get_template()
-        assert template.has_schema()
+        assert template.result_schema is not None
         templatedir = template.sourcedir
         assert os.path.isfile(os.path.join(templatedir, 'code/helloworld.py'))
         assert os.path.isfile(os.path.join(templatedir, 'data/names.txt'))
@@ -68,7 +68,7 @@ def test_create_workflow(database, tmpdir):
         assert wf.description == 'desc'
         assert wf.instructions == 'How to run Hello World'
         template = wf.get_template()
-        assert not template.has_schema()
+        assert template.result_schema is None
     with database.session() as session:
         manager = WorkflowManager(session=session, fs=fs)
         wf = manager.get_workflow(workflow_id=workflow_id)
@@ -76,7 +76,7 @@ def test_create_workflow(database, tmpdir):
         assert wf.description == 'desc'
         assert wf.instructions == 'How to run Hello World'
         template = wf.get_template()
-        assert not template.has_schema()
+        assert template.result_schema is None
     # -- Template with post-processing step -----------------------------------
     with database.session() as session:
         manager = WorkflowManager(session=session, fs=fs)
@@ -201,7 +201,7 @@ def test_get_workflow(database, tmpdir):
         assert wf.description is None
         assert wf.instructions is None
         template = wf.get_template()
-        assert template.has_schema()
+        assert template.result_schema is not None
         wf = manager.get_workflow(workflow_2)
         assert wf.name == 'B'
 

@@ -12,15 +12,12 @@ import os
 import pytest
 
 from flowserv.model.group import WorkflowGroupManager
-from flowserv.model.parameter.base import InputFile, TemplateParameter
 from flowserv.model.run import RunManager
 from flowserv.model.workflow.fs import WorkflowFileSystem
 from flowserv.model.workflow.manager import WorkflowManager
 
 import flowserv.error as err
 import flowserv.util as util
-import flowserv.model.parameter.declaration as pd
-import flowserv.model.parameter.value as pv
 import flowserv.model.workflow.state as st
 import flowserv.tests.model as model
 
@@ -218,27 +215,7 @@ def test_run_parameters(database, tmpdir):
     # Prepare run arguments
     filename = os.path.join(str(tmpdir), 'results.json')
     util.write_object(filename=filename, obj={'A': 1})
-    arguments = pv.parse_arguments(
-        arguments={
-            'A': 10,
-            'B': True,
-            'C': InputFile(
-                filename=filename,
-                target_path='/dev/null'
-            )
-        },
-        parameters={
-            'A': TemplateParameter(
-                pd.parameter_declaration('A', data_type=pd.DT_INTEGER)
-            ),
-            'B': TemplateParameter(
-                pd.parameter_declaration('B', data_type=pd.DT_BOOL)
-            ),
-            'C': TemplateParameter(
-                pd.parameter_declaration('C', data_type=pd.DT_FILE)
-            )
-        }
-    )
+    arguments = [{'id': 'A', 'value': 10}, {'id': 'B', 'value': True}]
     # -- Test create run with arguments ---------------------------------------
     with database.session() as session:
         groups = WorkflowGroupManager(session=session, fs=fs)
@@ -251,11 +228,7 @@ def test_run_parameters(database, tmpdir):
     with database.session() as session:
         runs = RunManager(session=session, fs=fs)
         run = runs.get_run(run_id)
-        arguments = run.arguments
-        assert len(arguments) == 3
-        assert arguments['A'] == 10
-        assert arguments['B']
-        assert arguments['C']['target'] == '/dev/null'
+        assert run.arguments == arguments
 
 
 def test_success_run(database, tmpdir):

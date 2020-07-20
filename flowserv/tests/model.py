@@ -11,6 +11,7 @@
 from passlib.hash import pbkdf2_sha256
 
 from flowserv.model.base import GroupHandle, RunHandle, User, WorkflowHandle
+from flowserv.model.template.parameter import ParameterIndex
 
 import flowserv.model.workflow.state as st
 import flowserv.util as util
@@ -40,7 +41,7 @@ def create_group(session, workflow_id, users):
         workflow_id=workflow_id,
         name=group_id,
         owner_id=users[0],
-        parameters=dict(),
+        parameters=ParameterIndex(),
         workflow_spec=dict()
     )
     # Add users as group members.
