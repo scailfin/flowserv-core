@@ -19,6 +19,10 @@ from flowserv.config.database import FLOWSERV_DB
 from flowserv.model.database import TEST_URL
 
 
+DIR = os.path.dirname(os.path.realpath(__file__))
+TEMPLATE_DIR = os.path.join(DIR, '../.files/benchmark/helloworld')
+
+
 def test_basedir_argument(tmpdir):
     """Test passing the base directory as an argument."""
     os.environ[FLOWSERV_DB] = TEST_URL

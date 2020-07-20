@@ -14,7 +14,6 @@ from flowserv.model.parameter.numeric import PARA_FLOAT, PARA_INT
 from flowserv.model.parameter.string import PARA_STRING
 from flowserv.model.template.schema import ResultColumn, ResultSchema
 from flowserv.controller.base import WorkflowController
-from flowserv.controller.serial.engine import SerialWorkflowEngine
 
 import flowserv.model.workflow.state as st
 

@@ -10,11 +10,11 @@ import os
 import shutil
 import tempfile
 
-from flowserv.model.parameter.base import InputFile
-from flowserv.model.parameter.value import TemplateArgument
+from flowserv.model.parameter.files import InputFile, PARA_FILE
 from flowserv.model.template.base import WorkflowTemplate
 from flowserv.model.workflow.serial import SerialWorkflow
 from flowserv.model.workflow.state import StatePending
+from flowserv.service.run.argument import ARG, FILE  # noqa: F401
 
 import flowserv.controller.serial.engine as serial
 import flowserv.error as err
@@ -165,10 +165,10 @@ def run_workflow(sourcedir, arguments=dict(), specfile=None, rundir=None):
     sourcedir: string
         Path to the base directory containing the workflow resource files.
     arguments: dict, default=dict()
-        List of user provided arguments for template parameters
+        Mapping of parameter identifier to user provided argument values.
     specfile: string, default=None
         Path to the workflow template specification file (absolute or
-        relative to the workflow directory)
+        relative to the workflow directory).
     rundir: string, default=None
         Path to the target directory for worfklow run files. If not given, a
         temporary directory will be created.
@@ -187,28 +187,18 @@ def run_workflow(sourcedir, arguments=dict(), specfile=None, rundir=None):
     # Prepare arguments for workflow run.
     runargs = dict()
     for para in template.parameters.values():
-        if para.identifier in arguments:
-            if para.is_file():
-                fname, target_path = arguments[para.identifier]
+        if para.para_id in arguments:
+            if para.type_id == PARA_FILE:
+                fname, target_path = arguments[para.para_id]
                 if target_path is None:
-                    if para.has_constant():
-                        if not para.as_input():
-                            target_path = para.get_constant()
-                    if target_path is None:
-                        msg = "no target path given for '{}'"
-                        raise ValueError(msg.format(para.identifier))
-                val = TemplateArgument(
-                    parameter=para,
-                    value=InputFile(filename=fname, target_path=target_path),
-                    validate=True
-                )
+                    target_path = para.target
+                if target_path is None:
+                    msg = "no target path given for '{}'"
+                    raise ValueError(msg.format(para.identifier))
+                val = InputFile(source=fname, target=target_path)
             else:
-                val = TemplateArgument(
-                    parameter=para,
-                    value=arguments[para.identifier],
-                    validate=True
-                )
-            runargs[para.identifier] = val
+                val = arguments[para.para_id]
+            runargs[para.para_id] = val
     # Prepare workflow. Ensure to copy only those files that are not part of
     # the workflow template directory.
     wf = SerialWorkflow(template, runargs)

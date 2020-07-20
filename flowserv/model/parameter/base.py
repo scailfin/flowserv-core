@@ -72,10 +72,10 @@ class ParameterBase(metaclass=ABCMeta):
         -------
         string
         """
-        val = '${} ({})'.format(self.name, self.type_id)
+        val = '{} ({})'.format(self.name, self.type_id)
         if self.default_value is not None:
             val += " [default '{}']".format(self.default_value)
-        return val + '> '
+        return val + ' $> '
 
     @abstractmethod
     def to_argument(self, value):

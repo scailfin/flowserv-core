@@ -48,7 +48,7 @@ The environment settings for the Docker engine are as follows:
 
 .. code-block:: console
 
-    export FLOWSERV_BACKEND_MODULE=flowserv.controller.docker
+    export FLOWSERV_BACKEND_MODULE=flowserv.controller.serial.docker
     export FLOWSERV_BACKEND_CLASS=DockerWorkflowEngine
 
 

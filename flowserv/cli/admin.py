@@ -31,7 +31,10 @@ from flowserv.config.backend import (
 from flowserv.config.controller import FLOWSERV_ASYNC
 from flowserv.config.database import FLOWSERV_DB, DB_CONNECT
 from flowserv.model.database import DB, TEST_URL
+from flowserv.model.parameter.files import InputFile
+from flowserv.model.template.parameter import ParameterIndex
 from flowserv.service.api import service
+from flowserv.service.run.argument import ARG, FILE
 
 import flowserv.error as err
 import flowserv.util as util
@@ -187,7 +190,7 @@ def init(dir=None, force=False):
     required=False,
     help='Directory for output files.'
 )
-def run_workflow(src, specfile, ignorepp, output):
+def run_workflow(src, specfile, ignorepp, output):  # pragma: no cover
     """Run a workflow template for test purposes."""
     # -- Logging --------------------------------------------------------------
     root = logging.getLogger()
@@ -228,16 +231,15 @@ def run_workflow(src, specfile, ignorepp, output):
             user_id=user_id
         )['id']
     # -- Read input parameter values ------------------------------------------
-    params = create_parameter_index(workflow['parameters'])
-    params = sorted(params.values(), key=lambda p: (p.index, p.identifier))
+    params = ParameterIndex().from_dict(workflow['parameters']).sorted()
     click.echo('\nWorkflow inputs\n---------------')
     args = read(params)
     # -- Upload files ---------------------------------------------------------
     runargs = list()
-    for para in params:
-        arg = {ARG_ID: para.identifier}
-        if para.is_file():
-            filename, target_path = args[para.identifier]
+    for key, value in args.items():
+        if isinstance(value, InputFile):
+            filename = value.source()
+            target_path = value.target()
             with service() as api:
                 file_id = api.uploads().upload_file(
                     group_id=submission_id,
@@ -245,12 +247,8 @@ def run_workflow(src, specfile, ignorepp, output):
                     name=os.path.basename(filename),
                     user_id=user_id
                 )['id']
-                arg[ARG_VALUE] = file_id
-                if target_path is not None:
-                    arg[ARG_AS] = target_path
-        else:
-            arg[ARG_VALUE] = args[para.identifier]
-        runargs.append(arg)
+                value = FILE(file_id, target_path)
+        runargs.append(ARG(key, value))
     # -- Start workflow run ---------------------------------------------------
     click.echo('\nStart Workflow\n--------------')
     with service() as api:
