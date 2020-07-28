@@ -42,6 +42,6 @@ The `name` and `description` define the project title and a description for disp
 
 The list of `files` defines the source files (and folders) and their target paths that are copied from the project folder to the template repository. If the `target` element is omitted the empty string is used as the default value. The files that are copied to the template repository define the environment that is created each time the user runs the template workflow.
 
-The `specfile` element points to the workflow specification file. Alternatively, the `specfile` element can be replaced with a `workflowSpec` element that contains the full workflow specification. If a project description file contains both, the `specfile` and `workflowSpec` element, an error will be raised.
+The `specfile` element points to the workflow specification file.
 
 All elements (except for `files`) in the description file can be overridden by command line arguments when adding the template to the repository. If no `files` element (or no description file is given) all files and folders in the project base folder are copied recursively to the template repository.

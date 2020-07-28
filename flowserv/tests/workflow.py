@@ -10,14 +10,15 @@ import os
 import shutil
 import tempfile
 
-from flowserv.controller.serial.workflow import SerialWorkflow
-from flowserv.model.parameter.base import InputFile
-from flowserv.model.parameter.value import TemplateArgument
+from flowserv.model.parameter.files import InputFile, PARA_FILE
+from flowserv.model.template.base import WorkflowTemplate
+from flowserv.model.workflow.manifest import WorkflowManifest
+from flowserv.model.workflow.serial import SerialWorkflow
 from flowserv.model.workflow.state import StatePending
+from flowserv.service.run.argument import ARG, FILE  # noqa: F401
 
 import flowserv.controller.serial.engine as serial
 import flowserv.error as err
-import flowserv.model.template.base as tmpl
 import flowserv.model.workflow.manager as repo
 import flowserv.model.workflow.state as serialize
 import flowserv.service.postproc.base as postbase
@@ -56,14 +57,14 @@ def prepare_postproc_data(templatefile, runs):
     string
     """
     # Read workflow templatefrom the given file.
-    template = tmpl.WorkflowTemplate.from_dict(
+    template = WorkflowTemplate.from_dict(
         doc=util.read_object(templatefile),
         sourcedir=os.path.dirname(templatefile),
         validate=True
     )
     postproc_spec = template.postproc_spec
-    pp_inputs = postproc_spec.get(tmpl.PPLBL_INPUTS, {})
-    pp_files = pp_inputs.get(tmpl.PPLBL_FILES, [])
+    pp_inputs = postproc_spec.get('inputs', {})
+    pp_files = pp_inputs.get('files', [])
     # Prepare temporary directory with result files for all
     # runs in the ranking. The created directory is the only
     # run argument.
@@ -107,9 +108,9 @@ def run_postproc_workflow(sourcedir, runs, specfile=None, rundir=None):
         specfile=specfile
     )
     postproc_spec = template.postproc_spec
-    workflow_spec = postproc_spec.get(tmpl.PPLBL_WORKFLOW)
-    pp_inputs = postproc_spec.get(tmpl.PPLBL_INPUTS, {})
-    pp_files = pp_inputs.get(tmpl.PPLBL_FILES, [])
+    workflow_spec = postproc_spec.get('workflow')
+    pp_inputs = postproc_spec.get('inputs', {})
+    pp_files = pp_inputs.get('files', [])
     # Prepare temporary directory with result files for all
     # runs in the ranking. The created directory is the only
     # run argument.
@@ -122,20 +123,10 @@ def run_postproc_workflow(sourcedir, runs, specfile=None, rundir=None):
         ranking=ranking,
         run_manager=RunIndex(ranking)
     )
-    runargs = {
-        postbase.PARA_RUNS: TemplateArgument(
-            parameter=postbase.PARAMETERS[0],
-            value=InputFile(
-                filename=datadir,
-                target_path=pp_inputs.get(
-                    tmpl.PPLBL_RUNS,
-                    postbase.RUNS_DIR
-                )
-            )
-        )
-    }
+    dst = pp_inputs.get('runs', postbase.RUNS_DIR)
+    runargs = {postbase.PARA_RUNS: InputFile(source=datadir, target=dst)}
     wf = SerialWorkflow(
-        template=tmpl.WorkflowTemplate(
+        template=WorkflowTemplate(
             workflow_spec=workflow_spec,
             sourcedir=template.sourcedir,
             parameters=postbase.PARAMETERS
@@ -175,10 +166,10 @@ def run_workflow(sourcedir, arguments=dict(), specfile=None, rundir=None):
     sourcedir: string
         Path to the base directory containing the workflow resource files.
     arguments: dict, default=dict()
-        List of user provided arguments for template parameters
+        Mapping of parameter identifier to user provided argument values.
     specfile: string, default=None
         Path to the workflow template specification file (absolute or
-        relative to the workflow directory)
+        relative to the workflow directory).
     rundir: string, default=None
         Path to the target directory for worfklow run files. If not given, a
         temporary directory will be created.
@@ -196,29 +187,19 @@ def run_workflow(sourcedir, arguments=dict(), specfile=None, rundir=None):
     )
     # Prepare arguments for workflow run.
     runargs = dict()
-    for para in template.list_parameters():
-        if para.identifier in arguments:
-            if para.is_file():
-                fname, target_path = arguments[para.identifier]
+    for para in template.parameters.values():
+        if para.para_id in arguments:
+            if para.type_id == PARA_FILE:
+                fname, target_path = arguments[para.para_id]
                 if target_path is None:
-                    if para.has_constant():
-                        if not para.as_input():
-                            target_path = para.get_constant()
-                    if target_path is None:
-                        msg = "no target path given for '{}'"
-                        raise ValueError(msg.format(para.identifier))
-                val = TemplateArgument(
-                    parameter=para,
-                    value=InputFile(filename=fname, target_path=target_path),
-                    validate=True
-                )
+                    target_path = para.target
+                if target_path is None:
+                    msg = "no target path given for '{}'"
+                    raise ValueError(msg.format(para.identifier))
+                val = InputFile(source=fname, target=target_path)
             else:
-                val = TemplateArgument(
-                    parameter=para,
-                    value=arguments[para.identifier],
-                    validate=True
-                )
-            runargs[para.identifier] = val
+                val = arguments[para.para_id]
+            runargs[para.para_id] = val
     # Prepare workflow. Ensure to copy only those files that are not part of
     # the workflow template directory.
     wf = SerialWorkflow(template, runargs)
@@ -300,7 +281,7 @@ def INPUTFILE(filename, target_path=None):
     return filename, target_path
 
 
-def read_template(sourcedir, rundir, specfile=None):
+def read_template(sourcedir, rundir, specfile=None, manifestfile=None):
     """Read workflow template from a given source directory.
 
     Parameters
@@ -313,32 +294,26 @@ def read_template(sourcedir, rundir, specfile=None):
     specfile: string, default=None
         Path to the workflow template specification file (absolute or
         relative to the workflow directory)
+    manifestfile: string, default=None
+        Path to manifest file. If not given an attempt is made to read one
+        of the default manifest file names in the base directory.
 
     Returns
     -------
     flowserv.model.template.base.WorkflowTemplate
     """
     # Read project metadata from the manifest.
-    projectmeta = repo.read_description(
-        projectdir=sourcedir,
-        name=util.get_short_identifier(),
-        specfile=specfile
+    manifest = WorkflowManifest.load(
+        basedir=sourcedir,
+        specfile=specfile,
+        manifestfile=manifestfile
     )
     # Read the template specification file in the template workflow folder. If
     # the template is not found an error is raised.
-    template = repo.read_template(
-        projectmeta=projectmeta,
-        projectdir=sourcedir,
-        templatedir=rundir,
-        default_filenames=repo.DEFAULT_TEMPLATES
-    )
+    template = manifest.template(templatedir=rundir)
     if template is None:
         raise err.InvalidTemplateError('no template file found')
     # Copy files from the workflow folder to the template's static file
     # folder. By default all files in the project folder are copied.
-    repo.copy_files(
-        projectmeta=projectmeta,
-        projectdir=sourcedir,
-        templatedir=rundir
-    )
+    manifest.copyfiles(targetdir=rundir)
     return template

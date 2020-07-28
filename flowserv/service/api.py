@@ -23,7 +23,7 @@ from flowserv.model.workflow.fs import WorkflowFileSystem
 from flowserv.model.workflow.manager import WorkflowManager
 from flowserv.service.files import UploadFileService
 from flowserv.service.group import WorkflowGroupService
-from flowserv.service.run import RunService
+from flowserv.service.run.base import RunService
 from flowserv.service.server import Service
 from flowserv.service.user import UserService
 from flowserv.service.workflow import WorkflowService

@@ -6,17 +6,99 @@
 # flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
-"""Collection of helper methods for parameter references in workflow
-specifications within workflow templates.
+"""Collection of helper methods for parameter references in workflow templates.
 """
 
-import os
-
-from flowserv.model.parameter.base import InputFile
-from flowserv.model.parameter.value import TemplateArgument
+from flowserv.model.parameter.boolean import BoolParameter, PARA_BOOL
+from flowserv.model.parameter.enum import EnumParameter, PARA_ENUM
+from flowserv.model.parameter.files import FileParameter, PARA_FILE
+from flowserv.model.parameter.numeric import NumericParameter
+from flowserv.model.parameter.numeric import PARA_FLOAT, PARA_INT
+from flowserv.model.parameter.string import StringParameter, PARA_STRING
 
 import flowserv.error as err
 
+
+# -- Parameter Index ----------------------------------------------------------
+
+"""Dictionary of known parameter types. New types have to be added here."""
+PARAMETER_TYPES = {
+    PARA_BOOL: BoolParameter,
+    PARA_ENUM: EnumParameter,
+    PARA_FILE: FileParameter,
+    PARA_FLOAT: NumericParameter,
+    PARA_INT: NumericParameter,
+    PARA_STRING: StringParameter
+}
+
+
+class ParameterIndex(dict):
+    """Index of parameter declaration. Parameters are indexed by their unique
+    identifier.
+    """
+    @staticmethod
+    def from_dict(doc, validate=True):
+        """Create a parameter index from a dictionary serialization. Expects a
+        list of dictionaries, each being a serialized parameter declaration.
+
+        Raises an error if parameter indices are not unique.
+
+        Parameters
+        ----------
+        doc: list
+            List of serialized parameter declarations.
+        validate: bool, default=True
+            Validate dictionary serializations if True.
+
+        Returns
+        -------
+        flowserv.model.template.base.ParameterIndex
+        """
+        parameters = ParameterIndex()
+        for index, obj in enumerate(doc):
+            try:
+                cls = PARAMETER_TYPES[obj['type']]
+            except KeyError as ex:
+                msg = "missing '{}' for {}"
+                raise err.InvalidTemplateError(msg.format(str(ex), obj))
+            # Ensure that the 'index' property for the parameter is set. Use
+            # the order of parameters in the list as the default order.
+            obj['index'] = obj.get('index', index)
+            # Ensure that the 'isRequired' property is set. If no default value
+            # is defined the parameter is assumed to be required.
+            obj['isRequired'] = obj.get(
+                'isRequired',
+                'defaultValue' not in obj
+            )
+            para = cls.from_dict(obj, validate=validate)
+            if para.para_id in parameters:
+                msg = "duplicate parameter '{}'".format(para.para_id)
+                raise err.InvalidTemplateError(msg)
+            parameters[para.para_id] = para
+        return parameters
+
+    def sorted(self):
+        """Get list of parameter declarations sorted by ascending parameter
+        index position.
+
+        Returns
+        -------
+        list(flowserv.model.parameter.base.ParameterBase)
+        """
+        parameters = list(self.values())
+        return sorted(parameters, key=lambda p: p.index)
+
+    def to_dict(self):
+        """Get dictionary serialization for the parameter declarations.
+
+        Returns
+        -------
+        list
+        """
+        return [p.to_dict() for p in self.values()]
+
+
+# -- Helper functions to extract and generate parameter names -----------------
 
 def get_parameter_references(spec, parameters=None):
     """Get set of parameter identifier that are referenced in the given
@@ -26,9 +108,9 @@ def get_parameter_references(spec, parameters=None):
     Parameters
     ----------
     spec: dict
-        Parameterized workflow specification
+        Parameterized workflow specification.
     parameters: set, optional
-        Result set of parameter identifier
+        Result set of referenced parameter identifier.
 
     Returns
     -------
@@ -38,7 +120,7 @@ def get_parameter_references(spec, parameters=None):
     ------
     flowserv.error.InvalidTemplateError
     """
-    # The new object will contain the modified workflow specification
+    # Set of referenced parameter identifier.
     if parameters is None:
         parameters = set()
     for key in spec:
@@ -69,88 +151,6 @@ def get_parameter_references(spec, parameters=None):
     return parameters
 
 
-def get_upload_files(template, basedir, files, arguments):
-    """Get a list of all input files for a workflow template that need to be
-    uploaded for a new workflow run. The list of files corresponds, for
-    example, to the entries in the 'inputs.files' section of a REANA workflow
-    specification.
-
-    Returns a list of tuples containing the full path to the source file on
-    local disk and the relative target path for the uploaded file.
-
-    Raises errors if (i) an unknown parameter is referenced or (ii) if the type
-    of a referenced parameter in the input files section is not of type file.
-
-    Parameters
-    ----------
-    template: flowserv.model.template.base.WorkflowTemplate
-        Workflow template containing the parameterized specification and the
-        parameter declarations
-    basedir: string
-        Path to the base directory of the template folder containing static
-        template files
-    files: list(string)
-        List of file references
-    arguments: dict(flowserv.model.parameter.value.TemplateArgument)
-        Dictionary of argument values for parameters in the template
-
-    Returns
-    -------
-    list((string, string))
-
-    Raises
-    ------
-    flowserv.error.InvalidTemplateError
-    flowserv.error.MissingArgumentError
-    flowserv.error.UnknownParameterError
-    """
-    result = list()
-    for val in files:
-        # Set source and target values depending on whether the list
-        # entry references a template parameter or not
-        if is_parameter(val):
-            var = NAME(val)
-            # Raise error if the type of the referenced parameter is
-            # not file
-            para = template.get_parameter(var)
-            if not para.is_file():
-                msg = "expected file parameter for '{}'"
-                raise err.InvalidTemplateError(msg.format(var))
-            arg = arguments.get(var)
-            if arg is None:
-                if para.default_value is None:
-                    raise err.MissingArgumentError(var)
-                # Set argument to file handle using the default value
-                # (assuming that the default points to a file in the
-                # template base directory).
-                if para.has_constant() and not para.as_input():
-                    target_path = para.get_constant()
-                else:
-                    target_path = para.default_value
-                arg = TemplateArgument(
-                    parameter=para,
-                    value=InputFile(
-                        filename=os.path.join(
-                            basedir,
-                            para.default_value
-                        ),
-                        target_path=target_path
-                    )
-                )
-            # Get path to source file and the target path from the input
-            # file handle
-            source = arg.value.source()
-            target = arg.value.target()
-        else:
-            source = os.path.join(basedir, val)
-            target = val
-        # Upload source file
-        assert source is not None, 'source cannot be None'
-        assert target is not None, 'target cannot be None'
-        result.append((source, target))
-    return result
-
-
 def is_parameter(value):
     """Returns True if the given value is a reference to a template parameter.
 
@@ -176,12 +176,12 @@ def replace_args(spec, arguments, parameters):
     Parameters
     ----------
     spec: any
-        Parameterized workflow specification
-    arguments: dict(flowserv.model.parameter.value.TemplateArgument)
+        Parameterized workflow specification.
+    arguments: dict
         Dictionary that associates template parameter identifiers with
-        argument values
-    parameters: dict(flowserv.model.parameter.base.TemplateParameter)
-        Dictionary of parameter declarations
+        argument values.
+    parameters: flowserv.model.template.parameter.ParameterIndex
+        Dictionary of parameter declarations.
 
     Returns
     -------
@@ -222,10 +222,10 @@ def replace_value(value, arguments, parameters):
     ----------
     value: string
         String value in the workflow specification for a template parameter
-    arguments: dict(flowserv.model.parameter.value.TemplateArgument)
+    arguments: dict
         Dictionary that associates template parameter identifiers with
         argument values
-    parameters: dict(flowserv.model.parameter.base.TemplateParameter)
+    parameters: flowserv.model.template.parameter.ParameterIndex
         Dictionary of parameter declarations
 
     Returns
@@ -241,31 +241,18 @@ def replace_value(value, arguments, parameters):
         # Extract variable name.
         var = NAME(value)
         para = parameters[var]
-        # If the parameter has a constant value defined use that value as the
-        # replacement
-        if para.has_constant():
-            return para.get_constant()
         # If arguments contains a value for the variable we return the
-        # associated value from the dictionary. Note that there is a special
-        # treatment for file arguments. If case of file arguments the
-        # dictionary value is expected to be a file handle. In this case we
-        # return the file name as the argument value.
+        # associated value from the dictionary. Otherwise, the default value
+        # is returned or and error is raised if no default value is defined
+        # for the parameter.
         if var in arguments:
-            arg = arguments[var]
-            if para.is_file():
-                return arg.value.target()
-            else:
-                return arg.value
+            return str(arguments[var])
         elif para.default_value is not None:
             # Return the parameter default value
             return para.default_value
-        else:
-            raise err.MissingArgumentError(para.identifier)
-    else:
-        return value
+        raise err.MissingArgumentError(para.para_id)
+    return value
 
-
-# -- Helper functions to extract and generate parameter names -----------------
 
 def NAME(value):
     """Extract the parameter name for a template parameter reference.

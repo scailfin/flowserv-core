@@ -10,8 +10,8 @@
 
 from flowserv.controller.remote.client import RemoteClient
 from flowserv.controller.remote.engine import RemoteWorkflowController
-from flowserv.controller.remote.workflow import RemoteWorkflowHandle
-from flowserv.controller.serial.workflow import SerialWorkflow
+from flowserv.model.workflow.remote import RemoteWorkflowHandle
+from flowserv.model.workflow.serial import SerialWorkflow
 from flowserv.model.workflow.state import StatePending
 from flowserv.tests.files import FakeStream
 
@@ -48,12 +48,12 @@ class RemoteTestClient(RemoteClient):
         template: flowserv.model.template.base.WorkflowTemplate
             Workflow template containing the parameterized specification and
             the parameter declarations.
-        arguments: dict(flowserv.model.parameter.value.TemplateArgument)
+        arguments: dict
             Dictionary of argument values for parameters in the template.
 
         Returns
         -------
-        flowserv.controller.remote.workflow.RemoteWorkflowHandle
+        flowserv.model.workflow.remote.RemoteWorkflowHandle
         """
         # Create a serial workfow to have a workflow handle.
         wf = SerialWorkflow(template, arguments)
@@ -143,19 +143,3 @@ class RemoteTestController(RemoteWorkflowController):
             poll_interval=poll_interval,
             is_async=is_async
         )
-
-    def modify_template(self, template, parameters):  # pragma: no cover
-        """Fake template modification. Returns the template as it is.
-
-        Parameters
-        ----------
-        template: flowserv.model.template.base.WorkflowTemplate
-            Workflow template handle.
-        parameters: dict(flowserv.model.parameter.base.TemplateParameter)
-            Additional template parameters
-
-        Returns
-        -------
-        flowserv.model.template.base.WorkflowTemplate
-        """
-        return template

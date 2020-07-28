@@ -12,6 +12,7 @@ import os
 import time
 
 from flowserv.controller.serial.engine import SerialWorkflowEngine
+from flowserv.service.run.argument import FILE
 from flowserv.tests.files import FakeStream
 from flowserv.tests.service import create_group, create_user
 
@@ -36,7 +37,7 @@ def create_run(api, workflow_id):
     )['id']
     api.runs().start_run(
         group_id=group_id,
-        arguments=[{'id': 'names', 'value': file_id}],
+        arguments=[{'id': 'names', 'value': FILE(file_id)}],
         user_id=user_id
     )
 

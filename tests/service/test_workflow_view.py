@@ -14,7 +14,8 @@ import flowserv.tests.serialize as serialize
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))
-INSTRUCTION_FILE = os.path.join(DIR, '../.files/benchmark/instructions.txt')
+BENCHMARK_DIR = os.path.join(DIR, '../.files/benchmark/helloworld')
+INSTRUCTION_FILE = os.path.join(BENCHMARK_DIR, 'instructions.md')
 
 
 def test_delete_workflow_view(service, hello_world):
@@ -57,7 +58,7 @@ def test_get_workflow_view(service, hello_world):
         )
         serialize.validate_workflow_handle(doc=r, has_optional=True)
         assert r['description'] == 'ABC'
-        assert r['instructions'] == 'How to run Hello World'
+        assert r['instructions'] == '# Hello World'
 
 
 def test_list_workflows_view(service, hello_world):

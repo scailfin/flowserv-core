@@ -76,21 +76,6 @@ class WorkflowState(object):
         """
         return self.type_id
 
-    def has_changed(self, state):
-        """True if the type of this state object differs from the type of the
-        given state object.
-
-        Parameters
-        ----------
-        state: flowserv.model.workflow.state.WorkflowState
-            Workflow state object
-
-        Returns
-        -------
-        bool
-        """
-        return self.type_id != state.type_id
-
     def is_active(self):
         """A workflow is in active state if it is either pending or running.
 

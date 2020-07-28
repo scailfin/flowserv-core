@@ -53,8 +53,8 @@ class RunManager(object):
             Workflow handle if this is a post-processing run.
         group: flowserv.model.base.GroupHandle
             Group handle if this is a group sumbission run.
-        arguments: dict(flowserv.model.parameter.value.TemplateArgument)
-            Dictionary of argument values for parameters in the template
+        arguments: list
+            List of argument values for parameters in the template.
         runs: list(string), default=None
             List of run identifier that define the input for a post-processing
             run.
@@ -84,11 +84,6 @@ class RunManager(object):
         else:
             workflow_id = workflow.workflow_id
             group_id = None
-        # Serialize the given dictionary of workflow arguments (if not None)
-        arg_values = dict()
-        if arguments is not None:
-            for key in arguments:
-                arg_values[key] = arguments[key].value
         # Return handle for the created run. Ensure that the run base directory
         # is created.
         rundir = self.fs.run_basedir(workflow_id, group_id, run_id)
@@ -97,7 +92,7 @@ class RunManager(object):
             run_id=run_id,
             workflow_id=workflow_id,
             group_id=group_id,
-            arguments=arg_values,
+            arguments=arguments if arguments is not None else list(),
             state_type=st.STATE_PENDING
         )
         self.session.add(run)
@@ -304,7 +299,7 @@ class RunManager(object):
                     values = dict()
                     for col in result_schema.columns:
                         val = util.jquery(doc=results, path=col.jpath())
-                        col_id = col.identifier
+                        col_id = col.column_id
                         if val is None and col.required:
                             msg = "missing value for '{}'".format(col_id)
                             raise err.ConstraintViolationError(msg)

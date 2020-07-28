@@ -60,9 +60,15 @@ REPOS = {
     required=False,
     help='Optional path to workflow specification file.'
 )
+@click.option(
+    '-m', '--manifest',
+    type=click.Path(exists=True, dir_okay=False, readable=True),
+    required=False,
+    help='Optional path to workflow manifest file.'
+)
 def add_workflow(
     name=None, description=None, instructions=None, src=None, url=None,
-    specfile=None
+    specfile=None, manifest=None
 ):
     """Create a new workflow."""
     # If the url references a known repository in REPO replace the value with
@@ -81,7 +87,8 @@ def add_workflow(
                 instructions=read_instructions(instructions),
                 sourcedir=src,
                 repourl=url,
-                specfile=specfile
+                specfile=specfile,
+                manifestfile=manifest
             )
         click.echo('export FLOWSERV_WORKFLOW={}'.format(wf['id']))
     except (err.ConstraintViolationError, ValueError) as ex:

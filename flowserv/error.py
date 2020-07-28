@@ -249,6 +249,22 @@ class InvalidSortColumnError(ConstraintViolationError):
         )
 
 
+class InvalidManifestError(ConstraintViolationError):
+    """Exception indicating that a given workflow manifest is invalid or has
+    missing elements.
+    """
+    def __init__(self, message):
+        """Initialize error message. The message for invalid manifest errors
+        is depending on the context
+
+        Parameters
+        ----------
+        message : string
+            Error message
+        """
+        super(InvalidManifestError, self).__init__(message=message)
+
+
 class InvalidTemplateError(ConstraintViolationError):
     """Exception indicating that a given workflow template is invalid or has
     missing elements.

@@ -42,9 +42,7 @@ class WorkflowGroupService(object):
         self.auth = auth
         self.serialize = serializer
 
-    def create_group(
-        self, workflow_id, name, user_id, parameters=None, members=None
-    ):
+    def create_group(self, workflow_id, name, user_id, members=None):
         """Create a new user group for a given workflow. Each group has a
         a unique name for the workflow, a group owner, and a list of additional
         group members.
@@ -60,9 +58,6 @@ class WorkflowGroupService(object):
             Unique team name
         user_id: string
             unique identifier for the user that is the group owner
-        parameters: dict(flowserv.model.parameter.base.TemplateParameter),
-                default=None
-            Workflow template parameter declarations
         members: list(string), default=None
             List of user identifier for group members
 
@@ -82,8 +77,6 @@ class WorkflowGroupService(object):
         # specification accordingly. This may raise an error if a given
         # parameter identifier is not unique.
         template = workflow.get_template()
-        if parameters is not None:
-            template = self.backend.modify_template(template, parameters)
         group = self.group_manager.create_group(
             workflow_id=workflow_id,
             name=name,

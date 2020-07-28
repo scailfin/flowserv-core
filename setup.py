@@ -17,7 +17,6 @@ from setuptools import setup, find_packages
 install_requires = [
     'docker',
     'gitpython',
-    'jsonschema',
     'passlib',
     'psycopg2-binary',
     'python-dateutil',
@@ -83,6 +82,7 @@ setup(
     entry_points={
         'console_scripts': [
             'flowserv = flowserv.cli.admin:cli',
+            'flowapp = flowserv.cli.app:cli',
         ]
     },
     classifiers=[

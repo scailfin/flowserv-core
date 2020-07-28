@@ -12,7 +12,7 @@ import os
 import pytest
 
 from flowserv.controller.serial.engine import SerialWorkflowEngine
-from flowserv.service.run import ARG_ID, ARG_VALUE, ARG_AS
+from flowserv.service.run.argument import ARG, FILE
 from flowserv.tests.files import FakeStream
 from flowserv.tests.service import (
     create_group, create_user, create_workflow, start_run, upload_file
@@ -55,8 +55,8 @@ def test_run_helloworld_sync(service, specfile, state):
         names = FakeStream(data=['Alice', 'Bob'], format='plain/text')
         file_id = upload_file(api, group_id, user_id, names)
         args = [
-            {ARG_ID: 'names', ARG_VALUE: file_id, ARG_AS: 'data/names.txt'},
-            {ARG_ID: 'sleeptime', ARG_VALUE: 3}
+            ARG('names', FILE(file_id, 'data/names.txt')),
+            ARG('sleeptime', 3)
         ]
         run_id = start_run(api, group_id, user_id, arguments=args)
     # -- Validate the run handle against the expected state -------------------

@@ -108,7 +108,7 @@ class RemoteWorkflowController(WorkflowController):
         template: flowserv.model.template.base.WorkflowTemplate
             Workflow template containing the parameterized specification and
             the parameter declarations.
-        arguments: dict(flowserv.model.parameter.value.TemplateArgument)
+        arguments: dict
             Dictionary of argument values for parameters in the template.
         service: contextlib,contextmanager, default=None
             Context manager to create an instance of the service API.

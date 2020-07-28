@@ -25,7 +25,8 @@ workflow:
 parameters:
     - id: names
       name: 'Input file'
-      datatype: file
+      type: file
     - id: sleeptime
-      datatype: int
+      name: 'Sleeptime (s)'
+      type: int
       defaultValue: 10

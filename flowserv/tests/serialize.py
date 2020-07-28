@@ -291,8 +291,8 @@ def validate_parameter(doc):
     """
     util.validate_doc(
         doc=doc,
-        mandatory=['id', 'name', 'datatype', 'index', 'required'],
-        optional=['description', 'as', 'defaultValue', 'parent', 'values']
+        mandatory=['id', 'name', 'type', 'index', 'isRequired'],
+        optional=['description', 'defaultValue', 'target', 'values', 'module']
     )
 
 

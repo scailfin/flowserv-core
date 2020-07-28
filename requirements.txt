@@ -1,6 +1,5 @@
 docker
 gitpython
-jsonschema
 passlib
 psycopg2-binary
 python-dateutil

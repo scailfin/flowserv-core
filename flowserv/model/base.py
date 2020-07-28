@@ -22,12 +22,12 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.types import TypeDecorator, Unicode
 
-from flowserv.model.parameter.base import InputFile, ParameterGroup
+from flowserv.model.parameter.base import ParameterGroup
 from flowserv.model.template.base import WorkflowTemplate
+from flowserv.model.template.parameter import ParameterIndex
 from flowserv.model.template.schema import ResultSchema
 
 import flowserv.model.workflow.state as st
-import flowserv.model.parameter.base as pb
 import flowserv.util as util
 
 # -- ORM Base -----------------------------------------------------------------
@@ -46,7 +46,7 @@ class JsonObject(TypeDecorator):
     def process_literal_param(self, value, dialect):
         """Expects a JSON serializable object."""
         if value is not None:
-            return json.dumps(value, cls=ArgumentEncoder)
+            return json.dumps(value)
 
     process_bind_param = process_literal_param
 
@@ -66,14 +66,14 @@ class WorkflowParameters(TypeDecorator):
     def process_literal_param(self, value, dialect):
         """Expects a dictionary of parameter declarations."""
         if value is not None:
-            return json.dumps([p.to_dict() for p in value.values()])
+            return json.dumps(value.to_dict())
 
     process_bind_param = process_literal_param
 
     def process_result_value(self, value, dialect):
         """Create parameter index from JSON serialization."""
         if value is not None:
-            return pb.create_parameter_index(json.loads(value), validate=False)
+            return ParameterIndex.from_dict(json.loads(value), validate=False)
 
 
 class WorkflowModules(TypeDecorator):
@@ -186,37 +186,6 @@ class FileHandle(Base):
         """
         assert self._path is not None
         return os.stat(self._path).st_size
-
-    def to_input(self, parameter, target_path=None):
-        """Get input file object for this file handle. If the target_path is
-        not given a constant target definition is expected to be included in
-        the parameter declaration.
-
-        Parameters
-        ----------
-        parameter: flowserv.model.parameter.base.TemplateParameter
-            Template parameter declaration.
-        target_path: string, default=None
-            Target path for the input file.
-
-        Returns
-        -------
-        flowserv.model.parameter.base.InputFile
-        """
-        assert self._path is not None
-        if target_path is None:
-            if parameter.has_constant():
-                if not parameter.as_input():
-                    target_path = parameter.get_constant()
-            if target_path is None:
-                msg = "no target path given for '{}'"
-                raise ValueError(msg.format(parameter.identifier))
-        return InputFile(
-            filename=self._path,
-            target_path=target_path,
-            file_id=self.file_id,
-            name=self.name
-        )
 
 
 # -- Association Tables -------------------------------------------------------
@@ -738,23 +707,6 @@ class RunMessage(Base):
 
 # -- Helper classes and functions ---------------------------------------------
 
-class ArgumentEncoder(json.JSONEncoder):
-    """JSON encoder for run argument values. The encoder is required to handle
-    argument values that are input file objects.
-    """
-    def default(self, obj):
-        if isinstance(obj, InputFile):
-            return {
-                'file': {
-                    'id': obj.file_id,
-                    'name': obj.name,
-                },
-                'target': obj.target_path
-            }
-        # Let the base class default method raise the TypeError
-        return json.JSONEncoder.default(self, obj)
-
-
 def by_pos(msg):
-    """Helper to sort log messaged by position."""
+    """Helper to sort log messages by position."""
     return msg.pos
