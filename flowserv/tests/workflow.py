@@ -12,6 +12,7 @@ import tempfile
 
 from flowserv.model.parameter.files import InputFile, PARA_FILE
 from flowserv.model.template.base import WorkflowTemplate
+from flowserv.model.workflow.manifest import WorkflowManifest
 from flowserv.model.workflow.serial import SerialWorkflow
 from flowserv.model.workflow.state import StatePending
 from flowserv.service.run.argument import ARG, FILE  # noqa: F401
@@ -280,7 +281,7 @@ def INPUTFILE(filename, target_path=None):
     return filename, target_path
 
 
-def read_template(sourcedir, rundir, specfile=None):
+def read_template(sourcedir, rundir, specfile=None, manifestfile=None):
     """Read workflow template from a given source directory.
 
     Parameters
@@ -293,32 +294,26 @@ def read_template(sourcedir, rundir, specfile=None):
     specfile: string, default=None
         Path to the workflow template specification file (absolute or
         relative to the workflow directory)
+    manifestfile: string, default=None
+        Path to manifest file. If not given an attempt is made to read one
+        of the default manifest file names in the base directory.
 
     Returns
     -------
     flowserv.model.template.base.WorkflowTemplate
     """
     # Read project metadata from the manifest.
-    projectmeta = repo.read_manifest(
-        projectdir=sourcedir,
-        name=util.get_short_identifier(),
-        specfile=specfile
+    manifest = WorkflowManifest.load(
+        basedir=sourcedir,
+        specfile=specfile,
+        manifestfile=manifestfile
     )
     # Read the template specification file in the template workflow folder. If
     # the template is not found an error is raised.
-    template = repo.read_template(
-        projectmeta=projectmeta,
-        projectdir=sourcedir,
-        templatedir=rundir,
-        default_filenames=repo.DEFAULT_TEMPLATES
-    )
+    template = manifest.template(templatedir=rundir)
     if template is None:
         raise err.InvalidTemplateError('no template file found')
     # Copy files from the workflow folder to the template's static file
     # folder. By default all files in the project folder are copied.
-    repo.copy_files(
-        projectmeta=projectmeta,
-        projectdir=sourcedir,
-        templatedir=rundir
-    )
+    manifest.copyfiles(targetdir=rundir)
     return template

@@ -1,0 +1,6 @@
+name: 'Hello World'
+description: 'Hello World Demo'
+instructions: 'instructions.md'
+files:
+    - source: 'code'
+specfile: 'benchmark.yaml'

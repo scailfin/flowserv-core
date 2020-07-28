@@ -108,7 +108,7 @@ class App(object):
 
 def install_app(
     name=None, description=None, instructions=None, sourcedir=None,
-    repourl=None, specfile=None, db=None, basedir=None
+    repourl=None, specfile=None, manifestfile=None, db=None, basedir=None
 ):
     """Create database objects for a application that is defined by a workflow
     template. For each application the workflow is created, a single unser and
@@ -131,6 +131,9 @@ def install_app(
     specfile: string, optional
         Path to the workflow template specification file (absolute or
         relative to the workflow directory)
+    manifestfile: string, default=None
+        Path to manifest file. If not given an attempt is made to read one
+        of the default manifest file names in the base directory.
     db: flowserv.model.database.DB, default=None
         Database connection manager.
     basedir: string, default=None
@@ -157,6 +160,7 @@ def install_app(
             sourcedir=sourcedir,
             repourl=repourl,
             specfile=specfile,
+            manifestfile=manifestfile,
             ignore_postproc=True
         )
         workflow_id = workflow.workflow_id
@@ -217,3 +221,32 @@ def list_apps(db=None):
                 if group.name == wf.name:
                     result.append((wf.name, group.group_id))
     return result
+
+
+def uninstall_app(app_key, db=None, basedir=None):
+    """Remove workflow and group associated with the given application key.
+
+    Parameters
+    ----------
+    app_key: string
+        Application identifier (i.e., group identifier).
+    db: flowserv.model.database.DB, default=None
+        Database connection manager.
+    basedir: string, default=None
+        Base directory for application files.
+    """
+    if db is None:
+        # Use the default database object if no database is given.
+        from flowserv.service.database import database
+        db = database
+    basedir = config.APP_BASEDIR(basedir)
+    fs = WorkflowFileSystem(util.create_dir(basedir, abs=True))
+    # Delete workflow and all related files.
+    with db.session() as session:
+        # Get the identifier for the workflow that is associated with the
+        # application key (workflow group).
+        group = WorkflowGroupManager(session=session, fs=fs).get_group(app_key)
+        workflow_id = group.workflow_id
+        # Delete workflow using the workflow manager.
+        WorkflowManager(session=session, fs=fs).delete_workflow(workflow_id)
+        session.commit()

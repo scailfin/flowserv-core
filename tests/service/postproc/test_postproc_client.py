@@ -44,7 +44,8 @@ def test_workflow_postproc_client(service, hello_world):
         runs = Runs(rundir)
         assert len(runs) == 4
         assert [r.run_id for r in ranking] == [r.run_id for r in runs]
-        for run in runs:
+        for i in range(len(runs)):
+            run = runs.get_run(runs.at_rank(i).run_id)
             assert run.get_file(name='results/analytics.json') is not None
             assert os.path.isfile(run.get_file(name='results/analytics.json'))
             assert run.get_file(name='results/greeting.txt') is None

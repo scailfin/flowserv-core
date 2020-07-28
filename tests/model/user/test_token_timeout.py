@@ -21,8 +21,8 @@ import flowserv.tests.model as model
 
 
 @pytest.mark.parametrize('authcls', [DefaultAuthPolicy, OpenAccessAuth])
-def test_login_timeout(database, authcls):
-    """Test login after key expired."""
+def test_authenticate_after_timeout(database, authcls):
+    """Test authentication after key expired."""
     # -- Setup ----------------------------------------------------------------
     #
     # Create a database with a single active user.
@@ -39,3 +39,22 @@ def test_login_timeout(database, authcls):
         time.sleep(1.5)
         with pytest.raises(err.UnauthenticatedAccessError):
             auth.authenticate(api_key)
+
+
+@pytest.mark.parametrize('authcls', [DefaultAuthPolicy, OpenAccessAuth])
+def test_login_after_timeout(database, authcls):
+    """Test login after key expired."""
+    # -- Setup ----------------------------------------------------------------
+    #
+    # Create a database with a single active user.
+    with database.session() as session:
+        user_1 = model.create_user(session, active=True)
+    # Test login after timeout -----------------------------------------
+    with database.session() as session:
+        # Create user manager with TTL for login tokens of 1 sec.
+        users = UserManager(session, token_timeout=1)
+        # Authenticate user 1. Then sleep for 1.5 sec. When logging in again an
+        # new api-key is generated.
+        api_key = users.login_user(user_1, user_1).api_key.value
+        time.sleep(1.5)
+        assert users.login_user(user_1, user_1).api_key.value != api_key

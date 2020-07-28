@@ -44,7 +44,7 @@ class WorkflowService(object):
 
     def create_workflow(
         self, name, description=None, instructions=None, sourcedir=None,
-        repourl=None, specfile=None, ignore_postproc=False
+        repourl=None, specfile=None, manifestfile=None, ignore_postproc=False
     ):
         """Create a new workflow in the repository. If the workflow template
         includes a result schema the workflow is also registered with the
@@ -68,6 +68,9 @@ class WorkflowService(object):
         specfile: string, optional
             Path to the workflow template specification file (absolute or
             relative to the workflow directory)
+        manifestfile: string, default=None
+            Path to manifest file. If not given an attempt is made to read one
+            of the default manifest file names in the base directory.
         ignore_postproc: bool, default=False
             Ignore post-processing workflow specification if True.
 
@@ -89,6 +92,7 @@ class WorkflowService(object):
             sourcedir=sourcedir,
             repourl=repourl,
             specfile=specfile,
+            manifestfile=manifestfile,
             ignore_postproc=ignore_postproc
         )
         # Return serialization og the workflow handle

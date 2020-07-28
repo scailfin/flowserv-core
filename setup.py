@@ -82,6 +82,7 @@ setup(
     entry_points={
         'console_scripts': [
             'flowserv = flowserv.cli.admin:cli',
+            'flowapp = flowserv.cli.app:cli',
         ]
     },
     classifiers=[

@@ -131,21 +131,13 @@ def configuration(
 
 @cli.command()
 @click.option(
-    '-d', '--dir',
-    type=click.Path(exists=True, dir_okay=True, readable=True),
-    help='Base directory for API files (overrides FLOWSERV_API_DIR).'
-)
-@click.option(
     '-f', '--force',
     is_flag=True,
     default=False,
     help='Create database without confirmation'
 )
-def init(dir=None, force=False):
-    """Initialize database and base directories for the flowServ API. The
-    configuration parameters for the database are taken from the respective
-    environment variables. Creates the API base directory if it does not exist.
-    """
+def init(force=False):
+    """Initialize database and base directories for the API."""
     if not force:
         click.echo('This will erase an existing database.')
         click.confirm('Continue?', default=True, abort=True)
@@ -155,12 +147,7 @@ def init(dir=None, force=False):
     except err.MissingConfigurationError as ex:
         click.echo(str(ex))
         sys.exit(-1)
-    # If the base directory is given ensure that the directory exists
-    if dir is not None:
-        base_dir = dir
-    else:
-        base_dir = API_BASEDIR()
-    util.create_dir(base_dir)
+    util.create_dir(API_BASEDIR())
 
 
 # -- Run workflow template for testing purposes -------------------------------

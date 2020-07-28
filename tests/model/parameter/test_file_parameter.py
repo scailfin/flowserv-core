@@ -78,13 +78,25 @@ def test_file_parameter_from_dict():
 
 def test_file_parameter_value(tmpdir):
     """Test getting argument value for a file parameter."""
-    para = FileParameter('0000', 'name', 0, 'data/names.txt')
     filename = os.path.abspath(tmpdir)
+    # -- Parameter target value
+    para = FileParameter('0000', 'name', 0, target='data/names.txt')
     file = para.to_argument(filename)
     assert file.source() == filename
     assert file.target() == 'data/names.txt'
     assert str(file) == file.target()
-    # Missing file without error
+    # -- Parameter default value
+    para = FileParameter('0000', 'name', 0, default_value='data/names.txt')
+    file = para.to_argument(filename)
+    assert file.source() == filename
+    assert file.target() == 'data/names.txt'
+    assert str(file) == file.target()
+    # -- Error for missing target
+    para = FileParameter('0000', 'name', 0)
+    with pytest.raises(err.InvalidArgumentError):
+        para.to_argument(filename)
+    # -- Missing file without error
+    para = FileParameter('0000', 'name', 0, target='data/names.txt')
     filename = os.path.join(filename, 'missing.txt')
     file = para.to_argument(filename, exists=False)
     assert file.source() == filename
