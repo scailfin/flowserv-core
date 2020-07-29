@@ -21,6 +21,7 @@ install_requires = [
     'psycopg2-binary',
     'python-dateutil',
     'pyyaml>=5.1',
+    'requests',
     'SQLAlchemy>=1.3.18',
     'Click'
 ]

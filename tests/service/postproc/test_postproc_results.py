@@ -51,7 +51,7 @@ def test_workflow_postproc_results(service):
     with service() as api:
         workflow_id = api.workflows().create_workflow(
             name='W1',
-            sourcedir=TEMPLATE_DIR,
+            source=TEMPLATE_DIR,
             specfile=SPEC_FILE
         )['id']
     # -- Create three groups and a successful run for each. Then read the

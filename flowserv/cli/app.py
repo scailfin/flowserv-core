@@ -50,17 +50,6 @@ def cli():
     help='File containing detailed instructions.'
 )
 @click.option(
-    '-s', '--src',
-    type=click.Path(exists=True, file_okay=False, readable=True),
-    required=False,
-    help='Workflow template directory.'
-)
-@click.option(
-    '-r', '--url',
-    required=False,
-    help='Workflow template Git repository name or URL.'
-)
-@click.option(
     '-t', '--specfile',
     type=click.Path(exists=True, dir_okay=False, readable=True),
     required=False,
@@ -72,9 +61,9 @@ def cli():
     required=False,
     help='Optional path to workflow manifest file.'
 )
+@click.argument('template')
 def install_workflow(
-    initdb=False, name=None, description=None, instructions=None,
-    src=None, url=None, specfile=None, manifest=None
+    initdb, name, description, instructions, specfile, manifest, template
 ):
     """Install application from local folder or repository."""
     if initdb:
@@ -84,11 +73,10 @@ def install_workflow(
         DB().init()
     # Install the application from the given workflow template.
     app_key = install_app(
+        source=template,
         name=name,
         description=description,
         instructions=instructions,
-        sourcedir=src,
-        repourl=url,
         specfile=specfile,
         manifestfile=manifest
     )

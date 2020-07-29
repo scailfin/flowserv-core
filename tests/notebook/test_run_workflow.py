@@ -10,7 +10,10 @@
 
 import os
 
-from flowserv.tests.workflow import clone_helloworld, run_workflow, INPUTFILE
+from flowserv.model.workflow.manager import clone
+from flowserv.model.workflow.repository import WorkflowRepository
+
+from flowserv.tests.workflow import run_workflow, INPUTFILE, GITHUB_HELLOWORLD
 
 DIR = os.path.dirname(os.path.realpath(__file__))
 TEMPLATE_DIR = os.path.join(DIR, '../.files/benchmark/helloworld')
@@ -19,13 +22,14 @@ NAMES_FILE = os.path.join(TEMPLATE_DIR, 'data/names.txt')
 
 def test_running_workflow_template(tmpdir):
     """Test helper function for running a workflow template."""
-    workflowdir = clone_helloworld()
-    # Use helper function INPUTFILE to create run argument for names file.
-    args = {
-        'greeting': 'Hey there',
-        'sleeptime': 2,
-        'names': INPUTFILE(NAMES_FILE)
-    }
-    rundir = tmpdir
-    state = run_workflow(workflowdir, arguments=args, rundir=rundir)
-    assert state.is_success()
+    repo = WorkflowRepository(templates=[])
+    with clone(GITHUB_HELLOWORLD, repository=repo) as workflowdir:
+        # Use helper function INPUTFILE to create run argument for names file.
+        args = {
+            'greeting': 'Hey there',
+            'sleeptime': 2,
+            'names': INPUTFILE(NAMES_FILE)
+        }
+        rundir = tmpdir
+        state = run_workflow(workflowdir, arguments=args, rundir=rundir)
+        assert state.is_success()

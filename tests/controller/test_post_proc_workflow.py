@@ -53,7 +53,7 @@ def test_postproc_workflow(tmpdir):
     with service(engine=engine) as api:
         workflow_id = create_workflow(
             api,
-            sourcedir=TEMPLATE_DIR,
+            source=TEMPLATE_DIR,
             specfile=SPEC_FILE
         )
         user_id = create_user(api)
@@ -142,7 +142,7 @@ def run_erroneous_workflow(service, engine, specfile):
         # Create workflow template, user, and the workflow group.
         workflow_id = create_workflow(
             api,
-            sourcedir=TEMPLATE_DIR,
+            source=TEMPLATE_DIR,
             specfile=specfile
         )
         user_id = create_user(api)

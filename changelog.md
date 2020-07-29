@@ -23,3 +23,4 @@
 * Run workflow templates from command-line for test purposes.
 * Add methods for running and testing workflows in Python scripts (or Jupyter Notebooks).
 * Include support and a command line interface for single-workflow applications.
+* Install workflow templates from global repository.

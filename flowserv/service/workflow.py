@@ -43,8 +43,8 @@ class WorkflowService(object):
         self.serialize = serializer
 
     def create_workflow(
-        self, name, description=None, instructions=None, sourcedir=None,
-        repourl=None, specfile=None, manifestfile=None, ignore_postproc=False
+        self, source, name=None, description=None, instructions=None,
+        specfile=None, manifestfile=None, ignore_postproc=False
     ):
         """Create a new workflow in the repository. If the workflow template
         includes a result schema the workflow is also registered with the
@@ -54,17 +54,15 @@ class WorkflowService(object):
 
         Parameters
         ----------
+        source: string
+            Path to local template, name or URL of the template in the
+            repository.
         name: string
             Unique workflow name
         description: string, optional
             Optional short description for display in workflow listings
         instructions: string, optional
             Text containing detailed instructions for running the workflow
-        sourcedir: string, optional
-            Directory containing the workflow static files and the workflow
-            template specification.
-        repourl: string, optional
-            Git repository that contains the the workflow files
         specfile: string, optional
             Path to the workflow template specification file (absolute or
             relative to the workflow directory)
@@ -86,11 +84,10 @@ class WorkflowService(object):
         """
         # Create workflow in the repository to get the workflow handle.
         workflow = self.workflow_repo.create_workflow(
+            source=source,
             name=name,
             description=description,
             instructions=instructions,
-            sourcedir=sourcedir,
-            repourl=repourl,
             specfile=specfile,
             manifestfile=manifestfile,
             ignore_postproc=ignore_postproc

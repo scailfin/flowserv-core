@@ -54,7 +54,7 @@ def hello_world():
             name=name if name is not None else util.get_unique_identifier(),
             description=description,
             instructions=instructions,
-            sourcedir=TEMPLATE_DIR
+            source=TEMPLATE_DIR
         )
 
     return _hello_world

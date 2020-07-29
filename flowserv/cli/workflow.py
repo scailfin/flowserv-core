@@ -17,12 +17,6 @@ from flowserv.service.api import service
 
 import flowserv.error as err
 
-# Define a dictionary that associates identifier with some default repositories
-# for easy install.
-REPOS = {
-    'Hello World': 'https://github.com/scailfin/rob-demo-hello-world.git'
-}
-
 
 # -- Add workflow -------------------------------------------------------------
 
@@ -44,17 +38,6 @@ REPOS = {
     help='File containing instructions for running the workflow.'
 )
 @click.option(
-    '-s', '--src',
-    type=click.Path(exists=True, file_okay=False, readable=True),
-    required=False,
-    help='Workflow template directory.'
-)
-@click.option(
-    '-r', '--url',
-    required=False,
-    help='Workflow template Git repository name or URL.'
-)
-@click.option(
     '-f', '--specfile',
     type=click.Path(exists=True, dir_okay=False, readable=True),
     required=False,
@@ -66,15 +49,11 @@ REPOS = {
     required=False,
     help='Optional path to workflow manifest file.'
 )
+@click.argument('template')
 def add_workflow(
-    name=None, description=None, instructions=None, src=None, url=None,
-    specfile=None, manifest=None
+    name, description, instructions, specfile, manifest, template
 ):
     """Create a new workflow."""
-    # If the url references a known repository in REPO replace the value with
-    # the repository url
-    if url is not None:
-        url = REPOS.get(url, url)
     # Add workflow template to repository
     try:
         # Use the workflow service component to create the workflow. This
@@ -82,11 +61,10 @@ def add_workflow(
         # specifies a result schema.
         with service() as api:
             wf = api.workflows().create_workflow(
+                source=template,
                 name=name,
                 description=description,
                 instructions=read_instructions(instructions),
-                sourcedir=src,
-                repourl=url,
                 specfile=specfile,
                 manifestfile=manifest
             )

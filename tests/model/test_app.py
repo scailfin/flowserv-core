@@ -21,7 +21,7 @@ TEMPLATE_DIR = os.path.join(DIR, '../.files/benchmark/helloworld')
 
 def test_install_app(database, tmpdir):
     """Install a workflow template as a flowServ application."""
-    app_key = install_app(sourcedir=TEMPLATE_DIR, db=database, basedir=tmpdir)
+    app_key = install_app(source=TEMPLATE_DIR, db=database, basedir=tmpdir)
     assert app_key is not None
     apps = list_apps(db=database)
     assert len(apps) == 1
@@ -36,7 +36,7 @@ def test_install_app_from_env(tmpdir):
     os.environ[FLOWSERV_API_BASEDIR] = str(tmpdir)
     from flowserv.service.database import database
     database.init()
-    app_key = install_app(sourcedir=TEMPLATE_DIR,)
+    app_key = install_app(source=TEMPLATE_DIR,)
     assert app_key is not None
     apps = list_apps()
     assert len(apps) == 1

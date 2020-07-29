@@ -198,7 +198,7 @@ def run_workflow(src, specfile, ignorepp, output):  # pragma: no cover
     with service() as api:
         workflow = api.workflows().create_workflow(
             name=util.get_short_identifier(),
-            sourcedir=src,
+            source=src,
             specfile=specfile,
             ignore_postproc=ignorepp
         )

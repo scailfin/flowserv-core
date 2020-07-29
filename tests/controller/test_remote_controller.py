@@ -44,7 +44,7 @@ def test_cancel_remote_workflow(tmpdir):
         is_async=True
     )
     with service(engine=engine) as api:
-        workflow_id = create_workflow(api, sourcedir=TEMPLATE_DIR)
+        workflow_id = create_workflow(api, source=TEMPLATE_DIR)
         user_id = create_user(api)
         group_id = create_group(api, workflow_id, [user_id])
         run_id = start_run(api, group_id, user_id)
@@ -86,7 +86,7 @@ def test_run_remote_workflow(tmpdir, is_async):
         is_async=is_async
     )
     with service(engine=engine) as api:
-        workflow_id = create_workflow(api, sourcedir=TEMPLATE_DIR)
+        workflow_id = create_workflow(api, source=TEMPLATE_DIR)
         user_id = create_user(api)
         group_id = create_group(api, workflow_id, [user_id])
         run_id = start_run(api, group_id, user_id)
@@ -130,7 +130,7 @@ def test_run_remote_workflow_with_error(tmpdir):
         is_async=True
     )
     with service(engine=engine) as api:
-        workflow_id = create_workflow(api, sourcedir=TEMPLATE_DIR)
+        workflow_id = create_workflow(api, source=TEMPLATE_DIR)
         user_id = create_user(api)
         group_id = create_group(api, workflow_id, [user_id])
         run_id = start_run(api, group_id, user_id)

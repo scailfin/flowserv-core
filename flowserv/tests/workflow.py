@@ -19,7 +19,6 @@ from flowserv.service.run.argument import ARG, FILE  # noqa: F401
 
 import flowserv.controller.serial.engine as serial
 import flowserv.error as err
-import flowserv.model.workflow.manager as repo
 import flowserv.model.workflow.state as serialize
 import flowserv.service.postproc.base as postbase
 import flowserv.service.postproc.util as postutil
@@ -27,17 +26,6 @@ import flowserv.util as util
 
 
 GITHUB_HELLOWORLD = 'https://github.com/scailfin/rob-demo-hello-world.git'
-
-
-def clone_helloworld():
-    """Clone 'Hello World' demo repository to temporary folder. Returns target
-    folder.
-
-    Returns
-    -------
-    string
-    """
-    return repo.git_clone(GITHUB_HELLOWORLD)
 
 
 def prepare_postproc_data(templatefile, runs):

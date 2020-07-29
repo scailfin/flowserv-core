@@ -19,24 +19,19 @@ TEMPLATE_DIR = os.path.join(DIR, '../.files/benchmark/helloworld')
 
 def test_create_workflow(cli_runner):
     """Test creating a new workflow via the command-line interface."""
-    cmd = ['workflows', 'create', '-s', TEMPLATE_DIR]
-    result = cli_runner.invoke(cli, cmd)
-    assert result.exit_code == 0
-    assert 'export FLOWSERV_WORKFLOW=' in result.output
-    # Create from GitHub repository
-    cmd = ['workflows', 'create', '-r', 'Hello World']
+    cmd = ['workflows', 'create', TEMPLATE_DIR]
     result = cli_runner.invoke(cli, cmd)
     assert result.exit_code == 0
     assert 'export FLOWSERV_WORKFLOW=' in result.output
     # Error when using an invalid name.
-    cmd = ['workflows', 'create', '-s', TEMPLATE_DIR, '-n', 'X'*600]
+    cmd = ['workflows', 'create', TEMPLATE_DIR, '-n', 'X'*600]
     result = cli_runner.invoke(cli, cmd)
     assert result.exit_code == -1
 
 
 def test_delete_workflow(cli_runner):
     """Test deleting a workflow via the command-line interface."""
-    cmd = ['workflows', 'create', '-s', TEMPLATE_DIR]
+    cmd = ['workflows', 'create', TEMPLATE_DIR]
     result = cli_runner.invoke(cli, cmd)
     pos = result.output.find('export FLOWSERV_WORKFLOW=') + 25
     workflow_id = result.output[pos:].strip()
@@ -57,9 +52,9 @@ def test_list_workflows(cli_runner):
     assert result.exit_code == 0
     assert result.output == ''
     # -- Test listing with two workflows --------------------------------------
-    cmd = ['workflows', 'create', '-s', TEMPLATE_DIR]
+    cmd = ['workflows', 'create', TEMPLATE_DIR]
     assert cli_runner.invoke(cli, cmd).exit_code == 0
-    cmd = ['workflows', 'create', '-s', TEMPLATE_DIR]
+    cmd = ['workflows', 'create', TEMPLATE_DIR]
     assert cli_runner.invoke(cli, cmd).exit_code == 0
     cmd = ['workflows', 'list']
     result = cli_runner.invoke(cli, cmd)
@@ -70,7 +65,7 @@ def test_list_workflows(cli_runner):
 def test_update_workflow(cli_runner, tmpdir):
     """Test updating workflow properties via the command-line interface."""
     # -- Setup ----------------------------------------------------------------
-    cmd = ['workflows', 'create', '-s', TEMPLATE_DIR]
+    cmd = ['workflows', 'create', TEMPLATE_DIR]
     result = cli_runner.invoke(cli, cmd)
     pos = result.output.find('export FLOWSERV_WORKFLOW=') + 25
     workflow_id = result.output[pos:].strip()
