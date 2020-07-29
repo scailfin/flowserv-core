@@ -17,8 +17,11 @@ import os
 import shutil
 import tempfile
 
+from contextlib import contextmanager
+
 from flowserv.model.base import WorkflowHandle
 from flowserv.model.workflow.manifest import WorkflowManifest
+from flowserv.model.workflow.repository import WorkflowRepository
 
 import flowserv.error as err
 import flowserv.util as util
@@ -68,8 +71,8 @@ class WorkflowManager(object):
         self.attempts = attempts if attempts is not None else DEFAULT_ATTEMPTS
 
     def create_workflow(
-        self, name=None, description=None, instructions=None, sourcedir=None,
-        repourl=None, specfile=None, manifestfile=None, ignore_postproc=False
+        self, source, name=None, description=None, instructions=None,
+        specfile=None, manifestfile=None, ignore_postproc=False
     ):
         """Add new workflow to the repository. The associated workflow template
         is created in the template repository from either the given source
@@ -96,18 +99,16 @@ class WorkflowManager(object):
 
         Parameters
         ----------
-        name: string, optional
+        source: string
+            Path to local template, name or URL of the template in the
+            repository.
+        name: string, default=None
             Unique workflow name
-        description: string, optional
+        description: string, default=None
             Optional short description for display in workflow listings
-        instructions: string, optional
+        instructions: string, default=None
             File containing instructions for workflow users.
-        sourcedir: string, optional
-            Directory containing the workflow static files and the workflow
-            template specification.
-        repourl: string, optional
-            Git repository that contains the the workflow files
-        specfile: string, optional
+        specfile: string, default=None
             Path to the workflow template specification file (absolute or
             relative to the workflow directory)
         manifestfile: string, default=None
@@ -127,18 +128,9 @@ class WorkflowManager(object):
         flowserv.error.InvalidManifestError
         ValueError
         """
-        # Exactly one of sourcedir and repourl has to be not None. If both
-        # are None (or not None) a ValueError is raised.
-        if sourcedir is None and repourl is None:
-            raise ValueError('no source folder or repository url given')
-        elif sourcedir is not None and repourl is not None:
-            raise ValueError('source folder and repository url given')
         # If a repository Url is given we first clone the repository into a
         # temporary directory that is used as the workflow source directory.
-        sourcedir = git_clone(repourl) if repourl is not None else sourcedir
-        # Read project metadata from description file. Override with given
-        # arguments
-        try:
+        with clone(source) as sourcedir:
             manifest = WorkflowManifest.load(
                 basedir=sourcedir,
                 manifestfile=manifestfile,
@@ -148,29 +140,20 @@ class WorkflowManager(object):
                 specfile=specfile,
                 existing_names=[wf.name for wf in self.list_workflows()]
             )
-        except (IOError, OSError, ValueError, err.InvalidManifestError) as ex:
-            # Cleanup source directory if it was cloned from a git repository.
-            if repourl is not None:
-                shutil.rmtree(sourcedir)
-            raise ex
-        # Create identifier and folder for the workflow template. Create a
-        # sub-folder for static template files that are copied from the project
-        # folder.
-        workflow_id, workflowdir = self.create_folder(self.fs.workflow_basedir)
-        staticdir = self.fs.workflow_staticdir(workflow_id)
-        template = manifest.template(staticdir)
-        # Copy files from the project folder to the template's static file
-        # folder. By default all files in the project folder are copied.
-        try:
-            manifest.copyfiles(targetdir=staticdir)
-            # Remove the project folder if it was created from a git repository
-            if repourl is not None:
-                shutil.rmtree(sourcedir)
-        except (IOError, OSError, KeyError) as ex:
-            shutil.rmtree(workflowdir)
-            if repourl is not None:
-                shutil.rmtree(sourcedir)
-            raise ex
+            # Create identifier and folder for the workflow template. Create a
+            # sub-folder for static template files that are copied from the
+            # project folder.
+            func = self.fs.workflow_basedir
+            workflow_id, workflowdir = self.create_folder(dirfunc=func)
+            staticdir = self.fs.workflow_staticdir(workflow_id)
+            template = manifest.template(staticdir)
+            # Copy files from the project folder to the template's static file
+            # folder. By default all files in the project folder are copied.
+            try:
+                manifest.copyfiles(targetdir=staticdir)
+            except (IOError, OSError, KeyError) as ex:
+                shutil.rmtree(workflowdir)
+                raise ex
         # Insert workflow into database and return the workflow handle.
         postproc_spec = template.postproc_spec if not ignore_postproc else None
         workflow = WorkflowHandle(
@@ -359,25 +342,47 @@ class WorkflowManager(object):
 
 # -- Helper Methods -----------------------------------------------------------
 
-def git_clone(repourl):
-    """Clone a git repository from a given Url into a temporary folder on the
-    local disk.
+@contextmanager
+def clone(source, repository=None):
+    """Clone a workflow template repository. If source points to a directory on
+    local disk it is returned as the 'cloned' source directory. Otherwise, it
+    is assumed that source either references a known template in the global
+    workflow template repository or points to a git repository. The repository
+    is cloned into a temporary directory which is removed when the generator
+    resumes after the workflow has been copied to the local repository.
+
+    Returns the path to the resulting template source directory on the local
+    disk.
 
     Parameters
     ----------
-    repourl: string
-        Url to git repository.
+    source: string
+        The source is either a path to local template directory, an identifer
+        for a template in the global template repository, or the URL for a git
+        repository.
+    repository: flowserv.model.workflow.repository.WorkflowRepository,
+            default=None
+        Object providing access to the global workflow repository.
 
     Returns
     -------
     string
     """
-    # Create a temporary folder for the git repository
-    projectdir = tempfile.mkdtemp()
-    try:
-        git.Repo.clone_from(repourl, projectdir)
-    except (IOError, OSError, git.exc.GitCommandError) as ex:
-        # Make sure to cleanup by removing the created project folder
-        shutil.rmtree(projectdir)
-        raise ex
-    return projectdir
+    if os.path.isdir(source):
+        # Return the source if it references a directory on local disk.
+        yield source
+    else:
+        # Clone the repository that matches the given source into a temporary
+        # directory on local disk.
+        if repository is None:
+            repository = WorkflowRepository()
+        repourl = repository.get(source)
+        sourcedir = tempfile.mkdtemp()
+        try:
+            git.Repo.clone_from(repourl, sourcedir)
+            yield sourcedir
+        except (IOError, OSError, git.exc.GitCommandError) as ex:
+            raise ex
+        finally:
+            # Make sure to cleanup by removing the created teporary folder.
+            shutil.rmtree(sourcedir)

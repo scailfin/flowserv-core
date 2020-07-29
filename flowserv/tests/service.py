@@ -84,11 +84,11 @@ def create_ranking(api, workflow_id, user_id, count):
     return groups
 
 
-def create_workflow(api, sourcedir, specfile=None):
+def create_workflow(api, source, specfile=None):
     """Start a new workflow for a given template."""
     return api.workflows().create_workflow(
         name=util.get_unique_identifier(),
-        sourcedir=sourcedir,
+        source=source,
         specfile=specfile
     )['id']
 

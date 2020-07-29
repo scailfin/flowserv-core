@@ -48,7 +48,7 @@ def test_create_workflow(database, tmpdir):
     # -- Add workflow with minimal information --------------------------------
     with database.session() as session:
         manager = WorkflowManager(session=session, fs=fs)
-        wf = manager.create_workflow(sourcedir=BENCHMARK_DIR)
+        wf = manager.create_workflow(source=BENCHMARK_DIR)
         assert wf.name == 'Hello World'
         assert wf.description is None
         assert wf.instructions is None
@@ -64,7 +64,7 @@ def test_create_workflow(database, tmpdir):
             name='My benchmark',
             description='My description',
             instructions=INSTRUCTION_FILE,
-            sourcedir=BENCHMARK_DIR
+            source=BENCHMARK_DIR
         )
         assert wf.name == 'My benchmark'
         assert wf.description == 'My description'
@@ -84,7 +84,7 @@ def test_create_workflow_with_alt_spec(database, tmpdir):
     with database.session() as session:
         manager = WorkflowManager(session=session, fs=fs)
         wf = manager.create_workflow(
-            sourcedir=BENCHMARK_DIR,
+            source=BENCHMARK_DIR,
             specfile=TEMPLATE_WITHOUT_SCHEMA
         )
         workflow_id = wf.workflow_id
@@ -102,7 +102,7 @@ def test_create_workflow_with_alt_spec(database, tmpdir):
         manager = WorkflowManager(session=session, fs=fs)
         wf = manager.create_workflow(
             name='Top Tagger',
-            sourcedir=BENCHMARK_DIR,
+            source=BENCHMARK_DIR,
             specfile=TEMPLATE_TOPTAGGER
         )
         workflow_id = wf.workflow_id
@@ -121,26 +121,17 @@ def test_create_workflow_with_error(database, tmpdir):
     with database.session() as session:
         manager = WorkflowManager(session=session, fs=fs)
         with pytest.raises(err.ConstraintViolationError):
-            manager.create_workflow(name=' ', sourcedir=BENCHMARK_DIR)
-        manager.create_workflow(name='a' * 512, sourcedir=BENCHMARK_DIR)
+            manager.create_workflow(name=' ', source=BENCHMARK_DIR)
+        manager.create_workflow(name='a' * 512, source=BENCHMARK_DIR)
         with pytest.raises(err.ConstraintViolationError):
-            manager.create_workflow(name='a' * 513, sourcedir=BENCHMARK_DIR)
+            manager.create_workflow(name='a' * 513, source=BENCHMARK_DIR)
         # - Invalid template
         with pytest.raises(err.UnknownParameterError):
             manager.create_workflow(
                 name='A benchmark',
-                sourcedir=BENCHMARK_DIR,
+                source=BENCHMARK_DIR,
                 specfile=TEMPLATE_WITH_ERROR
             )
-        # -- Source and repo given --------------------------------------------
-        with pytest.raises(ValueError):
-            manager.create_workflow(name='Git', sourcedir='src', repourl='git')
-        # - No source given
-        with pytest.raises(ValueError):
-            manager.create_workflow(name='A benchmark')
-        # -- Error cloning repository -----------------------------------------
-        with pytest.raises(git.exc.GitCommandError):
-            manager.create_workflow(name='A benchmark', repourl='/dev/null')
 
 
 def test_create_workflow_with_alt_manifest(database, tmpdir):
@@ -149,7 +140,7 @@ def test_create_workflow_with_alt_manifest(database, tmpdir):
     with database.session() as session:
         manager = WorkflowManager(session=session, fs=fs)
         wf = manager.create_workflow(
-            sourcedir=BENCHMARK_DIR,
+            source=BENCHMARK_DIR,
             manifestfile=ALT_MANIFEST
         )
         assert wf.name == 'Hello World'
@@ -170,14 +161,14 @@ def test_delete_workflow(database, tmpdir):
     fs = WorkflowFileSystem(tmpdir)
     with database.session() as session:
         manager = WorkflowManager(session=session, fs=fs)
-        wf = manager.create_workflow(name='A', sourcedir=BENCHMARK_DIR)
+        wf = manager.create_workflow(name='A', source=BENCHMARK_DIR)
         workflow_1 = wf.workflow_id
         # Ensure that the tample and workflow folder exists for workflow 1.
         templatedir = wf.get_template().sourcedir
         workflowdir = fs.workflow_basedir(workflow_1)
         assert os.path.isdir(templatedir)
         assert os.path.isdir(workflowdir)
-        wf = manager.create_workflow(name='B', sourcedir=BENCHMARK_DIR)
+        wf = manager.create_workflow(name='B', source=BENCHMARK_DIR)
         workflow_2 = wf.workflow_id
     # -- Test delete first workflow -------------------------------------------
     with database.session() as session:
@@ -218,7 +209,7 @@ def test_error_for_id_func(database, tmpdir):
         )
         os.makedirs(manager.fs.workflow_basedir('0000'))
         with pytest.raises(RuntimeError):
-            manager.create_workflow(name='A', sourcedir=BENCHMARK_DIR)
+            manager.create_workflow(name='A', source=BENCHMARK_DIR)
         assert dummy_func.count == 101
 
 
@@ -230,12 +221,12 @@ def test_get_workflow(database, tmpdir):
     fs = WorkflowFileSystem(tmpdir)
     with database.session() as session:
         manager = WorkflowManager(session=session, fs=fs)
-        wf = manager.create_workflow(name='A', sourcedir=BENCHMARK_DIR)
+        wf = manager.create_workflow(name='A', source=BENCHMARK_DIR)
         workflow_1 = wf.workflow_id
         wf = manager.create_workflow(
             name='B',
             description='Workflow B',
-            sourcedir=BENCHMARK_DIR,
+            source=BENCHMARK_DIR,
             instructions=INSTRUCTION_FILE,
             specfile=TEMPLATE_WITHOUT_SCHEMA
         )
@@ -265,9 +256,9 @@ def test_list_workflow(database, tmpdir):
     fs = WorkflowFileSystem(tmpdir)
     with database.session() as session:
         manager = WorkflowManager(session=session, fs=fs)
-        manager.create_workflow(sourcedir=BENCHMARK_DIR)
-        manager.create_workflow(sourcedir=BENCHMARK_DIR)
-        manager.create_workflow(sourcedir=BENCHMARK_DIR)
+        manager.create_workflow(source=BENCHMARK_DIR)
+        manager.create_workflow(source=BENCHMARK_DIR)
+        manager.create_workflow(source=BENCHMARK_DIR)
     # -- Test list workflows --------------------------------------------------
     with database.session() as session:
         manager = WorkflowManager(session=session, fs=fs)
@@ -284,7 +275,7 @@ def test_update_workflow_description(database, tmpdir):
     with database.session() as session:
         manager = WorkflowManager(session=session, fs=fs)
         # Initialize the repository
-        wf = manager.create_workflow(name='A', sourcedir=BENCHMARK_DIR)
+        wf = manager.create_workflow(name='A', source=BENCHMARK_DIR)
         workflow_id = wf.workflow_id
     # -- Test update description and instruction text -------------------------
     with database.session() as session:
@@ -327,13 +318,13 @@ def test_update_workflow_name(database, tmpdir):
     with database.session() as session:
         manager = WorkflowManager(session=session, fs=fs)
         # Initialize the repository
-        wf = manager.create_workflow(name='A', sourcedir=BENCHMARK_DIR)
+        wf = manager.create_workflow(name='A', source=BENCHMARK_DIR)
         workflow_1 = wf.workflow_id
         wf = manager.create_workflow(
             name='My benchmark',
             description='desc',
             instructions=INSTRUCTION_FILE,
-            sourcedir=BENCHMARK_DIR
+            source=BENCHMARK_DIR
         )
         workflow_2 = wf.workflow_id
     # -- Test update workflow name --------------------------------------------
@@ -364,13 +355,13 @@ def test_workflow_name(database, tmpdir):
     fs = WorkflowFileSystem(tmpdir)
     with database.session() as session:
         manager = WorkflowManager(session=session, fs=fs)
-        manager.create_workflow(name='Workflow', sourcedir=BENCHMARK_DIR)
-        manager.create_workflow(name='Workflow (2)', sourcedir=BENCHMARK_DIR)
+        manager.create_workflow(name='Workflow', source=BENCHMARK_DIR)
+        manager.create_workflow(name='Workflow (2)', source=BENCHMARK_DIR)
     # Creating another workflow with name 'Workflow' will result in a workflow
     # with name 'Workflow (1)' and the 'Workflow (3)'
     with database.session() as session:
         manager = WorkflowManager(session=session, fs=fs)
-        wf = manager.create_workflow(name='Workflow', sourcedir=BENCHMARK_DIR)
+        wf = manager.create_workflow(name='Workflow', source=BENCHMARK_DIR)
         assert wf.name == 'Workflow (1)'
-        wf = manager.create_workflow(name='Workflow', sourcedir=BENCHMARK_DIR)
+        wf = manager.create_workflow(name='Workflow', source=BENCHMARK_DIR)
         assert wf.name == 'Workflow (3)'

@@ -47,7 +47,7 @@ def test_run_helloworld_sync(service, specfile, state):
     with service(engine=engine) as api:
         workflow_id = create_workflow(
             api,
-            sourcedir=TEMPLATE_DIR,
+            source=TEMPLATE_DIR,
             specfile=specfile
         )
         user_id = create_user(api)

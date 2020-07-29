@@ -107,8 +107,8 @@ class App(object):
 # -- App commands -------------------------------------------------------------
 
 def install_app(
-    name=None, description=None, instructions=None, sourcedir=None,
-    repourl=None, specfile=None, manifestfile=None, db=None, basedir=None
+    source, name=None, description=None, instructions=None, specfile=None,
+    manifestfile=None, db=None, basedir=None
 ):
     """Create database objects for a application that is defined by a workflow
     template. For each application the workflow is created, a single unser and
@@ -117,17 +117,14 @@ def install_app(
 
     Parameters
     ----------
+    source: string
+        Path to local template, name or URL of the template in the repository.
     name: string, optional
         Unique workflow name
     description: string, optional
         Optional short description for display in workflow listings
     instructions: string, optional
         File containing instructions for workflow users.
-    sourcedir: string, optional
-        Directory containing the workflow static files and the workflow
-        template specification.
-    repourl: string, optional
-        Git repository that contains the the workflow files
     specfile: string, optional
         Path to the workflow template specification file (absolute or
         relative to the workflow directory)
@@ -154,11 +151,10 @@ def install_app(
     with db.session() as session:
         repo = WorkflowManager(session=session, fs=fs)
         workflow = repo.create_workflow(
+            source=source,
             name=name,
             description=description,
             instructions=instructions,
-            sourcedir=sourcedir,
-            repourl=repourl,
             specfile=specfile,
             manifestfile=manifestfile,
             ignore_postproc=True

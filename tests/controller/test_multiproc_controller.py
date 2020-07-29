@@ -38,7 +38,7 @@ def test_cancel_run_helloworld(service):
     # Start a new run for the workflow template.
     engine = SerialWorkflowEngine(is_async=True)
     with service(engine=engine) as api:
-        workflow_id = create_workflow(api, sourcedir=TEMPLATE_DIR)
+        workflow_id = create_workflow(api, source=TEMPLATE_DIR)
         user_id = create_user(api)
         group_id = create_group(api, workflow_id, [user_id])
         names = FakeStream(data=['Alice', 'Bob', 'Zoe'], format='plain/text')
@@ -81,7 +81,7 @@ def test_run_helloworld_async(target, tmpdir):
     database.init()
     engine = SerialWorkflowEngine(is_async=True)
     with service(engine=engine) as api:
-        workflow_id = create_workflow(api, sourcedir=TEMPLATE_DIR)
+        workflow_id = create_workflow(api, source=TEMPLATE_DIR)
         user_id = create_user(api)
         group_id = create_group(api, workflow_id, [user_id])
         names = FakeStream(data=['Alice', 'Bob', 'Zoe'], format='plain/text')
