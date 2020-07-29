@@ -1,0 +1,8 @@
+FROM python:3.8
+COPY flowserv /app/flowserv
+COPY README.rst /app/README.rst
+COPY setup.py /app/setup.py
+WORKDIR /app
+RUN pip install /app
+RUN rm -Rf /app
+WORKDIR /
