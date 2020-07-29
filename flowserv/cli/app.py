@@ -11,6 +11,7 @@
 import click
 
 from flowserv.app import install_app, list_apps, uninstall_app
+from flowserv.cli.repository import list_repository
 from flowserv.model.database import DB
 
 import flowserv.config.app as config
@@ -95,3 +96,6 @@ def list_applications():
 def uninstall_application(appkey):
     """Uninstall application with the given key."""
     uninstall_app(app_key=appkey)
+
+
+cli.add_command(list_repository, name='repository')

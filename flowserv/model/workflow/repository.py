@@ -61,8 +61,8 @@ class WorkflowRepository(object):
         return identifier
 
     def list(self):
-        """Get list of printable strings containing the template identifier
-        and descriptions.
+        """Get list of tuples containing the template identifier, descriptions,
+        and repository URL.
 
         Returns
         -------
@@ -70,6 +70,6 @@ class WorkflowRepository(object):
         """
         result = list()
         for obj in self.templates:
-            entry = '{}\t{}'.format(obj.get('id'), obj.get('description'))
+            entry = obj.get('id'), obj.get('description'), obj.get('url')
             result.append(entry)
         return result

@@ -18,6 +18,7 @@ import sys
 import tempfile
 
 from flowserv.cli.parameter import read
+from flowserv.cli.repository import list_repository
 from flowserv.cli.workflow import workflowcli
 from flowserv.config.api import (
     API_BASEDIR, API_HOST, API_NAME, API_PATH, API_PORT, API_PROTOCOL,
@@ -255,6 +256,10 @@ def run_workflow(src, specfile, ignorepp, output):  # pragma: no cover
     if postrun is not None:
         click.echo('\nPost-processing results\n-----------------------')
         run_results(postrun, user_id, postout)
+
+
+# Repository
+cli.add_command(list_repository, name='repository')
 
 
 # Workflows
