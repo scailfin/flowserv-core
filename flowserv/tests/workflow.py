@@ -6,6 +6,7 @@
 # flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
+import git
 import os
 import shutil
 import tempfile
@@ -26,6 +27,26 @@ import flowserv.util as util
 
 
 GITHUB_HELLOWORLD = 'https://github.com/scailfin/rob-demo-hello-world.git'
+
+
+def clone_helloworld(targetdir=None):
+    """Clone 'Hello World' demo repository into the given target directory. If
+    no target is specified a temporary folder will be created. Returns target
+    folder.
+
+    Parameters
+    ----------
+    targetdir: string, default=None
+        Target directory for the cloned repository.
+
+    Returns
+    -------
+    string
+    """
+    if targetdir is None:
+        targetdir = tempfile.mkdtemp()
+    git.Repo.clone_from(GITHUB_HELLOWORLD, targetdir)
+    return targetdir
 
 
 def prepare_postproc_data(templatefile, runs):
