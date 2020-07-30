@@ -11,7 +11,6 @@ tests for creating, retrieving, updating, listing, and deleting workflows
 in the repository.
 """
 
-import git
 import os
 import pytest
 
