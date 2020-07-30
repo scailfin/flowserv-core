@@ -9,11 +9,14 @@
 """Unit test for API methods."""
 
 import os
+import pytest
 
 from flowserv.model.workflow.manager import clone
 from flowserv.model.workflow.repository import WorkflowRepository
 
 from flowserv.tests.workflow import run_workflow, INPUTFILE, GITHUB_HELLOWORLD
+
+import flowserv.error as err
 
 DIR = os.path.dirname(os.path.realpath(__file__))
 TEMPLATE_DIR = os.path.join(DIR, '../.files/benchmark/helloworld')
@@ -24,12 +27,25 @@ def test_running_workflow_template(tmpdir):
     """Test helper function for running a workflow template."""
     repo = WorkflowRepository(templates=[])
     with clone(GITHUB_HELLOWORLD, repository=repo) as workflowdir:
-        # Use helper function INPUTFILE to create run argument for names file.
+        # Run with all parameters given.
         args = {
             'greeting': 'Hey there',
             'sleeptime': 2,
             'names': INPUTFILE(NAMES_FILE)
         }
-        rundir = tmpdir
+        rundir = os.path.join(tmpdir, 'run1')
         state = run_workflow(workflowdir, arguments=args, rundir=rundir)
         assert state.is_success()
+        # Run with default greeting.
+        args = {
+            'sleeptime': 2,
+            'names': INPUTFILE(NAMES_FILE)
+        }
+        rundir = os.path.join(tmpdir, 'run2')
+        state = run_workflow(workflowdir, arguments=args, rundir=rundir)
+        assert state.is_success()
+        # Error when mandatory parameter is missing.
+        args = {'sleeptime': 2}
+        rundir = os.path.join(tmpdir, 'run3')
+        with pytest.raises(err.MissingArgumentError):
+            run_workflow(workflowdir, arguments=args, rundir=rundir)

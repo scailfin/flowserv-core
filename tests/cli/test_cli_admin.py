@@ -83,3 +83,10 @@ def test_init_without_force(tmpdir):
     assert result.exit_code == 0
     del os.environ[FLOWSERV_DB]
     del os.environ[FLOWSERV_API_BASEDIR]
+
+
+def test_list_repository():
+    """Test listing the contents of the global repository."""
+    runner = CliRunner()
+    result = runner.invoke(cli, ['repository'])
+    assert result.exit_code == 0

@@ -19,7 +19,7 @@ import tempfile
 
 from flowserv.cli.parameter import read
 from flowserv.cli.repository import list_repository
-from flowserv.cli.workflow import workflowcli
+from flowserv.cli.workflow import add_workflow, workflowcli
 from flowserv.config.api import (
     API_BASEDIR, API_HOST, API_NAME, API_PATH, API_PORT, API_PROTOCOL,
     FLOWSERV_API_BASEDIR, FLOWSERV_API_HOST, FLOWSERV_API_NAME,
@@ -155,16 +155,16 @@ def init(force=False):
 
 @cli.command(name='run')
 @click.option(
-    '-s', '--src',
-    type=click.Path(exists=True, file_okay=False, readable=True),
-    required=True,
-    help='Workflow template directory.'
-)
-@click.option(
     '-f', '--specfile',
     type=click.Path(exists=True, dir_okay=False, readable=True),
     required=False,
     help='Optional path to workflow specification file.'
+)
+@click.option(
+    '-m', '--manifest',
+    type=click.Path(exists=True, dir_okay=False, readable=True),
+    required=False,
+    help='Optional path to workflow manifest file.'
 )
 @click.option(
     '-i', '--ignorepp',
@@ -178,7 +178,8 @@ def init(force=False):
     required=False,
     help='Directory for output files.'
 )
-def run_workflow(src, specfile, ignorepp, output):  # pragma: no cover
+@click.argument('template')
+def run_workflow(specfile, manifest, ignorepp, output, source):  # pragma: no cover  # noqa: E501
     """Run a workflow template for test purposes."""
     # -- Logging --------------------------------------------------------------
     root = logging.getLogger()
@@ -199,8 +200,9 @@ def run_workflow(src, specfile, ignorepp, output):  # pragma: no cover
     with service() as api:
         workflow = api.workflows().create_workflow(
             name=util.get_short_identifier(),
-            source=src,
+            source=source,
             specfile=specfile,
+            manifest=manifest,
             ignore_postproc=ignorepp
         )
         workflow_id = workflow['id']
@@ -264,6 +266,7 @@ cli.add_command(list_repository, name='repository')
 
 # Workflows
 cli.add_command(workflowcli)
+cli.add_command(add_workflow, name='install')
 
 
 # -- Helper methods -----------------------------------------------------------

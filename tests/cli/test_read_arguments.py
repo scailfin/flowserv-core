@@ -15,6 +15,7 @@ from flowserv.model.parameter.numeric import (
 )
 from flowserv.model.parameter.string import StringParameter
 from flowserv.scanner import Scanner, ListReader
+from flowserv.service.run.argument import FILE
 
 import flowserv.cli.parameter as cli
 
@@ -62,6 +63,17 @@ def test_read_file_parameters(tmpdir):
     assert arguments['B'].target() == 'target2'
     assert arguments['C'].source() == tmpdir
     assert arguments['C'].target() == 'target3'
+
+
+def test_read_file_parameter_with_uploads(tmpdir):
+    """Test reading a file parameter with a given list of upload files."""
+    parameters = [
+        FileParameter(para_id='A', name='A', index=0, target='target1')
+    ]
+    sc = Scanner(reader=ListReader(['f1']))
+    arguments = cli.read(parameters, sc, files=[('f1', 'F', '123')])
+    assert len(arguments) == 1
+    assert arguments['A'] == FILE('f1', target='target1')
 
 
 def test_read_numeric_parameters():

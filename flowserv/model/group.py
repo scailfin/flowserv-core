@@ -74,7 +74,7 @@ class WorkflowGroupManager(object):
             Group name
         user_id: string
             Unique identifier of the user that created the group
-        parameters: list(flowserv.model.parameter.base.TemplateParameter)
+        parameters: list(flowserv.model.parameter.base.ParameterBase)
             List of workflow template parameter declarations that may be
             specific to the group
         workflow_spec: dict

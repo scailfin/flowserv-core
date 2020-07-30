@@ -68,6 +68,10 @@ def copy_files(files, target_dir, overwrite=True, raise_error=False):
         # If the source references a directory the whole directory tree is
         # copied. Otherwise, a single file is copied.
         if os.path.isdir(source):
+            # If we are overwriting an existing directory we need to remove the
+            # directory first.
+            if os.path.exists(dst):
+                shutil.rmtree(dst)
             shutil.copytree(src=source, dst=dst)
         else:
             shutil.copy(src=source, dst=dst)
