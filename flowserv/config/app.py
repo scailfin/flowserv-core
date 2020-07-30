@@ -11,9 +11,11 @@ used to configure a flowServ application. In addition, the module provides
 methods to get and set the configuration values in the environment variables.
 """
 
+import os
+
 from flowserv.config.api import API_BASEDIR as APP_BASEDIR  # noqa: F401
 from flowserv.config.base import get_variable
-from flowserv.config.controller import ENGINE_ASYNC
+from flowserv.config.controller import FLOWSERV_ASYNC
 
 
 """Names of environment variables that configure the application."""
@@ -45,4 +47,4 @@ def SYNC():
     """Set the asyncronous engine flag in the respective environment variable
     to False.
     """
-    ENGINE_ASYNC(False)
+    os.environ[FLOWSERV_ASYNC] = 'False'

@@ -6,11 +6,15 @@
 # flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
+from io import BytesIO, StringIO
+
 from flowserv.model.base import WorkflowHandle
 from flowserv.model.group import WorkflowGroupManager
 from flowserv.model.user import UserManager
 from flowserv.model.workflow.fs import WorkflowFileSystem
 from flowserv.model.workflow.manager import WorkflowManager
+from flowserv.service.api import API
+from flowserv.service.run.argument import ARG, FILE
 
 import flowserv.config.app as config
 import flowserv.util as util
@@ -45,19 +49,22 @@ class App(object):
             from flowserv.service.database import database
             db = database
         self._db = db
+        # Set API components.
+        self._basedir = config.APP_BASEDIR(basedir)
         if engine is None:
             config.SYNC()
             from flowserv.controller.init import init_backend
             engine = init_backend()
         self._engine = engine
-        # Set the workflow file system object.
-        basedir = config.APP_BASEDIR(basedir)
-        self._fs = WorkflowFileSystem(util.create_dir(basedir, abs=True))
-        # Set the application identifier.
+        # Get application properties from the database.
         self._group_id = config.APP_KEY(key)
         with self._db.session() as session:
-            manager = WorkflowGroupManager(session=session, fs=self._fs)
+            manager = WorkflowGroupManager(
+                session=session,
+                fs=WorkflowFileSystem(util.create_dir(self._basedir, abs=True))
+            )
             group = manager.get_group(self._group_id)
+            self._user_id = group.owner_id
             self._name = group.name
             workflow = group.workflow
             self._description = workflow.description
@@ -75,6 +82,33 @@ class App(object):
         string
         """
         return self._description
+
+    def get_file(self, run_id, file_id):
+        """Get handle for a run result file with the given identifier.
+
+        Parameters
+        ----------
+        run_id: string
+            Unique run identifier.
+        file_id: string
+            Unique file identifier.
+
+        Returns
+        -------
+        flowserv.model.base.RunFile
+        """
+        with self._db.session() as session:
+            api = API(
+                session=session,
+                engine=self._engine,
+                basedir=self._basedir
+            )
+            fh = api.runs().get_result_file(
+                run_id=run_id,
+                file_id=file_id,
+                user_id=self._user_id
+            )
+            return (fh.filename, fh.mimetype)
 
     def instructions(self):
         """Get instructions text for the application.
@@ -102,6 +136,45 @@ class App(object):
         flowserv.model.template.parameters.ParameterIndex
         """
         return self._parameters
+
+    def run(self, arguments):
+        """Run the associated workflow for the given set of arguments.
+
+        Parameters
+        ----------
+        arguments: dict
+            Dictionary of user-provided arguments.
+
+        Returns
+        -------
+        dict
+        """
+        with self._db.session() as session:
+            api = API(
+                session=session,
+                engine=self._engine,
+                basedir=self._basedir
+            )
+            # Upload any argument values as files that are either of type
+            # StringIO or BytesIO.
+            arglist = list()
+            for key, val in arguments.items():
+                if isinstance(val, StringIO) or isinstance(val, BytesIO):
+                    fh = api.uploads().upload_file(
+                        group_id=self._group_id,
+                        file=val,
+                        name=key,
+                        user_id=self._user_id
+                    )
+                    val = FILE(fh['id'])
+                arglist.append(ARG(key, val))
+            # Execute the run. Since we are using a synchronized engine this
+            # will block execution until the run is finished.
+            return api.runs().start_run(
+                group_id=self._group_id,
+                arguments=arglist,
+                user_id=self._user_id
+            )
 
 
 # -- App commands -------------------------------------------------------------

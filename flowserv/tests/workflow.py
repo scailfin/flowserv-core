@@ -11,7 +11,7 @@ import os
 import shutil
 import tempfile
 
-from flowserv.model.parameter.files import InputFile, PARA_FILE
+from flowserv.model.parameter.files import InputFile
 from flowserv.model.template.base import WorkflowTemplate
 from flowserv.model.workflow.manifest import WorkflowManifest
 from flowserv.model.workflow.serial import SerialWorkflow
@@ -194,24 +194,9 @@ def run_workflow(sourcedir, arguments=dict(), specfile=None, rundir=None):
         rundir=rundir,
         specfile=specfile
     )
-    # Prepare arguments for workflow run.
-    runargs = dict()
-    for para in template.parameters.values():
-        if para.para_id in arguments:
-            if para.type_id == PARA_FILE:
-                fname, target_path = arguments[para.para_id]
-                if target_path is None:
-                    target_path = para.target
-                if target_path is None:
-                    msg = "no target path given for '{}'"
-                    raise ValueError(msg.format(para.identifier))
-                val = InputFile(source=fname, target=target_path)
-            else:
-                val = arguments[para.para_id]
-            runargs[para.para_id] = val
     # Prepare workflow. Ensure to copy only those files that are not part of
     # the workflow template directory.
-    wf = SerialWorkflow(template, runargs)
+    wf = SerialWorkflow(template, template.parse_arguments(arguments))
     util.copy_files(
         files=wf.upload_files(),
         target_dir=rundir,

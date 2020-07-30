@@ -14,6 +14,8 @@ database.
 import os
 import shutil
 
+from io import BytesIO, StringIO
+
 from flowserv.model.base import UploadFile, GroupHandle, WorkflowHandle
 from flowserv.model.user import UserManager
 
@@ -375,6 +377,13 @@ class WorkflowGroupManager(object):
         util.create_dir(os.path.dirname(output_file))
         if isinstance(file, str):
             shutil.copy(src=file, dst=output_file)
+        elif isinstance(file, StringIO):
+            with open(output_file, 'w') as fd:
+                file.seek(0)
+                shutil.copyfileobj(file, fd)
+        elif isinstance(file, BytesIO):
+            with open(output_file, 'wb') as fd:
+                fd.write(file.getbuffer())
         else:
             file.save(output_file)
         # Insert information into database.
