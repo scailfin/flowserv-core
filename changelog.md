@@ -24,3 +24,8 @@
 * Add methods for running and testing workflows in Python scripts (or Jupyter Notebooks).
 * Include support and a command line interface for single-workflow applications.
 * Install workflow templates from global repository.
+
+
+### 0.2.1 - 2020-07-31
+
+* Fix bug in created_at timestamp for workflow runs.

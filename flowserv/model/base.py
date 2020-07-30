@@ -486,7 +486,7 @@ class RunHandle(Base):
         nullable=True
     )
     state_type = Column(String(8), nullable=False)
-    created_at = Column(String(32), default=util.utc_now(), nullable=False)
+    created_at = Column(String(32), default=util.utc_now, nullable=False)
     started_at = Column(String(32))
     ended_at = Column(String(32))
     arguments = Column(JsonObject)
