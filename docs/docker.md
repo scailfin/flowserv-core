@@ -1,4 +1,4 @@
-# Docker Container for PIE
+# Docker Container for flowServ
 
 Build Docker container image containing the flowServ code base:
 

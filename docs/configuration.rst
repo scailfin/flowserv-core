@@ -41,6 +41,17 @@ The **flowServ** API uses a workflow controller to handle execution of workflow 
 The specified controller module is imported dynamically. Each implementation of the workflow controller may define additional environment variables that are required for configuration.
 
 
+Default Engine
+--------------
+
+By default, a simple multi-process engine is used that ecexutes every workflow in a separate process. The environment settings for the default engine are as follows:
+
+.. code-block:: console
+
+    export FLOWSERV_BACKEND_MODULE=flowserv.controller.serial.engine
+    export FLOWSERV_BACKEND_CLASS=SerialWorkflowEngine
+
+
 Docker Engine
 -------------
 
@@ -56,27 +67,26 @@ The environment settings for the Docker engine are as follows:
 Database
 --------
 
-Database connections are established using the environment variable *FLOWSERV_DBMS*  that determines the type of the database system that is used. **flowServ** currently supports the following two database systems: `SQLite <https://sqlite.org/index.html>`_ (identified by either ``SQLITE`` or ``SQLITE3``) and `PostgreSQL <https://www.postgresql.org/>`_ (identified by ``POSTGRES``, ``POSTGRESQL``, ``PSQL``, or ``PG``).
-
-Depending on the specified database system additional environment variables are used to specify database connection parameter.
+Database connections are established using the environment variable *FLOWSERV_DATABASE*. **flowServ** uses `SQLAlchemy <https://www.sqlalchemy.org/>`_ for the Object-Relational-Mapping and to access the underlying database. The value of *FLOWSERV_DATABASE* is passed to the SQLAlchemy engine at initialization. The value is expected to be a database connection URL. Consult the `SQLAlchemy Database Urls documentation <https://docs.sqlalchemy.org/en/13/core/engines.html#database-urls>`_ for more information about the format of the URLs.
 
 
 Connect to SQLite
 -----------------
 
-When using SQLite as the underlying database system, the environment variable *SQLITE_FLOWSERV_CONNECT* is expected to contain the path to the database file.
+When using SQLite as the underlying database system, an example value for *FLOWSERV_DATABASE* is:
 
+.. code-block:: bash
+
+    export FLOWSERV_DATABASE=sqlite:////absolute/path/to/foo.db
+    
 
 Connect to PostgreSQL
 ---------------------
 
-When connecting to a PostgreSQL database server the database connection information is set using the following environment variables:
 
-- *PG_FLOWSERV_HOST*: Address of the database host server (default: ``localhost``)
-- *PG_FLOWSERV_DATABASE*: Name of the database (default: ``flowserv``)
-- *PG_FLOWSERV_USER*: Database user name for authentication (default: ``flowserv``
-- *PG_FLOWSERV_PASSWORD*: User password for authentication (default: ``flowserv``)
-- *PG_FLOWSERV_PORT*: Connection port of database on host (default ``5432``)
+.. code-block:: bash
+
+    export FLOWSERV_DATABASE=postgresql://scott:tiger@localhost/mydatabase
 
 
 The following steps are an example for creating an initial empty database for **flowServ** in PostgreSQL:
