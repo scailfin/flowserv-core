@@ -38,12 +38,12 @@ def test_basedir_argument(tmpdir):
     'option',
     [None, '--all', '--database', '--auth', '--backend', '--service']
 )
-def test_config_options(cli_runner, option):
+def test_config_options(flowserv_cli, option):
     """Test different options for the config command."""
     if option is None:
-        result = cli_runner.invoke(cli, ['config'])
+        result = flowserv_cli.invoke(cli, ['config'])
     else:
-        result = cli_runner.invoke(cli, ['config', option])
+        result = flowserv_cli.invoke(cli, ['config', option])
     assert result.exit_code == 0
 
 
@@ -90,3 +90,13 @@ def test_list_repository():
     runner = CliRunner()
     result = runner.invoke(cli, ['repository'])
     assert result.exit_code == 0
+
+
+def test_register_user(flowserv_cli):
+    """Test creating a new user."""
+    cmd = ['register', '-u', 'alice', '-p', 'mypwd']
+    result = flowserv_cli.invoke(cli, cmd)
+    assert result.exit_code == 0
+    # Registering the same user twice will raise an error.
+    result = flowserv_cli.invoke(cli, cmd)
+    assert result.exit_code == -1
