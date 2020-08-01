@@ -10,42 +10,60 @@
 
 import os
 import pytest
+import shutil
 
 from flowserv.model.workflow.manager import clone
 from flowserv.model.workflow.repository import WorkflowRepository
-
-from flowserv.tests.workflow import run_workflow, INPUTFILE, GITHUB_HELLOWORLD
-
+from flowserv.tests.workflow import (
+    clone_helloworld, prepare_postproc_data, run_postproc_workflow,
+    run_workflow, INPUTFILE
+)
+from flowserv.service.postproc.client import Runs
 import flowserv.error as err
-
-DIR = os.path.dirname(os.path.realpath(__file__))
-TEMPLATE_DIR = os.path.join(DIR, '../.files/benchmark/helloworld')
-NAMES_FILE = os.path.join(TEMPLATE_DIR, 'data/names.txt')
 
 
 def test_running_workflow_template(tmpdir):
     """Test helper function for running a workflow template."""
+    templatedir = os.path.join(tmpdir, 'template')
+    clone_helloworld(targetdir=templatedir)
+    templatefile = os.path.join(templatedir, 'benchmark.yaml')
+    namesfile = os.path.join(templatedir, 'data/names.txt')
     repo = WorkflowRepository(templates=[])
-    with clone(GITHUB_HELLOWORLD, repository=repo) as workflowdir:
+    # -- Run the workflow -----------------------------------------------------
+    with clone(templatedir, repository=repo) as workflowdir:
         # Run with all parameters given.
         args = {
             'greeting': 'Hey there',
             'sleeptime': 2,
-            'names': INPUTFILE(NAMES_FILE)
+            'names': INPUTFILE(namesfile)
         }
-        rundir = os.path.join(tmpdir, 'run1')
-        state = run_workflow(workflowdir, arguments=args, rundir=rundir)
+        rundir1 = os.path.join(tmpdir, 'run1')
+        state = run_workflow(workflowdir, arguments=args, rundir=rundir1)
         assert state.is_success()
         # Run with default greeting.
         args = {
             'sleeptime': 2,
-            'names': INPUTFILE(NAMES_FILE)
+            'names': INPUTFILE(namesfile)
         }
-        rundir = os.path.join(tmpdir, 'run2')
-        state = run_workflow(workflowdir, arguments=args, rundir=rundir)
+        rundir2 = os.path.join(tmpdir, 'run2')
+        state = run_workflow(workflowdir, arguments=args, rundir=rundir2)
         assert state.is_success()
         # Error when mandatory parameter is missing.
         args = {'sleeptime': 2}
-        rundir = os.path.join(tmpdir, 'run3')
+        rundir3 = os.path.join(tmpdir, 'run3')
         with pytest.raises(err.MissingArgumentError):
-            run_workflow(workflowdir, arguments=args, rundir=rundir)
+            run_workflow(workflowdir, arguments=args, rundir=rundir3)
+    # -- Post-processing data -------------------------------------------------
+    postprocdata = prepare_postproc_data(templatefile, runs=[rundir1, rundir2])
+    runs = Runs(postprocdata)
+    assert len(runs) == 2
+    shutil.rmtree(postprocdata)
+    # -- Run post-processing workflow -----------------------------------------
+    postprocdir = os.path.join(tmpdir, 'postproc')
+    state = run_postproc_workflow(
+        sourcedir=templatedir,
+        runs=[rundir1, rundir2],
+        rundir=postprocdir
+    )
+    assert state.is_success()
+    assert state.files == ['results/ngrams.csv']
