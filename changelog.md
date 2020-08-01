@@ -29,3 +29,4 @@
 ### 0.2.1 - 2020-07-31
 
 * Fix bug in created_at timestamp for workflow runs.
+* Command-line interface to register new users.
