@@ -19,7 +19,7 @@ def test_invalid_serialization():
     """Test errors for invalid serializations."""
     EnumParameter.from_dict({
         'id': '0000',
-        'type': PARA_ENUM,
+        'dtype': PARA_ENUM,
         'index': 0,
         'name': 'Options',
         'isRequired': True,
@@ -28,7 +28,7 @@ def test_invalid_serialization():
     with pytest.raises(err.InvalidParameterError):
         EnumParameter.from_dict({
             'id': '0000',
-            'type': PARA_ENUM,
+            'dtype': PARA_ENUM,
             'index': 0,
             'name': 'Options',
             'isRequired': True
@@ -36,7 +36,7 @@ def test_invalid_serialization():
     with pytest.raises(ValueError):
         EnumParameter.from_dict({
             'id': '0000',
-            'type': 'string',
+            'dtype': 'string',
             'index': 0,
             'name': 'Name',
             'isRequired': True,
@@ -52,7 +52,7 @@ def test_enum_parameter_from_dict():
         EnumParameter.to_dict(
             EnumParameter.from_dict({
                 'id': '0000',
-                'type': PARA_ENUM,
+                'dtype': PARA_ENUM,
                 'name': 'Options',
                 'index': 0,
                 'description': 'List of options',

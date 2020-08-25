@@ -16,6 +16,18 @@ from abc import ABCMeta, abstractmethod
 import flowserv.util as util
 
 
+"""Labels for general workflow declaration elements."""
+
+DEFAULT = 'defaultValue'
+DESC = 'description'
+ID = 'id'
+INDEX = 'index'
+MODULE = 'module'
+NAME = 'name'
+TYPE = 'dtype'
+REQUIRED = 'isRequired'
+
+
 class ParameterBase(metaclass=ABCMeta):
     """Base class for template parameters. The base class maintains the unique
     parameter identifier, the type identifier, the parameter name, the optional
@@ -110,14 +122,14 @@ class ParameterBase(metaclass=ABCMeta):
         dict
         """
         return {
-            'id': self.para_id,
-            'type': self.type_id,
-            'name': self.name,
-            'index': self.index,
-            'description': self.description,
-            'defaultValue': self.default_value,
-            'isRequired': self.is_required,
-            'module': self.module_id
+            ID: self.para_id,
+            TYPE: self.type_id,
+            NAME: self.name,
+            INDEX: self.index,
+            DESC: self.description,
+            DEFAULT: self.default_value,
+            REQUIRED: self.is_required,
+            MODULE: self.module_id
         }
 
 

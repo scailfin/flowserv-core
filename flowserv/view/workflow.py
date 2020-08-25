@@ -31,7 +31,7 @@ class WorkflowSerializer(Serializer):
             labels={
                 'COLUMN_ID': 'id',
                 'COLUMN_NAME': 'name',
-                'COLUMN_TYPE': 'type',
+                'COLUMN_TYPE': 'dtype',
                 'COLUMN_VALUE': 'value',
                 'GROUP_ID': 'id',
                 'GROUP_NAME': 'name',

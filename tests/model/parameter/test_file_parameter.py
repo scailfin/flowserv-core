@@ -20,7 +20,7 @@ def test_invalid_serialization():
     """Test errors for invalid serializations."""
     FileParameter.from_dict({
         'id': '0000',
-        'type': PARA_FILE,
+        'dtype': PARA_FILE,
         'index': 0,
         'name': 'Input file',
         'isRequired': True,
@@ -29,7 +29,7 @@ def test_invalid_serialization():
     with pytest.raises(err.InvalidParameterError):
         FileParameter.from_dict({
             'id': '0000',
-            'type': PARA_FILE,
+            'dtype': PARA_FILE,
             'index': 0,
             'name': 'Input file',
             'isRequired': True,
@@ -38,7 +38,7 @@ def test_invalid_serialization():
     with pytest.raises(ValueError):
         FileParameter.from_dict({
             'id': '0000',
-            'type': 'string',
+            'dtype': 'string',
             'index': 0,
             'name': 'Name',
             'isRequired': True,
@@ -54,7 +54,7 @@ def test_file_parameter_from_dict():
         FileParameter.to_dict(
             FileParameter.from_dict({
                 'id': '0000',
-                'type': PARA_FILE,
+                'dtype': PARA_FILE,
                 'name': 'Names',
                 'index': 2,
                 'description': 'List of names',

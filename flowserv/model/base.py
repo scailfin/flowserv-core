@@ -8,12 +8,10 @@
 
 """Define the classes in the Object-Relational Mapping."""
 
-import io
 import json
 import mimetypes
 import os
 import shutil
-import tarfile
 
 from datetime import datetime
 from sqlalchemy import Boolean, Integer, String, Text
@@ -532,13 +530,7 @@ class RunHandle(Base):
         -------
         io.BytesIO
         """
-        file_out = io.BytesIO()
-        tar_handle = tarfile.open(fileobj=file_out, mode='w:gz')
-        for r in self.files:
-            tar_handle.add(name=r.filename, arcname=r.name)
-        tar_handle.close()
-        file_out.seek(0)
-        return file_out
+        return util.archive_files([(r.filename, r.name) for r in self.files])
 
     def get_file(self, by_id=None, by_name=None):
         """Get handle for identified file. A file can either be identified by

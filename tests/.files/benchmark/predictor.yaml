@@ -28,16 +28,16 @@ workflow:
 parameters:
     - id: code
       name: 'Code file'
-      type: file
+      dtype: file
 results:
     file: results/eval.json
     schema:
         - id: avg_diff
           name: 'Deviation'
-          type: float
+          dtype: float
         - id: exact_match
           name: 'Exact Predictions'
-          type: int
+          dtype: int
     orderBy:
         - id: avg_diff
           sortDesc: false

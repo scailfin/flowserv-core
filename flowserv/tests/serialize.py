@@ -9,6 +9,7 @@
 """Helper methods to test object serialization."""
 
 import flowserv.util as util
+import flowserv.model.parameter.base as pd
 import flowserv.model.workflow.state as st
 
 
@@ -111,7 +112,7 @@ def validate_ranking(doc):
     )
     # Schema columns
     for col in doc['schema']:
-        util.validate_doc(doc=col, mandatory=['id', 'name', 'type'])
+        util.validate_doc(doc=col, mandatory=['id', 'name', 'dtype'])
     # Run results
     for entry in doc['ranking']:
         util.validate_doc(doc=entry, mandatory=['run', 'group', 'results'])
@@ -295,8 +296,8 @@ def validate_parameter(doc):
     """
     util.validate_doc(
         doc=doc,
-        mandatory=['id', 'name', 'type', 'index', 'isRequired'],
-        optional=['description', 'defaultValue', 'target', 'values', 'module']
+        mandatory=[pd.ID, pd.TYPE, pd.NAME, pd.INDEX, pd.REQUIRED],
+        optional=[pd.DESC, pd.DEFAULT, pd.MODULE, 'target', 'values', 'range']
     )
 
 

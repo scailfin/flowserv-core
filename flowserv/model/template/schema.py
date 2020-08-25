@@ -112,7 +112,7 @@ class ResultColumn(object):
             try:
                 util.validate_doc(
                     doc,
-                    mandatory=['id', 'name', 'type'],
+                    mandatory=['id', 'name', 'dtype'],
                     optional=['path', 'required']
                 )
             except ValueError as ex:
@@ -121,7 +121,7 @@ class ResultColumn(object):
         return cls(
             column_id=doc['id'],
             name=doc['name'],
-            type_id=doc['type'],
+            type_id=doc['dtype'],
             path=doc.get('path'),
             required=doc.get('required')
         )
@@ -151,7 +151,7 @@ class ResultColumn(object):
         doc = {
             'id': self.column_id,
             'name': self.name,
-            'type': self.type_id,
+            'dtype': self.type_id,
             'required': self.required
         }
         # Add the path expression if it is given

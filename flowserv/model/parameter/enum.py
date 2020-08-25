@@ -14,6 +14,7 @@ printable 'name' and an associated 'value'.
 from flowserv.model.parameter.base import ParameterBase
 
 import flowserv.error as err
+import flowserv.model.parameter.base as pd
 import flowserv.util as util
 
 
@@ -88,14 +89,14 @@ class EnumParameter(ParameterBase):
                 util.validate_doc(
                     doc,
                     mandatory=[
-                        'id',
-                        'type',
-                        'name',
-                        'index',
-                        'isRequired',
+                        pd.ID,
+                        pd.TYPE,
+                        pd.NAME,
+                        pd.INDEX,
+                        pd.REQUIRED,
                         'values'
                     ],
-                    optional=['description', 'defaultValue', 'module']
+                    optional=[pd.DESC, pd.DEFAULT, pd.MODULE]
                 )
                 for val in doc['values']:
                     util.validate_doc(
@@ -105,16 +106,16 @@ class EnumParameter(ParameterBase):
                     )
             except ValueError as ex:
                 raise err.InvalidParameterError(str(ex))
-            if doc['type'] != PARA_ENUM:
-                raise ValueError("invalid type '{}'".format(doc['type']))
+            if doc[pd.TYPE] != PARA_ENUM:
+                raise ValueError("invalid type '{}'".format(doc[pd.TYPE]))
         return cls(
-            para_id=doc['id'],
-            name=doc['name'],
-            index=doc['index'],
-            description=doc.get('description'),
-            default_value=doc.get('defaultValue'),
-            is_required=doc['isRequired'],
-            module_id=doc.get('module'),
+            para_id=doc[pd.ID],
+            name=doc[pd.NAME],
+            index=doc[pd.INDEX],
+            description=doc.get(pd.DESC),
+            default_value=doc.get(pd.DEFAULT),
+            is_required=doc[pd.REQUIRED],
+            module_id=doc.get(pd.MODULE),
             values=doc['values']
         )
 

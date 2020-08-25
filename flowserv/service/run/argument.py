@@ -61,7 +61,7 @@ def FILE(file_id, target=None):
 
     Returns
     -------
-    string, string
+    dict
     """
     value = {'fileId': file_id}
     if target is not None:

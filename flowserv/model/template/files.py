@@ -21,11 +21,11 @@ class WorkflowOutputFile(object):
     - source: relative path the the file in the run folder
     - title: optional title for display purposes
     - caption: optional caption for display purposes
-    - widget: optional identifier for the output widget
-    - format: optional widget-specific format information.
+    - format: optional format information for file contents.
+    - widget: optional instructions for widget used to display file contents.
     """
     def __init__(
-        self, source, title=None, caption=None, widget=None, format=None
+        self, source, title=None, caption=None, format=None, widget=None
     ):
         """Initialize the object properties.
 
@@ -37,16 +37,16 @@ class WorkflowOutputFile(object):
             Optional title for display purposes.
         caption: string, default=None
             Optional caption for display purposes.
-        widget: string, default=None
-            Optional identifier for the output widget.
         format: dict, default=None
-            Optional widget-specific format information.
+            Optional format information for file contents.
+        widget: dict, default=None
+            Optional instructions for widget used to display file contents.
         """
         self.source = source
         self.title = title
         self.caption = caption
-        self.widget = widget
         self.format = format
+        self.widget = widget
 
     @classmethod
     def from_dict(cls, doc, validate=True):
@@ -78,8 +78,8 @@ class WorkflowOutputFile(object):
             source=doc['source'],
             title=doc.get('title'),
             caption=doc.get('caption'),
-            widget=doc.get('widget'),
-            format=doc.get('format')
+            format=doc.get('format'),
+            widget=doc.get('widget')
         )
 
     def to_dict(self):
@@ -94,8 +94,8 @@ class WorkflowOutputFile(object):
             doc['title'] = self.title
         if self.caption is not None:
             doc['caption'] = self.caption
-        if self.widget is not None:
-            doc['widget'] = self.widget
         if self.format is not None:
             doc['format'] = self.format
+        if self.widget is not None:
+            doc['widget'] = self.widget
         return doc

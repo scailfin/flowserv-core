@@ -27,7 +27,7 @@ workflow:
 parameters:
     - id: names
       name: 'Input file'
-      type: file
+      dtype: file
       target: data/names.txt
 outputs:
     - source: 'results/greetings.txt'

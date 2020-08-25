@@ -46,7 +46,7 @@ def clone_helloworld(targetdir=None):
     """
     if targetdir is None:
         targetdir = tempfile.mkdtemp()
-    git.Repo.clone_from(GITHUB_HELLOWORLD, targetdir)
+    git.Repo.clone_from(GITHUB_HELLOWORLD, targetdir, branch='flowserv0.3.0')
     return targetdir
 
 

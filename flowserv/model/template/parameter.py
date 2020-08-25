@@ -9,6 +9,7 @@
 """Collection of helper methods for parameter references in workflow templates.
 """
 
+from flowserv.model.parameter.base import TYPE
 from flowserv.model.parameter.boolean import BoolParameter, PARA_BOOL
 from flowserv.model.parameter.enum import EnumParameter, PARA_ENUM
 from flowserv.model.parameter.files import FileParameter, PARA_FILE
@@ -57,7 +58,7 @@ class ParameterIndex(dict):
         parameters = ParameterIndex()
         for index, obj in enumerate(doc):
             try:
-                cls = PARAMETER_TYPES[obj['type']]
+                cls = PARAMETER_TYPES[obj[TYPE]]
             except KeyError as ex:
                 msg = "missing '{}' for {}"
                 raise err.InvalidTemplateError(msg.format(str(ex), obj))

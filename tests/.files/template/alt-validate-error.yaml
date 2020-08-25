@@ -27,21 +27,21 @@ workflow:
 parameters:
     - id: code
       name: 'Code file'
-      type: file
+      dtype: file
     - id: names
       name: 'Input file'
-      type: file
+      dtype: file
       target: data/persons.txt
     - id: friends
       name: 'Default example'
-      type: file
+      dtype: file
       target: data/friends.txt
       defaultValue: inputs/names.txt
     - id: sleeptime
       name: 'Sleep time (s)'
-      type: int
+      dtype: int
       defaultValue: 10
     - id: waittime
       name: 'Wait time (s)'
-      type: int
+      dtype: int
       defaultValue: 5

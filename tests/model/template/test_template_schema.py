@@ -21,10 +21,10 @@ import flowserv.error as err
 
 def test_result_column_path():
     """Test result column serialiations with optional query path."""
-    doc = {'id': '0', 'name': 'col0', 'type': PARA_STRING, 'path': 'x/y/z'}
+    doc = {'id': '0', 'name': 'col0', 'dtype': PARA_STRING, 'path': 'x/y/z'}
     col = ResultColumn.from_dict(ResultColumn.from_dict(doc).to_dict())
     assert col.jpath() == ['x', 'y', 'z']
-    doc = {'id': '0', 'name': 'col0', 'type': PARA_STRING}
+    doc = {'id': '0', 'name': 'col0', 'dtype': PARA_STRING}
     col = ResultColumn.from_dict(ResultColumn.from_dict(doc).to_dict())
     assert col.jpath() == ['0']
 
@@ -51,8 +51,8 @@ def test_schema_serialization():
     schema = ResultSchema.from_dict(ResultSchema.from_dict({
         'file': 'results/analytics.json',
         'schema': [
-            {'id': '0', 'name': 'col0', 'type': PARA_STRING},
-            {'id': '1', 'name': 'col1', 'type': PARA_STRING}
+            {'id': '0', 'name': 'col0', 'dtype': PARA_STRING},
+            {'id': '1', 'name': 'col1', 'dtype': PARA_STRING}
         ]
     }).to_dict())
     assert schema.result_file == 'results/analytics.json'
@@ -63,8 +63,8 @@ def test_schema_serialization():
     schema = ResultSchema.from_dict(ResultSchema.from_dict({
         'file': 'results/analytics.json',
         'schema': [
-            {'id': '0', 'name': 'col0', 'type': PARA_STRING},
-            {'id': '1', 'name': 'col1', 'type': PARA_STRING}
+            {'id': '0', 'name': 'col0', 'dtype': PARA_STRING},
+            {'id': '1', 'name': 'col1', 'dtype': PARA_STRING}
         ],
         'orderBy': [{'id': '1', 'sortDesc': False}]
     }).to_dict())
@@ -79,8 +79,8 @@ def test_schema_serialization():
         ResultSchema.from_dict({
             'file': 'results/analytics.json',
             'schema': [
-                {'id': '0', 'name': 'col0', 'type': PARA_STRING},
-                {'id': '1', 'name': 'col0', 'type': PARA_STRING}
+                {'id': '0', 'name': 'col0', 'dtype': PARA_STRING},
+                {'id': '1', 'name': 'col0', 'dtype': PARA_STRING}
             ]
         })
     # Error for duplicate column identifier.
@@ -88,8 +88,8 @@ def test_schema_serialization():
         ResultSchema.from_dict({
             'file': 'results/analytics.json',
             'schema': [
-                {'id': '0', 'name': 'col0', 'type': PARA_STRING},
-                {'id': '0', 'name': 'col1', 'type': PARA_STRING}
+                {'id': '0', 'name': 'col0', 'dtype': PARA_STRING},
+                {'id': '0', 'name': 'col1', 'dtype': PARA_STRING}
             ]
         })
     # Error when referencing unknown column in 'Order By' clause.
@@ -97,15 +97,15 @@ def test_schema_serialization():
         ResultSchema.from_dict({
             'file': 'results/analytics.json',
             'schema': [
-                {'id': '0', 'name': 'col0', 'type': PARA_STRING},
-                {'id': '1', 'name': 'col1', 'type': PARA_STRING}
+                {'id': '0', 'name': 'col0', 'dtype': PARA_STRING},
+                {'id': '1', 'name': 'col1', 'dtype': PARA_STRING}
             ],
             'orderBy': [{'id': '2', 'sortDesc': False}]
         })
     # Invalid elemtn in specification.
     ResultSchema.from_dict({
         'file': 'results/analytics.json',
-        'schema': [{'id': '0', 'name': 'col0', 'type': PARA_STRING}],
+        'schema': [{'id': '0', 'name': 'col0', 'dtype': PARA_STRING}],
         'notValid': 1
     }, validate=False)
     # Ensure that the validate flag is passed through.
@@ -114,7 +114,7 @@ def test_schema_serialization():
         'schema': [{
             'id': '0',
             'name': 'col0',
-            'type': PARA_STRING,
+            'dtype': PARA_STRING,
             'notValid': True
         }],
         'orderBy': [{'id': '0', 'noSort': False}]
@@ -122,7 +122,7 @@ def test_schema_serialization():
     with pytest.raises(err.InvalidTemplateError):
         ResultSchema.from_dict({
             'file': 'results/analytics.json',
-            'schema': [{'id': '0', 'name': 'col0', 'type': PARA_STRING}],
+            'schema': [{'id': '0', 'name': 'col0', 'dtype': PARA_STRING}],
             'notValid': 1
         })
     with pytest.raises(err.InvalidTemplateError):
@@ -131,7 +131,7 @@ def test_schema_serialization():
             'schema': [{
                 'id': '0',
                 'name': 'col0',
-                'type': PARA_STRING,
+                'dtype': PARA_STRING,
                 'notValid': True
             }]
         })
