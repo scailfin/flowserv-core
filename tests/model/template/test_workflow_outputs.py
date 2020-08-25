@@ -27,7 +27,6 @@ def test_maximal_output_specification():
         source='myfile.txt',
         title='My title',
         caption='A caption',
-        mime_type='plain/text',
         widget='vega',
         format={'data': 'xyz'}
     ).to_dict()
@@ -35,7 +34,6 @@ def test_maximal_output_specification():
     assert obj.source == 'myfile.txt'
     assert obj.title == 'My title'
     assert obj.caption == 'A caption'
-    assert obj.mime_type == 'plain/text'
     assert obj.widget == 'vega'
     assert obj.format == {'data': 'xyz'}
 
@@ -47,6 +45,5 @@ def test_minimal_output_specification():
     assert obj.source == 'myfile.txt'
     assert obj.title is None
     assert obj.caption is None
-    assert obj.mime_type is None
     assert obj.widget is None
     assert obj.format is None

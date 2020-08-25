@@ -635,6 +635,28 @@ class RunHandle(Base):
         """
         return self.state_type == st.STATE_SUCCESS
 
+    def outputs(self):
+        """Get specification of output file properties. If the workflow
+        template does not contain any output file specifications the result
+        is None.
+
+        If the run is associated with a group, then the output file
+        specification of the associated workflow is returned. If the run is a
+        post-processing run the optional output specification in the post-
+        processing workflow template is returned.
+
+        Returns
+        -------
+        list(flowserv.model.template.files.WorkflowOutputFile)
+        """
+        if self.group_id is not None:
+            return self.workflow.outputs
+        else:
+            outputs = self.workflow.postproc_spec.get('outputs')
+            if outputs is not None:
+                outputs = [WorkflowOutputFile.from_dict(f) for f in outputs]
+            return outputs
+
     def set_rundir(self, dirname):
         """Set the path to the base directory for run files.
 
@@ -710,7 +732,7 @@ class RunFile(FileHandle):
 
 
 class RunMessage(Base):
-    """Log for messages created by workflow runs. Primarily ised for error
+    """Log for messages created by workflow runs. Primarily used for error
     messages by now.
     """
     # -- Schema ---------------------------------------------------------------

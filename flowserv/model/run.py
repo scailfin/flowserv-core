@@ -281,10 +281,11 @@ class RunManager(object):
             files = list()
             # Create list of output files depending on whether files are
             # specified in the workflow specification or not.
-            if run.workflow.outputs is not None:
+            outspec = run.outputs()
+            if outspec is not None:
                 # List only existing files for output specifications in the
                 # workflow handle.
-                for outfile in run.workflow.outputs:
+                for outfile in outspec:
                     filename = os.path.join(rundir, outfile.source)
                     if os.path.exists(filename):
                         f = RunFile(relative_path=outfile.source)

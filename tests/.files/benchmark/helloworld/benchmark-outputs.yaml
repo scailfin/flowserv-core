@@ -33,7 +33,6 @@ outputs:
     - source: 'results/greetings.txt'
       title: 'Greetings'
       caption: 'Say Hello to everyone'
-      mimeType: 'plain/text'
       widget: 'textview'
       format:
           fontSize: 12

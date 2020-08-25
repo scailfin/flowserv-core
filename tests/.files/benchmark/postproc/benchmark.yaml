@@ -53,7 +53,7 @@ postproc:
             - 'results/analytics.json'
         runs: 'runs/'
     outputs:
-        - id: 'results/compare.json'
+        - source: 'results/compare.json'
           title: 'Results'
           caption: 'The results.'
 parameters:

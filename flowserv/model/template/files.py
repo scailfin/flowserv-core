@@ -21,13 +21,11 @@ class WorkflowOutputFile(object):
     - source: relative path the the file in the run folder
     - title: optional title for display purposes
     - caption: optional caption for display purposes
-    - mimeType: optional Mime type for the file
     - widget: optional identifier for the output widget
     - format: optional widget-specific format information.
     """
     def __init__(
-        self, source, title=None, caption=None, mime_type=None, widget=None,
-        format=None
+        self, source, title=None, caption=None, widget=None, format=None
     ):
         """Initialize the object properties.
 
@@ -39,8 +37,6 @@ class WorkflowOutputFile(object):
             Optional title for display purposes.
         caption: string, default=None
             Optional caption for display purposes.
-        mime_type: string, default=None
-            Optional Mime type for the file.
         widget: string, default=None
             Optional identifier for the output widget.
         format: dict, default=None
@@ -49,7 +45,6 @@ class WorkflowOutputFile(object):
         self.source = source
         self.title = title
         self.caption = caption
-        self.mime_type = mime_type
         self.widget = widget
         self.format = format
 
@@ -77,13 +72,12 @@ class WorkflowOutputFile(object):
             util.validate_doc(
                 doc=doc,
                 mandatory=['source'],
-                optional=['title', 'caption', 'mimeType', 'widget', 'format']
+                optional=['title', 'caption', 'widget', 'format']
             )
         return cls(
             source=doc['source'],
             title=doc.get('title'),
             caption=doc.get('caption'),
-            mime_type=doc.get('mimeType'),
             widget=doc.get('widget'),
             format=doc.get('format')
         )
@@ -100,8 +94,6 @@ class WorkflowOutputFile(object):
             doc['title'] = self.title
         if self.caption is not None:
             doc['caption'] = self.caption
-        if self.mime_type is not None:
-            doc['mimeType'] = self.mime_type
         if self.widget is not None:
             doc['widget'] = self.widget
         if self.format is not None:
