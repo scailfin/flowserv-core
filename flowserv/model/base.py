@@ -24,6 +24,7 @@ from sqlalchemy.types import TypeDecorator, Unicode
 
 from flowserv.model.parameter.base import ParameterGroup
 from flowserv.model.template.base import WorkflowTemplate
+from flowserv.model.template.files import WorkflowOutputFile
 from flowserv.model.template.parameter import ParameterIndex
 from flowserv.model.template.schema import ResultSchema
 
@@ -114,6 +115,26 @@ class WorkflowResultSchema(TypeDecorator):
         """Create result schema from JSON serialization."""
         if value is not None:
             return ResultSchema.from_dict(json.loads(value))
+
+
+class WorkflowOutputs(TypeDecorator):
+    """Decorator for workflow output file specifications that are stored as
+    serialized Json objects.
+    """
+
+    impl = Unicode
+
+    def process_literal_param(self, value, dialect):
+        """Expects a list of workflow output file objects."""
+        if value is not None:
+            return json.dumps([f.to_dict() for f in value])
+
+    process_bind_param = process_literal_param
+
+    def process_result_value(self, value, dialect):
+        """Create workflow output file list from JSON serialization."""
+        if value is not None:
+            return [WorkflowOutputFile.from_dict(f) for f in json.loads(value)]
 
 
 # -- Files --------------------------------------------------------------------
@@ -317,6 +338,7 @@ class WorkflowHandle(Base):
     workflow_spec = Column(JsonObject, nullable=False)
     parameters = Column(WorkflowParameters)
     modules = Column(WorkflowModules)
+    outputs = Column(WorkflowOutputs)
     postproc_ranking_key = Column(JsonObject)
     # Omit foreign key here to avaoid circular dependencies. The run will
     # reference the workflow to ensure integrity with respect to deleting
@@ -361,6 +383,7 @@ class WorkflowHandle(Base):
             sourcedir=self._staticdir,
             parameters=self.parameters if parameters is None else parameters,
             modules=self.modules,
+            outputs=self.outputs,
             postproc_spec=self.postproc_spec,
             result_schema=self.result_schema
         )

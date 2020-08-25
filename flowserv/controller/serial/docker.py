@@ -69,7 +69,6 @@ def docker_run(run_id, rundir, state, output_files, steps):
     -------
     (string, dict)
     """
-    print('start docker run {}'.format(run_id))
     logging.debug('start docker run {}'.format(run_id))
     # Setup the workflow environment by obtaining volume information for all
     # directories in the run folder.

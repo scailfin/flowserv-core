@@ -164,6 +164,7 @@ class WorkflowManager(object):
             workflow_spec=template.workflow_spec,
             parameters=template.parameters,
             modules=template.modules,
+            outputs=template.outputs,
             postproc_spec=postproc_spec,
             result_schema=template.result_schema
         )

@@ -177,7 +177,11 @@ def validate_run_handle(doc, state):
     assert doc['state'] == state
     if state == st.STATE_SUCCESS:
         for r in doc['files']:
-            util.validate_doc(doc=r, mandatory=['id', 'name'])
+            util.validate_doc(
+                doc=r,
+                mandatory=['id', 'name'],
+                optional=['title', 'caption', 'mimeType', 'widget', 'format']
+            )
 
 
 def validate_run_listing(doc):

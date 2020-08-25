@@ -17,7 +17,7 @@ The main elements of parameter declarations are:
 - **datatype**: Type of the expected value. Valid data types are ``bool``, ``decimal``, ``file``, ``int``, ``list``, ``record``, and ``string``.
 - **defaultValue**: Default value for the parameter
 - **values**: List of allowed values. Value lists are for example used to render drop-down elements in the front-end input form.
-- **required**: Boolean flag indicating whether the user is required to provide a value for the parameter or not.
+- **isRequired**: Boolean flag indicating whether the user is required to provide a value for the parameter or not.
 - **as**: Specify an alternate target value for the user-provided value. This property is primarily intended for parameters of type ``file``. It provides flexibility with respect to renaming the file that a user uploads (see below).
 - **index**: The index defines the order in which parameters are presented in the front-end input form.
 - **parent**: Identifier of the parent element for parameters that are part of a list or record.

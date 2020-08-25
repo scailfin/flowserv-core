@@ -118,13 +118,25 @@ class RunSerializer(Serializer):
             doc[LABELS['RUN_ERRORS']] = run.state().messages
         elif run.is_success():
             doc[LABELS['RUN_FINISHED']] = run.state().finished_at
+            # Create serialization of output files if specification is present
+            # in the workflow handle.
+            outspec = dict()
+            if run.workflow.outputs is not None:
+                for file in run.workflow.outputs:
+                    obj = file.to_dict()
+                    source = obj['source']
+                    del obj['source']
+                    outspec[source] = obj
             # Serialize file resources
             files = list()
             for f in run.files:
-                files.append({
+                fileobj = {
                     LABELS['FILE_ID']: f.file_id,
                     LABELS['FILE_NAME']: f.name
-                })
+                }
+                if f.name in outspec:
+                    fileobj.update(outspec[f.name])
+                files.append(fileobj)
             doc[LABELS['RUN_FILES']] = files
         return doc
 

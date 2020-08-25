@@ -30,3 +30,10 @@
 
 * Fix bug in created_at timestamp for workflow runs.
 * Command-line interface to register new users.
+
+
+### 0.3.0 - 2020-08-25
+
+* Add manifest file option as parameter for test workflow runs in Jupyter.
+* Option to add specification of output file properties for display purposes in workflow specification.
+* Test workflow runs using Docker engine.

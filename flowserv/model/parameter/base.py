@@ -156,7 +156,7 @@ class ParameterGroup(object):
 
         Returns
         -------
-        flowserv.module.parameter.base.ParameterGroup
+        flowserv.model.parameter.base.ParameterGroup
 
         Raises
         ------
