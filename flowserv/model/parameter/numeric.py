@@ -274,7 +274,9 @@ class NumericParameter(ParameterBase):
         ------
         flowserv.error.InvalidArgumentError
         """
-        if self.type_id == PARA_INT:
+        if value in ['-inf', 'inf']:
+            value = float(value)
+        elif self.type_id == PARA_INT:
             try:
                 value = int(value)
             except (TypeError, ValueError):
