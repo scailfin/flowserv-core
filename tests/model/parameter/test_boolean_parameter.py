@@ -20,11 +20,11 @@ def test_invalid_serialization():
     with pytest.raises(err.InvalidParameterError):
         BoolParameter.from_dict({
             'id': '0000',
-            'type': PARA_BOOL,
+            'dtype': PARA_BOOL,
         })
     BoolParameter.from_dict({
         'id': '0000',
-        'type': 'string',
+        'dtype': 'string',
         'index': 0,
         'name': 'Name',
         'isRequired': True
@@ -32,7 +32,7 @@ def test_invalid_serialization():
     with pytest.raises(ValueError):
         BoolParameter.from_dict({
             'id': '0000',
-            'type': 'unknown',
+            'dtype': 'unknown',
             'index': 0,
             'name': 'Name',
             'isRequired': True
@@ -47,7 +47,7 @@ def test_boolean_parameter_from_dict():
         BoolParameter.to_dict(
             BoolParameter.from_dict({
                 'id': '0000',
-                'type': PARA_BOOL,
+                'dtype': PARA_BOOL,
                 'name': 'Agree',
                 'index': 10,
                 'description': 'Do you agree?',

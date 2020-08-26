@@ -18,6 +18,7 @@ from flowserv.model.workflow.serial import SerialWorkflow
 from flowserv.model.workflow.state import StatePending
 from flowserv.service.run.argument import ARG, FILE  # noqa: F401
 
+import flowserv.controller.serial.docker as docker
 import flowserv.controller.serial.engine as serial
 import flowserv.error as err
 import flowserv.model.workflow.state as serialize
@@ -45,7 +46,7 @@ def clone_helloworld(targetdir=None):
     """
     if targetdir is None:
         targetdir = tempfile.mkdtemp()
-    git.Repo.clone_from(GITHUB_HELLOWORLD, targetdir)
+    git.Repo.clone_from(GITHUB_HELLOWORLD, targetdir, branch='flowserv0.3.0')
     return targetdir
 
 
@@ -88,7 +89,9 @@ def prepare_postproc_data(templatefile, runs):
     )
 
 
-def run_postproc_workflow(sourcedir, runs, specfile=None, rundir=None):
+def run_postproc_workflow(
+    sourcedir, runs, specfile=None, manifestfile=None, rundir=None
+):
     """Run post-processing workflow for a workflow template.
 
     Parameters
@@ -101,6 +104,9 @@ def run_postproc_workflow(sourcedir, runs, specfile=None, rundir=None):
     specfile: string, default=None
         Path to the workflow template specification file (absolute or
         relative to the workflow directory)
+    manifestfile: string, default=None
+        Path to manifest file. If not given an attempt is made to read one
+        of the default manifest file names in the base directory.
     rundir: string, default=None
         Path to the target directory for worfklow run files. If not given, a
         temporary directory will be created.
@@ -114,7 +120,8 @@ def run_postproc_workflow(sourcedir, runs, specfile=None, rundir=None):
     template = read_template(
         sourcedir=sourcedir,
         rundir=rundir,
-        specfile=specfile
+        specfile=specfile,
+        manifestfile=manifestfile
     )
     postproc_spec = template.postproc_spec
     workflow_spec = postproc_spec.get('workflow')
@@ -160,7 +167,55 @@ def run_postproc_workflow(sourcedir, runs, specfile=None, rundir=None):
     return serialize.deserialize_state(state_dict)
 
 
-def run_workflow(sourcedir, arguments=dict(), specfile=None, rundir=None):
+def run_docker_workflow(
+    sourcedir, arguments=dict(), specfile=None, manifestfile=None, rundir=None
+):
+    """Run a workflow template with a given set of arguments for test purposes.
+    Expects the worklfow files and specification to be located in the given
+    source directory. Creates a copy of the files in the target directory. If
+    no target directory is given a temporary directory is created.
+
+    After the workflow files are copied the workflow is executed using the
+    given arguments. This function will only run the main workflow but not
+    any post-processing workflow that is included in the workflow template.
+
+    The workflow is executed using the Docker docker_run method that is used by
+    the Docker workflow controller.
+
+    Parameters
+    ----------
+    sourcedir: string
+        Path to the base directory containing the workflow resource files.
+    arguments: dict, default=dict()
+        Mapping of parameter identifier to user provided argument values.
+    specfile: string, default=None
+        Path to the workflow template specification file (absolute or
+        relative to the workflow directory).
+    manifestfile: string, default=None
+        Path to manifest file. If not given an attempt is made to read one
+        of the default manifest file names in the base directory.
+    rundir: string, default=None
+        Path to the target directory for worfklow run files. If not given, a
+        temporary directory will be created.
+
+    Returns
+    -------
+    flowserv.model.workflow.state.WorkflowState
+    """
+    return run_workflow(
+        sourcedir=sourcedir,
+        arguments=arguments,
+        specfile=specfile,
+        manifestfile=manifestfile,
+        rundir=rundir,
+        exec_func=docker.docker_run
+    )
+
+
+def run_workflow(
+    sourcedir, arguments=dict(), specfile=None, manifestfile=None, rundir=None,
+    exec_func=serial.run_workflow
+):
     """Run a workflow template with a given set of arguments for test purposes.
     Expects the worklfow files and specification to be located in the given
     source directory. Creates a copy of the files in the target directory. If
@@ -179,9 +234,14 @@ def run_workflow(sourcedir, arguments=dict(), specfile=None, rundir=None):
     specfile: string, default=None
         Path to the workflow template specification file (absolute or
         relative to the workflow directory).
+    manifestfile: string, default=None
+        Path to manifest file. If not given an attempt is made to read one
+        of the default manifest file names in the base directory.
     rundir: string, default=None
         Path to the target directory for worfklow run files. If not given, a
         temporary directory will be created.
+    exec_func: func, default=serial.run_workflow
+        Function to execute the workflow run.
 
     Returns
     -------
@@ -192,7 +252,8 @@ def run_workflow(sourcedir, arguments=dict(), specfile=None, rundir=None):
     template = read_template(
         sourcedir=sourcedir,
         rundir=rundir,
-        specfile=specfile
+        specfile=specfile,
+        manifestfile=manifestfile
     )
     # Prepare workflow. Ensure to copy only those files that are not part of
     # the workflow template directory.
@@ -203,7 +264,7 @@ def run_workflow(sourcedir, arguments=dict(), specfile=None, rundir=None):
         overwrite=False
     )
     util.create_directories(basedir=rundir, files=wf.output_files())
-    _, state_dict = serial.run_workflow(
+    _, state_dict = exec_func(
         util.get_unique_identifier(),
         rundir,
         StatePending().start(),
@@ -257,7 +318,8 @@ class RunIndex(object):
 # -- Helper functions ---------------------------------------------------------
 
 def INPUTFILE(filename, target_path=None):
-    """Create run argument for unpit files.
+    """Create run argument for input files. Returns a tuple of source and
+    target file path. The target file may be None.
 
     Parameters
     ----------

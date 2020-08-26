@@ -37,24 +37,24 @@
         {
             "id": "names",
             "name": "Input file",
-            "type": "file",
+            "dtype": "file",
             "target": "data/names.txt"
         },
         {
             "id": "code",
             "name": "Code file",
-            "type": "file",
+            "dtype": "file",
             "target": "code/helloworld.py"
         },
         {
             "id": "sleeptime",
             "name": "Sleep time (s)",
-            "type": "int"
+            "dtype": "int"
         },
         {
             "id": "waittime",
             "name": "Wait time (s)",
-            "type": "int",
+            "dtype": "int",
             "defaultValue": 5
         }
     ]

@@ -14,9 +14,11 @@ identifiers.
 
 import datetime
 import errno
+import io
 import json
 import os
 import shutil
+import tarfile
 import time
 import traceback
 import uuid
@@ -28,6 +30,29 @@ from dateutil.tz import UTC
 """Identifier for supported data formats."""
 FORMAT_JSON = 'JSON'
 FORMAT_YAML = 'YAML'
+
+
+def archive_files(files):
+    """Create a gzipped tar file containing all files in the given list. The
+    input is expected to be a list of 2-tupes of (filename, archive-name).
+
+    Parameters
+    ----------
+    files: list
+        List of (filename, archive-name) for files that are added to the
+        returned archive.
+
+    Returns
+    -------
+    io.BytesIO
+    """
+    file_out = io.BytesIO()
+    tar_handle = tarfile.open(fileobj=file_out, mode='w:gz')
+    for filename, arcname in files:
+        tar_handle.add(name=filename, arcname=arcname)
+    tar_handle.close()
+    file_out.seek(0)
+    return file_out
 
 
 def copy_files(files, target_dir, overwrite=True, raise_error=False):

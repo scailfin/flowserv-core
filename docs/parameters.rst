@@ -4,182 +4,80 @@ Template Parameters
 
 Template parameters are used to define the variable parts of workflow templates. One of the primary use cases for parameter declarations is to render input forms to collect user input data.
 
-
-
-Parameter Declarations
-======================
-
-The main elements of parameter declarations are:
+The mandatory elements of parameter declarations are:
 
 - **id**: Unique identifier for the parameter. This identifier is used in the template workflow specification to reference the parameter value.
 - **name**: Descriptive short-name for the parameter (to be displayed in a front-end input form).
-- **description**: Additional descriptive information about the parameter (to be displayed in a front-end input form).
-- **datatype**: Type of the expected value. Valid data types are ``bool``, ``decimal``, ``file``, ``int``, ``list``, ``record``, and ``string``.
-- **defaultValue**: Default value for the parameter
-- **values**: List of allowed values. Value lists are for example used to render drop-down elements in the front-end input form.
-- **required**: Boolean flag indicating whether the user is required to provide a value for the parameter or not.
-- **as**: Specify an alternate target value for the user-provided value. This property is primarily intended for parameters of type ``file``. It provides flexibility with respect to renaming the file that a user uploads (see below).
+- **dtype**: Type of the expected value. Valid data types are ``bool``, ``enum``, ``file``, ``float``, ``int``, and ``string``.
 - **index**: The index defines the order in which parameters are presented in the front-end input form.
-- **parent**: Identifier of the parent element for parameters that are part of a list or record.
+- **isRequired**: Boolean flag indicating whether the user is required to provide a value for the parameter or not.
 
-Only the parameter ``id`` is mandatory. All other elements are optional. If no ``name`` is given the ``id`` is used as the name. If no ``description`` is given the ``name`` is used as description. The default ``datatype`` is ``string``.
+In addition, several oprional elements can be given for a parameter declaration:
 
-The data types ``bool``, ``decimal``, ``int``, and ``string`` represent the standard raw data types for scalar values. A parameter of type ``file`` expects the user to upload a file. Data type ``record`` is used to group parameters. The elements of the record have to reference the record element as their ``parent``. Note that data types ``list`` and ``record`` are included for future reference. These types are not supported properly by current implementations of the benchmark engine.
+- **description**: Additional descriptive information about the parameter (to be displayed in a front-end input form).
+- **defaultValue**: Default value for the parameter.
+- **module**: Identifier of the group (module) that the parameter belongs to.
 
-
-
-Example
-=======
-
-The following example declares two input parameters for a workflow template. Within the workflow specification the parameter values are referenced as ``$[[outputFormat]]`` and ``$[[repeatCount]]``, respectively.
-
-.. code-block:: yaml
-
-    parameters:
-        - id: outputFormat
-          name: 'Output file format'
-          description: 'Format of the generated output file (JSON or YAML files are currently supported)'
-          datatype: int
-          values:
-            - name: JSON
-              value: 0
-              isDefault: true
-            - name: YAML
-              value: 1
-          index: 0
-        - id: threshold
-          name: 'Threshold'
-          description: 'Threshold that is relevant for a parameterized workflow step'
-          datatype: decimal
-          defaultValue: 4.2
-          index: 1
+Depending on the data type of a parameter, additional element can be present in the declaration.
 
 
-The first parameter ``outputFormat`` defines a list of possible values. For each value the ``name`` defines the displayed name while ``value`` defines the resulting value if the respective entry is selected. Only one of the values in the list can be declared as the default value. An input form would render the output format parameter before the threshold parameter.
+Enumeration Parameters
+----------------------
 
-See the `Workflow & Benchmark Templates <https://github.com/scailfin/flowserv-core/blob/master/docs/workflow.rst>`_ document for more examples of template parameters and their usage within workflow templates.
+Parameters of type ``enum`` have a mandatory element ``values`` that specifies the valid parameter values. Each entry in the values list contains (up-to) three elements:
 
+- **name**: Display name for the value.
+- **value**: Actual value if this item is selected by the user.
+- **isDefault**: Optional element to declare a list item as the default value (for display purposes).
 
-
-File Parameters
-===============
-
-Template parameters of type ``file`` are intended to allow users to upload files from their local computer to the server that executes a workflow template. File parameter specifications may include the ``as`` property to specify the target path of the uploaded file. Consider the example below. in this example, the file that the user uploads will available at the path ``data/names.txt`` in the environment where the workflow is executed.
+An example declaration for an enumeration parameter is shown below:
 
 .. code-block:: yaml
 
-    parameters:
-        - id: names
-          name: 'Input file'
-          datatype: file
-          defaultValue: 'input/names.txt'
-          as: 'data/names.txt'
-
-
- If the ``as`` property is not set, the ``defaultValue`` will be used as the target path. Note that the ``defaultValue`` will be the source path for the file if no argument value for the parameter ``names`` is given. That is, the file at path ``input/names.txt`` will be used as input if the user does not upload a file for ``names``. The target path will be ``data/names.txt``.
-
-The ``as`` property may take the special value ``$input``. In this case, the target path is not predefined but provided by the user it as part of the input. The use of ``$input`` is intended to allow flexibility around the type of environment (i.e., Docker image) the user-provided code runs in. Consider the following modification of the *Hello World* example where the user can provide their own implementation of the code that generates the greetings:
-
-.. code-block:: yaml
-
-    workflow:
-        version: 0.3.0
-        inputs:
-          files:
-            - $[[code]]
-            - data/names.txt
-          parameters:
-            codefile: $[[code]]
-            inputfile: data/names.txt
-            outputfile: results/greetings.txt
-            sleeptime: $[[sleeptime]]
-            greeting: $[[greeting]]
-        workflow:
-          type: serial
-          specification:
-            steps:
-              - environment: $[[env]]
-                commands:
-                  - $[[cmd]]
-        outputs:
-          files:
-           - results/greetings.txt
-    parameters:
-        - id: code
-          name: 'Code file'
-          description: 'File containing the executable code to run Hello World'
-          datatype: file
-          as: $input
-          defaultValue: 'code/helloworld.py'
-        - id: env
-          name: 'Docker Image'
-          description: 'Docker image that runs the executable'
-          datatype: string
-          defaultValue: 'python:3.7'
-        - id: cmd
-          name: 'Command line'
-          datatype: string
-          defaultValue: 'python code/helloworld.py
-                  --inputfile "${inputfile}"
-                  --outputfile "${outputfile}"
-                  --sleeptime ${sleeptime}
-                  --greeting ${greeting}'
-        - id: sleeptime
-          datatype: int
-          defaultValue: 10
-        - id: greeting
-          datatype: string
-          defaultValue: 'Hello'
-
-In this example the user is not required to provide a Python implementation like helloworld.py but could use other programming languages like Java. Assume that the user has a Jar-File named ``HelloWorld.jar`` that takes four command line arguments input file, output file, sleep time, and greeting phrase. In this case they could set the ``as`` value of the ``code`` parameter to ``code/HelloWorld.jar`` when uploading the file, user ``java:8`` as the value for ``env``, and provide the command line ``java -jar code/HelloWorld.jar "${inputfile}" "${outputfile}" ${sleeptime} ${greeting}`` to run their code (as value for parameter ``cmd``).
-
-
-
-Parameter Declaration Schema
-============================
-
-The JSON schema for template parameters is shown below:
-
-.. code-block:: yaml
-
-    properties:
-      as:
-        type: string
-      datatype:
-        type: string
-      defaultValue:
-        oneOf:
-        - type: boolean
-        - type: string
-        - type: number
-      description:
-        type: string
-      id:
-        type: string
-      index:
-        type: number
-      name:
-        type: string
-      parent:
-        type: string
-      required:
-        type: boolean
+    - id: 'imageType'
+      name: 'Image Type'
+      description: 'The type of micrscopy used to generate images'
+      type: 'enum'
+      defaultValue: 'brightfield'
       values:
-        items:
-          properties:
-            isDefault:
-              type: boolean
-            name:
-              type: string
-            value:
-              oneOf:
-              - type: boolean
-              - type: string
-              - type: number
-          required:
-          - value
-          type: object
-        type: array
-    required:
-    - id
-    type: object
+          - name: 'Brightfield'
+            value: 'brightfield'
+            isDefault: true
+          - name: 'Phasecontrast'
+            value: 'phasecontrast'
+            isDefault: false
+      isRequired: true
+
+
+Input File Parameters
+---------------------
+
+Parameters of type ``file`` have one additonal optional element ``target``. The file target specifies the (relative) target path for an uploaded input file in the run folder. If the target is not specified in the parameter declaration it can be provided by the user as part of the arguments for a workflow run. Note that the default value for a file parameter points to an existing file in the workflow template's file structure but is also used as the default target path.
+
+An example declaration for a file parameter is shown below:
+
+.. code-block:: yaml
+
+    - id: 'names'
+      name: 'Names File'
+      dtype: 'file'
+      target: 'data/names.txt'
+      index: 0
+      isRequired: true
+
+
+Numeric Parameters
+------------------
+
+Parameters of type ``float`` or ``int`` have an optional ``range`` element to specify constraints for valid input values. Range constraints are intervals that are represented as strings. Round brackets are used to define open intervals and square brackets define closed intervals. A missing interval boundary is interpreted as (positive or negative) infinity. An open interval does not include the endpoints and a closed interval does.
+
+An example declaration for a integer parameter is shown below:
+
+.. code-block:: yaml
+
+    - id: 'maxProportion'
+      name: 'Max. Proportion'
+      dtype: 'float'
+      index: 3
+      defaultValue: 0.75
+      range: '[0,1]'

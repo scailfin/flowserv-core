@@ -2,32 +2,39 @@ workflow:
     version: 0.3.0
     inputs:
       files:
+        - code/analyze.py
         - code/helloworld.py
         - $[[names]]
       parameters:
-        helloworld: code/helloworld.py
         inputfile: $[[names]]
         outputfile: results/greetings.txt
-        sleeptime: $[[sleeptime]]
+        sleeptime: 0
+        greeting: 'Hello'
     workflow:
       type: serial
       specification:
         steps:
-          - environment: 'python:2.7'
+          - environment: 'python:3.7'
             commands:
-              - python "${helloworld}"
+              - python code/helloworld.py
                   --inputfile "${inputfile}"
                   --outputfile "${outputfile}"
                   --sleeptime ${sleeptime}
+                  --greeting ${greeting}
     outputs:
       files:
-       - results/greetings.txt
+       - results/
 parameters:
     - id: names
       name: 'Input file'
       dtype: file
       target: data/names.txt
-    - id: sleeptime
-      name: 'Sleeptime (s)'
-      dtype: int
-      defaultValue: 10
+outputs:
+    - source: 'results/greetings.txt'
+      title: 'Greetings'
+      caption: 'Say Hello to everyone'
+      widget: 'textview'
+      format:
+          fontSize: 12
+    - source: 'results/nothing.txt'
+      title: 'Not a file'

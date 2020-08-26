@@ -53,17 +53,17 @@ postproc:
             - 'results/analytics.json'
         runs: 'runs/'
     outputs:
-        - id: 'results/compare.json'
+        - source: 'results/compare.json'
           title: 'Results'
           caption: 'The results.'
 parameters:
     - id: names
       name: 'Input file'
-      type: file
+      dtype: file
       target: data/names.txt
     - id: greeting
       name: Greeting
-      type: string
+      dtype: string
       defaultValue: 'Hello'
 modules:
     - id: 'main'
@@ -74,11 +74,11 @@ results:
     schema:
         - id: avg_count
           name: 'Avg. Characters per Line'
-          type: float
+          dtype: float
         - id: max_len
           name: 'Max. Output Line Length'
-          type: float
+          dtype: float
         - id: max_line
           name: 'Longest Output Line'
-          type: string
+          dtype: string
           required: False

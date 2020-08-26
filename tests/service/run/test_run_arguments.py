@@ -18,7 +18,7 @@ def test_check_file_argument():
     """Test checking an argument value for representing an input file."""
     assert IS_FILE(FILE('0000'))
     assert not IS_FILE({'id': 'names'})
-    assert not IS_FILE({'type': '$record', 'value': []})
+    assert not IS_FILE({'dtype': '$record', 'value': []})
 
 
 def test_deserialize_file_argument():

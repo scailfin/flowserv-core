@@ -11,7 +11,9 @@
 import pytest
 
 from flowserv.model.parameter.numeric import NumericParameter, RangeConstraint
-from flowserv.model.parameter.numeric import PARA_FLOAT, PARA_INT
+from flowserv.model.parameter.numeric import (
+    NUMERIC_TYPES, PARA_FLOAT, PARA_INT
+)
 
 import flowserv.error as err
 
@@ -94,14 +96,14 @@ def test_create_numeric_parameter_error():
     with pytest.raises(KeyError):
         NumericParameter.from_dict({
             'id': '0000',
-            'type': PARA_FLOAT,
+            'dtype': PARA_FLOAT,
             'name': 'X',
             'isRequired': False
         }, validate=False)
     with pytest.raises(err.InvalidParameterError):
         NumericParameter.from_dict({
             'id': '0000',
-            'type': PARA_FLOAT,
+            'dtype': PARA_FLOAT,
             'name': 'X',
             'isRequired': False,
             'range': '0-1'
@@ -109,7 +111,7 @@ def test_create_numeric_parameter_error():
     with pytest.raises(ValueError):
         NumericParameter.from_dict({
             'id': '0000',
-            'type': 'string',
+            'dtype': 'string',
             'name': 'X',
             'index': 0,
             'isRequired': False
@@ -118,7 +120,7 @@ def test_create_numeric_parameter_error():
     with pytest.raises(err.InvalidParameterError):
         NumericParameter.from_dict({
             'id': '0000',
-            'type': PARA_INT,
+            'dtype': PARA_INT,
             'index': 0,
             'isRequired': False
         })
@@ -137,7 +139,7 @@ def test_numeric_parameter(type_id, range):
     """Test creating numeric parameters from dictinaries."""
     doc = {
         'id': '0000',
-        'type': type_id,
+        'dtype': type_id,
         'name': 'X',
         'index': 0,
         'isRequired': False
@@ -154,7 +156,7 @@ def test_numeric_parameter(type_id, range):
             para.to_argument('5')
     assert para.to_argument('6') == 6
     assert para.to_argument(7) == 7
-    if type_id == PARA_FLOAT:
+    if type_id in NUMERIC_TYPES:
         assert para.to_argument('inf') == float('inf')
     else:
         with pytest.raises(err.InvalidArgumentError):

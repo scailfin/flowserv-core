@@ -31,14 +31,13 @@ class WorkflowSerializer(Serializer):
             labels={
                 'COLUMN_ID': 'id',
                 'COLUMN_NAME': 'name',
-                'COLUMN_TYPE': 'type',
+                'COLUMN_TYPE': 'dtype',
                 'COLUMN_VALUE': 'value',
                 'GROUP_ID': 'id',
                 'GROUP_NAME': 'name',
                 'MODULE_ID': 'id',
                 'MODULE_INDEX': 'index',
                 'MODULE_NAME': 'name',
-                'POSTPROC_OUTPUTS': 'outputs',
                 'POSTPROC_RUN': 'postproc',
                 'RANKING': 'ranking',
                 'RUN_CREATED': 'createdAt',
@@ -117,10 +116,6 @@ class WorkflowSerializer(Serializer):
         # Add serialization for post-processing workflow (if present).
         if postproc is not None:
             obj[LABELS['POSTPROC_RUN']] = self.runs.run_handle(run=postproc)
-            # Add output descriptors (if given)
-            if 'outputs' in workflow.postproc_spec:
-                postproc_outputs = workflow.postproc_spec['outputs']
-                obj[LABELS['POSTPROC_OUTPUTS']] = postproc_outputs
         return obj
 
     def workflow_leaderboard(self, workflow, ranking, postproc=None):
@@ -176,11 +171,6 @@ class WorkflowSerializer(Serializer):
             obj[self.labels['POSTPROC_RUN']] = self.runs.run_handle(
                 run=postproc
             )
-            # Add output descriptors (if given)
-            template = workflow.get_template()
-            if 'outputs' in template.postproc_spec:
-                postproc_outputs = template.postproc_spec['outputs']
-                obj[LABELS['POSTPROC_OUTPUTS']] = postproc_outputs
         return obj
 
     def workflow_listing(self, workflows):

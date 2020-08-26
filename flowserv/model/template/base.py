@@ -24,6 +24,7 @@ have been replaced by parameter values.
 
 from flowserv.model.parameter.base import ParameterGroup
 from flowserv.model.parameter.files import PARA_FILE
+from flowserv.model.template.files import WorkflowOutputFile
 from flowserv.model.template.parameter import ParameterIndex
 from flowserv.model.template.schema import ResultSchema
 
@@ -50,7 +51,7 @@ class WorkflowTemplate(object):
     generate a benchmark leader board.
     """
     def __init__(
-        self, workflow_spec, sourcedir, parameters, modules=None,
+        self, workflow_spec, sourcedir, parameters, modules=None, outputs=None,
         postproc_spec=None, result_schema=None
     ):
         """Initialize the components of the workflow template.
@@ -64,9 +65,12 @@ class WorkflowTemplate(object):
         parameters: flowserv.model.template.parameter.ParamaterIndex
             Dictionary of workflow template parameter declarations keyed by
             their unique identifier.
-        modules: list(flowserv.module.parameter.base.ParameterGroup),
+        modules: list(flowserv.model.parameter.base.ParameterGroup),
                 default=None
             List of workflow modules that group template parameters
+        outputs: list(flowserv.model.template.files.WorkflowOutputFile),
+                default=None
+            List of specifications for workflow output files.
         postproc_spec: dict, default=None
             Optional post-processing workflow specification
         result_schema: flowserv.model.template.schema.ResultSchema,
@@ -78,6 +82,7 @@ class WorkflowTemplate(object):
         self.parameters = parameters
         # Optional components (may be None)
         self.modules = modules
+        self.outputs = outputs
         self.postproc_spec = postproc_spec
         self.result_schema = result_schema
 
@@ -149,6 +154,10 @@ class WorkflowTemplate(object):
             modules = list()
             for m in doc['modules']:
                 modules.append(ParameterGroup.from_dict(m, validate=validate))
+        # -- Output file specifications --------------------------------------
+        outputs = None
+        if 'outputs' in doc:
+            outputs = [WorkflowOutputFile.from_dict(f) for f in doc['outputs']]
         # -- Result schema ---------------------------------------------------
         schema = ResultSchema.from_dict(doc.get('results'), validate=validate)
         # Return template instance
@@ -158,7 +167,8 @@ class WorkflowTemplate(object):
             sourcedir=sourcedir,
             parameters=parameters,
             result_schema=schema,
-            modules=modules
+            modules=modules,
+            outputs=outputs
         )
 
     def parse_arguments(self, arguments):

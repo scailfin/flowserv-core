@@ -30,3 +30,11 @@
 
 * Fix bug in created_at timestamp for workflow runs.
 * Command-line interface to register new users.
+
+
+### 0.3.0 - 2020-08-25
+
+* Option to add specification of output file properties for display purposes in workflow specification.
+* Rename data type element in parameter declarations and result schema columns to 'dtype'.
+* Add manifest file option as parameter for test workflow runs in Jupyter.
+* Test workflow runs using Docker engine.

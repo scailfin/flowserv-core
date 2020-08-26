@@ -14,8 +14,8 @@ Here is a sample layout based on the `Hello World Demo <https://github.com/scail
         data/
             names.txt
     flowserv.yaml
-    instructions.md
-    workflow.yaml
+    instructions.txt
+    benchmark.yaml
 
 
 The `template` folder contains all the code and data files that are provided to the user to run the workflow. The `workflow.yaml` file contains the `template specification <https://github.com/scailfin/flowserv-core/blob/master/docs/workflow.rst>`_. User instructions for running the workflow are in the markdown file `instructions.md`. The `flowserv.yaml` file contains all the necessary metadata that is required when adding the workflow template to a flowServ repository.
@@ -30,15 +30,14 @@ The project manifest file contains the necessary information when adding a workf
 .. code-block:: yaml
 
     name: 'Hello World Demo'
-    description: 'Simple Hello World Demo Workflow for flowServ'
-    instructions: 'instructions.md'
+    description: 'Hello World Demo for ROB'
+    instructions: 'instructions.txt'
     files:
-        - source: 'template'
-          target: ''
-    specfile: 'workflow.yaml'
+        - source: 'template/code'
+          target: 'code'
+    specfile: 'benchmark.yaml'
 
-
-The `name` and `description` define the project title and a description for display, e.g., in the `ROB UI <https://github.com/scailfin/rob-ui>`_. The `instructions` element refers to the user instructions file. Note that all file references in the description file are relative to the project base folder.
+The `name` and `description` define the project title and a description for display, e.g., in the `ROB UI <https://github.com/scailfin/rob-ui>`_. The `instructions` element refers to the user instructions file. Note that all file references in the description file are relative to the project base folder (e.g., the folder that contains the cloned git repository).
 
 The list of `files` defines the source files (and folders) and their target paths that are copied from the project folder to the template repository. If the `target` element is omitted the empty string is used as the default value. The files that are copied to the template repository define the environment that is created each time the user runs the template workflow.
 

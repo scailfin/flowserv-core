@@ -20,11 +20,11 @@ def test_invalid_serialization():
     with pytest.raises(err.InvalidParameterError):
         StringParameter.from_dict({
             'id': '0000',
-            'type': PARA_STRING,
+            'dtype': PARA_STRING,
         })
     StringParameter.from_dict({
         'id': '0000',
-        'type': 'unknown',
+        'dtype': 'unknown',
         'index': 0,
         'name': 'Name',
         'isRequired': True
@@ -32,7 +32,7 @@ def test_invalid_serialization():
     with pytest.raises(ValueError):
         StringParameter.from_dict({
             'id': '0000',
-            'type': 'unknown',
+            'dtype': 'unknown',
             'index': 0,
             'name': 'Name',
             'isRequired': True
@@ -40,7 +40,7 @@ def test_invalid_serialization():
     with pytest.raises(ValueError):
         StringParameter.from_dict({
             'id': None,
-            'type': PARA_STRING,
+            'dtype': PARA_STRING,
             'name': 'Firstname',
             'index': 1,
             'description': 'Your first name',
@@ -58,7 +58,7 @@ def test_string_parameter_from_dict():
         StringParameter.to_dict(
             StringParameter.from_dict({
                 'id': '0000',
-                'type': PARA_STRING,
+                'dtype': PARA_STRING,
                 'name': 'Firstname',
                 'index': 1,
                 'description': 'Your first name',

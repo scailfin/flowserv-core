@@ -8,12 +8,10 @@
 
 """Define the classes in the Object-Relational Mapping."""
 
-import io
 import json
 import mimetypes
 import os
 import shutil
-import tarfile
 
 from datetime import datetime
 from sqlalchemy import Boolean, Integer, String, Text
@@ -24,6 +22,7 @@ from sqlalchemy.types import TypeDecorator, Unicode
 
 from flowserv.model.parameter.base import ParameterGroup
 from flowserv.model.template.base import WorkflowTemplate
+from flowserv.model.template.files import WorkflowOutputFile
 from flowserv.model.template.parameter import ParameterIndex
 from flowserv.model.template.schema import ResultSchema
 
@@ -114,6 +113,26 @@ class WorkflowResultSchema(TypeDecorator):
         """Create result schema from JSON serialization."""
         if value is not None:
             return ResultSchema.from_dict(json.loads(value))
+
+
+class WorkflowOutputs(TypeDecorator):
+    """Decorator for workflow output file specifications that are stored as
+    serialized Json objects.
+    """
+
+    impl = Unicode
+
+    def process_literal_param(self, value, dialect):
+        """Expects a list of workflow output file objects."""
+        if value is not None:
+            return json.dumps([f.to_dict() for f in value])
+
+    process_bind_param = process_literal_param
+
+    def process_result_value(self, value, dialect):
+        """Create workflow output file list from JSON serialization."""
+        if value is not None:
+            return [WorkflowOutputFile.from_dict(f) for f in json.loads(value)]
 
 
 # -- Files --------------------------------------------------------------------
@@ -317,6 +336,7 @@ class WorkflowHandle(Base):
     workflow_spec = Column(JsonObject, nullable=False)
     parameters = Column(WorkflowParameters)
     modules = Column(WorkflowModules)
+    outputs = Column(WorkflowOutputs)
     postproc_ranking_key = Column(JsonObject)
     # Omit foreign key here to avaoid circular dependencies. The run will
     # reference the workflow to ensure integrity with respect to deleting
@@ -361,6 +381,7 @@ class WorkflowHandle(Base):
             sourcedir=self._staticdir,
             parameters=self.parameters if parameters is None else parameters,
             modules=self.modules,
+            outputs=self.outputs,
             postproc_spec=self.postproc_spec,
             result_schema=self.result_schema
         )
@@ -509,13 +530,7 @@ class RunHandle(Base):
         -------
         io.BytesIO
         """
-        file_out = io.BytesIO()
-        tar_handle = tarfile.open(fileobj=file_out, mode='w:gz')
-        for r in self.files:
-            tar_handle.add(name=r.filename, arcname=r.name)
-        tar_handle.close()
-        file_out.seek(0)
-        return file_out
+        return util.archive_files([(r.filename, r.name) for r in self.files])
 
     def get_file(self, by_id=None, by_name=None):
         """Get handle for identified file. A file can either be identified by
@@ -612,6 +627,28 @@ class RunHandle(Base):
         """
         return self.state_type == st.STATE_SUCCESS
 
+    def outputs(self):
+        """Get specification of output file properties. If the workflow
+        template does not contain any output file specifications the result
+        is None.
+
+        If the run is associated with a group, then the output file
+        specification of the associated workflow is returned. If the run is a
+        post-processing run the optional output specification in the post-
+        processing workflow template is returned.
+
+        Returns
+        -------
+        list(flowserv.model.template.files.WorkflowOutputFile)
+        """
+        if self.group_id is not None:
+            return self.workflow.outputs
+        else:
+            outputs = self.workflow.postproc_spec.get('outputs')
+            if outputs is not None:
+                outputs = [WorkflowOutputFile.from_dict(f) for f in outputs]
+            return outputs
+
     def set_rundir(self, dirname):
         """Set the path to the base directory for run files.
 
@@ -687,7 +724,7 @@ class RunFile(FileHandle):
 
 
 class RunMessage(Base):
-    """Log for messages created by workflow runs. Primarily ised for error
+    """Log for messages created by workflow runs. Primarily used for error
     messages by now.
     """
     # -- Schema ---------------------------------------------------------------

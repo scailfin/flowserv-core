@@ -389,7 +389,7 @@ class StateSuccess(WorkflowState):
             Timestamp when the workflow started running
         finished_at: string, optional
             Timestamp when workflow execution completed
-        files: list(fstring), default=None
+        files: list(string), default=None
             Optional list of created files (relative path).
         """
         super(StateSuccess, self).__init__(

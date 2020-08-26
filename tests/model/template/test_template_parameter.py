@@ -32,7 +32,7 @@ def test_parameter_index_serialization():
         ParameterIndex.from_dict([p1.to_dict(), p1.to_dict()])
     # Error case: Unknown parameter type.
     doc = p1.to_dict()
-    doc['type'] = 'unknown'
+    doc['dtype'] = 'unknown'
     with pytest.raises(err.InvalidTemplateError):
         ParameterIndex.from_dict([doc])
 

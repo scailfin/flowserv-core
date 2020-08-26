@@ -13,6 +13,7 @@ ranges of valid values or minimum and maximum values.
 from flowserv.model.parameter.base import ParameterBase
 
 import flowserv.error as err
+import flowserv.model.parameter.base as pd
 import flowserv.util as util
 
 
@@ -229,8 +230,8 @@ class NumericParameter(ParameterBase):
             try:
                 util.validate_doc(
                     doc,
-                    mandatory=['id', 'type', 'name', 'index', 'isRequired'],
-                    optional=['description', 'defaultValue', 'module', 'range']
+                    mandatory=[pd.ID, pd.TYPE, pd.NAME, pd.INDEX, pd.REQUIRED],
+                    optional=[pd.DESC, pd.DEFAULT, pd.MODULE, 'range']
                 )
                 constraint = None
                 if 'range' in doc:
@@ -244,14 +245,14 @@ class NumericParameter(ParameterBase):
         except (ValueError, TypeError) as ex:
             raise err.InvalidParameterError(str(ex))
         return cls(
-            para_id=doc['id'],
-            type_id=doc['type'],
-            name=doc['name'],
-            index=doc['index'],
-            description=doc.get('description'),
-            default_value=doc.get('defaultValue'),
-            is_required=doc['isRequired'],
-            module_id=doc.get('module'),
+            para_id=doc[pd.ID],
+            type_id=doc[pd.TYPE],
+            name=doc[pd.NAME],
+            index=doc[pd.INDEX],
+            description=doc.get(pd.DESC),
+            default_value=doc.get(pd.DEFAULT),
+            is_required=doc[pd.REQUIRED],
+            module_id=doc.get(pd.MODULE),
             constraint=constraint
         )
 
@@ -273,7 +274,9 @@ class NumericParameter(ParameterBase):
         ------
         flowserv.error.InvalidArgumentError
         """
-        if self.type_id == PARA_INT:
+        if value in ['-inf', 'inf']:
+            value = float(value)
+        elif self.type_id == PARA_INT:
             try:
                 value = int(value)
             except (TypeError, ValueError):
