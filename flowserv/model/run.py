@@ -327,6 +327,7 @@ class RunManager(object):
             raise err.ConstraintViolationError(msg.format(state.type_id))
         run.state_type = state.type_id
         # Commit changes to database.
+        self.session.commit()
         return run
 
 

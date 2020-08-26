@@ -224,6 +224,8 @@ def callback_function(result, lock, tasks, service):
             api.runs().update_run(run_id, state)
     except Exception as ex:
         logging.error(ex)
+        for line in util.stacktrace(ex):
+            logging.debug(line)
 
 
 def run_workflow(run_id, rundir, state, output_files, steps):
