@@ -83,6 +83,7 @@ class WorkflowMonitor(Thread):
             del self.tasks[self.run_id]
         except Exception as ex:
             logging.error(ex)
+            logging.debug('\n'.join(util.stacktrace(ex)))
 
 
 # -- Helper functions ---------------------------------------------------------
@@ -176,7 +177,9 @@ def monitor_workflow(
                 return state
     except Exception as ex:
         logging.error(ex)
-        state = state.error(messages=util.stacktrace(ex))
+        strace = util.stacktrace(ex)
+        logging.debug('\n'.join(strace))
+        state = state.error(messages=strace)
         with service() as api:
             api.runs().update_run(run_id, state)
     msg = 'finished run {} = {}'.format(run_id, state.type_id)

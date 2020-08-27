@@ -224,8 +224,7 @@ def callback_function(result, lock, tasks, service):
             api.runs().update_run(run_id, state)
     except Exception as ex:
         logging.error(ex)
-        for line in util.stacktrace(ex):
-            logging.debug(line)
+        logging.debug('\n'.join(util.stacktrace(ex)))
 
 
 def run_workflow(run_id, rundir, state, output_files, steps):
@@ -290,7 +289,9 @@ def run_workflow(run_id, rundir, state, output_files, steps):
                     )
                 except subprocess.CalledProcessError as ex:
                     logging.error(ex)
-                    result_state = state.error(messages=util.stacktrace(ex))
+                    strace = util.stacktrace(ex)
+                    logging.debug('\n'.join(strace))
+                    result_state = state.error(messages=strace)
                     return run_id, serialize.serialize_state(result_state)
         # Create list of output files that were generated.
         files = list()
@@ -301,6 +302,8 @@ def run_workflow(run_id, rundir, state, output_files, steps):
         result_state = state.success(files=files)
     except Exception as ex:
         logging.error(ex)
-        result_state = state.error(messages=util.stacktrace(ex))
+        strace = util.stacktrace(ex)
+        logging.debug('\n'.join(strace))
+        result_state = state.error(messages=strace)
     logging.info('finished run {}: {}'.format(run_id, result_state.type_id))
     return run_id, serialize.serialize_state(result_state)
