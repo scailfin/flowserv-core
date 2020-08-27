@@ -71,6 +71,7 @@ class RemoteWorkflowController(WorkflowController):
                 self.client.stop_workflow(workflow_id)
             except Exception as ex:
                 logging.error(ex)
+                logging.debug('\n'.join(util.stacktrace(ex)))
             # Delete the task from the dictionary. The state of the
             # respective run will be updated by the workflow engine that
             # uses this controller for workflow execution
@@ -169,4 +170,6 @@ class RemoteWorkflowController(WorkflowController):
         except Exception as ex:
             # Set the workflow runinto an ERROR state
             logging.error(ex)
-            return run.state().error(messages=util.stacktrace(ex))
+            strace = util.stacktrace(ex)
+            logging.debug('\n'.join(strace))
+            return run.state().error(messages=strace)

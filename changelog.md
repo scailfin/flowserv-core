@@ -38,3 +38,8 @@
 * Rename data type element in parameter declarations and result schema columns to 'dtype'.
 * Add manifest file option as parameter for test workflow runs in Jupyter.
 * Test workflow runs using Docker engine.
+
+
+### 0.3.1 - 2020-08-27
+
+* Commit changes after run state update (issue \#48).

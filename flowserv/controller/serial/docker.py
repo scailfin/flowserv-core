@@ -19,6 +19,7 @@ from docker.errors import ContainerError, ImageNotFound, APIError
 from flowserv.controller.serial.engine import SerialWorkflowEngine
 
 import flowserv.model.workflow.state as serialize
+import flowserv.util as util
 
 
 class DockerWorkflowEngine(SerialWorkflowEngine):
@@ -90,7 +91,9 @@ def docker_run(run_id, rundir, state, output_files, steps):
                 )
     except (ContainerError, ImageNotFound, APIError) as ex:
         logging.error(ex)
-        result_state = state.error(messages=[str(ex)])
+        strace = util.stacktrace(ex)
+        logging.debug('\n'.join(strace))
+        result_state = state.error(messages=strace)
         return run_id, serialize.serialize_state(result_state)
     # Create list of output files that were generated.
     files = list()
