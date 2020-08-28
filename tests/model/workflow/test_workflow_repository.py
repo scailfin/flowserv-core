@@ -16,7 +16,12 @@ from flowserv.model.workflow.repository import WorkflowRepository
 """Test list of repository entries."""
 TEMPLATES = [
     {'id': '0000', 'description': 'TEMPLATE_0', 'url': 'http://template.0'},
-    {'id': '0001', 'description': 'TEMPLATE_1', 'url': 'http://template.1'}
+    {
+        'id': '0001',
+        'description': 'TEMPLATE_1',
+        'url': 'http://template.1',
+        'manifest': 'myfile.txt'
+    }
 ]
 
 
@@ -27,9 +32,9 @@ def repository():
 
 def test_workflow_repository_get(repository):
     """Test the get() method of the workflow repository."""
-    assert repository.get('0000') == 'http://template.0'
-    assert repository.get('0001') == 'http://template.1'
-    assert repository.get('0002') == '0002'
+    assert repository.get('0000') == ('http://template.0', None)
+    assert repository.get('0001') == ('http://template.1', 'myfile.txt')
+    assert repository.get('0002') == ('0002', None)
 
 
 def test_workflow_repository_list(repository):

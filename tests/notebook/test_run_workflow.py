@@ -30,7 +30,7 @@ def test_running_workflow_template(tmpdir):
     namesfile = os.path.join(templatedir, 'data/names.txt')
     repo = WorkflowRepository(templates=[])
     # -- Run the workflow -----------------------------------------------------
-    with clone(templatedir, repository=repo) as workflowdir:
+    with clone(templatedir, repository=repo) as (workflowdir, manifestpath):
         # Run with all parameters given.
         args = {
             'greeting': 'Hey there',
