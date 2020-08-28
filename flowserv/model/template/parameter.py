@@ -9,6 +9,8 @@
 """Collection of helper methods for parameter references in workflow templates.
 """
 
+import re
+
 from flowserv.model.parameter.base import TYPE
 from flowserv.model.parameter.boolean import BoolParameter, PARA_BOOL
 from flowserv.model.parameter.enum import EnumParameter, PARA_ENUM
@@ -18,6 +20,10 @@ from flowserv.model.parameter.numeric import PARA_FLOAT, PARA_INT
 from flowserv.model.parameter.string import StringParameter, PARA_STRING
 
 import flowserv.error as err
+
+
+"""Regular expression for template parameters."""
+REGEX_PARA = r'\$\[\[(.*?)\]\]'
 
 
 # -- Parameter Index ----------------------------------------------------------
@@ -101,6 +107,100 @@ class ParameterIndex(dict):
 
 # -- Helper functions to extract and generate parameter names -----------------
 
+def expand_value(value, arguments, parameters):
+    """Test whether the string is a reference to a template parameter and (if
+    True) replace the value with the given argument or default value.
+
+    In the current implementation template parameters are referenced using
+    $[[..]] syntax.
+
+    Parameters
+    ----------
+    value: string
+        String value in the workflow specification for a template parameter
+    arguments: dict
+        Dictionary that associates template parameter identifiers with
+        argument values
+    parameters: flowserv.model.template.parameter.ParameterIndex
+        Dictionary of parameter declarations
+
+    Returns
+    -------
+    string
+
+    Raises
+    ------
+    flowserv.error.MissingArgumentError
+    """
+    # Replace function for parameter references.
+    def replace_ref(match):
+        """Function to replace references to template parameters in a given
+        string. Used as callback function by the regular expression substitute
+        method.
+
+        Parameters
+        ----------
+        match: re.MatchObject
+            Regular expression match object.
+
+        Returns
+        -------
+        string
+        """
+        ref = match.group()
+        # Strip expression of parameter reference syntax.
+        expr = ref[3:-2]
+        pos = expr.find('?')
+        if pos == -1:
+            para = parameters[expr]
+            # If arguments contains a value for the variable we return the
+            # associated value from the dictionary. Otherwise, the default
+            # value is returned or and error is raised if no default value
+            # is defined for the parameter.
+            if expr in arguments:
+                return str(arguments[expr])
+            elif para.default_value is not None:
+                # Return the parameter default value.
+                return para.default_value
+            raise err.MissingArgumentError(para.para_id)
+        # Extract the variable name and the conditional return values.
+        var = expr[:pos].strip()
+        expr = expr[pos+1:].strip()
+        pos = expr.find(':')
+        if pos == -1:
+            eval_true = expr
+            eval_false = None
+        else:
+            eval_true = expr[:pos].strip()
+            eval_false = expr[pos+1:].strip()
+        if var not in arguments:
+            raise err.MissingArgumentError(var)
+        if str(arguments[var]).lower() == 'true':
+            return eval_true
+        else:
+            return eval_false
+
+    return re.sub(REGEX_PARA, replace_ref, value)
+
+
+def get_name(value):
+    """Extract the parameter name for a template parameter reference.
+
+    Parameters
+    ----------
+    value: string
+        String value in the workflow specification for a template parameter
+
+    Returns
+    -------
+    string
+    """
+    end_pos = value.find('?')
+    if end_pos == -1:
+        end_pos = -2
+    return value[3: end_pos].strip()
+
+
 def get_parameter_references(spec, parameters=None):
     """Get set of parameter identifier that are referenced in the given
     workflow specification. Adds parameter identifier to the given parameter
@@ -127,11 +227,10 @@ def get_parameter_references(spec, parameters=None):
     for key in spec:
         val = spec[key]
         if isinstance(val, str):
-            # If the value is of type string we test whether the string is a
-            # reference to a template parameter
-            if is_parameter(val):
+            # If the value is of type string extract all parameter references.
+            for match in re.finditer(REGEX_PARA, val):
                 # Extract variable name.
-                parameters.add(NAME(val))
+                parameters.add(get_name(match.group()))
         elif isinstance(val, dict):
             # Recursive call to get_parameter_references
             get_parameter_references(val, parameters=parameters)
@@ -140,9 +239,9 @@ def get_parameter_references(spec, parameters=None):
                 if isinstance(list_val, str):
                     # Get potential references to template parameters in
                     # list elements of type string.
-                    if is_parameter(list_val):
+                    for match in re.finditer(REGEX_PARA, list_val):
                         # Extract variable name.
-                        parameters.add(NAME(list_val))
+                        parameters.add(get_name(match.group()))
                 elif isinstance(list_val, dict):
                     # Recursive replace for dictionaries
                     get_parameter_references(list_val, parameters=parameters)
@@ -150,6 +249,56 @@ def get_parameter_references(spec, parameters=None):
                     # We currently do not support lists of lists
                     raise err.InvalidTemplateError('nested lists not allowed')
     return parameters
+
+
+def get_value(value, arguments):
+    """Get the result value from evaluating a parameter reference expression.
+    Expects a value that satisfies the is_parameter() predicate. If the given
+    expression is unconditional, e.g., $[[name]], the parameter name is the
+    returned result. If the expression is conditional, e.g., $[[name ? x : y]]
+    the argument value for parameter 'name' is tested for being Boolean True or
+    False. Depending on the outcome of the evaluation either x or y are
+    returned.
+
+    Note that nested conditional expressions are currently not supported.
+
+    Parameters
+    ----------
+    value: string
+        Parameter reference string that satisifes the is_parameter() predicate.
+    arguments: dict
+        Dictionary of user-provided argument values for template arguments.
+
+    Returns
+    -------
+    string
+
+    Raises
+    ------
+    flowserv.error.MissingArgumentError
+    """
+    # Strip expression of parameter reference syntax.
+    expr = value[3:-2]
+    pos = expr.find('?')
+    if pos == -1:
+        # Return immediately if this is an unconditional expression.
+        return expr
+    # Extract the variable name and the conditional return values.
+    var = expr[:pos].strip()
+    expr = expr[pos+1:].strip()
+    pos = expr.find(':')
+    if pos == -1:
+        eval_true = expr
+        eval_false = None
+    else:
+        eval_true = expr[:pos].strip()
+        eval_false = expr[pos+1:].strip()
+    if var not in arguments:
+        raise err.MissingArgumentError(var)
+    if str(arguments[var]).lower() == 'true':
+        return eval_true
+    else:
+        return eval_false
 
 
 def is_parameter(value):
@@ -206,68 +355,10 @@ def replace_args(spec, arguments, parameters):
                 raise err.InvalidTemplateError('nested lists not supported')
             obj.append(replace_args(val, arguments, parameters))
     elif isinstance(spec, str):
-        obj = replace_value(spec, arguments, parameters)
+        obj = expand_value(spec, arguments, parameters)
     else:
         obj = spec
     return obj
-
-
-def replace_value(value, arguments, parameters):
-    """Test whether the string is a reference to a template parameter and (if
-    True) replace the value with the given argument or default value.
-
-    In the current implementation template parameters are referenced using
-    $[[..]] syntax.
-
-    Parameters
-    ----------
-    value: string
-        String value in the workflow specification for a template parameter
-    arguments: dict
-        Dictionary that associates template parameter identifiers with
-        argument values
-    parameters: flowserv.model.template.parameter.ParameterIndex
-        Dictionary of parameter declarations
-
-    Returns
-    -------
-    string
-
-    Raises
-    ------
-    flowserv.error.MissingArgumentError
-    """
-    # Check if the value matches the template parameter reference pattern
-    if is_parameter(value):
-        # Extract variable name.
-        var = NAME(value)
-        para = parameters[var]
-        # If arguments contains a value for the variable we return the
-        # associated value from the dictionary. Otherwise, the default value
-        # is returned or and error is raised if no default value is defined
-        # for the parameter.
-        if var in arguments:
-            return str(arguments[var])
-        elif para.default_value is not None:
-            # Return the parameter default value
-            return para.default_value
-        raise err.MissingArgumentError(para.para_id)
-    return value
-
-
-def NAME(value):
-    """Extract the parameter name for a template parameter reference.
-
-    Parameters
-    ----------
-    value: string
-        String value in the workflow specification for a template parameter
-
-    Returns
-    -------
-    string
-    """
-    return value[3:-2]
 
 
 def VARIABLE(name):

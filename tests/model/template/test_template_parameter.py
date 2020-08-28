@@ -17,6 +17,108 @@ import flowserv.error as err
 import flowserv.model.template.parameter as tp
 
 
+@pytest.fixture
+def spec():
+    """Workflow specification dictionary for test purposes."""
+    return {
+            'name': 'myname',
+            'var1': tp.VARIABLE('A'),
+            'var2': '{} XYZ {}'.format(tp.VARIABLE('A'), tp.VARIABLE('E? e1')),
+            'values': [
+                {
+                    'name': 'name',
+                    'el1': tp.VARIABLE('B'),
+                    'el2': '{}{}'.format(tp.VARIABLE('G?Z'), tp.VARIABLE('F')),
+                    'nest': {'var': tp.VARIABLE('D')}
+                },
+                tp.VARIABLE('C'),
+                tp.VARIABLE('B'),
+                3,
+                'E'
+            ],
+            'count': 2
+        }
+
+
+@pytest.mark.parametrize(
+    'value,args,result',
+    [
+        (tp.VARIABLE('A'), {'A': 1}, '1'),
+        (tp.VARIABLE('A ? xyz : abc'), {'A': True}, 'xyz'),
+        (tp.VARIABLE('A ? xyz : abc'), {'A': 'true'}, 'xyz'),
+        (tp.VARIABLE('A ? xyz : abc'), {'A': False}, 'abc'),
+        (tp.VARIABLE('C'), {'A': 1}, 'default'),
+        (
+            '{} : {} = {}{}'.format(
+                tp.VARIABLE('A'),
+                tp.VARIABLE('B ? y'),
+                tp.VARIABLE('C'),
+                tp.VARIABLE('A ? t')
+            ),
+            {'A': 'x', 'B': 'True'},
+            'x : y = default'
+        )
+    ]
+)
+def test_expand_parameter_value(value, args, result):
+    """Test expand parameter reference function."""
+    parameters = ParameterIndex()
+    parameters['A'] = StringParameter(para_id='A', name='P1', index=0)
+    parameters['B'] = StringParameter(para_id='B', name='P2', index=0)
+    parameters['C'] = StringParameter(
+        para_id='C',
+        name='P3',
+        index=2,
+        default_value='default'
+    )
+    assert tp.expand_value(value, args, parameters) == result
+
+
+@pytest.mark.parametrize(
+    'variable,name',
+    [(' ABC ', 'ABC'), ('A', 'A'), ('name?B:C', 'name'), ('n ? A : A', 'n')]
+)
+def test_extract_parameter_name(variable, name):
+    """Test function to extract the parameter name from a template parameter
+    string.
+    """
+    assert tp.get_name(tp.VARIABLE(variable)) == name
+
+
+@pytest.mark.parametrize(
+    'value,result',
+    [
+        (tp.VARIABLE('A'), 'A'),
+        (tp.VARIABLE('A?x:y'), 'x'),
+        (tp.VARIABLE('B?x:y'), 'x'),
+        (tp.VARIABLE('C?x:y'), 'y'),
+        (tp.VARIABLE('A? x : y'), 'x'),
+        (tp.VARIABLE('D? x : y'), 'y'),
+        (tp.VARIABLE('A?x'), 'x'),
+        (tp.VARIABLE('C?x'), None)
+    ]
+)
+def test_get_parameter_value(value, result):
+    """Test getting parameter reference value for conditional and unconditional
+    parameter references.
+    """
+    args = {'A': True, 'B': 'true', 'C': 1, 'D': {'A': True}}
+    assert tp.get_value(value=value, arguments=args) == result
+
+
+@pytest.mark.parametrize(
+    'value',
+    [(tp.VARIABLE('B?x')), (tp.VARIABLE('B?x:y')), (tp.VARIABLE('a?x'))]
+)
+def test_get_parameter_value_exception(value):
+    """Test exception when referencing unknown parameter in conditional
+    parameter reference.
+    """
+    args = {'A': True}
+    with pytest.raises(err.MissingArgumentError):
+        assert tp.get_value(value=value, arguments=args)
+
+
 def test_parameter_index_serialization():
     """Test generating parameter index from serializations."""
     p1 = StringParameter(para_id='0', name='P1', index=1)
@@ -37,25 +139,10 @@ def test_parameter_index_serialization():
         ParameterIndex.from_dict([doc])
 
 
-def test_parameter_references():
+def test_parameter_references(spec):
     """Test getting parameter references for a workflow specification."""
-    spec = {
-        'name': 'myname',
-        'var': tp.VARIABLE('A'),
-        'values': [
-            {
-                'name': 'name',
-                'el': tp.VARIABLE('B'),
-                'nest': {'var': tp.VARIABLE('D')}
-            },
-            tp.VARIABLE('C'),
-            tp.VARIABLE('B'),
-            3,
-            'E'
-        ],
-        'count': 2
-    }
-    assert tp.get_parameter_references(spec) == set({'A', 'B', 'C', 'D'})
+    params = tp.get_parameter_references(spec)
+    assert params == set({'A', 'B', 'C', 'D', 'E', 'F', 'G'})
     # Error for nested lists.
     spec = {
         'values': [
@@ -72,24 +159,8 @@ def test_parameter_references():
         tp.get_parameter_references(spec)
 
 
-def test_replace_arguments():
+def test_replace_arguments(spec):
     """Test getting parameter references for a workflow specification."""
-    spec = {
-        'name': 'myname',
-        'var': tp.VARIABLE('A'),
-        'values': [
-            {
-                'name': 'name',
-                'el': tp.VARIABLE('B'),
-                'nest': {'var': tp.VARIABLE('D')}
-            },
-            tp.VARIABLE('C'),
-            tp.VARIABLE('B'),
-            3,
-            'E'
-        ],
-        'count': 2
-    }
     parameters = ParameterIndex()
     parameters['A'] = StringParameter(para_id='A', name='P1', index=0)
     parameters['B'] = StringParameter(para_id='B', name='P2', index=1)
@@ -100,18 +171,33 @@ def test_replace_arguments():
         index=3,
         default_value='default'
     )
-    doc = tp.replace_args(spec, {'A': 'x', 'B': 'y', 'C': 'z'}, parameters)
+    parameters['E'] = StringParameter(para_id='E', name='P5', index=4)
+    parameters['F'] = StringParameter(para_id='F', name='P6', index=5)
+    parameters['G'] = StringParameter(para_id='G', name='P7', index=6)
+    doc = tp.replace_args(
+        spec,
+        arguments={'A': 'x', 'B': 'y', 'C': 'z', 'E': 'a', 'F': 'b', 'G': 'c'},
+        parameters=parameters
+    )
     assert doc == {
-        'name': 'myname',
-        'var': 'x',
-        'values': [
-            {'name': 'name', 'el': 'y', 'nest': {'var': 'default'}},
-            'z',
-            'y',
+        "name": "myname",
+        "var1": "x",
+        "var2": "x XYZ ",
+        "values": [
+            {
+                "name": "name",
+                "el1": "y",
+                "el2": "b",
+                "nest": {
+                    "var": "default"
+                }
+            },
+            "z",
+            "y",
             3,
-            'E'
+            "E"
         ],
-        'count': 2
+        "count": 2
     }
     # Error for missing parameter value.
     with pytest.raises(err.MissingArgumentError):
@@ -120,11 +206,3 @@ def test_replace_arguments():
     with pytest.raises(err.InvalidTemplateError):
         spec = {'values': ['A', [2, 3]]}
         tp.replace_args(spec, {'A': 'x', 'B': 'y'}, parameters)
-
-
-def test_variable_helpers():
-    """Test helper functions for parameter references."""
-    var = tp.VARIABLE('myvar')
-    assert tp.is_parameter(var)
-    assert tp.NAME(var) == 'myvar'
-    assert not tp.is_parameter(tp.NAME(var))
