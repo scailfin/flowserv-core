@@ -48,3 +48,8 @@
 ### 0.3.2 - 2020-08-28
 
 * Allow Conditional Parameter Replacements (\#50).
+
+
+### 0.3.3 - 2020-08-28
+
+* Handle optional manifest element in workflow repository entries (\#52).
