@@ -142,6 +142,8 @@ class FileParameter(ParameterBase):
                 target = self.default_value
             else:
                 raise err.InvalidArgumentError('missing target path')
+        # The InputFile constructor may raise a TypeError if the source
+        # argument is not a string.
         try:
             return InputFile(source=value, target=target, exists=exists)
         except TypeError as ex:

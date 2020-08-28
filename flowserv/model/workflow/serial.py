@@ -91,7 +91,7 @@ class SerialWorkflow(object):
         flowserv.error.MissingArgumentError
         """
         workflow_spec = self.template.workflow_spec
-        # Get the input/parameters dictionary from the workflow specification
+        # Get the input parameters dictionary from the workflow specification
         # and replace all references to template parameters with the given
         # arguments or default values.
         workflow_parameters = tp.replace_args(
@@ -110,13 +110,18 @@ class SerialWorkflow(object):
         result = list()
         spec = workflow_spec.get('workflow', {}).get('specification', {})
         for step in spec.get('steps', []):
-            env = step.get('environment')
-            if tp.is_parameter(env):
-                env = workflow_parameters[tp.NAME(env)]
+            env = tp.expand_value(
+                value=step.get('environment'),
+                arguments=workflow_parameters,
+                parameters=self.template.parameters
+            )
             script = Step(env=env)
             for cmd in step.get('commands', []):
-                if tp.is_parameter(cmd):
-                    cmd = workflow_parameters[tp.NAME(cmd)]
+                cmd = tp.expand_value(
+                    value=cmd,
+                    arguments=workflow_parameters,
+                    parameters=self.template.parameters
+                )
                 script.add(Template(cmd).substitute(workflow_parameters))
             result.append(script)
         return result
@@ -172,7 +177,7 @@ class SerialWorkflow(object):
                 # assumed that this is a file parameter. If no argument value
                 # is given for the parameter a default value will be used as
                 # source and target path.
-                var = tp.NAME(val)
+                var = tp.get_value(value=val, arguments=self.arguments)
                 para = self.template.parameters.get(var)
                 arg = self.arguments.get(var)
                 if arg is None:

@@ -43,3 +43,8 @@
 ### 0.3.1 - 2020-08-27
 
 * Commit changes after run state update (issue \#48).
+
+
+### 0.3.2 - 2020-08-28
+
+* Allow Conditional Parameter Replacements (\#50).

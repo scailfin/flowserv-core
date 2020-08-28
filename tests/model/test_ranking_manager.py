@@ -10,6 +10,8 @@
 
 import os
 
+from datetime import timedelta
+
 from flowserv.model.parameter.numeric import PARA_FLOAT, PARA_INT
 from flowserv.model.parameter.string import PARA_STRING
 from flowserv.model.ranking import RankingManager
@@ -157,6 +159,8 @@ def test_multi_success_runs(database, tmpdir):
         )
         rank_order = [e.run_id for e in ranking]
         assert rank_order == asc_order
+        # Run execution time
+        assert type(ranking[0].exectime()) == timedelta
     # -- Test get ranking with all results per group --------------------------
     with database.session() as session:
         wfrepo = WorkflowManager(session=session, fs=fs)
