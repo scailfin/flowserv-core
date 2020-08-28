@@ -130,10 +130,10 @@ class WorkflowManager(object):
         """
         # If a repository Url is given we first clone the repository into a
         # temporary directory that is used as the workflow source directory.
-        with clone(source) as sourcedir:
+        with clone(source) as (sourcedir, manifestpath):
             manifest = WorkflowManifest.load(
                 basedir=sourcedir,
-                manifestfile=manifestfile,
+                manifestfile=manifestfile if manifestfile else manifestpath,
                 name=name,
                 description=description,
                 instructions=instructions,
@@ -352,8 +352,9 @@ def clone(source, repository=None):
     is cloned into a temporary directory which is removed when the generator
     resumes after the workflow has been copied to the local repository.
 
-    Returns the path to the resulting template source directory on the local
-    disk.
+    Returns a tuple containing the path to the resulting template source
+    directory on the local disk and the optional path to the template's
+    manifest file.
 
     Parameters
     ----------
@@ -367,21 +368,23 @@ def clone(source, repository=None):
 
     Returns
     -------
-    string
+    string, string
     """
     if os.path.isdir(source):
         # Return the source if it references a directory on local disk.
-        yield source
+        yield source, None
     else:
         # Clone the repository that matches the given source into a temporary
         # directory on local disk.
         if repository is None:
             repository = WorkflowRepository()
-        repourl = repository.get(source)
+        repourl, manifestpath = repository.get(source)
         sourcedir = tempfile.mkdtemp()
+        if manifestpath is not None:
+            manifestpath = os.path.join(sourcedir, manifestpath)
         try:
             git.Repo.clone_from(repourl, sourcedir)
-            yield sourcedir
+            yield sourcedir, manifestpath
         except (IOError, OSError, git.exc.GitCommandError) as ex:
             raise ex
         finally:

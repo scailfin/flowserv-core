@@ -43,8 +43,12 @@ class WorkflowRepository(object):
         self.templates = templates
 
     def get(self, identifier):
-        """Get the URL for the repository entry with the given identifier. If
-        no entry matches the identifier it is returned as the function result.
+        """Get the URL and the optional (relative) manifest file path for the
+        repository entry with the given identifier. If no entry matches the
+        identifier it is returned as the function result.
+
+        Returns a tuple of (url, manifestpath). If the manifest element is not
+        present in the repository entry the second value is None.
 
         Parameters
         ----------
@@ -53,12 +57,12 @@ class WorkflowRepository(object):
 
         Returns
         -------
-        string
+        string, string
         """
         for obj in self.templates:
             if obj.get('id') == identifier:
-                return obj.get('url')
-        return identifier
+                return obj.get('url'), obj.get('manifest')
+        return identifier, None
 
     def list(self):
         """Get list of tuples containing the template identifier, descriptions,
