@@ -10,9 +10,12 @@
 and querying analytics results for individual workflows.
 """
 
+from dateutil.parser import isoparse
+
 from flowserv.model.base import GroupHandle, RunHandle
 
 import flowserv.model.workflow.state as st
+import flowserv.util as util
 
 
 class RunResult(object):
@@ -60,7 +63,7 @@ class RunResult(object):
         -------
         datetime.timedelta
         """
-        return self.finished_at - self.started_at
+        return isoparse(self.finished_at) - isoparse(self.started_at)
 
     def get(self, name):
         """Get the result value for the schema attribute with the given name.

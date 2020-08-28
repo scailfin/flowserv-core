@@ -16,6 +16,28 @@ from json.decoder import JSONDecodeError
 import flowserv.util as util
 
 
+def test_copy_files_overwrite(tmpdir):
+    """Test overwrite flag for copy files function."""
+    # Create single file in tmpdir.
+    filename = os.path.join(tmpdir, 'A.txt')
+    with open(filename, 'w') as f:
+        f.write('X')
+    files = [(filename, os.path.basename(filename))] * 2
+    util.copy_files(
+        files=files,
+        target_dir=tmpdir,
+        overwrite=False,
+        raise_error=False
+    )
+    with pytest.raises(ValueError):
+        util.copy_files(
+            files=files,
+            target_dir=tmpdir,
+            overwrite=False,
+            raise_error=True
+        )
+
+
 def test_datetime():
     """Ensure that timestamp conversion works for ISO strings with or
     without milliseconds.

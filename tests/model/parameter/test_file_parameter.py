@@ -104,3 +104,6 @@ def test_file_parameter_value(tmpdir):
     # Missing file with error
     with pytest.raises(err.UnknownFileError):
         para.to_argument(filename)
+    # Invalid argument.
+    with pytest.raises(err.InvalidArgumentError):
+        para.to_argument(value={'A': 1}, target='/dev/null')

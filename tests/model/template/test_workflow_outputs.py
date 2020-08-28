@@ -17,6 +17,7 @@ def test_error_specification():
     """Test output file specification with errors."""
     with pytest.raises(ValueError):
         WorkflowOutputFile.from_dict(dict())
+    WorkflowOutputFile.from_dict({'source': 'abc', 'unkn': 1}, validate=False)
     with pytest.raises(ValueError):
         WorkflowOutputFile.from_dict({'source': 'abc', 'unkn': 1})
 
