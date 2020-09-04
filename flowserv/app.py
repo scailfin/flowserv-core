@@ -9,9 +9,9 @@
 from io import BytesIO, StringIO
 
 from flowserv.model.base import WorkflowHandle
+from flowserv.model.files.fs import FileSystemStore
 from flowserv.model.group import WorkflowGroupManager
 from flowserv.model.user import UserManager
-from flowserv.model.workflow.fs import WorkflowFileSystem
 from flowserv.model.workflow.manager import WorkflowManager
 from flowserv.service.api import API
 from flowserv.service.run.argument import ARG, FILE
@@ -61,7 +61,7 @@ class App(object):
         with self._db.session() as session:
             manager = WorkflowGroupManager(
                 session=session,
-                fs=WorkflowFileSystem(util.create_dir(self._basedir, abs=True))
+                fs=FileSystemStore(self._basedir)
             )
             group = manager.get_group(self._group_id)
             self._user_id = group.owner_id
@@ -103,12 +103,12 @@ class App(object):
                 engine=self._engine,
                 basedir=self._basedir
             )
-            fh = api.runs().get_result_file(
+            fh, fileobj = api.runs().get_result_file(
                 run_id=run_id,
                 file_id=file_id,
                 user_id=self._user_id
             )
-            return (fh.filename, fh.mimetype)
+            return (fileobj, fh.mime_type)
 
     def instructions(self):
         """Get instructions text for the application.
@@ -217,8 +217,7 @@ def install_app(
         # Use the default database object if no database is given.
         from flowserv.service.database import database
         db = database
-    basedir = config.APP_BASEDIR(basedir)
-    fs = WorkflowFileSystem(util.create_dir(basedir, abs=True))
+    fs = FileSystemStore(config.APP_BASEDIR(basedir))
     # Create a new workflow for the application from the specified template.
     # For applications, any post-processing workflow is currently ignored.
     with db.session() as session:
@@ -308,8 +307,7 @@ def uninstall_app(app_key, db=None, basedir=None):
         # Use the default database object if no database is given.
         from flowserv.service.database import database
         db = database
-    basedir = config.APP_BASEDIR(basedir)
-    fs = WorkflowFileSystem(util.create_dir(basedir, abs=True))
+    fs = FileSystemStore(config.APP_BASEDIR(basedir))
     # Delete workflow and all related files.
     with db.session() as session:
         # Get the identifier for the workflow that is associated with the

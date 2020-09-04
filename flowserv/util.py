@@ -13,7 +13,6 @@ identifiers.
 """
 
 import datetime
-import errno
 import io
 import json
 import os
@@ -25,6 +24,7 @@ import uuid
 import yaml
 
 from dateutil.tz import UTC
+from typing import IO, List, Tuple, Union
 
 
 """Identifier for supported data formats."""
@@ -32,7 +32,7 @@ FORMAT_JSON = 'JSON'
 FORMAT_YAML = 'YAML'
 
 
-def archive_files(files):
+def archive_files(files: List[Tuple[Union[str, IO], str]]):
     """Create a gzipped tar file containing all files in the given list. The
     input is expected to be a list of 2-tupes of (filename, archive-name).
 
@@ -48,8 +48,13 @@ def archive_files(files):
     """
     file_out = io.BytesIO()
     tar_handle = tarfile.open(fileobj=file_out, mode='w:gz')
-    for filename, arcname in files:
-        tar_handle.add(name=filename, arcname=arcname)
+    for file, arcname in files:
+        if isinstance(file, str):
+            tar_handle.add(name=file, arcname=arcname)
+        else:
+            info = tarfile.TarInfo(name=arcname, arcname=arcname)
+            info.size = file.tell()
+            tar_handle.add(tarinfo=info, fileobj=file)
     tar_handle.close()
     file_out.seek(0)
     return file_out
@@ -72,6 +77,10 @@ def copy_files(files, target_dir, overwrite=True, raise_error=False):
     raise_error: bool, default=False
         Raise an error when an existing target file is encountered if this flag
         is true and overwrite is False.
+
+    Raises
+    ------
+    ValueError
     """
     for source, target in files:
         # The target path is relative to the target directory. Create the
@@ -102,34 +111,6 @@ def copy_files(files, target_dir, overwrite=True, raise_error=False):
             shutil.copy(src=source, dst=dst)
 
 
-def create_dir(directory, abs=False):
-    """Safely create the given directory path if it does not exist.
-
-    Parameters
-    ----------
-    directory: string
-        Path to directory that is being created.
-    abs: boolean, optional
-        Return absolute path if true
-
-    Returns
-    -------
-    string
-    """
-    # Based on https://stackoverflow.com/questions/273192/
-    # how-can-i-safely-create-a-nested-directory
-    if not os.path.exists(directory):
-        try:
-            os.makedirs(directory)
-        except OSError as e:  # pragma: no cover
-            if e.errno != errno.EEXIST:
-                raise
-    if abs:
-        return os.path.abspath(directory)
-    else:
-        return directory
-
-
 def create_directories(basedir, files):
     """Create top-level folder for all files in a given list. The file list
     contains the path names of (result) files relative to a given base
@@ -158,17 +139,6 @@ def get_unique_identifier():
     string
     """
     return str(uuid.uuid4()).replace('-', '')
-
-
-def get_short_identifier():
-    """Create a unique identifier that contains only eigth characters. Uses the
-    prefix of a unique identifier as the result.
-
-    Returns
-    -------
-    string
-    """
-    return get_unique_identifier()[:8]
 
 
 def from_utc_datetime(utc_datetime):

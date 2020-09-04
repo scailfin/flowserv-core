@@ -63,6 +63,12 @@ The environment settings for the Docker engine are as follows:
     export FLOWSERV_BACKEND_CLASS=DockerWorkflowEngine
 
 
+Temporary Run Files
+-------------------
+
+The default engine and the Docker engine maintain run files in a temporary folder before they are moved to persistent storage (as defined by the file store parameters). The base folder for these temporary files can be configured using the environment variable *FLOWSERV_RUNSDIR*. If the variable is not set all workflow runs will use the sub-folder `runs` in the *FLOWSERV_API_DIR* as the default base directory.
+
+
 --------
 Database
 --------
@@ -78,7 +84,7 @@ When using SQLite as the underlying database system, an example value for *FLOWS
 .. code-block:: bash
 
     export FLOWSERV_DATABASE=sqlite:////absolute/path/to/foo.db
-    
+
 
 Connect to PostgreSQL
 ---------------------

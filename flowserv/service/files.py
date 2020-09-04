@@ -80,7 +80,7 @@ class UploadFileService(object):
 
         Returns
         -------
-        flowserv.model.base.FileHandle, dict
+        flowserv.model.base.FileHandle, string or FileObject
 
         Raises
         ------
@@ -98,10 +98,9 @@ class UploadFileService(object):
             )
             if not is_member:
                 raise err.UnauthorizedAccessError()
-        # Return the file handle and a serialization of tit
-        fh = self.group_manager.get_file(group_id=group_id, file_id=file_id)
-        doc = self.serialize.file_handle(group_id=group_id, fh=fh)
-        return fh, doc
+        # Return the file handle and object that provides read access to
+        # the file object.
+        return self.group_manager.get_file(group_id=group_id, file_id=file_id)
 
     def list_files(self, group_id, user_id):
         """Get a listing of all files that have been uploaded for the given
@@ -132,7 +131,7 @@ class UploadFileService(object):
             files=self.group_manager.list_files(group_id)
         )
 
-    def upload_file(self, group_id, file, name, user_id, file_type=None):
+    def upload_file(self, group_id, file, name, user_id):
         """Create a file for a given workflow group.
 
         Parameters
@@ -145,9 +144,6 @@ class UploadFileService(object):
             Name of the file
         user_id: string
             Unique user identifier
-        file_type: string, default=None
-            Identifier for the file type (e.g., the file MimeType). This could
-            also by the identifier of a content handler.
 
         Returns
         -------
@@ -167,7 +163,6 @@ class UploadFileService(object):
         fh = self.group_manager.upload_file(
             group_id=group_id,
             file=file,
-            name=name,
-            file_type=file_type
+            name=name
         )
         return self.serialize.file_handle(group_id=group_id, fh=fh)

@@ -15,11 +15,11 @@ closed properly after every API request has been handled.
 from contextlib import contextmanager
 
 from flowserv.model.auth import DefaultAuthPolicy
+from flowserv.model.files.fs import FileSystemStore
 from flowserv.model.group import WorkflowGroupManager
 from flowserv.model.ranking import RankingManager
 from flowserv.model.run import RunManager
 from flowserv.model.user import UserManager
-from flowserv.model.workflow.fs import WorkflowFileSystem
 from flowserv.model.workflow.manager import WorkflowManager
 from flowserv.service.files import UploadFileService
 from flowserv.service.group import WorkflowGroupService
@@ -31,7 +31,6 @@ from flowserv.view.factory import DefaultView
 
 import flowserv.config.api as config
 import flowserv.error as err
-import flowserv.util as util
 
 
 """Name of the header element that contains the access token."""
@@ -78,7 +77,7 @@ class API(object):
         self.engine = engine
         # Ensure that the API base directory exists
         fsdir = config.API_BASEDIR(value=basedir)
-        self.fs = WorkflowFileSystem(util.create_dir(fsdir, abs=True))
+        self.fs = FileSystemStore(fsdir)
         # Set the serializer factory
         self.view = view if view is not None else DefaultView()
         # Keep an instance of objects that may be used by multiple components

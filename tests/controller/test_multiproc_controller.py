@@ -38,6 +38,7 @@ def test_cancel_run_helloworld(service):
     # Start a new run for the workflow template.
     engine = SerialWorkflowEngine(is_async=True)
     with service(engine=engine) as api:
+        engine.fs = api.fs
         workflow_id = create_workflow(api, source=TEMPLATE_DIR)
         user_id = create_user(api)
         group_id = create_group(api, workflow_id, [user_id])
@@ -81,6 +82,7 @@ def test_run_helloworld_async(target, tmpdir):
     database.init()
     engine = SerialWorkflowEngine(is_async=True)
     with service(engine=engine) as api:
+        engine.fs = api.fs
         workflow_id = create_workflow(api, source=TEMPLATE_DIR)
         user_id = create_user(api)
         group_id = create_group(api, workflow_id, [user_id])
@@ -103,22 +105,22 @@ def test_run_helloworld_async(target, tmpdir):
     files = dict()
     for f in run['files']:
         files[f['name']] = f['id']
-    fh = api.runs().get_result_file(
+    fh, filename = api.runs().get_result_file(
         run_id=run_id,
         file_id=files['results/greetings.txt'],
         user_id=user_id
     )
-    with open(fh.filename) as f:
+    with open(filename) as f:
         greetings = f.read()
         assert 'Hi Alice' in greetings
         assert 'Hi Bob' in greetings
         assert 'Hi Zoe' in greetings
-    fh = api.runs().get_result_file(
+    fh, filename = api.runs().get_result_file(
         run_id=run_id,
         file_id=files['results/analytics.json'],
         user_id=user_id
     )
-    assert os.path.isfile(fh.filename)
+    assert os.path.isfile(filename)
     # Clean-up environment variables
     del os.environ[FLOWSERV_DB]
     del os.environ[FLOWSERV_API_BASEDIR]

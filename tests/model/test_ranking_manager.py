@@ -12,10 +12,10 @@ import os
 
 from datetime import timedelta
 
+from flowserv.model.files.fs import FileSystemStore
 from flowserv.model.parameter.numeric import PARA_FLOAT, PARA_INT
 from flowserv.model.parameter.string import PARA_STRING
 from flowserv.model.ranking import RankingManager
-from flowserv.model.workflow.fs import WorkflowFileSystem
 from flowserv.model.workflow.manager import WorkflowManager
 from flowserv.model.run import RunManager
 from flowserv.model.template.schema import (
@@ -82,7 +82,7 @@ def init(database, basedir):
 
 def run_success(run_manager, run_id, rundir, values):
     """Set given run into success state with the given result data."""
-    util.create_dir(rundir)
+    os.makedirs(rundir)
     filename = os.path.join(rundir, RESULT_FILE_ID)
     util.write_object(filename=filename, obj=values)
     ts = util.utc_now()
@@ -93,7 +93,8 @@ def run_success(run_manager, run_id, rundir, values):
             started_at=ts,
             finished_at=ts,
             files=[RESULT_FILE_ID]
-        )
+        ),
+        rundir=rundir
     )
 
 
@@ -101,7 +102,7 @@ def test_empty_ranking(database, tmpdir):
     """The rankings for workflows without completed runs are empty."""
     # -- Setup ----------------------------------------------------------------
     workflows = init(database, tmpdir)
-    fs = WorkflowFileSystem(tmpdir)
+    fs = FileSystemStore(tmpdir)
     # -- Test empty listing with no successful runs ---------------------------
     with database.session() as session:
         wfrepo = WorkflowManager(session=session, fs=fs)
@@ -120,7 +121,7 @@ def test_multi_success_runs(database, tmpdir):
     # three active runs. Then set all runs for the first workflow into success
     # state. Increase a counter for the avg_len value as we update runs.
     workflows = init(database, tmpdir)
-    fs = WorkflowFileSystem(tmpdir)
+    fs = FileSystemStore(tmpdir)
     workflow_id, groups = workflows[0]
     count = 0
     asc_order = list()
@@ -129,15 +130,11 @@ def test_multi_success_runs(database, tmpdir):
     with database.session() as session:
         for group_id, runs in groups:
             for i, run_id in enumerate(runs):
-                rundir = fs.run_basedir(
-                    workflow_id=workflow_id,
-                    group_id=group_id,
-                    run_id=run_id
-                )
+                tmprundir = os.path.join(tmpdir, 'runs', run_id)
                 run_success(
                     run_manager=RunManager(session=session, fs=fs),
                     run_id=run_id,
-                    rundir=rundir,
+                    rundir=tmprundir,
                     values={'count': count, 'avg': 1.0, 'name': run_id}
                 )
                 count += 1

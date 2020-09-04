@@ -8,12 +8,11 @@
 
 """Unit test for the functionality of the workflow group manager."""
 
-import os
 import pytest
 
+from flowserv.model.files.fs import FileSystemStore
 from flowserv.model.group import WorkflowGroupManager
 from flowserv.model.template.parameter import ParameterIndex
-from flowserv.model.workflow.fs import WorkflowFileSystem
 
 import flowserv.error as err
 import flowserv.tests.model as model
@@ -24,7 +23,7 @@ def test_create_group(database, tmpdir):
     # -- Setup ----------------------------------------------------------------
     #
     # Create a database with a single workflow.
-    fs = WorkflowFileSystem(tmpdir)
+    fs = FileSystemStore(tmpdir)
     with database.session() as session:
         user_id = model.create_user(session, active=True)
         workflow_id = model.create_workflow(session)
@@ -107,7 +106,7 @@ def test_delete_group(database, tmpdir):
     # -- Setup ----------------------------------------------------------------
     #
     # Create a database with two groups for a single workflow.
-    fs = WorkflowFileSystem(tmpdir)
+    fs = FileSystemStore(tmpdir)
     with database.session() as session:
         user_id = model.create_user(session, active=True)
         wf_id = model.create_workflow(session)
@@ -130,9 +129,7 @@ def test_delete_group(database, tmpdir):
     with database.session() as session:
         # Ensure that group directores are deleted.
         manager = WorkflowGroupManager(session=session, fs=fs)
-        groupdir = fs.workflow_groupdir(wf_id, group_1)
         manager.delete_group(group_1)
-        assert not os.path.isdir(groupdir)
         # Access to group 1 raises error while group 2 is still accessible.
         with pytest.raises(err.UnknownWorkflowGroupError):
             manager.get_group(group_1)
@@ -146,7 +143,7 @@ def test_list_groups(database, tmpdir):
     # Create a database with three groups for a two workflow. Group 1 has
     # user 1 as only member, group 2 has user 2 and 3 as member, group 3 has
     # user 1 and 3 as members.
-    fs = WorkflowFileSystem(tmpdir)
+    fs = FileSystemStore(tmpdir)
     with database.session() as session:
         user_1 = model.create_user(session, active=True)
         user_2 = model.create_user(session, active=True)
@@ -188,7 +185,7 @@ def test_update_groups(database, tmpdir):
     #
     # Create a database with two groups for one workflow. Group 1 has user 1 as
     # only member, group 2 has user 2 and 3 as member.
-    fs = WorkflowFileSystem(tmpdir)
+    fs = FileSystemStore(tmpdir)
     with database.session() as session:
         user_1 = model.create_user(session, active=True)
         user_2 = model.create_user(session, active=True)

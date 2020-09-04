@@ -9,6 +9,10 @@
 """Implementation for a workflow controller backend that is capable of running
 serial workflow specification. This controller allows execution in workflow
 steps within separate sub-processes.
+
+All workflow run files will be maintained in a (temporary) directory on the
+local file system. The base folder for these run files in configured using the
+environment variable FLOWSERV_RUNSDIR.
 """
 
 import logging
@@ -22,6 +26,7 @@ from flowserv.config.controller import ENGINE_ASYNC, FLOWSERV_ASYNC
 from flowserv.controller.base import WorkflowController
 from flowserv.model.workflow.serial import SerialWorkflow
 
+import flowserv.controller.serial.config as config
 import flowserv.util as util
 import flowserv.model.workflow.state as serialize
 
@@ -31,7 +36,7 @@ class SerialWorkflowEngine(WorkflowController):
     set of arguments. Each workflow is executed as a serial workflow. The
     individual workflow steps can be executed in a separate process on request.
     """
-    def __init__(self, exec_func=None, is_async=None):
+    def __init__(self, fs=None, exec_func=None, is_async=None):
         """Initialize the function that is used to execute individual workflow
         steps. The run workflow function in this module executes all steps
         within sub-processes in the same environment as the workflow
@@ -48,12 +53,15 @@ class SerialWorkflowEngine(WorkflowController):
 
         Parameters
         ----------
-        run_workflow: func, default=None
+        fs: flowserv.model.files.base.FileStore, default=None
+            File store for run input files.
+        exec_func: func, default=None
             Function that is used to execute the workflow commands
         is_async: bool, default=None
             Flag that determines whether workflows execution is synchronous or
             asynchronous by default.
         """
+        self.fs = fs
         self.exec_func = exec_func if exec_func is not None else run_workflow
         self.is_async = is_async if is_async is not None else ENGINE_ASYNC()
         # Dictionary of all running tasks
@@ -98,8 +106,15 @@ class SerialWorkflowEngine(WorkflowController):
     def exec_workflow(self, run, template, arguments, service=None):
         """Initiate the execution of a given workflow template for a set of
         argument values. This will start a new process that executes a serial
-        workflow asynchronously. Returns the state of the workflow after the
-        process is stated (the state will therefore be RUNNING).
+        workflow asynchronously.
+
+        The serial workflow engine executes workflows on the local machine and
+        therefore uses the file system to store temporary run files. The path
+        to the run folder is returned as the second value in the result tuple.
+        The first value in the result tuple is the state of the workflow after
+        the process is stated. If the workflow is executed asynchronously the
+        state will be RUNNING. Otherwise, the run state should be an inactive
+        state.
 
         The set of arguments is not further validated. It is assumed that the
         validation has been performed by the calling code (e.g., the run
@@ -121,7 +136,7 @@ class SerialWorkflowEngine(WorkflowController):
 
         Returns
         -------
-        flowserv.model.workflow.state.WorkflowState
+        flowserv.model.workflow.state.WorkflowState, string
 
         Raises
         ------
@@ -131,19 +146,21 @@ class SerialWorkflowEngine(WorkflowController):
         if not run.is_pending():
             raise RuntimeError("invalid run state '{}'".format(run.state))
         state = run.state()
+        rundir = os.path.join(config.RUNSDIR(), run.run_id)
         # Expand template parameters. Get (i) list of files that need to be
         # copied, (ii) the expanded commands that represent the workflow steps,
         # and (iii) the list of output files.
-        wf = SerialWorkflow(template, arguments)
+        sourcedir = self.fs.workflow_staticdir(run.workflow.workflow_id)
+        wf = SerialWorkflow(template, arguments, sourcedir)
         try:
             # Copy all necessary files to the run folder
-            util.copy_files(
+            self.fs.download_files(
                 files=wf.upload_files(),
-                target_dir=run.get_rundir()
+                dst=rundir
             )
             # Create top-level folder for all expected result files.
             util.create_directories(
-                basedir=run.get_rundir(),
+                basedir=rundir,
                 files=wf.output_files()
             )
             # Get list of commands to execute.
@@ -169,28 +186,28 @@ class SerialWorkflowEngine(WorkflowController):
                     self.exec_func,
                     args=(
                         run.run_id,
-                        run.get_rundir(),
+                        rundir,
                         state,
                         wf.output_files(),
                         commands
                     ),
                     callback=task_callback_function
                 )
-                return state
+                return state, rundir
             else:
                 # Run steps synchronously and block the controller until done
-                _, state_dict = self.exec_func(
+                _, _, state_dict = self.exec_func(
                     run.run_id,
-                    run.get_rundir(),
+                    rundir,
                     state,
                     wf.output_files(),
                     commands
                 )
-                return serialize.deserialize_state(state_dict)
+                return serialize.deserialize_state(state_dict), rundir
         except Exception as ex:
             # Set the workflow runinto an ERROR state
             logging.error(ex)
-            return state.error(messages=util.stacktrace(ex))
+            return state.error(messages=util.stacktrace(ex)), rundir
 
 
 # -- Helper Methods -----------------------------------------------------------
@@ -210,7 +227,7 @@ def callback_function(result, lock, tasks, service):
         service: contextlib,contextmanager
             Context manager to create an instance of the service API.
     """
-    run_id, state_dict = result
+    run_id, rundir, state_dict = result
     logging.info('finished run {} with {}'.format(run_id, state_dict))
     with lock:
         if run_id in tasks:
@@ -221,7 +238,7 @@ def callback_function(result, lock, tasks, service):
     state = serialize.deserialize_state(state_dict)
     try:
         with service() as api:
-            api.runs().update_run(run_id, state)
+            api.runs().update_run(run_id=run_id, state=state, rundir=rundir)
     except Exception as ex:
         logging.error(ex)
         logging.debug('\n'.join(util.stacktrace(ex)))
@@ -232,8 +249,8 @@ def run_workflow(run_id, rundir, state, output_files, steps):
     function for asynchronous workflow executions. Starts by copying input
     files and then executes the workflow synchronously.
 
-    Returns a tuple containing the task identifier and a serialization of the
-    workflow state.
+    Returns a tuple containing the run identifier, the folder with the run
+    files, and a serialization of the workflow state.
 
     Parameters
     ----------
@@ -250,7 +267,7 @@ def run_workflow(run_id, rundir, state, output_files, steps):
 
     Returns
     -------
-    (string, dict)
+    (string, string, dict)
     """
     logging.info('start run {}'.format(run_id))
     try:
@@ -306,4 +323,4 @@ def run_workflow(run_id, rundir, state, output_files, steps):
         logging.debug('\n'.join(strace))
         result_state = state.error(messages=strace)
     logging.info('finished run {}: {}'.format(run_id, result_state.type_id))
-    return run_id, serialize.serialize_state(result_state)
+    return run_id, rundir, serialize.serialize_state(result_state)

@@ -10,8 +10,11 @@
 about workflow runs in an underlying database.
 """
 
+import mimetypes
 import os
 import shutil
+
+from typing import IO, Tuple, Union
 
 from flowserv.model.base import RunFile, RunHandle, RunMessage
 
@@ -33,8 +36,8 @@ class RunManager(object):
         ----------
         session: sqlalchemy.orm.session.Session
             Database session.
-        fs: flowserv.model.workflow.fs.WorkflowFileSystem
-            Helper to generate file system paths to group folders
+        fs: flowserv.model.files.FileStore
+            File store for run input and output files.
         """
         self.session = session
         self.fs = fs
@@ -84,10 +87,7 @@ class RunManager(object):
         else:
             workflow_id = workflow.workflow_id
             group_id = None
-        # Return handle for the created run. Ensure that the run base directory
-        # is created.
-        rundir = self.fs.run_basedir(workflow_id, group_id, run_id)
-        util.create_dir(rundir)
+        # Return handle for the created run.
         run = RunHandle(
             run_id=run_id,
             workflow_id=workflow_id,
@@ -102,8 +102,6 @@ class RunManager(object):
             workflow.postproc_run_id = run_id
         # Commit changes in case run monitors need to access the run state.
         self.session.commit()
-        # Set run base directory.
-        run.set_rundir(rundir)
         return run
 
     def delete_run(self, run_id):
@@ -122,13 +120,12 @@ class RunManager(object):
         run = self.get_run(run_id)
         # Get base directory for run files
         workflow_id = run.workflow_id
-        group_id = run.group_id
-        rundir = self.fs.run_basedir(workflow_id, group_id, run_id)
+        rundir = self.fs.run_basedir(workflow_id, run_id)
         # Delete run and the base directory containing run files. Commit
         # changes before deleting the directory.
         self.session.delete(run)
         self.session.commit()
-        shutil.rmtree(rundir)
+        self.fs.delete_file(key=rundir)
 
     def get_run(self, run_id):
         """Get handle for the given run from the underlying database. Raises an
@@ -155,13 +152,75 @@ class RunManager(object):
             .one_or_none()
         if run is None:
             raise err.UnknownRunError(run_id)
-        # Set run base directory.
-        workflow = run.workflow
-        workflow_id = workflow.workflow_id
-        workflow.set_staticdir(self.fs.workflow_staticdir(workflow_id))
-        rundir = self.fs.run_basedir(run.workflow_id, run.group_id, run_id)
-        set_files(run, rundir)
         return run
+
+    def get_runarchive(self, run_id: str) -> IO:
+        """Get tar archive containing all result files for a given workflow
+        run. Raises UnknownRunError if the run is not in SUCCESS state.
+
+        Parameters
+        ----------
+        run_id: string
+            Unique run identifier.
+
+        Returns
+        -------
+        io.BytesIO
+
+        Raises
+        ------
+        flowserv.error.UnknownRunError
+        """
+        # Get the run handle and ensure that the run is in SUCCESS state.
+        run = self.get_run(run_id)
+        if not run.is_success():
+            raise err.UnknownRunError(run_id)
+        # Get archive of all run result files from the file store.
+        workflow_id = run.workflow.workflow_id
+        return self.fs.download_archive(
+            src=self.fs.run_basedir(workflow_id=workflow_id, run_id=run_id),
+            files=[f.key for f in run.files]
+        )
+
+    def get_runfile(
+        self, run_id: str, file_id: str = None, key: str = None
+    ) -> Tuple[RunFile, Union[str, IO]]:
+        """Get handle and file object for a given run result file. The file is
+        either identified by the unique file identifier or the file key.Raises
+        an error if the specified file does not exist.
+
+        Parameters
+        ----------
+        run_id: string
+            Unique run identifier.
+        file_id: string
+            Unique file identifier.
+
+        Returns
+        -------
+        flowserv.model.base.RunFile, string or io.BytesIO
+
+        Raises
+        ------
+        flowserv.error.UnknownFileError
+        ValueError
+        """
+        # Raise an error if both or neither file_id and key are given.
+        if file_id is None and key is None:
+            raise ValueError('no arguments for file_id or key')
+        elif not (file_id is None or key is None):
+            raise ValueError('invalid arguments for file_id and key')
+        run = self.get_run(run_id)
+        if file_id:
+            fh = run.get_file(by_id=file_id)
+        else:
+            fh = run.get_file(by_key=key)
+        if fh is None:
+            raise err.UnknownFileError(file_id)
+        # Return file handle for resource file
+        workflow_id = run.workflow.workflow_id
+        rundir = self.fs.run_basedir(workflow_id=workflow_id, run_id=run_id)
+        return fh, self.fs.load_file(os.path.join(rundir, fh.key))
 
     def list_runs(self, group_id, state=None):
         """Get list of run handles for all runs that are associated with a
@@ -189,21 +248,7 @@ class RunManager(object):
                 query = query.filter(RunHandle.state_type.in_(state))
             else:
                 query = query.filter(RunHandle.state_type == state)
-        rs = query.all()
-        # Set run directory for all elements in the query result.
-        runs = list()
-        for run in rs:
-            rundir = self.fs.run_basedir(
-                workflow_id=run.workflow_id,
-                group_id=run.group_id,
-                run_id=run.run_id
-            )
-            workflow = run.workflow
-            workflow_id = workflow.workflow_id
-            workflow.set_staticdir(self.fs.workflow_staticdir(workflow_id))
-            set_files(run, rundir)
-            runs.append(run)
-        return runs
+        return query.all()
 
     def poll_runs(self, group_id, state=None):
         """Get list of identifier for group runs that are currently in the
@@ -225,11 +270,14 @@ class RunManager(object):
         else:
             return self.list_runs(group_id=group_id, state=st.ACTIVE_STATES)
 
-    def update_run(self, run_id, state):
+    def update_run(self, run_id, state, rundir=None):
         """Update the state of the given run. This method does check if the
         state transition is valid. Transitions are valid for active workflows,
         if the transition is (a) from pending to running or (b) to an inactive
         state. Invalid state transitions will raise an error.
+
+        For inactive runs a reference to the local file system folder that
+        contains run (result) files should be present.
 
         Parameters
         ----------
@@ -237,6 +285,10 @@ class RunManager(object):
             Unique identifier for the run
         state: flowserv.model.workflow.state.WorkflowState
             New workflow state
+        rundir: string, default=None
+            Path to folder with run (result) files on the local disk. This
+            parameter should be given for all sucessful runs and potentially
+            also for runs in an error state.
 
         Returns
         -------
@@ -248,8 +300,11 @@ class RunManager(object):
         flowserv.error.UnknownRunError
         """
         # Fetch run information from the database. Raises an error if the run
-        # is unknown..
+        # is unknown. If the run state is the same as the new state we return
+        # immediately. The result is None to signal that nothing has changed.
         run = self.get_run(run_id)
+        if run.state() == state:
+            return None
         # Get current state identifier to check whether the state transition is
         # valid.
         current_state = run.state_type
@@ -272,32 +327,42 @@ class RunManager(object):
             run.log = messages
             run.started_at = state.started_at
             run.ended_at = state.stopped_at
+            # Delete all run files.
+            if rundir is not None:
+                shutil.rmtree(rundir)
         # -- SUCCESS ----------------------------------------------------------
         elif state.is_success():
             if current_state not in st.ACTIVE_STATES:
                 msg = 'cannot set run in {} state to error state'
                 raise err.ConstraintViolationError(msg.format(current_state))
-            rundir = run.get_rundir()
-            files = list()
+            assert rundir is not None
             # Create list of output files depending on whether files are
             # specified in the workflow specification or not.
-            outspec = run.outputs()
-            if outspec is not None:
+            runfiles = None
+            if run.outputs() is not None:
                 # List only existing files for output specifications in the
                 # workflow handle.
-                for outfile in outspec:
-                    filename = os.path.join(rundir, outfile.source)
-                    if os.path.exists(filename):
-                        f = RunFile(relative_path=outfile.source)
-                        f.set_filename(filename)
-                        files.append(f)
+                runfiles = [f.source for f in run.outputs()]
             else:
                 # List all files that were generated by the workflow run as
                 # output.
-                for f_path in state.files:
-                    f = RunFile(relative_path=f_path)
-                    f.set_filename(os.path.join(rundir, f_path))
-                    files.append(f)
+                runfiles = state.files
+            # For each run file ensure that it exist before adding a file
+            # handle to the run.
+            files = list()
+            for filekey in runfiles:
+                filename = os.path.join(rundir, filekey)
+                if not os.path.exists(filename):
+                    continue
+                mime_type, _ = mimetypes.guess_type(url=filename)
+                rf = RunFile(
+                    key=filekey,
+                    name=filekey,
+                    mime_type=mime_type,
+                    size=os.stat(filename).st_size
+                )
+                files.append(rf)
+            # Set run properties.
             run.files = files
             run.started_at = state.started_at
             run.ended_at = state.finished_at
@@ -307,9 +372,9 @@ class RunManager(object):
                 # Read the results from the result file that is specified in
                 # the workflow result schema. If the file is not found we
                 # currently do not raise an error.
-                f = run.get_file(by_name=result_schema.result_file)
-                if f is not None:
-                    results = util.read_object(f.filename)
+                filename = os.path.join(rundir, result_schema.result_file)
+                if os.path.exists(filename):
+                    results = util.read_object(filename)
                     # Create a dictionary of result values.
                     values = dict()
                     for col in result_schema.columns:
@@ -321,29 +386,22 @@ class RunManager(object):
                         elif val is not None:
                             values[col_id] = col.cast(val)
                     run.result = values
+            # Archive run files (and remove all other files from the run
+            # directory).
+            targetdir = self.fs.run_basedir(
+                workflow_id=run.workflow.workflow_id,
+                run_id=run_id
+            )
+            self.fs.copy_files(
+                src=rundir,
+                files=[(f.key, os.path.join(targetdir, f.key)) for f in files]
+            )
+            shutil.rmtree(rundir)
         # -- PENDING ----------------------------------------------------------
         elif current_state != st.STATE_PENDING:
             msg = 'cannot set run in pending state to {}'
             raise err.ConstraintViolationError(msg.format(state.type_id))
         run.state_type = state.type_id
-        # Commit changes to database.
+        # Commit changes to database. Then remove the local run directory.
         self.session.commit()
         return run
-
-
-# -- Helper functions ---------------------------------------------------------
-
-def set_files(run, rundir):
-    """Set filenames for the run and potential result files.
-
-    Parameters
-    ----------
-    run: flowserv.model.base.RunHandle
-        Handle for a workflow run.
-    rundir: string
-        Base directory for run files.
-    """
-    run.set_rundir(rundir)
-    if run.is_success():
-        for f in run.files:
-            f.set_filename(os.path.join(rundir, f.relative_path))

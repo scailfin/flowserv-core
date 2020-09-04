@@ -36,6 +36,7 @@ def test_run_workflow_with_outputs(service):
     # Start a new run for the workflow template.
     engine = SerialWorkflowEngine(is_async=False)
     with service(engine=engine) as api:
+        engine.fs = api.fs
         workflow_id = create_workflow(
             api,
             source=BENCHMARK_DIR,
@@ -56,9 +57,9 @@ def test_run_workflow_with_outputs(service):
         for obj in r['files']:
             files[obj['name']] = obj['id']
         assert len(files) == 1
-        fh = api.runs().get_result_file(
+        fh, filename = api.runs().get_result_file(
             run_id=run_id,
             file_id=files['results/greetings.txt'],
             user_id=user_id
         )
-        assert util.read_object(fh.filename) == 'Hello Alice! Hello Bob!'
+        assert util.read_object(filename) == 'Hello Alice! Hello Bob!'

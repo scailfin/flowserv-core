@@ -14,7 +14,7 @@ in the repository.
 import os
 import pytest
 
-from flowserv.model.workflow.fs import WorkflowFileSystem
+from flowserv.model.files.fs import FileSystemStore
 from flowserv.model.workflow.manager import WorkflowManager
 
 import flowserv.error as err
@@ -43,7 +43,7 @@ TEMPLATE = dict({'A': 1})
 def test_create_workflow(database, tmpdir):
     """Test creating workflows with different levels of detail."""
     # -- Setup ----------------------------------------------------------------
-    fs = WorkflowFileSystem(tmpdir)
+    fs = FileSystemStore(tmpdir)
     # -- Add workflow with minimal information --------------------------------
     with database.session() as session:
         manager = WorkflowManager(session=session, fs=fs)
@@ -53,9 +53,9 @@ def test_create_workflow(database, tmpdir):
         assert wf.instructions is None
         template = wf.get_template()
         assert template.result_schema is not None
-        templatedir = template.sourcedir
-        assert os.path.isfile(os.path.join(templatedir, 'code/helloworld.py'))
-        assert os.path.isfile(os.path.join(templatedir, 'data/names.txt'))
+        staticdir = os.path.join(tmpdir, fs.workflow_staticdir(wf.workflow_id))
+        assert os.path.isfile(os.path.join(staticdir, 'code/helloworld.py'))
+        assert os.path.isfile(os.path.join(staticdir, 'data/names.txt'))
     # -- Add workflow with user-provided metadata -----------------------------
     with database.session() as session:
         manager = WorkflowManager(session=session, fs=fs)
@@ -70,15 +70,15 @@ def test_create_workflow(database, tmpdir):
         assert wf.instructions == '# Hello World'
         template = wf.get_template()
         assert template.result_schema is not None
-        templatedir = template.sourcedir
-        assert os.path.isfile(os.path.join(templatedir, 'code/helloworld.py'))
-        assert os.path.isfile(os.path.join(templatedir, 'data/names.txt'))
+        staticdir = os.path.join(tmpdir, fs.workflow_staticdir(wf.workflow_id))
+        assert os.path.isfile(os.path.join(staticdir, 'code/helloworld.py'))
+        assert os.path.isfile(os.path.join(staticdir, 'data/names.txt'))
 
 
 def test_create_workflow_with_alt_spec(database, tmpdir):
     """Test creating workflows with alternative specification files."""
     # -- Setup ----------------------------------------------------------------
-    fs = WorkflowFileSystem(tmpdir)
+    fs = FileSystemStore(tmpdir)
     # -- Template without schema ----------------------------------------------
     with database.session() as session:
         manager = WorkflowManager(session=session, fs=fs)
@@ -115,7 +115,7 @@ def test_create_workflow_with_alt_spec(database, tmpdir):
 def test_create_workflow_with_error(database, tmpdir):
     """Error cases when creating a workflow."""
     # -- Setup ----------------------------------------------------------------
-    fs = WorkflowFileSystem(tmpdir)
+    fs = FileSystemStore(tmpdir)
     # -- Invalid name ---------------------------------------------------------
     with database.session() as session:
         manager = WorkflowManager(session=session, fs=fs)
@@ -135,7 +135,7 @@ def test_create_workflow_with_error(database, tmpdir):
 
 def test_create_workflow_with_alt_manifest(database, tmpdir):
     """Test creating 'Hello World' workflow with a different manifest file."""
-    fs = WorkflowFileSystem(tmpdir)
+    fs = FileSystemStore(tmpdir)
     with database.session() as session:
         manager = WorkflowManager(session=session, fs=fs)
         wf = manager.create_workflow(
@@ -147,9 +147,9 @@ def test_create_workflow_with_alt_manifest(database, tmpdir):
         assert wf.instructions == '# Hello World'
         template = wf.get_template()
         assert template.result_schema is not None
-        templatedir = template.sourcedir
-        assert os.path.isfile(os.path.join(templatedir, 'code/helloworld.py'))
-        assert not os.path.isfile(os.path.join(templatedir, 'data/names.txt'))
+        staticdir = os.path.join(tmpdir, fs.workflow_staticdir(wf.workflow_id))
+        assert os.path.isfile(os.path.join(staticdir, 'code/helloworld.py'))
+        assert not os.path.isfile(os.path.join(staticdir, 'data/names.txt'))
 
 
 def test_delete_workflow(database, tmpdir):
@@ -157,15 +157,15 @@ def test_delete_workflow(database, tmpdir):
     # -- Setup ----------------------------------------------------------------
     #
     # Create two workflows.
-    fs = WorkflowFileSystem(tmpdir)
+    fs = FileSystemStore(tmpdir)
     with database.session() as session:
         manager = WorkflowManager(session=session, fs=fs)
         wf = manager.create_workflow(name='A', source=BENCHMARK_DIR)
         workflow_1 = wf.workflow_id
         # Ensure that the tample and workflow folder exists for workflow 1.
-        templatedir = wf.get_template().sourcedir
-        workflowdir = fs.workflow_basedir(workflow_1)
-        assert os.path.isdir(templatedir)
+        staticdir = os.path.join(tmpdir, fs.workflow_staticdir(wf.workflow_id))
+        workflowdir = os.path.join(tmpdir, fs.workflow_basedir(workflow_1))
+        assert os.path.isdir(staticdir)
         assert os.path.isdir(workflowdir)
         wf = manager.create_workflow(name='B', source=BENCHMARK_DIR)
         workflow_2 = wf.workflow_id
@@ -173,7 +173,7 @@ def test_delete_workflow(database, tmpdir):
     with database.session() as session:
         manager = WorkflowManager(session=session, fs=fs)
         manager.delete_workflow(workflow_1)
-        assert not os.path.isdir(templatedir)
+        assert not os.path.isdir(staticdir)
         assert not os.path.isdir(workflowdir)
     with database.session() as session:
         # The second workflow still exists.
@@ -186,38 +186,12 @@ def test_delete_workflow(database, tmpdir):
             manager.delete_workflow(workflow_id=workflow_1)
 
 
-def test_error_for_id_func(database, tmpdir):
-    """Error when the id function cannot return unique folder identifier.
-    """
-    # -- Helper class ---------------------------------------------------------
-    class DummyIDFunc():
-        """Dummy id function."""
-        def __init__(self):
-            self.count = 0
-
-        def __call__(self):
-            self.count += 1
-            return '0000'
-    # -- Setup ----------------------------------------------------------------
-    with database.session() as session:
-        dummy_func = DummyIDFunc()
-        manager = WorkflowManager(
-            session=session,
-            fs=WorkflowFileSystem(tmpdir),
-            idfunc=dummy_func
-        )
-        os.makedirs(manager.fs.workflow_basedir('0000'))
-        with pytest.raises(RuntimeError):
-            manager.create_workflow(name='A', source=BENCHMARK_DIR)
-        assert dummy_func.count == 101
-
-
 def test_get_workflow(database, tmpdir):
     """Test retrieving workflows from the repository."""
     # -- Setup ----------------------------------------------------------------
     #
     # Create two workflows.
-    fs = WorkflowFileSystem(tmpdir)
+    fs = FileSystemStore(tmpdir)
     with database.session() as session:
         manager = WorkflowManager(session=session, fs=fs)
         wf = manager.create_workflow(name='A', source=BENCHMARK_DIR)
@@ -252,7 +226,7 @@ def test_list_workflow(database, tmpdir):
     # -- Setup ----------------------------------------------------------------
     #
     # Create two workflows.
-    fs = WorkflowFileSystem(tmpdir)
+    fs = FileSystemStore(tmpdir)
     with database.session() as session:
         manager = WorkflowManager(session=session, fs=fs)
         manager.create_workflow(source=BENCHMARK_DIR)
@@ -270,7 +244,7 @@ def test_update_workflow_description(database, tmpdir):
     # -- Setup ----------------------------------------------------------------
     #
     # Create one workflow without description and instructions.
-    fs = WorkflowFileSystem(tmpdir)
+    fs = FileSystemStore(tmpdir)
     with database.session() as session:
         manager = WorkflowManager(session=session, fs=fs)
         # Initialize the repository
@@ -313,7 +287,7 @@ def test_update_workflow_name(database, tmpdir):
     #
     # Create two workflow templates. Workflow 1 does not have a description
     # and instructions while workflow 2 has.
-    fs = WorkflowFileSystem(tmpdir)
+    fs = FileSystemStore(tmpdir)
     with database.session() as session:
         manager = WorkflowManager(session=session, fs=fs)
         # Initialize the repository
@@ -351,7 +325,7 @@ def test_workflow_name(database, tmpdir):
     # -- Setup ----------------------------------------------------------------
     # Initialize the repository. Create two workflows, one with name 'Workflow'
     # and the other with name 'Workflow (2)'
-    fs = WorkflowFileSystem(tmpdir)
+    fs = FileSystemStore(tmpdir)
     with database.session() as session:
         manager = WorkflowManager(session=session, fs=fs)
         manager.create_workflow(name='Workflow', source=BENCHMARK_DIR)

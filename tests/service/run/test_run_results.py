@@ -10,6 +10,7 @@
 
 import pytest
 import tarfile
+import tempfile
 
 from flowserv.tests.service import (
     create_group, create_user, start_hello_world, write_results
@@ -29,10 +30,10 @@ def init_db(api, hello_world):
     group_id = create_group(api, workflow_id=workflow_id, users=[user_1])
     # Start the new run. Then set it into SUCESS state.
     run_id, file_id = start_hello_world(api, group_id, user_1)
+    tmpdir = tempfile.mkdtemp()
     write_results(
-        api,
-        run_id,
-        [
+        rundir=tmpdir,
+        files=[
             ({'group': group_id, 'run': run_id}, None, 'results/data.json'),
             ([group_id, run_id], 'txt/plain', 'values.txt')
         ]
@@ -42,7 +43,8 @@ def init_db(api, hello_world):
         state=api.engine.success(
             run_id,
             files=['results/data.json', 'values.txt']
-        )
+        ),
+        rundir=tmpdir
     )
     return user_1, user_2, group_id, run_id
 
@@ -60,15 +62,19 @@ def test_access_run_result_files(service, hello_world):
         for fh in r['files']:
             files[fh['name']] = fh['id']
         # Read content of result files.
-        fh = api.runs().get_result_file(
+        fh, filename = api.runs().get_result_file(
             run_id=run_id,
             file_id=files['results/data.json'],
             user_id=user_1
         )
-        results = util.read_object(fh.filename)
+        results = util.read_object(filename)
         assert results == {'group': group_id, 'run': run_id}
-        fh = api.runs().get_result_file(run_id, files['values.txt'], user_1)
-        values = util.read_object(fh.filename)
+        fh, filename = api.runs().get_result_file(
+            run_id=run_id,
+            file_id=files['values.txt'],
+            user_id=user_1
+        )
+        values = util.read_object(filename)
         assert values == '{} {}'.format(group_id, run_id)
     # -- Error when user 2 attempts to read file ------------------------------
     with service() as api:

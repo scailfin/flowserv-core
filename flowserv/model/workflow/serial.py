@@ -11,8 +11,9 @@ REANA serial workflow specifications.
 """
 
 import os
-
 from string import Template
+
+from flowserv.model.template.base import WorkflowTemplate
 
 import flowserv.error as err
 import flowserv.model.template.parameter as tp
@@ -60,7 +61,9 @@ class SerialWorkflow(object):
     modeled as properties to avoid confusion with the same properties for the
     remote workflow handle.
     """
-    def __init__(self, template, arguments):
+    def __init__(
+        self, template: WorkflowTemplate, arguments: dict, sourcedir: str
+    ):
         """Initialize the object properties.
 
         Parameters
@@ -71,9 +74,12 @@ class SerialWorkflow(object):
         arguments: dict
             Dictionary of argument values for parameters in the template. Maps
             the parameter identifier to the provided argument value.
+        sourcedir: string
+            Path to the source directory for template files.
         """
         self.template = template
         self.arguments = arguments
+        self.sourcedir = sourcedir
 
     def commands(self):
         """Get expanded commands from template workflow specification. The
@@ -166,24 +172,26 @@ class SerialWorkflow(object):
         flowserv.error.UnknownFileError
         """
         workflow_spec = self.template.workflow_spec
-        basedir = self.template.sourcedir
         files = workflow_spec.get('inputs', {}).get('files', [])
         result = list()
         for val in files:
             # Set source and target values depending on whether the list
             # entry references a template parameter or not.
             if tp.is_parameter(val):
-                # If the value in the files listing is a parameter it is
-                # assumed that this is a file parameter. If no argument value
-                # is given for the parameter a default value will be used as
-                # source and target path.
+                # If the value in the files listing references a parameter we
+                # first extract the parameter name to get the parameter
+                # declaration.
                 var = tp.get_value(value=val, arguments=self.arguments)
                 para = self.template.parameters.get(var)
+                #  Get the argument value for the file parameter. If no value
+                # is given, the default value will be used as source and target
+                # path. Raises an error if the default value is not defined for
+                # the parameter.
                 arg = self.arguments.get(var)
                 if arg is None:
                     if para.default_value is None:
                         raise err.MissingArgumentError(var)
-                    source = os.path.join(basedir, para.default_value)
+                    source = os.path.join(self.sourcedir, para.default_value)
                     target = para.default_value
                 else:
                     # Get path to source file and the target path from the
@@ -191,7 +199,7 @@ class SerialWorkflow(object):
                     source = arg.source()
                     target = arg.target()
             else:
-                source = os.path.join(basedir, val)
+                source = os.path.join(self.sourcedir, val)
                 target = val
             # Add upload file source and target path to the result list.
             result.append((source, target))

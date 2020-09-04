@@ -149,7 +149,7 @@ def init(force=False):
     except err.MissingConfigurationError as ex:
         click.echo(str(ex))
         sys.exit(-1)
-    util.create_dir(API_BASEDIR())
+    os.makedirs(API_BASEDIR(), exist_ok=True)
 
 
 # -- Run workflow template for testing purposes -------------------------------
@@ -200,7 +200,7 @@ def run_workflow(specfile, manifest, ignorepp, output, source):  # pragma: no co
     # -- Add workflow template to repository ----------------------------------
     with service() as api:
         workflow = api.workflows().create_workflow(
-            name=util.get_short_identifier(),
+            name=util.get_unique_identifier(),
             source=source,
             specfile=specfile,
             manifest=manifest,
@@ -288,12 +288,12 @@ def run_results(run, user_id, output):
         for obj in run['files']:
             with service() as api:
                 file_id = obj['id']
-                fh = api.runs().get_result_file(
+                fh, fileobj = api.runs().get_result_file(
                     run_id=run_id,
                     file_id=file_id,
                     user_id=user_id
                 )
-                files[file_id] = (fh.filename, obj['name'])
+                files[file_id] = (fileobj, obj['name'])
         # Copy files if output directory is given.
         if output is not None:
             util.copy_files(files.values(), output)

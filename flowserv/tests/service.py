@@ -9,6 +9,9 @@
 """Helper methods to initialize the database state via the service API."""
 
 import os
+import tempfile
+
+from typing import Tuple, Union
 
 from flowserv.service.run.argument import FILE
 from flowserv.tests.files import FakeStream
@@ -62,6 +65,7 @@ def create_ranking(api, workflow_id, user_id, count):
     -------
     list(string)
     """
+    tmpdir = tempfile.mkdtemp()
     groups = list()
     for i in range(count):
         group_id = create_group(api, workflow_id=workflow_id, users=[user_id])
@@ -69,8 +73,7 @@ def create_ranking(api, workflow_id, user_id, count):
         run_id, file_id = start_hello_world(api, group_id, user_id)
         data = {'avg_count': i, 'max_len': 100 - i, 'max_line': 'A'*i}
         write_results(
-            api,
-            run_id,
+            tmpdir,
             [(data, None, 'results/analytics.json')]
         )
         api.runs().update_run(
@@ -78,7 +81,8 @@ def create_ranking(api, workflow_id, user_id, count):
             state=api.engine.success(
                 run_id,
                 files=['results/analytics.json']
-            )
+            ),
+            rundir=tmpdir
         )
         groups.append(group_id)
     return groups
@@ -193,25 +197,25 @@ def upload_file(api, group_id, user_id, file):
     return api.uploads().upload_file(
         group_id=group_id,
         file=file,
-        name=util.get_short_identifier(),
+        name=util.get_unique_identifier(),
         user_id=user_id
     )['id']
 
 
-def write_results(api, run_id, files):
-    """Create a reult file for a given workflow run.
+def write_results(rundir: str, files: Tuple[Union[dict, list], str, str]):
+    """Create a result files for a workflow run.
 
 
     Parameters
     ----------
-    api: flowserv.service.api.API
-        Service API manager.
+    rundir: string
+        Path to the temporary run directory.
     run_id: string
         Unique run identifier.
     files: list
         List of 3-tuples containing the file data, format, and relative path.
     """
-    run = api.run_manager.get_run(run_id)
     for data, format, rel_path in files:
-        filename = os.path.join(run.get_rundir(), rel_path)
+        filename = os.path.join(rundir, rel_path)
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
         FakeStream(data=data, format=format).save(filename)

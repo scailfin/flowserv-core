@@ -11,8 +11,8 @@
 import os
 import pytest
 
+from flowserv.model.files.fs import FileSystemStore
 from flowserv.model.group import WorkflowGroupManager
-from flowserv.model.workflow.fs import WorkflowFileSystem
 from flowserv.tests.files import FakeStream
 
 import flowserv.error as err
@@ -28,7 +28,7 @@ def test_delete_file(database, tmpdir):
     # for each group.
     file = FakeStream(data={'A': 1})
     fn = 'data.json'
-    fs = WorkflowFileSystem(tmpdir)
+    fs = FileSystemStore(tmpdir)
     with database.session() as session:
         user_1 = model.create_user(session, active=True)
         workflow_id = model.create_workflow(session)
@@ -42,15 +42,15 @@ def test_delete_file(database, tmpdir):
     # -- Test delete file -----------------------------------------------------
     with database.session() as session:
         manager = WorkflowGroupManager(session=session, fs=fs)
-        fh = manager.get_file(group_id=group_1, file_id=file_1)
-        assert os.path.isfile(fh.filename)
+        fh, filename = manager.get_file(group_id=group_1, file_id=file_1)
+        assert os.path.isfile(filename)
         manager.delete_file(group_id=group_1, file_id=file_1)
-        assert not os.path.isfile(fh.filename)
+        assert not os.path.isfile(filename)
         # File 1 can no longer be accessed while file 2 is still present.
         with pytest.raises(err.UnknownFileError):
             manager.get_file(group_id=group_1, file_id=file_1)
-        fh = manager.get_file(group_id=group_2, file_id=file_2)
-        assert os.path.isfile(fh.filename)
+        fh, filename = manager.get_file(group_id=group_2, file_id=file_2)
+        assert os.path.isfile(filename)
     # -- Error cases ----------------------------------------------------------
     with database.session() as session:
         # - Delete unknown file
@@ -70,7 +70,7 @@ def test_get_file(database, tmpdir):
     f1 = FakeStream(data=data_1)
     f2 = FakeStream(data=data_2)
     fn = 'data.json'
-    fs = WorkflowFileSystem(tmpdir)
+    fs = FileSystemStore(tmpdir)
     with database.session() as session:
         user_1 = model.create_user(session, active=True)
         workflow_id = model.create_workflow(session)
@@ -84,11 +84,11 @@ def test_get_file(database, tmpdir):
     with database.session() as session:
         manager = WorkflowGroupManager(session=session, fs=fs)
         for g_id, f_id, data in files:
-            fh = manager.get_file(group_id=g_id, file_id=f_id)
+            fh, filename = manager.get_file(group_id=g_id, file_id=f_id)
             assert fh.name == fn
-            assert fh.mimetype == 'application/json'
-            assert os.path.isfile(fh.filename)
-            assert util.read_object(filename=fh.filename) == data
+            assert fh.mime_type == 'application/json'
+            assert os.path.isfile(filename)
+            assert util.read_object(filename=filename) == data
     # -- Test error cases -----------------------------------------------------
     # - File handle is unknown for s2
     with database.session() as session:
@@ -108,7 +108,7 @@ def test_list_files(database, tmpdir):
     # has one uploaded file and the second group has one file.
     file = FakeStream(data={'A': 1})
     fn = 'data.json'
-    fs = WorkflowFileSystem(tmpdir)
+    fs = FileSystemStore(tmpdir)
     with database.session() as session:
         user_1 = model.create_user(session, active=True)
         workflow_id = model.create_workflow(session)
@@ -133,7 +133,7 @@ def test_upload_file(database, tmpdir):
     #
     # Create a database with two groups for a single workflow. Upload one file
     # for each group.
-    fs = WorkflowFileSystem(tmpdir)
+    fs = FileSystemStore(tmpdir)
     with database.session() as session:
         user_1 = model.create_user(session, active=True)
         workflow_id = model.create_workflow(session)
@@ -148,9 +148,10 @@ def test_upload_file(database, tmpdir):
             name='A.json'
         )
         assert fh.name == 'A.json'
-        assert fh.mimetype == 'application/json'
-        assert os.path.isfile(fh.filename)
-        assert util.read_object(filename=fh.filename) == data
+        assert fh.mime_type == 'application/json'
+        fh, filename = manager.get_file(group_id=group_1, file_id=fh.file_id)
+        assert os.path.isfile(filename)
+        assert util.read_object(filename=filename) == data
     # -- Test error case ------------------------------------------------------
     data = {'A': 1}
     with database.session() as session:

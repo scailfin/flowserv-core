@@ -41,7 +41,7 @@ DEFAULT_PROTOCOL = 'http'
 # -- Public helper methods to access configuration values ---------------------
 
 
-def API_BASEDIR(value=None):
+def API_BASEDIR(value: str = None) -> str:
     """Get the base directory that is used by the API to store benchmark
     templates and benchmark runs from the respective environment variable
     'FLOWSERV_API_DIR'. If a user-provided base directory is given, that value
@@ -66,7 +66,7 @@ def API_BASEDIR(value=None):
     )
 
 
-def API_HOST():
+def API_HOST() -> str:
     """Get the API server host name from the respective environment variable
     'FLOWSERV_API_HOST'. If the variable is not set the default host name is
     returned.
@@ -82,7 +82,7 @@ def API_HOST():
     )
 
 
-def API_NAME():
+def API_NAME() -> str:
     """Get the service name for the API from the respective environment
     variable 'FLOWSERV_API_NAME'. If the variable is not set the default name
     is returned.
@@ -98,7 +98,7 @@ def API_NAME():
     )
 
 
-def API_PATH():
+def API_PATH() -> str:
     """Get the application path name for the API from the respective
     environment variable 'FLOWSERV_API_PATH'. If the variable is not set the
     default application path is returned.
@@ -114,7 +114,7 @@ def API_PATH():
     )
 
 
-def API_PORT():
+def API_PORT() -> str:
     """Get the API application port number from the respective environment
     variable 'FLOWSERV_API_PORT'. If the variable is not set the default port
     number is returned.
@@ -138,7 +138,7 @@ def API_PORT():
     return int(val)
 
 
-def API_PROTOCOL():
+def API_PROTOCOL() -> str:
     """Get the HTTP protocol prefix for urls from the respective environment
     variable 'FLOWSERV_API_PROTOCOL'. If the variable is not set the default
     protocol is returned.
@@ -158,7 +158,7 @@ def API_PROTOCOL():
     )
 
 
-def API_URL():
+def API_URL() -> str:
     """Get the base URL for the API from the respective environment variables
     'FLOWSERV_API_HOST', 'FLOWSERV_API_PATH', and 'FLOWSERV_API_PORT'.
 

@@ -11,7 +11,6 @@ templates. For each template additional basic information is stored in the
 underlying database.
 """
 
-import errno
 import git
 import os
 import shutil
@@ -26,12 +25,6 @@ from flowserv.model.workflow.repository import WorkflowRepository
 import flowserv.error as err
 import flowserv.util as util
 import flowserv.model.constraint as constraint
-
-""" "Default values for the max. attempts parameter and the ID generator
-function.
-"""
-DEFAULT_ATTEMPTS = 100
-DEFAULT_IDFUNC = util.get_short_identifier
 
 
 class WorkflowManager(object):
@@ -53,22 +46,11 @@ class WorkflowManager(object):
         ----------
         session: sqlalchemy.orm.session.Session
             Database session.
-        fs: flowserv.model.workflow.fs.WorkflowFileSystem
-            Generattor for file names and directory paths
-        idfunc: func, optional
-            Function to generate template folder identifier
-        attempts: int, optional
-            Maximum number of attempts to create a unique folder for a new
-            workflow template
-        tmpl_names: list(string), optional
-            List of default names for template specification files
+        fs: flowserv.model.files.FileStore
+            File store for workflow files.
         """
         self.session = session
         self.fs = fs
-        # Initialize the identifier function and the max. number of attempts
-        # that are made to generate a unique identifier.
-        self.idfunc = idfunc if idfunc is not None else DEFAULT_IDFUNC
-        self.attempts = attempts if attempts is not None else DEFAULT_ATTEMPTS
 
     def create_workflow(
         self, source, name=None, description=None, instructions=None,
@@ -140,20 +122,13 @@ class WorkflowManager(object):
                 specfile=specfile,
                 existing_names=[wf.name for wf in self.list_workflows()]
             )
-            # Create identifier and folder for the workflow template. Create a
-            # sub-folder for static template files that are copied from the
-            # project folder.
-            func = self.fs.workflow_basedir
-            workflow_id, workflowdir = self.create_folder(dirfunc=func)
+            template = manifest.template()
+            # Create identifier for the workflow template.
+            workflow_id = util.get_unique_identifier()
             staticdir = self.fs.workflow_staticdir(workflow_id)
-            template = manifest.template(staticdir)
             # Copy files from the project folder to the template's static file
             # folder. By default all files in the project folder are copied.
-            try:
-                manifest.copyfiles(targetdir=staticdir)
-            except (IOError, OSError, KeyError) as ex:
-                shutil.rmtree(workflowdir)
-                raise ex
+            manifest.copyfiles(targetdir=staticdir, fs=self.fs)
         # Insert workflow into database and return the workflow handle.
         postproc_spec = template.postproc_spec if not ignore_postproc else None
         workflow = WorkflowHandle(
@@ -169,59 +144,7 @@ class WorkflowManager(object):
             result_schema=template.result_schema
         )
         self.session.add(workflow)
-        # Set the static directory for the workflow handle.
-        workflow.set_staticdir(staticdir)
         return workflow
-
-    def create_folder(self, dirfunc):
-        """Create a new unique folder in a base directory using the internal
-        identifier function. The path to the created folder is generated using
-        the given directory function that takes a unique identifier as the only
-        argument.
-
-        Returns a tuple containing the identifier and the directory. Raises
-        an error if the maximum number of attempts to create the unique folder
-        was reached.
-
-        Parameters
-        ----------
-        dirfunc: func
-            Function to generate the path for the created folder
-
-        Returns
-        -------
-        (id::string, subfolder::string)
-
-        Raises
-        ------
-        ValueError
-        """
-        identifier = None
-        attempt = 0
-        while identifier is None:
-            # Create a new identifier
-            identifier = self.idfunc()
-            # Try to generate the subfolder. If the folder exists, set
-            # identifier to None to signal failure.
-            subfolder = dirfunc(identifier)
-            if os.path.isdir(subfolder):
-                identifier = None
-            else:
-                try:
-                    os.makedirs(subfolder)
-                except OSError as e:
-                    if e.errno != errno.EEXIST:
-                        raise
-                    else:
-                        # Directory must have been created concurrently
-                        identifier = None
-            if identifier is None:
-                # Increase number of failed attempts. If the maximum number of
-                # attempts is reached raise an errir
-                attempt += 1
-                if attempt > self.attempts:
-                    raise RuntimeError('could not create unique folder')
-        return identifier, subfolder
 
     def delete_workflow(self, workflow_id):
         """Delete the workflow with the given identifier.
@@ -238,14 +161,12 @@ class WorkflowManager(object):
         # Get the workflow and workflow directory. This will raise an error if
         # the workflow does not exist.
         workflow = self.get_workflow(workflow_id)
-        workflowdir = self.fs.workflow_basedir(workflow_id)
         # Delete the workflow from the database and commit changes.
         self.session.delete(workflow)
         self.session.commit()
         # Delete all files that are associated with the workflow if the changes
         # to the database were successful.
-        if os.path.isdir(workflowdir):
-            shutil.rmtree(workflowdir)
+        self.fs.delete_file(key=self.fs.workflow_basedir(workflow_id))
 
     def get_workflow(self, workflow_id):
         """Get handle for the workflow with the given identifier. Raises
@@ -272,8 +193,6 @@ class WorkflowManager(object):
             .one_or_none()
         if workflow is None:
             raise err.UnknownWorkflowError(workflow_id)
-        # Set the static directory for the workflow handle.
-        workflow.set_staticdir(self.fs.workflow_staticdir(workflow_id))
         return workflow
 
     def list_workflows(self):
@@ -283,12 +202,7 @@ class WorkflowManager(object):
         -------
         list(flowserv.model.base.WorkflowHandle)
         """
-        workflows = list()
-        for wf in self.session.query(WorkflowHandle).all():
-            # Set the static directory for the workflow handle.
-            wf.set_staticdir(self.fs.workflow_staticdir(wf.workflow_id))
-            workflows.append(wf)
-        return workflows
+        return self.session.query(WorkflowHandle).all()
 
     def update_workflow(
         self, workflow_id, name=None, description=None, instructions=None

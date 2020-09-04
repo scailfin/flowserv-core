@@ -13,6 +13,7 @@ in the local database.
 
 import logging
 import os
+import tempfile
 import time
 
 from threading import Thread
@@ -28,8 +29,8 @@ class WorkflowMonitor(Thread):
     the remote state changes.
     """
     def __init__(
-        self, run_id, rundir, workflow_id, state, output_files, client,
-        poll_interval, service, tasks
+        self, run_id, workflow_id, state, output_files, client, poll_interval,
+        service, tasks
     ):
         """Initialize the workflow information and the connection to the local
         service API.
@@ -38,8 +39,6 @@ class WorkflowMonitor(Thread):
         ----------
         run_id: string
             Unique run identifier.
-        rundir: string
-            Path to the working directory of the workflow run.
         workflow_id: string
             Unique identifier for the workflow on the remote engine.
         state: flowserv.model.workflow.state.WorkflowState
@@ -57,7 +56,6 @@ class WorkflowMonitor(Thread):
         """
         Thread.__init__(self)
         self.run_id = run_id
-        self.rundir = rundir
         self.workflow_id = workflow_id
         self.state = state
         self.output_files = output_files
@@ -70,7 +68,6 @@ class WorkflowMonitor(Thread):
         """Poll the remote server continuously until execution is finished."""
         monitor_workflow(
             run_id=self.run_id,
-            rundir=self.rundir,
             state=self.state,
             workflow_id=self.workflow_id,
             output_files=self.output_files,
@@ -89,18 +86,20 @@ class WorkflowMonitor(Thread):
 # -- Helper functions ---------------------------------------------------------
 
 def monitor_workflow(
-    run_id, rundir, state, workflow_id, output_files, client, poll_interval,
-    service
+    run_id,  state, workflow_id, output_files, client, poll_interval,
+    service=None
 ):
     """Monitor a remote workflow run by continuous polling at a given interval.
     Updates the local workflow state as the remote state changes.
+
+    Returns the state of the inactive workflow and the temporary directory that
+    contains the downloaded run result files. The run directory may be None for
+    unsuccessful runs.
 
     Parameters
     ----------
     run_id: string
         Unique run identifier.
-    rundir: string
-        Path to the working directory of the workflow run.
     workflow_id: string
         Unique identifier for the workflow on the remote engine.
     state: flowserv.model.workflow.state.WorkflowState
@@ -114,13 +113,16 @@ def monitor_workflow(
     poll_interval: float
         Frequency (in sec.) at which the remote workflow engine is polled.
     service: contextlib,contextmanager, default=None
-        Context manager to create an instance of the service API.
+        Context manager to create an instance of the service API. If the value
+        is None the monitor is running in synchronous mode. In this case the
+        run state cannot be update by the monitor.
 
     Returns
     -------
-    flowserv.model.workflow.state.WorkflowState
+    flowserv.model.workflow.state.WorkflowState, string
     """
     logging.info('start monitoring workflow {}'.format(workflow_id))
+    rundir = None
     try:
         # Monitor the workflow state until the workflow is not in an active
         # state anymore.
@@ -137,6 +139,9 @@ def monitor_workflow(
                 continue
             state = curr_state
             if state.is_success():
+                # Create a temporary directory to download the run result
+                # files.
+                rundir = tempfile.mkdtemp()
                 # Download the result files. The curr_state object is not
                 # expected to contain the resource file information.
                 files = list()
@@ -157,10 +162,13 @@ def monitor_workflow(
                     files=files
                 )
             # Update the local state and the workflow state in the service
-            # API.
+            # API. If the service object is None the run state will be updated
+            # by the calling code.
+            if service is None:
+                continue
             try:
                 with service() as api:
-                    api.runs().update_run(run_id, state)
+                    api.runs().update_run(run_id, state, rundir=rundir)
             except Exception as ex:
                 # If the workflow is canceled for example, the state in the
                 # API will have been changed and this may cause an error
@@ -174,14 +182,15 @@ def monitor_workflow(
                     except Exception as ex:
                         logging.error(ex)
                 # Stop the thread by exiting the run method.
-                return state
+                return state, rundir
     except Exception as ex:
         logging.error(ex)
         strace = util.stacktrace(ex)
         logging.debug('\n'.join(strace))
         state = state.error(messages=strace)
-        with service() as api:
-            api.runs().update_run(run_id, state)
+        if service is not None:
+            with service() as api:
+                api.runs().update_run(run_id, state)
     msg = 'finished run {} = {}'.format(run_id, state.type_id)
     logging.info(msg)
-    return state
+    return state, rundir

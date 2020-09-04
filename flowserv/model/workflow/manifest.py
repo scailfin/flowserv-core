@@ -68,7 +68,7 @@ class WorkflowManifest(object):
         self.instructions = instructions
         self.files = files
 
-    def copyfiles(self, targetdir):
+    def copyfiles(self, targetdir, fs):
         """Copy all template files from the base folder to the local template
         folder a workflow repository. If the list of files in the manifest
         was None, the complete base directory is copied.
@@ -78,6 +78,8 @@ class WorkflowManifest(object):
         targetdir: string
             Path to the target directory for the local copy of the template
             directory.
+        fs: flowserv.model.files.FileStore
+            File store for workflow files.
 
         Raises
         ------
@@ -89,19 +91,13 @@ class WorkflowManifest(object):
             # If no files listing is present in the project metadata dictionary
             # copy the whole project directory to the source.
             for filename in os.listdir(self.basedir):
-                source = os.path.join(self.basedir, filename)
-                filelist.append((source, filename))
+                filelist.append((filename, os.path.join(targetdir, filename)))
         else:
             for fspec in self.files:
-                source = os.path.join(self.basedir, fspec['source'])
-                target = fspec.get('target')
-                if target is None:
-                    # If no target is given we assume that the file is copied
-                    # to the target folder under the same relative path as the
-                    # source.
-                    target = os.path.join(targetdir, fspec['source'])
+                source = fspec['source']
+                target = os.path.join(targetdir, fspec.get('target', source))
                 filelist.append((source, target))
-        util.copy_files(filelist, targetdir)
+        fs.copy_files(src=self.basedir, files=filelist)
 
     @staticmethod
     def load(
@@ -215,14 +211,9 @@ class WorkflowManifest(object):
             files=doc.get('files')
         )
 
-    def template(self, templatedir):
+    def template(self):
         """Get workflow template instance for the workflow specification that
         is included in the manifest.
-
-        Parameters
-        ----------
-        templatedir: string
-            Path to the target directory for template resource files.
 
         Returns
         -------
@@ -230,7 +221,6 @@ class WorkflowManifest(object):
         """
         return WorkflowTemplate.from_dict(
             doc=self.workflow_spec,
-            sourcedir=templatedir,
             validate=True
         )
 

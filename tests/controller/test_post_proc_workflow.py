@@ -15,6 +15,7 @@ from flowserv.config.api import FLOWSERV_API_BASEDIR
 from flowserv.config.backend import CLEAR_BACKEND, DEFAULT_BACKEND
 from flowserv.config.database import FLOWSERV_DB
 from flowserv.controller.serial.engine import SerialWorkflowEngine
+from flowserv.model.files.fs import FileSystemStore
 from flowserv.service.api import service
 from flowserv.service.run.argument import ARG, FILE
 from flowserv.tests.files import FakeStream
@@ -51,6 +52,12 @@ def test_postproc_workflow(tmpdir):
     database.init()
     engine = SerialWorkflowEngine(is_async=True)
     with service(engine=engine) as api:
+        engine.fs = api.fs
+        # Need to set the file store in the backend to the new instance as
+        # well. Otherwise, the post processing workflow may attempt to use
+        # the backend which was initialized prior with a different file store.
+        from flowserv.service.backend import backend
+        backend.fs = api.fs
         workflow_id = create_workflow(
             api,
             source=TEMPLATE_DIR,
@@ -75,26 +82,35 @@ def test_postproc_workflow(tmpdir):
         assert run['state'] == st.STATE_SUCCESS
         with service(engine=engine) as api:
             wh = api.workflows().get_workflow(workflow_id=workflow_id)
+        attmpts = 0
         while 'postproc' not in wh:
             time.sleep(1)
             with service(engine=engine) as api:
                 wh = api.workflows().get_workflow(workflow_id=workflow_id)
+            attmpts += 1
+            if attmpts > 60:
+                break
+        assert 'postproc' in wh
         serialize.validate_workflow_handle(wh)
+        attmpts = 0
         while wh['postproc']['state'] in st.ACTIVE_STATES:
             time.sleep(1)
             with service(engine=engine) as api:
                 wh = api.workflows().get_workflow(workflow_id=workflow_id)
+            attmpts += 1
+            if attmpts > 60:
+                break
         serialize.validate_workflow_handle(wh)
         for fobj in wh['postproc']['files']:
             if fobj['name'] == 'results/compare.json':
                 file_id = fobj['id']
         with service(engine=engine) as api:
-            fh = api.runs().get_result_file(
+            fh, filename = api.runs().get_result_file(
                 run_id=wh['postproc']['id'],
                 file_id=file_id,
                 user_id=None
             )
-        compare = util.read_object(fh.filename)
+        compare = util.read_object(filename)
         assert len(compare) == (i + 1)
     # Clean-up environment variables
     del os.environ[FLOWSERV_DB]
@@ -139,6 +155,7 @@ def poll_run(service, engine, run_id, user_id):
 def run_erroneous_workflow(service, engine, specfile):
     """Execute the modified helloworld example."""
     with service(engine=engine) as api:
+        engine.fs = api.fs
         # Create workflow template, user, and the workflow group.
         workflow_id = create_workflow(
             api,
@@ -161,14 +178,24 @@ def run_erroneous_workflow(service, engine, specfile):
     assert run['state'] == st.STATE_SUCCESS
     with service(engine=engine) as api:
         wh = api.workflows().get_workflow(workflow_id=workflow_id)
+    attmpts = 0
     while 'postproc' not in wh:
         time.sleep(1)
         with service(engine=engine) as api:
             wh = api.workflows().get_workflow(workflow_id=workflow_id)
+        attmpts += 1
+        if attmpts > 60:
+            break
+    assert 'postproc' in wh
     serialize.validate_workflow_handle(wh)
+    attmpts = 0
     while wh['postproc']['state'] in st.ACTIVE_STATES:
         time.sleep(1)
         with service(engine=engine) as api:
             wh = api.workflows().get_workflow(workflow_id=workflow_id)
+        attmpts += 1
+        if attmpts > 60:
+            break
+    assert wh['postproc']['state'] not in st.ACTIVE_STATES
     serialize.validate_workflow_handle(wh)
     assert wh['postproc']['state'] == st.STATE_ERROR

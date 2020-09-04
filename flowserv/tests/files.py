@@ -36,7 +36,7 @@ class FakeStream(object):
     def save(self, filename):
         """Write simple text to given file."""
         # Ensure that the directory for the file exists.
-        util.create_dir(os.path.dirname(filename))
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
         if self.format == util.FORMAT_JSON:
             util.write_object(
                 filename=filename,

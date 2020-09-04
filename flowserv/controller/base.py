@@ -71,7 +71,8 @@ class WorkflowController(metaclass=ABCMeta):  # pragma: no cover
     @abstractmethod
     def exec_workflow(self, run, template, arguments, service=None):
         """Initiate the execution of a given workflow template for a set of
-        argument values. Returns the state of the workflow.
+        argument values. Returns the state of the workflow and the path to
+        the directory that contains run result files for successful runs.
 
         The client provides a unique identifier for the workflow run that is
         being used to retrieve the workflow state in future calls.
@@ -94,6 +95,6 @@ class WorkflowController(metaclass=ABCMeta):  # pragma: no cover
 
         Returns
         -------
-        flowserv.model.workflow.state.WorkflowState
+        flowserv.model.workflow.state.WorkflowState, string
         """
         raise NotImplementedError()  # pragma: no cover

@@ -29,16 +29,19 @@ class DockerWorkflowEngine(SerialWorkflowEngine):
     the engine extends the multi-process controller for asynchronous execution.
     Workflow runs are executed by the docker_run() function.
     """
-    def __init__(self, is_async=None):
+    def __init__(self, fs, is_async=None):
         """Initialize the super class using the docker_run execution function.
 
         Parameters
         ----------
+        fs: flowserv.model.files.base.FileStore
+            File store for run input files.
         is_async: bool, optional
             Flag that determines whether workflows execution is synchronous or
             asynchronous by default.
         """
         super(DockerWorkflowEngine, self).__init__(
+            fs=fs,
             exec_func=docker_run,
             is_async=is_async
         )
@@ -50,8 +53,8 @@ class DockerWorkflowEngine(SerialWorkflowEngine):
 def docker_run(run_id, rundir, state, output_files, steps):
     """Execute a list of workflow steps synchronously using the Docker engine.
 
-    Returns a tuple containing the task identifier and a serialization of the
-    workflow state.
+    Returns a tuple containing the run identifier, the folder with the run
+    files, and a serialization of the workflow state.
 
     Parameters
     ----------
@@ -68,7 +71,7 @@ def docker_run(run_id, rundir, state, output_files, steps):
 
     Returns
     -------
-    (string, dict)
+    (string, string, dict)
     """
     logging.debug('start docker run {}'.format(run_id))
     # Setup the workflow environment by obtaining volume information for all
@@ -103,4 +106,4 @@ def docker_run(run_id, rundir, state, output_files, steps):
     # Workflow executed successfully
     result_state = state.success(files=files)
     logging.debug('finished run {} = {}'.format(run_id, result_state.type_id))
-    return run_id, serialize.serialize_state(result_state)
+    return run_id, rundir, serialize.serialize_state(result_state)

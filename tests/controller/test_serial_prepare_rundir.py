@@ -13,6 +13,7 @@ runs.
 import os
 import pytest
 
+from flowserv.model.files.fs import FileSystemStore
 from flowserv.model.parameter.files import InputFile
 from flowserv.model.template.base import WorkflowTemplate
 from flowserv.model.workflow.serial import SerialWorkflow
@@ -22,7 +23,7 @@ import flowserv.util as util
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))
-WORKFLOW_DIR = os.path.join(DIR, '../../.files/benchmark/helloworld')
+WORKFLOW_DIR = os.path.join(DIR, '../.files/benchmark/helloworld')
 TEMPLATE_FILE = os.path.join(WORKFLOW_DIR, 'benchmark.yaml')
 DATA_FILE = os.path.join(WORKFLOW_DIR, 'data/names.txt')
 
@@ -31,7 +32,7 @@ DATA_FILE = os.path.join(WORKFLOW_DIR, 'data/names.txt')
 def template():
     """Read the workflow template."""
     doc = util.read_object(TEMPLATE_FILE)
-    return WorkflowTemplate.from_dict(doc, WORKFLOW_DIR, validate=True)
+    return WorkflowTemplate.from_dict(doc, validate=True)
 
 
 @pytest.mark.parametrize(
@@ -43,11 +44,12 @@ def test_copy_default_template_files(target_path, template, tmpdir):
     data file in the template folder to simulate user input. Ensures that two
     code files get copied and one data file.
     """
+    fs = FileSystemStore(tmpdir)
     args = {'names': InputFile(source=DATA_FILE, target=target_path)}
-    workflow = SerialWorkflow(template, args)
+    workflow = SerialWorkflow(template, args, WORKFLOW_DIR)
     files = workflow.upload_files()
     assert len(files) == 3
-    util.copy_files(files, tmpdir, overwrite=False, raise_error=True)
+    fs.download_files(files=files, dst=tmpdir)
     # Create set of expected files.
     expected_files = set({
         os.path.join(tmpdir, 'code/analyze.py'),
@@ -71,12 +73,13 @@ def test_copy_template_with_directory(target_path, template, tmpdir):
     data file in the template folder to simulate user input. Ensures that three
     code files get copied and one data file.
     """
+    fs = FileSystemStore(tmpdir)
     args = {'names': InputFile(source=DATA_FILE, target=target_path)}
     template.workflow_spec['inputs']['files'] = ['code', tp.VARIABLE('names')]
-    workflow = SerialWorkflow(template, args)
+    workflow = SerialWorkflow(template, args, WORKFLOW_DIR)
     files = workflow.upload_files()
     assert len(files) == 2
-    util.copy_files(files, tmpdir, overwrite=False, raise_error=True)
+    fs.download_files(files=files, dst=tmpdir)
     # Create set of expected files.
     expected_files = set({
         os.path.join(tmpdir, 'code/analyze.py'),
@@ -96,9 +99,11 @@ def test_error_for_existing_file(template, tmpdir):
     """Ensure an error is raised if the user provides the target path to an
     existing file.
     """
-    args = {'names': InputFile(source=DATA_FILE, target='code/helloworld.py')}
-    workflow = SerialWorkflow(template, args)
+    util.write_object(os.path.join(tmpdir, 'helloworld.py'), {'A': 1})
+    fs = FileSystemStore(tmpdir)
+    args = {'names': InputFile(source=DATA_FILE, target='helloworld.py')}
+    workflow = SerialWorkflow(template, args, WORKFLOW_DIR)
     files = workflow.upload_files()
     assert len(files) == 3
     with pytest.raises(ValueError):
-        util.copy_files(files, tmpdir, overwrite=False, raise_error=True)
+        fs.download_files(files=files, dst=tmpdir)
