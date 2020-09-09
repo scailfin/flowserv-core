@@ -52,9 +52,9 @@ def archive_files(files: List[Tuple[Union[str, IO], str]]):
         if isinstance(file, str):
             tar_handle.add(name=file, arcname=arcname)
         else:
-            info = tarfile.TarInfo(name=arcname, arcname=arcname)
-            info.size = file.tell()
-            tar_handle.add(tarinfo=info, fileobj=file)
+            info = tarfile.TarInfo(name=arcname)
+            info.size = file.getbuffer().nbytes
+            tar_handle.addfile(tarinfo=info, fileobj=file)
     tar_handle.close()
     file_out.seek(0)
     return file_out

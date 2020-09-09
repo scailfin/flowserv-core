@@ -155,7 +155,7 @@ class FileSystemStore(FileStore):
 
         Paramaters
         ----------
-        file: string or FileObject
+        file: string or io.BytesIO or io.StringIO
             The input file is either a FileObject (buffer) or a reference to a
             file on the local file system.
         dst: string
