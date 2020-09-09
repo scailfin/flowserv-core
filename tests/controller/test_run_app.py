@@ -10,7 +10,7 @@
 
 import os
 
-from io import StringIO
+from io import BytesIO
 
 from flowserv.app import App, install_app
 from flowserv.config.api import FLOWSERV_API_BASEDIR
@@ -29,7 +29,7 @@ def test_run_app(database, tmpdir):
     app_key = install_app(source=TEMPLATE_DIR, db=database, basedir=tmpdir)
     engine = StateEngine()
     app = App(db=database, engine=engine, basedir=tmpdir, key=app_key)
-    r = app.run({'names': StringIO('Alice'), 'sleeptime': 0, 'greeting': 'Hi'})
+    r = app.run({'names': BytesIO(b'Alice'), 'sleeptime': 0, 'greeting': 'Hi'})
     assert r['state'] == state.STATE_PENDING
 
 
@@ -43,7 +43,7 @@ def test_run_app_from_env(tmpdir):
     database.init()
     app_key = install_app(source=TEMPLATE_DIR,)
     app = App(key=app_key)
-    r = app.run({'names': StringIO('Alice'), 'sleeptime': 0, 'greeting': 'Hi'})
+    r = app.run({'names': BytesIO(b'Alice'), 'sleeptime': 0, 'greeting': 'Hi'})
     assert r['state'] == state.STATE_SUCCESS
     files = dict()
     for obj in r['files']:

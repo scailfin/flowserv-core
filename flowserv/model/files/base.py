@@ -48,10 +48,6 @@ class FileStore(metaclass=ABCMeta):
             Path to source directory on disk.
         files: list((string, string))
             List of file source and target path. All path names are relative.
-
-        Raises
-        ------
-        ValueError
         """
         raise NotImplementedError()
 

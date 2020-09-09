@@ -137,7 +137,7 @@ def start_hello_world(api, group_id, user_id):
     """
     file_id = api.uploads().upload_file(
         group_id=group_id,
-        file=FakeStream(data=['Alice', 'Bob'], format='txt/plain'),
+        file=FakeStream(data=['Alice', 'Bob'], format='txt/plain').save(),
         name='n.txt',
         user_id=user_id
     )['id']
@@ -218,4 +218,4 @@ def write_results(rundir: str, files: Tuple[Union[dict, list], str, str]):
     for data, format, rel_path in files:
         filename = os.path.join(rundir, rel_path)
         os.makedirs(os.path.dirname(filename), exist_ok=True)
-        FakeStream(data=data, format=format).save(filename)
+        FakeStream(data=data, format=format).write(filename)

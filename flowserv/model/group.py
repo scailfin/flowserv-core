@@ -330,7 +330,7 @@ class WorkflowGroupManager(object):
         ----------
         group_id: string
             Unique group identifier
-        file: file object (e.g., werkzeug.datastructures.FileStorage)
+        file: file object
             File object (e.g., uploaded via HTTP request)
         name: string
             Name of the file

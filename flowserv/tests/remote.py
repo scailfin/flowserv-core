@@ -92,7 +92,7 @@ class RemoteTestClient(RemoteClient):
         target: string
             Path to target file on local disk.
         """
-        FakeStream(data=self.data).save(target)
+        FakeStream(data=self.data).write(target)
 
     def get_workflow_state(self, workflow_id, current_state):
         """Get information about the current state of a given workflow.

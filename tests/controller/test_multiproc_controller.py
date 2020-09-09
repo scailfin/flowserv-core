@@ -43,7 +43,7 @@ def test_cancel_run_helloworld(service):
         user_id = create_user(api)
         group_id = create_group(api, workflow_id, [user_id])
         names = FakeStream(data=['Alice', 'Bob', 'Zoe'], format='plain/text')
-        file_id = upload_file(api, group_id, user_id, names)
+        file_id = upload_file(api, group_id, user_id, names.save())
         args = [
             ARG('names', FILE(file_id)),
             ARG('sleeptime', 10),
@@ -87,7 +87,7 @@ def test_run_helloworld_async(target, tmpdir):
         user_id = create_user(api)
         group_id = create_group(api, workflow_id, [user_id])
         names = FakeStream(data=['Alice', 'Bob', 'Zoe'], format='plain/text')
-        file_id = upload_file(api, group_id, user_id, names)
+        file_id = upload_file(api, group_id, user_id, names.save())
         args = [
             ARG('names', FILE(file_id, target)),
             ARG('sleeptime', 1),

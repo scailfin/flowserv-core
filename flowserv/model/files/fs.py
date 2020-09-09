@@ -11,16 +11,12 @@
 import os
 import shutil
 
-from io import BytesIO, StringIO
-from typing import IO, List, Tuple, TypeVar, Union
+from io import StringIO
+from typing import IO, List, Tuple, Union
 
 from flowserv.model.files.base import FileStore
 
 import flowserv.util as util
-
-
-# Type variable for werkzeug.datastructures.FileStorage objects
-W = TypeVar('W')
 
 
 class FileSystemStore(FileStore):
@@ -43,6 +39,9 @@ class FileSystemStore(FileStore):
         """Copy a list of files or dirctories from a given source directory.
         The list of files contains tuples of relative file source and target
         path. The source path may reference existing files or directories.
+
+        Raises a ValueError if an attempt is made to overwrite an existing
+        file.
 
         Parameters
         ----------
@@ -147,10 +146,10 @@ class FileSystemStore(FileStore):
         """
         return os.path.join(self.basedir, key)
 
-    def upload_file(self, file: Union[str, IO, W], dst: str) -> int:
+    def upload_file(self, file: Union[str, IO], dst: str) -> int:
         """Upload a given file object to the file store. The destination path
         is a relative path. The file may reference a file on the local file
-        system or it is a fiile object (StringIO or BytesIO).
+        system or it is a file object (StringIO or BytesIO).
 
         Returns the size of the uploaded file on disk.
 
@@ -176,10 +175,8 @@ class FileSystemStore(FileStore):
             with open(target, 'w') as fd:
                 file.seek(0)
                 shutil.copyfileobj(file, fd)
-        elif isinstance(file, BytesIO):
+        else:  # assumes isinstance(file, BytesIO)
             with open(target, 'wb') as fd:
                 fd.write(file.getbuffer())
-        else:
-            file.save(target)
         # Return size of the created file.
         return os.stat(target).st_size

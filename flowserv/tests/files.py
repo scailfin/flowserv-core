@@ -8,7 +8,10 @@
 
 """helper classes and methods for unit tests that perform I/O operations."""
 
+import json
 import os
+
+from io import BytesIO
 
 import flowserv.util as util
 
@@ -33,8 +36,19 @@ class FakeStream(object):
         self.data = data if data is not None else dict()
         self.format = format if format is not None else util.FORMAT_JSON
 
-    def save(self, filename):
-        """Write simple text to given file."""
+    def save(self, buf=None):
+        """Write simple text to given bytes buffer."""
+        buf = BytesIO() if buf is None else buf
+        buf.seek(0)
+        if self.format == util.FORMAT_JSON:
+            buf.write(str.encode(json.dumps(self.data)))
+        else:
+            for line in self.data:
+                buf.write(str.encode('{}\n'.format(line)))
+        return buf
+
+    def write(self, filename):
+        """Write data to given file."""
         # Ensure that the directory for the file exists.
         os.makedirs(os.path.dirname(filename), exist_ok=True)
         if self.format == util.FORMAT_JSON:
@@ -47,4 +61,3 @@ class FakeStream(object):
             with open(filename, 'w') as f:
                 for line in self.data:
                     f.write('{}\n'.format(line))
-        return filename

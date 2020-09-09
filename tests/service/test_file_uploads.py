@@ -31,7 +31,7 @@ def test_delete_group_file_view(service, hello_world):
         file_id = upload_file(
             api=api,
             group_id=group_id,
-            file=FakeStream(data={'group': 1, 'file': 1}),
+            file=FakeStream(data={'group': 1, 'file': 1}).save(),
             user_id=user_id
         )
     # -- Error when unknown user attempts to delete the file ------------------
@@ -61,7 +61,7 @@ def test_list_group_files_view(service, hello_world):
             upload_file(
                 api=api,
                 group_id=group_id,
-                file=FakeStream(data={'group': 1, 'file': i}),
+                file=FakeStream(data={'group': 1, 'file': i}).save(),
                 user_id=user_id
             )
     # -- Get file listing -----------------------------------------------------
@@ -88,7 +88,7 @@ def test_upload_group_file_view(service, hello_world):
     with service() as api:
         r = api.uploads().upload_file(
             group_id=group_id,
-            file=FakeStream(data={'group': 1, 'file': 1}),
+            file=FakeStream(data={'group': 1, 'file': 1}).save(),
             name='group1.json',
             user_id=user_id
         )

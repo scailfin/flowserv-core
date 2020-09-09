@@ -31,7 +31,7 @@ def create_run(api, workflow_id):
     group_id = create_group(api, workflow_id=workflow_id, users=[user_id])
     file_id = api.uploads().upload_file(
         group_id=group_id,
-        file=FakeStream(data=['Alice', 'Bob'], format='txt/plain'),
+        file=FakeStream(data=['Alice', 'Bob'], format='txt/plain').save(),
         name='n.txt',
         user_id=user_id
     )['id']

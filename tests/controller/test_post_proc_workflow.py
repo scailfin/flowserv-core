@@ -15,7 +15,6 @@ from flowserv.config.api import FLOWSERV_API_BASEDIR
 from flowserv.config.backend import CLEAR_BACKEND, DEFAULT_BACKEND
 from flowserv.config.database import FLOWSERV_DB
 from flowserv.controller.serial.engine import SerialWorkflowEngine
-from flowserv.model.files.fs import FileSystemStore
 from flowserv.service.api import service
 from flowserv.service.run.argument import ARG, FILE
 from flowserv.tests.files import FakeStream
@@ -70,7 +69,7 @@ def test_postproc_workflow(tmpdir):
         with service(engine=engine) as api:
             group_id = create_group(api, workflow_id, [user_id])
             names = FakeStream(data=NAMES[:(i+1)], format='plain/text')
-            file_id = upload_file(api, group_id, user_id, names)
+            file_id = upload_file(api, group_id, user_id, names.save())
             # Set the template argument values
             arguments = [
                 ARG('names', FILE(file_id)),
@@ -165,7 +164,7 @@ def run_erroneous_workflow(service, engine, specfile):
         user_id = create_user(api)
         group_id = create_group(api, workflow_id, [user_id])
         # Upload the names file.
-        names = FakeStream(data=NAMES, format='txt/plain')
+        names = FakeStream(data=NAMES, format='txt/plain').save()
         file_id = upload_file(api, group_id, user_id, names)
         # Run the workflow.
         arguments = [

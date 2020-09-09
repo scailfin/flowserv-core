@@ -26,7 +26,7 @@ def test_delete_file(database, tmpdir):
     #
     # Create a database with two groups for a single workflow. Upload one file
     # for each group.
-    file = FakeStream(data={'A': 1})
+    file = FakeStream(data={'A': 1}).save()
     fn = 'data.json'
     fs = FileSystemStore(tmpdir)
     with database.session() as session:
@@ -67,8 +67,8 @@ def test_get_file(database, tmpdir):
     # for each group.
     data_1 = {'A': 1}
     data_2 = {'B': 2}
-    f1 = FakeStream(data=data_1)
-    f2 = FakeStream(data=data_2)
+    f1 = FakeStream(data=data_1).save()
+    f2 = FakeStream(data=data_2).save()
     fn = 'data.json'
     fs = FileSystemStore(tmpdir)
     with database.session() as session:
@@ -106,7 +106,7 @@ def test_list_files(database, tmpdir):
     #
     # Create a database with two groups for a single workflow. The first group
     # has one uploaded file and the second group has one file.
-    file = FakeStream(data={'A': 1})
+    file = FakeStream(data={'A': 1}).save()
     fn = 'data.json'
     fs = FileSystemStore(tmpdir)
     with database.session() as session:
@@ -144,7 +144,7 @@ def test_upload_file(database, tmpdir):
         manager = WorkflowGroupManager(session=session, fs=fs)
         fh = manager.upload_file(
             group_id=group_1,
-            file=FakeStream(data={'A': 1}),
+            file=FakeStream(data={'A': 1}).save(),
             name='A.json'
         )
         assert fh.name == 'A.json'
@@ -158,12 +158,12 @@ def test_upload_file(database, tmpdir):
         with pytest.raises(err.ConstraintViolationError):
             manager.upload_file(
                 group_id=group_1,
-                file=FakeStream(data={'A': 1}),
+                file=FakeStream(data={'A': 1}).save(),
                 name=' '
             )
         with pytest.raises(err.UnknownWorkflowGroupError):
             manager.upload_file(
                 group_id='UNKNOWN',
-                file=FakeStream(data={'A': 1}),
+                file=FakeStream(data={'A': 1}).save(),
                 name=' '
             )

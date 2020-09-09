@@ -45,7 +45,7 @@ def test_run_workflow_with_outputs(service):
         user_id = create_user(api)
         group_id = create_group(api, workflow_id, [user_id])
         names = FakeStream(data=['Alice', 'Bob'], format='plain/text')
-        file_id = upload_file(api, group_id, user_id, names)
+        file_id = upload_file(api, group_id, user_id, names.save())
         args = [ARG('names', FILE(file_id, 'data/names.txt'))]
         run_id = start_run(api, group_id, user_id, arguments=args)
     # -- Validate the run handle ----------------------------------------------

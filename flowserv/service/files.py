@@ -10,6 +10,8 @@
 delete, and upload files for workflow groups.
 """
 
+from io import BytesIO
+
 import flowserv.error as err
 
 
@@ -138,7 +140,7 @@ class UploadFileService(object):
         ----------
         group_id: string
             Unique workflow group identifier
-        file: werkzeug.datastructures.FileStorage
+        file: file-like object
             File object (e.g., uploaded via HTTP request)
         name: string
             Name of the file
@@ -159,7 +161,9 @@ class UploadFileService(object):
         # the workflow group or if the workflow group does not exist.
         if not self.auth.is_group_member(group_id=group_id, user_id=user_id):
             raise err.UnauthorizedAccessError()
-        # Return serialization of the uploaded file
+        # Convert the uploaded FileStorage object into a bytes buffer before
+        # passing it to the group manager. Return serialization of the handle
+        # for the uploaded file.
         fh = self.group_manager.upload_file(
             group_id=group_id,
             file=file,
