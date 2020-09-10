@@ -16,6 +16,7 @@ from typing import IO, List, Tuple, Union
 
 from flowserv.model.files.base import FileStore
 
+import flowserv.config.api as config
 import flowserv.util as util
 
 
@@ -24,16 +25,16 @@ class FileSystemStore(FileStore):
     all files are maintained on the local file system under a given base
     directory.
     """
-    def __init__(self, basedir: str):
+    def __init__(self, basedir: str = None):
         """Initialize the base directory. The directory is created if it does
         not exist.
 
         Parameters
         ----------
-        basedir: string
+        basedir: string, default=None
             Path to the base directory.
         """
-        self.basedir = basedir
+        self.basedir = basedir if basedir is not None else config.API_BASEDIR()
 
     def copy_files(self, src: str, files: List[Tuple[str, str]]):
         """Copy a list of files or dirctories from a given source directory.

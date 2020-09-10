@@ -10,8 +10,6 @@
 delete, and upload files for workflow groups.
 """
 
-from io import BytesIO
-
 import flowserv.error as err
 
 
@@ -170,3 +168,18 @@ class UploadFileService(object):
             name=name
         )
         return self.serialize.file_handle(group_id=group_id, fh=fh)
+
+
+# -- Factory pattern for file stores ------------------------------------------
+
+def get_filestore():
+    """Factory pattern to create file store instances for the service API. Uses
+    the environment variables ... and ... to create an instance of the file
+    store.
+
+    Returns
+    -------
+    flowserv.model.files.base.FileStore
+    """
+    from flowserv.model.files.fs import FileSystemStore
+    return FileSystemStore()

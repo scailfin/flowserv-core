@@ -13,9 +13,6 @@ define additional environment variables for their configuration.
 
 import os
 
-from flowserv.config.api import API_BASEDIR  # noqa: F401
-
-
 # Name of the class that implements the workflow controller interface
 FLOWSERV_BACKEND_CLASS = 'FLOWSERV_BACKEND_CLASS'
 # Name of the module that contains the workflow controller implementation

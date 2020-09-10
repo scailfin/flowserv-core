@@ -17,7 +17,7 @@ dynamically.
 import logging
 
 from flowserv.config.base import get_variable
-from flowserv.model.files.fs import FileSystemStore
+from flowserv.service.files import get_filestore
 
 import flowserv.config.backend as config
 import flowserv.error as err
@@ -44,7 +44,9 @@ def init_backend(raise_error=True):
     ------
     flowserv.error.MissingConfigurationError
     """
-    fs = FileSystemStore(config.API_BASEDIR())
+    # Create a new instance of the file store based on the configuration in the
+    # respective environment variables.
+    fs = get_filestore()
     module_name = get_variable(name=config.FLOWSERV_BACKEND_MODULE)
     class_name = get_variable(name=config.FLOWSERV_BACKEND_CLASS)
     # If both environment variables are None return the default controller.

@@ -15,6 +15,7 @@ from io import BytesIO
 from flowserv.app import App, install_app
 from flowserv.config.api import FLOWSERV_API_BASEDIR
 from flowserv.config.database import FLOWSERV_DB
+from flowserv.model.files.fs import FileSystemStore
 from flowserv.tests.controller import StateEngine
 
 import flowserv.model.workflow.state as state
@@ -26,9 +27,10 @@ TEMPLATE_DIR = os.path.join(DIR, '../.files/benchmark/helloworld')
 
 def test_run_app(database, tmpdir):
     """Simulate running the test workflow app."""
-    app_key = install_app(source=TEMPLATE_DIR, db=database, basedir=tmpdir)
+    fs = FileSystemStore(basedir=tmpdir)
+    app_key = install_app(source=TEMPLATE_DIR, db=database, fs=fs)
     engine = StateEngine()
-    app = App(db=database, engine=engine, basedir=tmpdir, key=app_key)
+    app = App(db=database, engine=engine, fs=fs, key=app_key)
     r = app.run({'names': BytesIO(b'Alice'), 'sleeptime': 0, 'greeting': 'Hi'})
     assert r['state'] == state.STATE_PENDING
 
@@ -41,7 +43,7 @@ def test_run_app_from_env(tmpdir):
     os.environ[FLOWSERV_API_BASEDIR] = str(tmpdir)
     from flowserv.service.database import database
     database.init()
-    app_key = install_app(source=TEMPLATE_DIR,)
+    app_key = install_app(source=TEMPLATE_DIR)
     app = App(key=app_key)
     r = app.run({'names': BytesIO(b'Alice'), 'sleeptime': 0, 'greeting': 'Hi'})
     assert r['state'] == state.STATE_SUCCESS

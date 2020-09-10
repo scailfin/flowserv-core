@@ -9,11 +9,11 @@
 from io import BytesIO, StringIO
 
 from flowserv.model.base import WorkflowHandle
-from flowserv.model.files.fs import FileSystemStore
 from flowserv.model.group import WorkflowGroupManager
 from flowserv.model.user import UserManager
 from flowserv.model.workflow.manager import WorkflowManager
 from flowserv.service.api import API
+from flowserv.service.files import get_filestore
 from flowserv.service.run.argument import ARG, FILE
 
 import flowserv.config.app as config
@@ -25,7 +25,7 @@ class App(object):
     metadata and provides functionality to execute workflow runs. Assumes that
     the given workflow engine is in synchronous mode.
     """
-    def __init__(self, db=None, engine=None, basedir=None, key=None):
+    def __init__(self, db=None, engine=None, fs=None, key=None):
         """Initialize the associated database and engine to retrieve workflow
         information and execute workflow runs. Each application has a unique
         key which is the identifier of the group that was created when the
@@ -38,8 +38,8 @@ class App(object):
             Database connection manager.
         engine: flowserv.controller.base.WorkflowController, default=None
             Workflow controller to execute application runs.
-        basedir: string, default=None
-            Base directory for application files.
+        fs: flowserv.model.files.base.FileStore, default=None
+            File store to access application files.
         key: string, default=None
             Unique application identifier. If not given the value is expected
             in the environment variable FLOWSERV_APP.
@@ -50,19 +50,16 @@ class App(object):
             db = database
         self._db = db
         # Set API components.
-        self._basedir = config.APP_BASEDIR(basedir)
         if engine is None:
             config.SYNC()
             from flowserv.controller.init import init_backend
             engine = init_backend()
         self._engine = engine
+        self.fs = fs if fs is not None else get_filestore()
         # Get application properties from the database.
         self._group_id = config.APP_KEY(key)
         with self._db.session() as session:
-            manager = WorkflowGroupManager(
-                session=session,
-                fs=FileSystemStore(self._basedir)
-            )
+            manager = WorkflowGroupManager(session=session, fs=fs)
             group = manager.get_group(self._group_id)
             self._user_id = group.owner_id
             self._name = group.name
@@ -98,11 +95,7 @@ class App(object):
         flowserv.model.base.RunFile
         """
         with self._db.session() as session:
-            api = API(
-                session=session,
-                engine=self._engine,
-                basedir=self._basedir
-            )
+            api = API(session=session, engine=self._engine, fs=self.fs)
             fh, fileobj = api.runs().get_result_file(
                 run_id=run_id,
                 file_id=file_id,
@@ -150,11 +143,7 @@ class App(object):
         dict
         """
         with self._db.session() as session:
-            api = API(
-                session=session,
-                engine=self._engine,
-                basedir=self._basedir
-            )
+            api = API(session=session, engine=self._engine, fs=self.fs)
             # Upload any argument values as files that are either of type
             # StringIO or BytesIO.
             arglist = list()
@@ -181,7 +170,7 @@ class App(object):
 
 def install_app(
     source, name=None, description=None, instructions=None, specfile=None,
-    manifestfile=None, db=None, basedir=None
+    manifestfile=None, db=None, fs=None
 ):
     """Create database objects for a application that is defined by a workflow
     template. For each application the workflow is created, a single unser and
@@ -206,8 +195,8 @@ def install_app(
         of the default manifest file names in the base directory.
     db: flowserv.model.database.DB, default=None
         Database connection manager.
-    basedir: string, default=None
-        Base directory for application files.
+    fs: flowserv.model.files.base.FileStore, default=None
+        File store to access application files.
 
     Returns
     -------
@@ -217,7 +206,8 @@ def install_app(
         # Use the default database object if no database is given.
         from flowserv.service.database import database
         db = database
-    fs = FileSystemStore(config.APP_BASEDIR(basedir))
+    if fs is None:
+        fs = get_filestore()
     # Create a new workflow for the application from the specified template.
     # For applications, any post-processing workflow is currently ignored.
     with db.session() as session:
@@ -291,7 +281,7 @@ def list_apps(db=None):
     return result
 
 
-def uninstall_app(app_key, db=None, basedir=None):
+def uninstall_app(app_key, db=None, fs=None):
     """Remove workflow and group associated with the given application key.
 
     Parameters
@@ -300,14 +290,15 @@ def uninstall_app(app_key, db=None, basedir=None):
         Application identifier (i.e., group identifier).
     db: flowserv.model.database.DB, default=None
         Database connection manager.
-    basedir: string, default=None
-        Base directory for application files.
+    fs: flowserv.model.files.base.FileStore, default=None
+        File store to access application files.
     """
     if db is None:
         # Use the default database object if no database is given.
         from flowserv.service.database import database
         db = database
-    fs = FileSystemStore(config.APP_BASEDIR(basedir))
+    if fs is None:
+        fs = get_filestore()
     # Delete workflow and all related files.
     with db.session() as session:
         # Get the identifier for the workflow that is associated with the
