@@ -8,10 +8,15 @@
 
 """Unit test for API methods."""
 
+import os
 import pytest
 
 from flowserv.model.auth import DefaultAuthPolicy
+from flowserv.model.files.s3 import BucketStore, FLOWSERV_S3BUCKET
+from flowserv.service.files import get_filestore
+from flowserv.tests.files import MemBucket
 
+import flowserv.config.files as config
 import flowserv.error as err
 
 
@@ -31,3 +36,32 @@ def test_api_components(service):
         assert api.uploads() is not None
         assert api.users() is not None
         assert api.workflows() is not None
+
+
+def test_initialize_filestore_from_env(tmpdir):
+    """Test initializing the bucket store with a memory bucket from the
+    envirnment variables.
+    """
+    # -- Setup ----------------------------------------------------------------
+    os.environ[config.FLOWSERV_FILESTORE_MODULE] = 'flowserv.model.files.s3'
+    os.environ[config.FLOWSERV_FILESTORE_CLASS] = 'BucketStore'
+    if FLOWSERV_S3BUCKET in os.environ:
+        del os.environ[FLOWSERV_S3BUCKET]
+    # -- Create bucket store instance -----------------------------------------
+    fs = get_filestore()
+    assert isinstance(fs, BucketStore)
+    assert isinstance(fs.bucket, MemBucket)
+    # -- Error cases ----------------------------------------------------------
+    del os.environ[config.FLOWSERV_FILESTORE_MODULE]
+    with pytest.raises(err.MissingConfigurationError):
+        get_filestore()
+    assert get_filestore(raise_error=False) is None
+    os.environ[config.FLOWSERV_FILESTORE_MODULE] = 'flowserv.model.files.s3'
+    del os.environ[config.FLOWSERV_FILESTORE_CLASS]
+    with pytest.raises(err.MissingConfigurationError):
+        get_filestore()
+    # -- Default file store ---------------------------------------------------
+    del os.environ[config.FLOWSERV_FILESTORE_MODULE]
+    os.environ[config.FLOWSERV_API_BASEDIR] = str(tmpdir)
+    assert get_filestore() is not None
+    del os.environ[config.FLOWSERV_API_BASEDIR]

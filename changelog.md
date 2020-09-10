@@ -53,3 +53,6 @@
 ### 0.3.3 - 2020-08-28
 
 * Handle optional manifest element in workflow repository entries (\#52).
+
+
+### 0.4.0 - 2020-09-??

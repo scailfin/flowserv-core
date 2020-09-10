@@ -20,6 +20,7 @@ from typing import IO, List, Set, Tuple, TypeVar, Union
 
 from flowserv.model.files.base import FileStore
 
+import flowserv.config.base as config
 import flowserv.error as err
 import flowserv.util as util
 
@@ -28,12 +29,16 @@ import flowserv.util as util
 B = TypeVar('B')
 
 
+"""Environment variable for unique bucket identifier."""
+FLOWSERV_S3BUCKET = 'FLOWSERV_S3BUCKET'
+
+
 class BucketStore(FileStore):
     """Implementation of the abstract file store class. In this implementation
     all files are maintained on the local file system under a given base
     directory.
     """
-    def __init__(self, bucket: B):
+    def __init__(self, bucket: B = None):
         """Initialize the storage bucket.
 
         Parameters
@@ -42,6 +47,14 @@ class BucketStore(FileStore):
             Object that implements the delete, download, and upload methods of
             the S3.Bucket interface.
         """
+        if bucket is None:
+            bucket_id = config.get_variable(FLOWSERV_S3BUCKET)
+            if bucket_id is None:
+                from flowserv.tests.files import MemBucket
+                bucket = MemBucket()
+            else:  # pragma: no cover
+                import boto3
+                bucket = boto3.resource('s3').Bucket(bucket_id)
         self.bucket = bucket
 
     def copy_files(self, src: str, files: List[Tuple[str, str]]):

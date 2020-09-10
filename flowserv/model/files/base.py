@@ -49,7 +49,7 @@ class FileStore(metaclass=ABCMeta):
         files: list((string, string))
             List of file source and target path. All path names are relative.
         """
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
     @abstractmethod
     def delete_file(self, key: str):
@@ -60,7 +60,7 @@ class FileStore(metaclass=ABCMeta):
         key: string
             Unique file key.
         """
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
     @abstractmethod
     def download_archive(self, src: str, files: List[str]) -> IO:
@@ -80,7 +80,7 @@ class FileStore(metaclass=ABCMeta):
         -------
         io.BytesIO
         """
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
     @abstractmethod
     def download_files(self, files: List[Tuple[str, str]], dst: str):
@@ -100,7 +100,7 @@ class FileStore(metaclass=ABCMeta):
         ------
         ValueError
         """
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
     def group_uploaddir(self, workflow_id: str, group_id: str) -> str:
         """Get base directory for files that are uploaded to a workflow group.
@@ -159,7 +159,7 @@ class FileStore(metaclass=ABCMeta):
         ------
         flowserv.error.UnknownFileError
         """
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
     def run_basedir(self, workflow_id: str, run_id: str) -> str:
         """Get path to the base directory for all files that are maintained for
@@ -199,7 +199,7 @@ class FileStore(metaclass=ABCMeta):
         -------
         int
         """
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
     def workflow_basedir(self, workflow_id: str) -> str:
         """Get base directory containing associated files for the workflow with

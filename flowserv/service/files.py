@@ -10,6 +10,10 @@
 delete, and upload files for workflow groups.
 """
 
+from flowserv.config.base import get_variable
+from flowserv.model.files.base import FileStore
+
+import flowserv.config.files as config
 import flowserv.error as err
 
 
@@ -172,14 +176,37 @@ class UploadFileService(object):
 
 # -- Factory pattern for file stores ------------------------------------------
 
-def get_filestore():
+def get_filestore(raise_error: bool = True) -> FileStore:
     """Factory pattern to create file store instances for the service API. Uses
-    the environment variables ... and ... to create an instance of the file
-    store.
+    the environment variables FLOWSERV_FILESTORE_MODULE and
+    FLOWSERV_FILESTORE_CLASS to create an instance of the file store. If the
+    environment variables are not set the FileSystemStore is returned as the
+    default file store.
+
+    Parameters
+    ----------
+    raise_error: bool, default=True
+        Flag to indicate whether an error is raised if a value for a
+        configuration variable is missing or not.
 
     Returns
     -------
     flowserv.model.files.base.FileStore
     """
-    from flowserv.model.files.fs import FileSystemStore
-    return FileSystemStore()
+    module_name = get_variable(name=config.FLOWSERV_FILESTORE_MODULE)
+    class_name = get_variable(name=config.FLOWSERV_FILESTORE_CLASS)
+    # If both environment variables are None return the default file store.
+    # Otherwise, import the specified module and return an instance of the
+    # controller class. An error is raised if only one of the two environment
+    # variables is set.
+    if module_name is None and class_name is None:
+        from flowserv.model.files.fs import FileSystemStore
+        return FileSystemStore()
+    elif module_name is not None and class_name is not None:
+        from importlib import import_module
+        module = import_module(module_name)
+        return getattr(module, class_name)()
+    elif module_name is None and raise_error:
+        raise err.MissingConfigurationError(config.FLOWSERV_FILESTORE_MODULE)
+    elif raise_error:
+        raise err.MissingConfigurationError(config.FLOWSERV_FILESTORE_CLASS)
