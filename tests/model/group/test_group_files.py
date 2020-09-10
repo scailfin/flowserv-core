@@ -8,19 +8,18 @@
 
 """Unit tests for the file store functionality of a workflow group handle."""
 
-import os
 import pytest
 
 from flowserv.model.files.fs import FileSystemStore
 from flowserv.model.group import WorkflowGroupManager
-from flowserv.tests.files import FakeStream
+from flowserv.tests.files import FakeStream, DiskStore, read_json
 
 import flowserv.error as err
 import flowserv.tests.model as model
-import flowserv.util as util
 
 
-def test_delete_file(database, tmpdir):
+@pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
+def test_delete_file(fscls, database, tmpdir):
     """Test deleting an uploaded file."""
     # -- Setup ----------------------------------------------------------------
     #
@@ -28,7 +27,7 @@ def test_delete_file(database, tmpdir):
     # for each group.
     file = FakeStream(data={'A': 1}).save()
     fn = 'data.json'
-    fs = FileSystemStore(tmpdir)
+    fs = fscls(tmpdir)
     with database.session() as session:
         user_1 = model.create_user(session, active=True)
         workflow_id = model.create_workflow(session)
@@ -43,14 +42,11 @@ def test_delete_file(database, tmpdir):
     with database.session() as session:
         manager = WorkflowGroupManager(session=session, fs=fs)
         fh, filename = manager.get_file(group_id=group_1, file_id=file_1)
-        assert os.path.isfile(filename)
         manager.delete_file(group_id=group_1, file_id=file_1)
-        assert not os.path.isfile(filename)
         # File 1 can no longer be accessed while file 2 is still present.
         with pytest.raises(err.UnknownFileError):
             manager.get_file(group_id=group_1, file_id=file_1)
         fh, filename = manager.get_file(group_id=group_2, file_id=file_2)
-        assert os.path.isfile(filename)
     # -- Error cases ----------------------------------------------------------
     with database.session() as session:
         # - Delete unknown file
@@ -59,7 +55,8 @@ def test_delete_file(database, tmpdir):
             manager.delete_file(group_id=group_1, file_id=file_1)
 
 
-def test_get_file(database, tmpdir):
+@pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
+def test_get_file(fscls, database, tmpdir):
     """Test accessing uploaded files."""
     # -- Setup ----------------------------------------------------------------
     #
@@ -70,7 +67,7 @@ def test_get_file(database, tmpdir):
     f1 = FakeStream(data=data_1).save()
     f2 = FakeStream(data=data_2).save()
     fn = 'data.json'
-    fs = FileSystemStore(tmpdir)
+    fs = fscls(tmpdir)
     with database.session() as session:
         user_1 = model.create_user(session, active=True)
         workflow_id = model.create_workflow(session)
@@ -87,8 +84,7 @@ def test_get_file(database, tmpdir):
             fh, filename = manager.get_file(group_id=g_id, file_id=f_id)
             assert fh.name == fn
             assert fh.mime_type == 'application/json'
-            assert os.path.isfile(filename)
-            assert util.read_object(filename=filename) == data
+            assert read_json(file=filename) == data
     # -- Test error cases -----------------------------------------------------
     # - File handle is unknown for s2
     with database.session() as session:
@@ -100,7 +96,8 @@ def test_get_file(database, tmpdir):
             manager.get_file(group_id=group_1, file_id='UNK')
 
 
-def test_list_files(database, tmpdir):
+@pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
+def test_list_files(fscls, database, tmpdir):
     """Test listing uploaded files."""
     # -- Setup ----------------------------------------------------------------
     #
@@ -108,7 +105,7 @@ def test_list_files(database, tmpdir):
     # has one uploaded file and the second group has one file.
     file = FakeStream(data={'A': 1}).save()
     fn = 'data.json'
-    fs = FileSystemStore(tmpdir)
+    fs = fscls(tmpdir)
     with database.session() as session:
         user_1 = model.create_user(session, active=True)
         workflow_id = model.create_workflow(session)
@@ -127,13 +124,14 @@ def test_list_files(database, tmpdir):
         assert len(files) == 1
 
 
-def test_upload_file(database, tmpdir):
+@pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
+def test_upload_file(fscls, database, tmpdir):
     """Test uploading files."""
     # -- Setup ----------------------------------------------------------------
     #
     # Create a database with two groups for a single workflow. Upload one file
     # for each group.
-    fs = FileSystemStore(tmpdir)
+    fs = fscls(tmpdir)
     with database.session() as session:
         user_1 = model.create_user(session, active=True)
         workflow_id = model.create_workflow(session)
@@ -150,8 +148,7 @@ def test_upload_file(database, tmpdir):
         assert fh.name == 'A.json'
         assert fh.mime_type == 'application/json'
         fh, filename = manager.get_file(group_id=group_1, file_id=fh.file_id)
-        assert os.path.isfile(filename)
-        assert util.read_object(filename=filename) == data
+        assert read_json(file=filename) == data
     # -- Test error case ------------------------------------------------------
     data = {'A': 1}
     with database.session() as session:

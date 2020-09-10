@@ -56,10 +56,15 @@ def prepare_postproc_data(input_files, ranking, run_manager):
         os.makedirs(rundir, exist_ok=True)
         for in_key in input_files:
             _, filename = run_manager.get_runfile(run_id=run_id, key=in_key)
-            source_file = filename
             target_file = os.path.join(rundir, in_key)
             os.makedirs(os.path.dirname(target_file), exist_ok=True)
-            shutil.copy(src=source_file, dst=target_file)
+            # The run file may either be the path to a local file on disk or
+            # a BytesIO buffer.
+            if isinstance(filename, str):
+                shutil.copy(src=filename, dst=target_file)
+            else:
+                with open(target_file, 'wb') as f:
+                    f.write(filename.read())
         run_listing.append({
             base.LABEL_ID: run_id,
             base.LABEL_NAME: entry.group_name,

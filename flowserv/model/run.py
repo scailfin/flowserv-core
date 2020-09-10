@@ -328,7 +328,7 @@ class RunManager(object):
             run.started_at = state.started_at
             run.ended_at = state.stopped_at
             # Delete all run files.
-            if rundir is not None:
+            if rundir is not None and os.path.exists(rundir):
                 shutil.rmtree(rundir)
         # -- SUCCESS ----------------------------------------------------------
         elif state.is_success():
@@ -396,7 +396,10 @@ class RunManager(object):
                 src=rundir,
                 files=[(f.key, os.path.join(targetdir, f.key)) for f in files]
             )
-            shutil.rmtree(rundir)
+            if os.path.exists(rundir):
+                # The run directory does not have to exist if the workflow does
+                # not access and files or create any files.
+                shutil.rmtree(rundir)
         # -- PENDING ----------------------------------------------------------
         elif current_state != st.STATE_PENDING:
             msg = 'cannot set run in pending state to {}'

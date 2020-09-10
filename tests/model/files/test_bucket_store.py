@@ -17,7 +17,7 @@ import shutil
 import tarfile
 
 from flowserv.model.files.s3 import BucketStore
-from flowserv.tests.files import FakeStream, MemBucket
+from flowserv.tests.files import FakeStream, DiskBucket
 
 import flowserv.error as err
 import flowserv.util as util
@@ -56,22 +56,23 @@ def create_files(basedir):
     os.makedirs(f_docs)
     fileD = os.path.join(f_docs, 'D.json')
     FakeStream(data=DATA4).write(fileD)
+    return basedir
 
 
 def test_delete_files(tmpdir):
     """Test deleting files in the file store."""
     # -- Setup ----------------------------------------------------------------
     # Initialize bucket store.
-    fs = BucketStore(MemBucket())
+    fs = BucketStore(DiskBucket(basedir=os.path.join(tmpdir, 'fs')))
     # Create file structure:
-    create_files(tmpdir)
+    datadir = create_files(os.path.join(tmpdir, 'data'))
     # -- Copy files -----------------------------------------------------------
     files = [
         ('A.json', 'A.json'),
         ('examples', 'examples'),
         ('A.json', 'examples.json')
     ]
-    fs.copy_files(src=tmpdir, files=files)
+    fs.copy_files(src=datadir, files=files)
     # -- Delete files ---------------------------------------------------------
     assert json.load(fs.load_file('A.json')) == DATA1
     fs.delete_file('A.json')
@@ -90,16 +91,16 @@ def test_download_archive(tmpdir):
     """Test downloading files and directories as tar archive."""
     # -- Setup ----------------------------------------------------------------
     # Initialize bucket store.
-    fs = BucketStore(MemBucket())
+    fs = BucketStore(DiskBucket(basedir=os.path.join(tmpdir, 'fs')))
     # Create file structure:
-    create_files(tmpdir)
+    datadir = create_files(os.path.join(tmpdir, 'data'))
     # -- Copy files -----------------------------------------------------------
     files = [
         ('A.json', 'A.json'),
         ('examples', 'examples'),
         ('docs', 'examples/docs')
     ]
-    fs.copy_files(src=tmpdir, files=files)
+    fs.copy_files(src=datadir, files=files)
     # -- Download archive -----------------------------------------------------
     files = [
         ('B.json', 'B.json'),
@@ -119,9 +120,9 @@ def test_file_copy_and_download(tmpdir):
     """Test uploading and downloading lists of files and directories."""
     # -- Setup ----------------------------------------------------------------
     # Initialize bucket store.
-    fs = BucketStore(MemBucket())
+    fs = BucketStore(DiskBucket(basedir=os.path.join(tmpdir, 'fs')))
     # Create file structure:
-    create_files(tmpdir)
+    datadir = create_files(os.path.join(tmpdir, 'data'))
     # -- Copy files -----------------------------------------------------------
     files = [
         ('A.json', 'A.json'),
@@ -131,7 +132,7 @@ def test_file_copy_and_download(tmpdir):
         ('examples', 'notes/'),
         ('docs', 'notes')
     ]
-    fs.copy_files(src=tmpdir, files=files)
+    fs.copy_files(src=datadir, files=files)
     # -- Load files -----------------------------------------------------------
     assert json.load(fs.load_file('A.json')) == DATA1
     assert json.load(fs.load_file('B.json')) == DATA1
@@ -166,7 +167,7 @@ def test_file_upload_and_load(tmpdir):
     """Test uploading and downloading files and and file objects."""
     # -- Setup ----------------------------------------------------------------
     # Initialize bucket store.
-    fs = BucketStore(MemBucket())
+    fs = BucketStore(DiskBucket(basedir=os.path.join(tmpdir, 'fs')))
     # Test files.
     file1 = os.path.join(tmpdir, 'A.json')
     FakeStream(data=DATA1).write(file1)

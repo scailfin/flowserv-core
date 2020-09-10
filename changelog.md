@@ -56,3 +56,6 @@
 
 
 ### 0.4.0 - 2020-09-??
+
+* Refactor code to include abstract file store for alternative storage backends.
+* Implement file store for S3 buckets.

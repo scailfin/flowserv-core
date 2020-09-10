@@ -8,12 +8,15 @@
 
 """helper classes and methods for unit tests that perform I/O operations."""
 
+import botocore.exceptions
 import json
 import os
+import shutil
 
 from io import BytesIO
 from typing import Dict, IO, List
 
+import flowserv.config.api as config
 import flowserv.util as util
 
 
@@ -66,13 +69,14 @@ class FakeStream(object):
 
 # -- S3 Buckets ---------------------------------------------------------------
 
-class MemBucket(object):
+class DiskBucket(object):
     """Implementation of relevant methods for S3 buckets that are used by the
-    BucketStore for test purposes. Maintains all objects in a dictionary.
+    BucketStore for test purposes. Persists all objects on disk. Uses the
+    API_BASDIR if not storage directory is given.
     """
-    def __init__(self):
+    def __init__(self, basedir: str = None):
         """Initialize the internal object dictionary."""
-        self._objects = dict()
+        self.basedir = basedir if basedir is not None else config.API_BASEDIR()
 
     @property
     def objects(self):
@@ -85,22 +89,25 @@ class MemBucket(object):
         object that is being deleted.
         """
         for obj in Delete.get('Objects'):
-            del self._objects[obj.get('Key')]
+            filename = os.path.join(self.basedir, obj.get('Key'))
+            if os.path.isfile(filename):
+                os.remove(filename)
+            elif os.path.isdir(filename):
+                shutil.rmtree(filename)
 
     def download_fileobj(self, key: str, data: IO):
         """Copy the buffer for the identified object into the given data
         buffer.
         """
-        try:
-            buf = self._objects[key]
-        except KeyError as ex:
-            import botocore.exceptions
+        filename = os.path.join(self.basedir, key)
+        if os.path.isfile(filename):
+            with open(filename, 'rb') as f:
+                data.write(f.read())
+        else:
             raise botocore.exceptions.ClientError(
                 operation_name='download_fileobj',
-                error_response={'Error': {'Code': 404, 'Message': str(ex)}}
+                error_response={'Error': {'Code': 404, 'Message': filename}}
             )
-        buf.seek(0)
-        data.write(buf.read())
         data.seek(0)
 
     def filter(self, Prefix: str) -> List:
@@ -108,7 +115,7 @@ class MemBucket(object):
         given prefix.
         """
         result = list()
-        for key in self._objects:
+        for key in parse_dir(self.basedir, ''):
             if key.startswith(Prefix):
                 result.append(ObjectSummary(key))
         return result
@@ -118,13 +125,23 @@ class MemBucket(object):
         data = BytesIO()
         with open(file, 'rb') as f:
             data.write(f.read())
+        data.seek(0)
         self.upload_fileobj(file=data, dst=dst)
 
     def upload_fileobj(self, file: IO, dst: str):
         """Add given buffer to the object index. Uses the destination as the
         object key.
         """
-        self._objects[dst] = file
+        filename = os.path.join(self.basedir, dst)
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+        with open(filename, 'wb') as f:
+            f.write(file.read())
+
+
+def DiskStore(basedir):
+    """Create an instance of the buckect store with a disk bucket."""
+    from flowserv.model.files.s3 import BucketStore
+    return BucketStore(DiskBucket(basedir))
 
 
 class ObjectSummary(object):
@@ -134,3 +151,36 @@ class ObjectSummary(object):
     def __init__(self, key):
         """Initialize the object key."""
         self.key = key
+
+
+def parse_dir(dirname, prefix, result=None):
+    result = result if result is not None else list()
+    for filename in os.listdir(dirname):
+        f = os.path.join(dirname, filename)
+        if os.path.isdir(f):
+            parse_dir(
+                dirname=f,
+                prefix=os.path.join(prefix, filename),
+                result=result
+            )
+        else:
+            result.append(os.path.join(prefix, filename))
+    return result
+
+
+def read_json(file):
+    """Read json object either from a file on disk or a BytesIO buffer."""
+    if isinstance(file, str):
+        with open(file, 'r') as f:
+            return json.load(f)
+    else:
+        return json.load(file)
+
+
+def read_text(file):
+    """Read string either from a file on disk or a BytesIO buffer."""
+    if isinstance(file, str):
+        with open(file, 'r') as f:
+            return f.read()
+    else:
+        return file.read().decode('utf-8')

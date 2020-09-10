@@ -153,7 +153,7 @@ class SerialWorkflowEngine(WorkflowController):
         sourcedir = self.fs.workflow_staticdir(run.workflow.workflow_id)
         wf = SerialWorkflow(template, arguments, sourcedir)
         try:
-            # Copy all necessary files to the run folder
+            # Copy all necessary files to the run folder.
             self.fs.download_files(
                 files=wf.upload_files(),
                 dst=rundir
@@ -295,7 +295,8 @@ def run_workflow(run_id, rundir, state, output_files, steps):
                     messages = list()
                     messages.append(proc.stderr.decode('utf-8'))
                     result_state = state.error(messages=messages)
-                    return run_id, serialize.serialize_state(result_state)
+                    doc = serialize.serialize_state(result_state)
+                    return run_id, rundir, doc
             except (AttributeError, TypeError):
                 try:
                     subprocess.check_output(
@@ -309,7 +310,8 @@ def run_workflow(run_id, rundir, state, output_files, steps):
                     strace = util.stacktrace(ex)
                     logging.debug('\n'.join(strace))
                     result_state = state.error(messages=strace)
-                    return run_id, serialize.serialize_state(result_state)
+                    doc = serialize.serialize_state(result_state)
+                    return run_id, rundir, doc
         # Create list of output files that were generated.
         files = list()
         for relative_path in output_files:

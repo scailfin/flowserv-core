@@ -9,6 +9,7 @@
 """Unit tests for the manager that maintains workflow result rankings."""
 
 import os
+import pytest
 
 from datetime import timedelta
 
@@ -21,6 +22,7 @@ from flowserv.model.run import RunManager
 from flowserv.model.template.schema import (
     ResultSchema, ResultColumn, SortColumn
 )
+from flowserv.tests.files import DiskStore
 
 import flowserv.model.workflow.state as st
 import flowserv.util as util
@@ -98,11 +100,12 @@ def run_success(run_manager, run_id, rundir, values):
     )
 
 
-def test_empty_ranking(database, tmpdir):
+@pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
+def test_empty_ranking(fscls, database, tmpdir):
     """The rankings for workflows without completed runs are empty."""
     # -- Setup ----------------------------------------------------------------
     workflows = init(database, tmpdir)
-    fs = FileSystemStore(tmpdir)
+    fs = fscls(tmpdir)
     # -- Test empty listing with no successful runs ---------------------------
     with database.session() as session:
         wfrepo = WorkflowManager(session=session, fs=fs)
@@ -112,7 +115,8 @@ def test_empty_ranking(database, tmpdir):
             assert len(rankings.get_ranking(wf)) == 0
 
 
-def test_multi_success_runs(database, tmpdir):
+@pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
+def test_multi_success_runs(fscls, database, tmpdir):
     """Test rankings for workflows where each group has multiple successful
     runs.
     """
@@ -121,7 +125,7 @@ def test_multi_success_runs(database, tmpdir):
     # three active runs. Then set all runs for the first workflow into success
     # state. Increase a counter for the avg_len value as we update runs.
     workflows = init(database, tmpdir)
-    fs = FileSystemStore(tmpdir)
+    fs = fscls(tmpdir)
     workflow_id, groups = workflows[0]
     count = 0
     asc_order = list()

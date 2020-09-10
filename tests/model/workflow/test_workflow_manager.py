@@ -16,6 +16,7 @@ import pytest
 
 from flowserv.model.files.fs import FileSystemStore
 from flowserv.model.workflow.manager import WorkflowManager
+from flowserv.tests.files import DiskStore
 
 import flowserv.error as err
 
@@ -40,10 +41,11 @@ TEMPLATE_TOPTAGGER = os.path.join(BENCHMARK_DIR, '../top-tagger.yaml')
 TEMPLATE = dict({'A': 1})
 
 
-def test_create_workflow(database, tmpdir):
+@pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
+def test_create_workflow(fscls, database, tmpdir):
     """Test creating workflows with different levels of detail."""
     # -- Setup ----------------------------------------------------------------
-    fs = FileSystemStore(tmpdir)
+    fs = fscls(tmpdir)
     # -- Add workflow with minimal information --------------------------------
     with database.session() as session:
         manager = WorkflowManager(session=session, fs=fs)
@@ -75,10 +77,11 @@ def test_create_workflow(database, tmpdir):
         assert os.path.isfile(os.path.join(staticdir, 'data/names.txt'))
 
 
-def test_create_workflow_with_alt_spec(database, tmpdir):
+@pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
+def test_create_workflow_with_alt_spec(fscls, database, tmpdir):
     """Test creating workflows with alternative specification files."""
     # -- Setup ----------------------------------------------------------------
-    fs = FileSystemStore(tmpdir)
+    fs = fscls(tmpdir)
     # -- Template without schema ----------------------------------------------
     with database.session() as session:
         manager = WorkflowManager(session=session, fs=fs)
@@ -112,10 +115,11 @@ def test_create_workflow_with_alt_spec(database, tmpdir):
         assert wf.get_template().postproc_spec is not None
 
 
-def test_create_workflow_with_error(database, tmpdir):
+@pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
+def test_create_workflow_with_error(fscls, database, tmpdir):
     """Error cases when creating a workflow."""
     # -- Setup ----------------------------------------------------------------
-    fs = FileSystemStore(tmpdir)
+    fs = fscls(tmpdir)
     # -- Invalid name ---------------------------------------------------------
     with database.session() as session:
         manager = WorkflowManager(session=session, fs=fs)
@@ -133,9 +137,10 @@ def test_create_workflow_with_error(database, tmpdir):
             )
 
 
-def test_create_workflow_with_alt_manifest(database, tmpdir):
+@pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
+def test_create_workflow_with_alt_manifest(fscls, database, tmpdir):
     """Test creating 'Hello World' workflow with a different manifest file."""
-    fs = FileSystemStore(tmpdir)
+    fs = fscls(tmpdir)
     with database.session() as session:
         manager = WorkflowManager(session=session, fs=fs)
         wf = manager.create_workflow(
@@ -152,29 +157,23 @@ def test_create_workflow_with_alt_manifest(database, tmpdir):
         assert not os.path.isfile(os.path.join(staticdir, 'data/names.txt'))
 
 
-def test_delete_workflow(database, tmpdir):
+@pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
+def test_delete_workflow(fscls, database, tmpdir):
     """Test deleting a workflows from the repository."""
     # -- Setup ----------------------------------------------------------------
     #
     # Create two workflows.
-    fs = FileSystemStore(tmpdir)
+    fs = fscls(tmpdir)
     with database.session() as session:
         manager = WorkflowManager(session=session, fs=fs)
         wf = manager.create_workflow(name='A', source=BENCHMARK_DIR)
         workflow_1 = wf.workflow_id
-        # Ensure that the tample and workflow folder exists for workflow 1.
-        staticdir = os.path.join(tmpdir, fs.workflow_staticdir(wf.workflow_id))
-        workflowdir = os.path.join(tmpdir, fs.workflow_basedir(workflow_1))
-        assert os.path.isdir(staticdir)
-        assert os.path.isdir(workflowdir)
         wf = manager.create_workflow(name='B', source=BENCHMARK_DIR)
         workflow_2 = wf.workflow_id
     # -- Test delete first workflow -------------------------------------------
     with database.session() as session:
         manager = WorkflowManager(session=session, fs=fs)
         manager.delete_workflow(workflow_1)
-        assert not os.path.isdir(staticdir)
-        assert not os.path.isdir(workflowdir)
     with database.session() as session:
         # The second workflow still exists.
         manager = WorkflowManager(session=session, fs=fs)
@@ -186,12 +185,13 @@ def test_delete_workflow(database, tmpdir):
             manager.delete_workflow(workflow_id=workflow_1)
 
 
-def test_get_workflow(database, tmpdir):
+@pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
+def test_get_workflow(fscls, database, tmpdir):
     """Test retrieving workflows from the repository."""
     # -- Setup ----------------------------------------------------------------
     #
     # Create two workflows.
-    fs = FileSystemStore(tmpdir)
+    fs = fscls(tmpdir)
     with database.session() as session:
         manager = WorkflowManager(session=session, fs=fs)
         wf = manager.create_workflow(name='A', source=BENCHMARK_DIR)

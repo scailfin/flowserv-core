@@ -14,7 +14,7 @@ import pytest
 from flowserv.model.auth import DefaultAuthPolicy
 from flowserv.model.files.s3 import BucketStore, FLOWSERV_S3BUCKET
 from flowserv.service.files import get_filestore
-from flowserv.tests.files import MemBucket
+from flowserv.tests.files import DiskBucket
 
 import flowserv.config.files as config
 import flowserv.error as err
@@ -50,7 +50,7 @@ def test_initialize_filestore_from_env(tmpdir):
     # -- Create bucket store instance -----------------------------------------
     fs = get_filestore()
     assert isinstance(fs, BucketStore)
-    assert isinstance(fs.bucket, MemBucket)
+    assert isinstance(fs.bucket, DiskBucket)
     # -- Error cases ----------------------------------------------------------
     del os.environ[config.FLOWSERV_FILESTORE_MODULE]
     with pytest.raises(err.MissingConfigurationError):

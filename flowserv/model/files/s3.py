@@ -50,8 +50,8 @@ class BucketStore(FileStore):
         if bucket is None:
             bucket_id = config.get_variable(FLOWSERV_S3BUCKET)
             if bucket_id is None:
-                from flowserv.tests.files import MemBucket
-                bucket = MemBucket()
+                from flowserv.tests.files import DiskBucket
+                bucket = DiskBucket()
             else:  # pragma: no cover
                 import boto3
                 bucket = boto3.resource('s3').Bucket(bucket_id)
@@ -127,15 +127,21 @@ class BucketStore(FileStore):
                 fileobjs.append((self.load_file(key), target))
         return util.archive_files(files=fileobjs)
 
-    def download_files(self, files: List[Tuple[str, str]], dst: str):
+    def download_files(
+        self, files: List[Tuple[Union[str, IO], str]], dst: str
+    ):
         """Copy a list of files or dirctories from the file store to a given
         destination directory. The list of files contains tuples of relative
         file source and target path. The source path may reference files or
         directories.
 
+        For the bucket store the source may also be a bytes buffer for an
+        uploaded file that has been downloaded previously via the load_file
+        method.
+
         Parameters
         ----------
-        files: list((string, string))
+        files: list((string or BytesIO, string))
             List of file source and target path. All path names are relative.
         dst: string
             Path to target directory on disk.
@@ -145,17 +151,25 @@ class BucketStore(FileStore):
         ValueError
         """
         for source, target in files:
-            downloads = download_list(
-                source=source,
-                target=target,
-                bucket=self.bucket
-            )
-            for key, target in downloads:
+            # The source may either reference an object in the bucket via its
+            # key or be a bytes buffer that has previously been loaded.
+            if isinstance(source, str):
+                downloads = download_list(
+                    source=source,
+                    target=target,
+                    bucket=self.bucket
+                )
+                for key, target in downloads:
+                    outfile = os.path.join(dst, target)
+                    os.makedirs(os.path.dirname(outfile), exist_ok=True)
+                    data = self.load_file(key)
+                    with open(outfile, 'wb') as f:
+                        f.write(data.read())
+            else:
                 outfile = os.path.join(dst, target)
                 os.makedirs(os.path.dirname(outfile), exist_ok=True)
-                data = self.load_file(key)
                 with open(outfile, 'wb') as f:
-                    f.write(data.read())
+                    f.write(source.read())
 
     def load_file(self, key: str) -> str:
         """Get a file object for the given key. Returns a buffer with the file

@@ -13,6 +13,9 @@ run environment.
 
 import os
 
+from io import BytesIO
+from typing import Dict, IO, Union
+
 from flowserv.model.parameter.base import ParameterBase
 
 import flowserv.error as err
@@ -29,8 +32,9 @@ class FileParameter(ParameterBase):
     the file.
     """
     def __init__(
-        self, para_id, name, index, target=None, description=None,
-        default_value=None, is_required=False, module_id=None
+        self, para_id: str, name: str, index: int, target: str = None,
+        description: str = None, default_value: str = None,
+        is_required: bool = False, module_id: str = None
     ):
         """Initialize the base properties a enumeration parameter declaration.
 
@@ -68,7 +72,7 @@ class FileParameter(ParameterBase):
         self.target = target
 
     @classmethod
-    def from_dict(cls, doc, validate=True):
+    def from_dict(cls, doc: Dict, validate: bool = True):
         """Get enumeration parameter instance from dictionary serialization.
 
         Parameters
@@ -108,14 +112,16 @@ class FileParameter(ParameterBase):
             target=doc.get('target')
         )
 
-    def to_argument(self, value, target=None, exists=True):
+    def to_argument(
+        self, value: Union[str, IO], target: str = None, exists: bool = True
+    ):
         """Get an instance of the InputFile class for a given argument value.
         The input value can either be a string (filename) or a dictionary. If
         the argument value is a dictionary it is expected to be the
 
         Parameters
         ----------
-        value: string
+        value: string or BytesIO
             Path to the source file.
         target: string, default=None
             Optional user-provided target path. If None the defined target path
@@ -149,7 +155,7 @@ class FileParameter(ParameterBase):
         except TypeError as ex:
             raise err.InvalidArgumentError(str(ex))
 
-    def to_dict(self):
+    def to_dict(self) -> Dict:
         """Get dictionary serialization for the parameter declaration. Adds
         target path to the base serialization.
 
@@ -167,12 +173,14 @@ class InputFile(object):
     'file'. This class contains the path to the sourcefor an uploaded file as
     well as the target path for the Upload.
     """
-    def __init__(self, source, target, exists=True):
+    def __init__(
+        self, source: Union[str, IO], target: str, exists: bool = True
+    ):
         """Initialize the object properties.
 
         Parameters
         ----------
-        source: string
+        source: string or BytesIO
             Path to file on disk.
         target: string, default=None
             Relative target path for file upload.
@@ -184,8 +192,13 @@ class InputFile(object):
         ------
         flowserv.error.UnknownFileError
         """
-        if exists and not os.path.exists(source):
-            raise err.UnknownFileError(source)
+        # Only if the source argument is a string (i.e., a file path) we need
+        # to check if the file exists.
+        if isinstance(source, str):
+            if exists and not os.path.exists(source):
+                raise err.UnknownFileError(source)
+        elif not isinstance(source, BytesIO):
+            raise TypeError(type(source))
         self._source = source
         self._target = target
 
@@ -200,16 +213,16 @@ class InputFile(object):
         """
         return self._target
 
-    def source(self):
+    def source(self) -> Union[str, IO]:
         """Get the source path for the file.
 
         Returns
         -------
-        string
+        string or BytesIO
         """
         return self._source
 
-    def target(self):
+    def target(self) -> str:
         """Get the target path for the file.
 
         Returns
