@@ -14,7 +14,7 @@ import mimetypes
 import os
 import shutil
 
-from typing import IO, Optional, Tuple, Union
+from typing import IO, List, Optional, Tuple, Union
 
 from flowserv.model.base import (
     RunFile, RunHandle, RunMessage, WorkflowRankingRun
@@ -137,7 +137,7 @@ class RunManager(object):
     ) -> int:
         """Delete all workflow runs that were created before the given date.
         The optional state parameter allows to further restrict the list of
-        deleted runss to those that were created before the given date and
+        deleted runs to those that were created before the given date and
         that are in the give state.
 
         Parameters
@@ -151,21 +151,10 @@ class RunManager(object):
         -------
         int
         """
-        # Get handles for all runs before the given date. Ensure to exclude
-        # runs that are part of a current workflow ranking result.
-        query = self.session\
-            .query(RunHandle)\
-            .filter(RunHandle.created_at < date)\
-            .filter(RunHandle.run_id.notin_(
-                self.session.query(WorkflowRankingRun.run_id)
-            ))
-        # Add filter for run state if given.
-        if state is not None:
-            query = query.filter(RunHandle.state_type == state)
-        # Delete each returned run separately and return the number of deleted
-        # runs.
+        # Get list of obsolete runs and delete each run separately. Count the
+        # number of runs to return the total number of deleted runs.
         count = 0
-        for run in query.all():
+        for run in self.list_obsolete_runs(date=date, state=state):
             self.delete_run(run.run_id)
             count += 1
         return count
@@ -291,6 +280,38 @@ class RunManager(object):
                 query = query.filter(RunHandle.state_type.in_(state))
             else:
                 query = query.filter(RunHandle.state_type == state)
+        return query.all()
+
+    def list_obsolete_runs(
+        self, date: str, state: Optional[str] = None
+    ) -> List[RunHandle]:
+        """List all workflow runs that were created before the given date.
+        The optional state parameter allows to further restrict the list of
+        returned runs to those that were created before the given date and
+        that are in the give state.
+
+        Parameters
+        ----------
+        date: string
+            Filter for run creation date.
+        state: string, default=None
+            Filter for run state.
+
+        Returns
+        -------
+        list(flowserv.model.base.RunHandle)
+        """
+        # Get handles for all runs before the given date. Ensure to exclude
+        # runs that are part of a current workflow ranking result.
+        query = self.session\
+            .query(RunHandle)\
+            .filter(RunHandle.created_at < date)\
+            .filter(RunHandle.run_id.notin_(
+                self.session.query(WorkflowRankingRun.run_id)
+            ))
+        # Add filter for run state if given.
+        if state is not None:
+            query = query.filter(RunHandle.state_type == state)
         return query.all()
 
     def poll_runs(self, group_id, state=None):

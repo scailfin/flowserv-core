@@ -19,6 +19,7 @@ import tempfile
 
 from flowserv.cli.parameter import read
 from flowserv.cli.repository import list_repository
+from flowserv.cli.run import runscli
 from flowserv.cli.user import register_user
 from flowserv.cli.workflow import add_workflow, workflowcli
 from flowserv.config.api import (
@@ -263,6 +264,10 @@ def run_workflow(specfile, manifest, ignorepp, output, source):  # pragma: no co
 
 # Repository
 cli.add_command(list_repository, name='repository')
+
+
+# Runs
+cli.add_command(runscli)
 
 
 # Users

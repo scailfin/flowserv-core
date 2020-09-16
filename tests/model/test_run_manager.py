@@ -154,37 +154,6 @@ def test_delete_run(fscls, database, tmpdir):
 
 
 @pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
-def test_delete_obsolete_runs(fscls, database, tmpdir):
-    """Test deleting runs that were created before a given date."""
-    # -- Setup ----------------------------------------------------------------
-    fs = fscls(tmpdir)
-    # Create two runs (one SUCCESS and one ERROR) before a timestamp t1
-    _, _, run_1 = success_run(database, fs, tmpdir)
-    _, _, run_2 = error_run(database, fs, ['There were errors'])
-    time.sleep(1)
-    t1 = util.utc_now()
-    # Create another SUCCESS run after timestamp t1
-    _, _, run_3 = success_run(database, fs, tmpdir)
-    # -- Test delete run with state filter ------------------------------------
-    with database.session() as session:
-        runs = RunManager(session=session, fs=fs)
-        assert runs.delete_obsolete_runs(date=t1, state=st.STATE_ERROR) == 1
-        # After deleting the error run the two success runs still exist.
-        runs.get_run(run_id=run_1)
-        with pytest.raises(err.UnknownRunError):
-            runs.get_run(run_id=run_2)
-        runs.get_run(run_id=run_3)
-    # -- Test delete all runs prior to a given date ---------------------------
-    with database.session() as session:
-        runs = RunManager(session=session, fs=fs)
-        assert runs.delete_obsolete_runs(date=t1) == 1
-        # After deleting the run the only one success runs still exist.
-        with pytest.raises(err.UnknownRunError):
-            runs.get_run(run_id=run_1)
-        runs.get_run(run_id=run_3)
-
-
-@pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
 def test_error_run(fscls, database, tmpdir):
     """Test setting run state to error."""
     # -- Setup ----------------------------------------------------------------
@@ -274,6 +243,37 @@ def test_list_runs(fscls, database, tmpdir):
         assert len(runs.poll_runs(group_id)) == 1
         assert len(runs.poll_runs(group_id, state=st.STATE_ERROR)) == 1
         assert len(runs.poll_runs(group_id, state=st.STATE_SUCCESS)) == 0
+
+
+@pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
+def test_obsolete_runs(fscls, database, tmpdir):
+    """Test deleting runs that were created before a given date."""
+    # -- Setup ----------------------------------------------------------------
+    fs = fscls(tmpdir)
+    # Create two runs (one SUCCESS and one ERROR) before a timestamp t1
+    _, _, run_1 = success_run(database, fs, tmpdir)
+    _, _, run_2 = error_run(database, fs, ['There were errors'])
+    time.sleep(1)
+    t1 = util.utc_now()
+    # Create another SUCCESS run after timestamp t1
+    _, _, run_3 = success_run(database, fs, tmpdir)
+    # -- Test delete run with state filter ------------------------------------
+    with database.session() as session:
+        runs = RunManager(session=session, fs=fs)
+        assert runs.delete_obsolete_runs(date=t1, state=st.STATE_ERROR) == 1
+        # After deleting the error run the two success runs still exist.
+        runs.get_run(run_id=run_1)
+        with pytest.raises(err.UnknownRunError):
+            runs.get_run(run_id=run_2)
+        runs.get_run(run_id=run_3)
+    # -- Test delete all runs prior to a given date ---------------------------
+    with database.session() as session:
+        runs = RunManager(session=session, fs=fs)
+        assert runs.delete_obsolete_runs(date=t1) == 1
+        # After deleting the run the only one success runs still exist.
+        with pytest.raises(err.UnknownRunError):
+            runs.get_run(run_id=run_1)
+        runs.get_run(run_id=run_3)
 
 
 @pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
