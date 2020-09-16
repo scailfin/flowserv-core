@@ -10,6 +10,7 @@
 
 import os
 import pytest
+import time
 
 from flowserv.model.files.fs import FileSystemStore
 from flowserv.model.group import WorkflowGroupManager
@@ -24,6 +25,26 @@ import flowserv.tests.model as model
 
 
 # -- Helper Methods -----------------------------------------------------------
+
+def error_run(database, fs, messages):
+    """Create a run that is in error state. Returns the identifier of the
+    created workflow, group, and run.
+    """
+    # Setup temporary run folder.
+    with database.session() as session:
+        user_id = model.create_user(session, active=True)
+        workflow_id = model.create_workflow(session)
+        group_id = model.create_group(session, workflow_id, users=[user_id])
+        groups = WorkflowGroupManager(session=session, fs=fs)
+        runs = RunManager(session=session, fs=fs)
+        run = runs.create_run(group=groups.get_group(group_id))
+        run_id = run.run_id
+        state = run.state()
+        runs.update_run(run_id=run_id, state=state)
+        messages = ['There', 'were', 'many errors']
+        runs.update_run(run_id=run_id, state=state.error(messages))
+    return workflow_id, group_id, run_id
+
 
 def success_run(database, fs, basedir):
     """Create a successful run with two result files:
@@ -119,12 +140,11 @@ def test_delete_run(fscls, database, tmpdir):
     """Test deleting a run."""
     # -- Setup ----------------------------------------------------------------
     fs = fscls(tmpdir)
-    workflow_id, _, run_id = success_run(database, fs, tmpdir)
+    _, _, run_id = success_run(database, fs, tmpdir)
     # -- Test delete run ------------------------------------------------------
     with database.session() as session:
         runs = RunManager(session=session, fs=fs)
         runs.delete_run(run_id)
-        # After deleting the run the run directory no longer exists.
     # -- Error cases ----------------------------------------------------------
     with database.session() as session:
         # Error when deleting an unknown run.
@@ -134,24 +154,43 @@ def test_delete_run(fscls, database, tmpdir):
 
 
 @pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
+def test_delete_obsolete_runs(fscls, database, tmpdir):
+    """Test deleting runs that were created before a given date."""
+    # -- Setup ----------------------------------------------------------------
+    fs = fscls(tmpdir)
+    # Create two runs (one SUCCESS and one ERROR) before a timestamp t1
+    _, _, run_1 = success_run(database, fs, tmpdir)
+    _, _, run_2 = error_run(database, fs, ['There were errors'])
+    time.sleep(1)
+    t1 = util.utc_now()
+    # Create another SUCCESS run after timestamp t1
+    _, _, run_3 = success_run(database, fs, tmpdir)
+    # -- Test delete run with state filter ------------------------------------
+    with database.session() as session:
+        runs = RunManager(session=session, fs=fs)
+        assert runs.delete_obsolete_runs(date=t1, state=st.STATE_ERROR) == 1
+        # After deleting the error run the two success runs still exist.
+        runs.get_run(run_id=run_1)
+        with pytest.raises(err.UnknownRunError):
+            runs.get_run(run_id=run_2)
+        runs.get_run(run_id=run_3)
+    # -- Test delete all runs prior to a given date ---------------------------
+    with database.session() as session:
+        runs = RunManager(session=session, fs=fs)
+        assert runs.delete_obsolete_runs(date=t1) == 1
+        # After deleting the run the only one success runs still exist.
+        with pytest.raises(err.UnknownRunError):
+            runs.get_run(run_id=run_1)
+        runs.get_run(run_id=run_3)
+
+
+@pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
 def test_error_run(fscls, database, tmpdir):
     """Test setting run state to error."""
     # -- Setup ----------------------------------------------------------------
     fs = fscls(tmpdir)
-    with database.session() as session:
-        user_id = model.create_user(session, active=True)
-        workflow_id = model.create_workflow(session)
-        group_id = model.create_group(session, workflow_id, users=[user_id])
-    # -- Test set run to error state ------------------------------------------
-    with database.session() as session:
-        groups = WorkflowGroupManager(session=session, fs=fs)
-        runs = RunManager(session=session, fs=fs)
-        run = runs.create_run(group=groups.get_group(group_id))
-        run_id = run.run_id
-        state = run.state()
-        runs.update_run(run_id=run_id, state=state)
-        messages = ['There', 'were', 'many errors']
-        runs.update_run(run_id=run_id, state=state.error(messages))
+    messages = ['There', 'were', 'many errors']
+    _, _, run_id = error_run(database, fs, messages)
     with database.session() as session:
         runs = RunManager(session=session, fs=fs)
         run = runs.get_run(run_id)

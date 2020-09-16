@@ -14,7 +14,7 @@ import mimetypes
 import os
 import shutil
 
-from typing import IO, Tuple, Union
+from typing import IO, Optional, Tuple, Union
 
 from flowserv.model.base import (
     RunFile, RunHandle, RunMessage, WorkflowRankingRun
@@ -131,6 +131,44 @@ class RunManager(object):
         self.session.delete(run)
         self.session.commit()
         self.fs.delete_file(key=rundir)
+
+    def delete_obsolete_runs(
+        self, date: str, state: Optional[str] = None
+    ) -> int:
+        """Delete all workflow runs that were created before the given date.
+        The optional state parameter allows to further restrict the list of
+        deleted runss to those that were created before the given date and
+        that are in the give state.
+
+        Parameters
+        ----------
+        date: string
+            Filter for run creation date.
+        state: string, default=None
+            Filter for run state.
+
+        Returns
+        -------
+        int
+        """
+        # Get handles for all runs before the given date. Ensure to exclude
+        # runs that are part of a current workflow ranking result.
+        query = self.session\
+            .query(RunHandle)\
+            .filter(RunHandle.created_at < date)\
+            .filter(RunHandle.run_id.notin_(
+                self.session.query(WorkflowRankingRun.run_id)
+            ))
+        # Add filter for run state if given.
+        if state is not None:
+            query = query.filter(RunHandle.state_type == state)
+        # Delete each returned run separately and return the number of deleted
+        # runs.
+        count = 0
+        for run in query.all():
+            self.delete_run(run.run_id)
+            count += 1
+        return count
 
     def get_run(self, run_id):
         """Get handle for the given run from the underlying database. Raises an
