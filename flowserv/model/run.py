@@ -393,7 +393,10 @@ class RunManager(object):
             run.ended_at = state.stopped_at
             # Delete all run files.
             if rundir is not None and os.path.exists(rundir):
-                shutil.rmtree(rundir)
+                try:
+                    shutil.rmtree(rundir)
+                except PermissionError:
+                    pass
         # -- SUCCESS ----------------------------------------------------------
         elif state.is_success():
             if current_state not in st.ACTIVE_STATES:
@@ -462,8 +465,13 @@ class RunManager(object):
             )
             if os.path.exists(rundir):
                 # The run directory does not have to exist if the workflow does
-                # not access and files or create any files.
-                shutil.rmtree(rundir)
+                # not access and files or create any files. If the workflow is
+                # running in a docker container we may also not have the
+                # permissions to delete the directory.
+                try:
+                    shutil.rmtree(rundir)
+                except PermissionError:
+                    pass
         # -- PENDING ----------------------------------------------------------
         elif current_state != st.STATE_PENDING:
             msg = 'cannot set run in pending state to {}'
