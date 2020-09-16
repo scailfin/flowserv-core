@@ -194,7 +194,7 @@ class WorkflowService(object):
 
         Returns
         -------
-        flowserv.model.base.RunHandle, string or io.BytesIO
+        (flowserv.model.base.RunFile, string or io.BytesIO)
 
         Raises
         ------

@@ -23,6 +23,7 @@ import traceback
 import uuid
 import yaml
 
+from dateutil.parser import isoparse
 from dateutil.tz import UTC
 from typing import IO, List, Tuple, Union
 
@@ -287,10 +288,12 @@ def to_datetime(timestamp):
         Datetime object
     """
     # Assumes a string in ISO format (with or without milliseconds)
-    try:
-        return datetime.datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%f')
-    except ValueError:
-        return datetime.datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S')
+    for format in ['%Y-%m-%dT%H:%M:%S.%f', '%Y-%m-%dT%H:%M:%S']:
+        try:
+            return datetime.datetime.strptime(timestamp, format)
+        except ValueError:
+            pass
+    return isoparse(timestamp)
 
 
 def utc_now():

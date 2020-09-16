@@ -230,7 +230,7 @@ class RunManager(object):
 
         Returns
         -------
-        flowserv.model.base.RunFile, string or io.BytesIO
+        (flowserv.model.base.RunFile, string or io.BytesIO)
 
         Raises
         ------

@@ -159,9 +159,10 @@ class SerialWorkflowEngine(WorkflowController):
                 dst=rundir
             )
             # Create top-level folder for all expected result files.
+            outputs = wf.output_files()
             util.create_directories(
                 basedir=rundir,
-                files=wf.output_files()
+                files=outputs
             )
             # Get list of commands to execute.
             commands = wf.commands()

@@ -202,6 +202,17 @@ class InputFile(object):
         self._source = source
         self._target = target
 
+    def __repr__(self):
+        """The string representation of an input file is the path to the target
+        file. This is important since the parameter replacement function
+        converts input arguments to string using str().
+
+        Returns
+        -------
+        string
+        """
+        return "<InputFile src={} dst={}/>".format(self._source, self._target)
+
     def __str__(self):
         """The string representation of an input file is the path to the target
         file. This is important since the parameter replacement function

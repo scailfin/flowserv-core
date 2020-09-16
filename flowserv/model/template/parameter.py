@@ -161,7 +161,7 @@ def expand_value(value, arguments, parameters):
                 return str(arguments[expr])
             elif para.default_value is not None:
                 # Return the parameter default value.
-                return para.default_value
+                return str(para.default_value)
             raise err.MissingArgumentError(para.para_id)
         # Extract the variable name and the conditional return values.
         var = expr[:pos].strip()
