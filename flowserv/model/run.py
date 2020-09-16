@@ -16,7 +16,9 @@ import shutil
 
 from typing import IO, Tuple, Union
 
-from flowserv.model.base import RunFile, RunHandle, RunMessage
+from flowserv.model.base import (
+    RunFile, RunHandle, RunMessage, WorkflowRankingRun
+)
 
 import flowserv.error as err
 import flowserv.model.workflow.state as st
@@ -98,7 +100,10 @@ class RunManager(object):
         self.session.add(run)
         # Update the workflow handle if this is a post-processing run.
         if workflow is not None:
-            workflow.postproc_ranking_key = runs
+            ranking = list()
+            for i in range(len(runs)):
+                ranking.append(WorkflowRankingRun(run_id=runs[i], rank=i))
+            workflow.postproc_ranking = ranking
             workflow.postproc_run_id = run_id
         # Commit changes in case run monitors need to access the run state.
         self.session.commit()

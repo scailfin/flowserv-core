@@ -253,6 +253,32 @@ post-processing step over a set of workflow run results are maintained.
 """
 
 
+class WorkflowRankingRun(Base):
+    """Identifier of a run that was input for a workflow's post-processing run.
+    Maintains the run identifier and the ranking position. Note that this class
+    does not provide direct access to the handles for the post-processing input
+    runs.
+    """
+    # -- Schema ---------------------------------------------------------------
+    __tablename__ = 'workflow_ranking'
+
+    run_id = Column(String(32), nullable=False, primary_key=True)
+    workflow_id = Column(
+        String(32),
+        ForeignKey('workflow_template.workflow_id'),
+        primary_key=True
+    )
+    rank = Column(Integer, nullable=False)
+
+    UniqueConstraint('workflow_id', 'rank')
+
+    # -- Relationships --------------------------------------------------------
+    workflow = relationship(
+        'WorkflowHandle',
+        back_populates='postproc_ranking'
+    )
+
+
 class WorkflowHandle(Base):
     """Each workflow has a unique name, an optional short descriptor and long
     instruction text. The five main components of the template are (i) the
@@ -282,7 +308,6 @@ class WorkflowHandle(Base):
     parameters = Column(WorkflowParameters)
     modules = Column(WorkflowModules)
     outputs = Column(WorkflowOutputs)
-    postproc_ranking_key = Column(JsonObject)
     # Omit foreign key here to avaoid circular dependencies. The run will
     # reference the workflow to ensure integrity with respect to deleting
     # the workflow and all dependend runs.
@@ -293,6 +318,11 @@ class WorkflowHandle(Base):
     # -- Relationships --------------------------------------------------------
     groups = relationship(
         'GroupHandle',
+        back_populates='workflow',
+        cascade='all, delete, delete-orphan'
+    )
+    postproc_ranking = relationship(
+        'WorkflowRankingRun',
         back_populates='workflow',
         cascade='all, delete, delete-orphan'
     )
@@ -325,6 +355,17 @@ class WorkflowHandle(Base):
             postproc_spec=self.postproc_spec,
             result_schema=self.result_schema
         )
+
+    def ranking(self):
+        """Get list of identifier for runs in the current ranking sorted by
+        their rank.
+
+        Returns
+        -------
+        list(string)
+        """
+        ranking = sorted(self.postproc_ranking, key=lambda r: r.rank)
+        return [r.run_id for r in ranking]
 
 
 # -- Workflow Groups ----------------------------------------------------------

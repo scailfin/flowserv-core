@@ -459,7 +459,7 @@ class RunService(object):
                 # Run post-processing task synchronously if the current
                 # post-processing resources where generated for a different
                 # set of runs than those in the ranking.
-                if runs != workflow.postproc_ranking_key:
+                if runs != workflow.ranking():
                     msg = 'Run post-processing workflow for {}'
                     logging.info(msg.format(workflow.workflow_id))
                     run_postproc_workflow(
@@ -502,7 +502,6 @@ def run_postproc_workflow(
         arg_list = []
     # Create a new run for the workflow. The identifier for the run group is
     # None.
-    workflow.postproc_ranking_key = runs
     run = run_manager.create_run(
         workflow=workflow,
         arguments=arg_list,
