@@ -55,7 +55,8 @@
 * Handle optional manifest element in workflow repository entries (\#52).
 
 
-### 0.4.0 - 2020-09-??
+### 0.4.0 - 2020-09-16
 
 * Refactor code to include abstract file store for alternative storage backends.
 * Implement file store for S3 buckets.
+* Remove old workflow runs from database.
