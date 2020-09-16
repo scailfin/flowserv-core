@@ -179,12 +179,7 @@ class WorkflowService(object):
         # state
         if workflow.postproc_run_id is None:
             raise err.UnknownFileError('no post-processing workflow')
-        run = self.run_manager.get_run(workflow.postproc_run_id)
-        if not run.is_success():
-            print(run.state().messages)
-            raise err.UnknownFileError('post-porcessing failed')
-        # Return the resource archive for the run handle
-        return run.archive()
+        return self.run_manager.get_runarchive(run_id=workflow.postproc_run_id)
 
     def get_result_file(self, workflow_id, file_id):
         """Get file handle for a file that was generated as the result of a
@@ -199,7 +194,7 @@ class WorkflowService(object):
 
         Returns
         -------
-        flowserv.model.base.FileHandle
+        (flowserv.model.base.RunFile, string or io.BytesIO)
 
         Raises
         ------
@@ -213,15 +208,15 @@ class WorkflowService(object):
         # state.
         if workflow.postproc_run_id is None:
             raise err.UnknownFileError(file_id)
-        run = self.run_manager.get_run(workflow.postproc_run_id)
-        if not run.is_success():
-            raise err.UnknownFileError(file_id)
         # Retrieve the resource. Raise error if the resource does not exist.
-        resource = run.get_file(by_id=file_id)
-        if resource is None:
+        fh, fileobj = self.run_manager.get_runfile(
+            run_id=workflow.postproc_run_id,
+            file_id=file_id
+        )
+        if fh is None:
             raise err.UnknownFileError(file_id)
         # Return file handle for resource file
-        return resource
+        return fh, fileobj
 
     def get_workflow(self, workflow_id):
         """Get serialization of the handle for the given workflow.

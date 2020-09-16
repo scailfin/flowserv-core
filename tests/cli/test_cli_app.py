@@ -27,8 +27,6 @@ def test_app_installation(flowapp_cli):
     assert result.exit_code == 0
     assert 'export FLOWSERV_APP=' in result.output
     app_key = result.output[result.output.rfind('=') + 1:].strip()
-    print(result.output)
-    print(app_key)
     # List apps
     cmd = ['list']
     result = flowapp_cli.invoke(cli, cmd)

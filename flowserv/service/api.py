@@ -19,9 +19,8 @@ from flowserv.model.group import WorkflowGroupManager
 from flowserv.model.ranking import RankingManager
 from flowserv.model.run import RunManager
 from flowserv.model.user import UserManager
-from flowserv.model.workflow.fs import WorkflowFileSystem
 from flowserv.model.workflow.manager import WorkflowManager
-from flowserv.service.files import UploadFileService
+from flowserv.service.files import UploadFileService, get_filestore
 from flowserv.service.group import WorkflowGroupService
 from flowserv.service.run.base import RunService
 from flowserv.service.server import Service
@@ -29,9 +28,7 @@ from flowserv.service.user import UserService
 from flowserv.service.workflow import WorkflowService
 from flowserv.view.factory import DefaultView
 
-import flowserv.config.api as config
 import flowserv.error as err
-import flowserv.util as util
 
 
 """Name of the header element that contains the access token."""
@@ -51,7 +48,7 @@ class API(object):
     - workflows()
     """
     def __init__(
-        self, session, engine=None, basedir=None, auth=None, view=None
+        self, session, engine=None, fs=None, auth=None, view=None
     ):
         """Initialize the database connection, URL factory, and the file system
         path generator. All other internal components are created when they are
@@ -63,8 +60,9 @@ class API(object):
             Database session.
         engine: flowserv.controller.base.WorkflowController, optional
             Workflow controller used by the API for workflow execution
-        basedir: string, optional
-            Path to the base directory for the API
+        fs: flowserv.model.files.base.FileStore, default=None
+            File store for accessing and maintaining files for workflows,
+            groups and workflow runs.
         auth: lowserv.model.user.auth.Auth, optional
             Authentication and authorization policy
         view: flowserv.view.factory.ViewFactory, optional
@@ -76,9 +74,8 @@ class API(object):
             from flowserv.service.backend import backend
             engine = backend
         self.engine = engine
-        # Ensure that the API base directory exists
-        fsdir = config.API_BASEDIR(value=basedir)
-        self.fs = WorkflowFileSystem(util.create_dir(fsdir, abs=True))
+        # Initialize the file store.
+        self.fs = fs if fs is not None else get_filestore()
         # Set the serializer factory
         self.view = view if view is not None else DefaultView()
         # Keep an instance of objects that may be used by multiple components
@@ -300,7 +297,7 @@ class API(object):
 
 
 @contextmanager
-def service(db=None, engine=None, basedir=None, auth=None, view=None):
+def service(db=None, engine=None, fs=None, auth=None, view=None):
     """The local service function is a context manager for an open database
     connection that is used to instantiate the API service class. The context
     manager ensures that the database connection is closed after an API request
@@ -312,6 +309,13 @@ def service(db=None, engine=None, basedir=None, auth=None, view=None):
         Database manager.
     engine: flowserv.controller.base.WorkflowController, optional
         Workflow controller used by the API for workflow execution
+    fs: flowserv.model.files.base.FileStore, default=None
+        File store for accessing and maintaining files for workflows,
+        groups and workflow runs.
+    auth: lowserv.model.user.auth.Auth, optional
+        Authentication and authorization policy
+    view: flowserv.view.factory.ViewFactory, optional
+        Factory pattern for resource serializers
 
     Returns
     -------
@@ -325,7 +329,7 @@ def service(db=None, engine=None, basedir=None, auth=None, view=None):
         yield API(
             session=session,
             engine=engine,
-            basedir=basedir,
+            fs=fs,
             auth=auth,
             view=view
         )

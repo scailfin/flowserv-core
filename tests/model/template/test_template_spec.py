@@ -22,11 +22,10 @@ def test_template_serialization():
     """Test creating template instances from serializations."""
     # Minimal template specification.
     doc = {'workflow': dict()}
-    doc = WorkflowTemplate.from_dict(doc, '/dev/null').to_dict()
-    template = WorkflowTemplate.from_dict(doc, '/dev/null')
+    doc = WorkflowTemplate.from_dict(doc).to_dict()
+    template = WorkflowTemplate.from_dict(doc)
     assert template.workflow_spec == dict()
     assert template.parameters == ParameterIndex()
-    assert template.sourcedir == '/dev/null'
     # Maximal template specification.
     doc = {
         'workflow': {'inputs': [tp.VARIABLE('A'), 'B', 'C']},
@@ -43,8 +42,8 @@ def test_template_serialization():
             'schema': [{'id': '0', 'name': 'col0', 'dtype': PARA_STRING}]
         }
     }
-    doc = WorkflowTemplate.from_dict(doc, '/dev/null').to_dict()
-    template = WorkflowTemplate.from_dict(doc, '/dev/null')
+    doc = WorkflowTemplate.from_dict(doc).to_dict()
+    template = WorkflowTemplate.from_dict(doc)
     assert template.workflow_spec == {'inputs': [tp.VARIABLE('A'), 'B', 'C']}
     assert len(template.parameters) == 1
     assert len(template.modules) == 2
@@ -61,12 +60,12 @@ def test_template_serialization():
         ],
         'postproc': {'inputs': {'files': ['D', 'E']}}
     }
-    WorkflowTemplate.from_dict(doc, '/dev/null', validate=False)
+    WorkflowTemplate.from_dict(doc, validate=False)
     with pytest.raises(err.InvalidParameterError):
-        WorkflowTemplate.from_dict(doc, '/dev/null')
+        WorkflowTemplate.from_dict(doc)
     # Error for missing workflow specification.
     with pytest.raises(err.InvalidTemplateError):
-        WorkflowTemplate.from_dict(dict(), '/dev/null')
+        WorkflowTemplate.from_dict(dict())
     # Error for unknown parameter.
     with pytest.raises(err.UnknownParameterError):
         doc = {
@@ -75,7 +74,7 @@ def test_template_serialization():
                 StringParameter(para_id='A', name='P1', index=0).to_dict()
             ]
         }
-        WorkflowTemplate.from_dict(doc, '/dev/null')
+        WorkflowTemplate.from_dict(doc)
 
 
 def test_validate_arguments():
@@ -98,7 +97,6 @@ def test_validate_arguments():
     ])
     template = WorkflowTemplate(
         workflow_spec=dict(),
-        sourcedir='/dev/null',
         parameters=parameters
     )
     template.validate_arguments({'A': 1, 'B': 0})

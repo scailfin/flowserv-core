@@ -19,6 +19,7 @@ import tempfile
 
 from flowserv.cli.parameter import read
 from flowserv.cli.repository import list_repository
+from flowserv.cli.run import runscli
 from flowserv.cli.user import register_user
 from flowserv.cli.workflow import add_workflow, workflowcli
 from flowserv.config.api import (
@@ -51,84 +52,51 @@ def cli():
 
 
 @cli.command(name='config')
-@click.option(
-    '-a', '--all',
-    is_flag=True,
-    default=False,
-    help='Show all configuration variables'
-)
-@click.option(
-    '-d', '--database',
-    is_flag=True,
-    default=False,
-    help='Show database configuration variables'
-)
-@click.option(
-    '-u', '--auth',
-    is_flag=True,
-    default=False,
-    help='Show database configuration variables'
-)
-@click.option(
-    '-b', '--backend',
-    is_flag=True,
-    default=False,
-    help='Show workflow controller configuration variables'
-)
-@click.option(
-    '-s', '--service',
-    is_flag=True,
-    default=False,
-    help='Show Web Service API configuration variables'
-)
-def configuration(
-    all=False, database=False, auth=False, backend=False, service=False
-):
+def configuration():
     """Print configuration variables for flowServ."""
-    # Show all configuration variables if no command line option is given:
-    if not (all or database or auth or backend or service):
-        all = True
-    comment = '#\n# {}\n#'
+    comment = '\n#\n# {}\n#\n'
     envvar = 'export {}={}'
     # Configuration for the API
-    if service or all:
-        click.echo(comment.format('Web Service API'))
-        conf = list()
-        conf.append((FLOWSERV_API_BASEDIR, API_BASEDIR()))
-        conf.append((FLOWSERV_API_NAME, '"{}"'.format(API_NAME())))
-        conf.append((FLOWSERV_API_HOST, API_HOST()))
-        conf.append((FLOWSERV_API_PORT, API_PORT()))
-        conf.append((FLOWSERV_API_PROTOCOL, API_PROTOCOL()))
-        conf.append((FLOWSERV_API_PATH, API_PATH()))
-        for var, val in conf:
-            click.echo(envvar.format(var, val))
+    click.echo(comment.format('Web Service API'))
+    conf = list()
+    conf.append((FLOWSERV_API_BASEDIR, API_BASEDIR()))
+    conf.append((FLOWSERV_API_NAME, '"{}"'.format(API_NAME())))
+    conf.append((FLOWSERV_API_HOST, API_HOST()))
+    conf.append((FLOWSERV_API_PORT, API_PORT()))
+    conf.append((FLOWSERV_API_PROTOCOL, API_PROTOCOL()))
+    conf.append((FLOWSERV_API_PATH, API_PATH()))
+    for var, val in conf:
+        click.echo(envvar.format(var, val))
     # Configuration for user authentication
-    if auth or all:
-        click.echo(comment.format('Authentication'))
-        conf = [(FLOWSERV_AUTH_LOGINTTL, AUTH_LOGINTTL())]
-        for var, val in conf:
-            click.echo(envvar.format(var, val))
+    click.echo(comment.format('Authentication'))
+    conf = [(FLOWSERV_AUTH_LOGINTTL, AUTH_LOGINTTL())]
+    for var, val in conf:
+        click.echo(envvar.format(var, val))
     # Configuration for the underlying database
-    if database or all:
-        click.echo(comment.format('Database'))
-        try:
-            connect_url = DB_CONNECT()
-        except err.MissingConfigurationError:
-            connect_url = 'None'
-        click.echo(envvar.format(FLOWSERV_DB, connect_url))
+    click.echo(comment.format('Database'))
+    try:
+        connect_url = DB_CONNECT()
+    except err.MissingConfigurationError:
+        connect_url = 'None'
+    click.echo(envvar.format(FLOWSERV_DB, connect_url))
+    # Configuration for the file store
+    from flowserv.service.files import get_filestore
+    click.echo(comment.format('File Store'))
+    for var, val in get_filestore(raise_error=False).configuration():
+        click.echo(envvar.format(var, val))
     # Configuration for the workflow execution backend
-    if backend or all:
-        from flowserv.service.backend import init_backend
-        click.echo(comment.format('Workflow Controller'))
-        conf = list()
-        backend_class = os.environ.get(FLOWSERV_BACKEND_CLASS, '')
-        conf.append((FLOWSERV_BACKEND_CLASS, backend_class))
-        backend_module = os.environ.get(FLOWSERV_BACKEND_MODULE, '')
-        conf.append((FLOWSERV_BACKEND_MODULE, backend_module))
-        for var, val in conf:
-            click.echo(envvar.format(var, val))
-        for var, val in init_backend(raise_error=False).configuration():
-            click.echo(envvar.format(var, val))
+    from flowserv.service.backend import init_backend
+    click.echo(comment.format('Workflow Controller'))
+    conf = list()
+    backend_class = os.environ.get(FLOWSERV_BACKEND_CLASS, '')
+    conf.append((FLOWSERV_BACKEND_CLASS, backend_class))
+    backend_module = os.environ.get(FLOWSERV_BACKEND_MODULE, '')
+    conf.append((FLOWSERV_BACKEND_MODULE, backend_module))
+    for var, val in conf:
+        click.echo(envvar.format(var, val))
+    for var, val in init_backend(raise_error=False).configuration():
+        click.echo(envvar.format(var, val))
+    click.echo()
 
 
 @cli.command()
@@ -149,7 +117,7 @@ def init(force=False):
     except err.MissingConfigurationError as ex:
         click.echo(str(ex))
         sys.exit(-1)
-    util.create_dir(API_BASEDIR())
+    os.makedirs(API_BASEDIR(), exist_ok=True)
 
 
 # -- Run workflow template for testing purposes -------------------------------
@@ -200,7 +168,7 @@ def run_workflow(specfile, manifest, ignorepp, output, source):  # pragma: no co
     # -- Add workflow template to repository ----------------------------------
     with service() as api:
         workflow = api.workflows().create_workflow(
-            name=util.get_short_identifier(),
+            name=util.get_unique_identifier(),
             source=source,
             specfile=specfile,
             manifest=manifest,
@@ -265,6 +233,10 @@ def run_workflow(specfile, manifest, ignorepp, output, source):  # pragma: no co
 cli.add_command(list_repository, name='repository')
 
 
+# Runs
+cli.add_command(runscli)
+
+
 # Users
 cli.add_command(register_user, name='register')
 
@@ -288,12 +260,12 @@ def run_results(run, user_id, output):
         for obj in run['files']:
             with service() as api:
                 file_id = obj['id']
-                fh = api.runs().get_result_file(
+                fh, fileobj = api.runs().get_result_file(
                     run_id=run_id,
                     file_id=file_id,
                     user_id=user_id
                 )
-                files[file_id] = (fh.filename, obj['name'])
+                files[file_id] = (fileobj, obj['name'])
         # Copy files if output directory is given.
         if output is not None:
             util.copy_files(files.values(), output)

@@ -36,6 +36,7 @@ def test_run_workflow_with_outputs(service):
     # Start a new run for the workflow template.
     engine = SerialWorkflowEngine(is_async=False)
     with service(engine=engine) as api:
+        engine.fs = api.fs
         workflow_id = create_workflow(
             api,
             source=BENCHMARK_DIR,
@@ -44,7 +45,7 @@ def test_run_workflow_with_outputs(service):
         user_id = create_user(api)
         group_id = create_group(api, workflow_id, [user_id])
         names = FakeStream(data=['Alice', 'Bob'], format='plain/text')
-        file_id = upload_file(api, group_id, user_id, names)
+        file_id = upload_file(api, group_id, user_id, names.save())
         args = [ARG('names', FILE(file_id, 'data/names.txt'))]
         run_id = start_run(api, group_id, user_id, arguments=args)
     # -- Validate the run handle ----------------------------------------------
@@ -56,9 +57,9 @@ def test_run_workflow_with_outputs(service):
         for obj in r['files']:
             files[obj['name']] = obj['id']
         assert len(files) == 1
-        fh = api.runs().get_result_file(
+        fh, filename = api.runs().get_result_file(
             run_id=run_id,
             file_id=files['results/greetings.txt'],
             user_id=user_id
         )
-        assert util.read_object(fh.filename) == 'Hello Alice! Hello Bob!'
+        assert util.read_object(filename) == 'Hello Alice! Hello Bob!'

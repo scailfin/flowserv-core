@@ -10,11 +10,13 @@
 
 import os
 import pytest
+import time
 
+from flowserv.model.files.fs import FileSystemStore
 from flowserv.model.group import WorkflowGroupManager
 from flowserv.model.run import RunManager
-from flowserv.model.workflow.fs import WorkflowFileSystem
 from flowserv.model.workflow.manager import WorkflowManager
+from flowserv.tests.files import DiskStore, read_json
 
 import flowserv.error as err
 import flowserv.util as util
@@ -22,10 +24,68 @@ import flowserv.model.workflow.state as st
 import flowserv.tests.model as model
 
 
-def test_cancel_run(database, tmpdir):
+# -- Helper Methods -----------------------------------------------------------
+
+def error_run(database, fs, messages):
+    """Create a run that is in error state. Returns the identifier of the
+    created workflow, group, and run.
+    """
+    # Setup temporary run folder.
+    with database.session() as session:
+        user_id = model.create_user(session, active=True)
+        workflow_id = model.create_workflow(session)
+        group_id = model.create_group(session, workflow_id, users=[user_id])
+        groups = WorkflowGroupManager(session=session, fs=fs)
+        runs = RunManager(session=session, fs=fs)
+        run = runs.create_run(group=groups.get_group(group_id))
+        run_id = run.run_id
+        state = run.state()
+        runs.update_run(run_id=run_id, state=state)
+        messages = ['There', 'were', 'many errors']
+        runs.update_run(run_id=run_id, state=state.error(messages))
+    return workflow_id, group_id, run_id
+
+
+def success_run(database, fs, basedir):
+    """Create a successful run with two result files:
+
+        - A.json
+        - run/results/B.json
+
+    Returns the identifier of the created workflow, group, and run.
+    """
+    # Setup temporary run folder.
+    tmprundir = os.path.join(basedir, 'tmprun')
+    tmpresultsdir = os.path.join(tmprundir, 'run', 'results')
+    os.makedirs(tmprundir)
+    os.makedirs(tmpresultsdir)
+    f1 = os.path.join(tmprundir, 'A.json')
+    util.write_object(f1, {'A': 1})
+    f2 = os.path.join(tmpresultsdir, 'B.json')
+    util.write_object(f2, {'B': 1})
+    with database.session() as session:
+        user_id = model.create_user(session, active=True)
+        workflow_id = model.create_workflow(session)
+        group_id = model.create_group(session, workflow_id, users=[user_id])
+        groups = WorkflowGroupManager(session=session, fs=fs)
+        runs = RunManager(session=session, fs=fs)
+        run = runs.create_run(group=groups.get_group(group_id))
+        run_id = run.run_id
+        state = run.state()
+        runs.update_run(
+            run_id,
+            state.start().success(files=['A.json', 'run/results/B.json']),
+            rundir=tmprundir
+        )
+    assert not os.path.exists(tmprundir)
+    return workflow_id, group_id, run_id
+
+
+@pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
+def test_cancel_run(fscls, database, tmpdir):
     """Test setting run state to canceled."""
     # -- Setup ----------------------------------------------------------------
-    fs = WorkflowFileSystem(tmpdir)
+    fs = fscls(tmpdir)
     with database.session() as session:
         user_id = model.create_user(session, active=True)
         workflow_id = model.create_workflow(session)
@@ -51,10 +111,11 @@ def test_cancel_run(database, tmpdir):
         assert len(state.messages) == 1
 
 
-def test_create_run_errors(database, tmpdir):
+@pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
+def test_create_run_errors(fscls, database, tmpdir):
     """Test error cases for create_run parameter combinations."""
     # -- Setup ----------------------------------------------------------------
-    fs = WorkflowFileSystem(tmpdir)
+    fs = fscls(tmpdir)
     with database.session() as session:
         user_id = model.create_user(session, active=True)
         workflow_id = model.create_workflow(session)
@@ -74,26 +135,16 @@ def test_create_run_errors(database, tmpdir):
             runs.create_run(group=group, runs=['A'])
 
 
-def test_delete_run(database, tmpdir):
+@pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
+def test_delete_run(fscls, database, tmpdir):
     """Test deleting a run."""
     # -- Setup ----------------------------------------------------------------
-    fs = WorkflowFileSystem(tmpdir)
-    with database.session() as session:
-        user_id = model.create_user(session, active=True)
-        workflow_id = model.create_workflow(session)
-        group_id = model.create_group(session, workflow_id, users=[user_id])
-        groups = WorkflowGroupManager(session=session, fs=fs)
-        runs = RunManager(session=session, fs=fs)
-        run = runs.create_run(group=groups.get_group(group_id))
-        run_id = run.run_id
-    rundir = fs.run_basedir(workflow_id, group_id, run_id)
-    assert os.path.isdir(rundir)
+    fs = fscls(tmpdir)
+    _, _, run_id = success_run(database, fs, tmpdir)
     # -- Test delete run ------------------------------------------------------
     with database.session() as session:
         runs = RunManager(session=session, fs=fs)
         runs.delete_run(run_id)
-        # After deleting the run the run directory no longer exists.
-        assert not os.path.isdir(rundir)
     # -- Error cases ----------------------------------------------------------
     with database.session() as session:
         # Error when deleting an unknown run.
@@ -102,24 +153,13 @@ def test_delete_run(database, tmpdir):
             runs.delete_run(run_id)
 
 
-def test_error_run(database, tmpdir):
+@pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
+def test_error_run(fscls, database, tmpdir):
     """Test setting run state to error."""
     # -- Setup ----------------------------------------------------------------
-    fs = WorkflowFileSystem(tmpdir)
-    with database.session() as session:
-        user_id = model.create_user(session, active=True)
-        workflow_id = model.create_workflow(session)
-        group_id = model.create_group(session, workflow_id, users=[user_id])
-    # -- Test set run to error state ------------------------------------------
-    with database.session() as session:
-        groups = WorkflowGroupManager(session=session, fs=fs)
-        runs = RunManager(session=session, fs=fs)
-        run = runs.create_run(group=groups.get_group(group_id))
-        run_id = run.run_id
-        state = run.state()
-        runs.update_run(run_id=run_id, state=state)
-        messages = ['There', 'were', 'many errors']
-        runs.update_run(run_id=run_id, state=state.error(messages))
+    fs = fscls(tmpdir)
+    messages = ['There', 'were', 'many errors']
+    _, _, run_id = error_run(database, fs, messages)
     with database.session() as session:
         runs = RunManager(session=session, fs=fs)
         run = runs.get_run(run_id)
@@ -133,10 +173,11 @@ def test_error_run(database, tmpdir):
         assert state.messages == messages
 
 
-def test_invalid_state_transitions(database, tmpdir):
+@pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
+def test_invalid_state_transitions(fscls, database, tmpdir):
     """Test error cases for invalid state transitions."""
     # -- Setup ----------------------------------------------------------------
-    fs = WorkflowFileSystem(tmpdir)
+    fs = fscls(tmpdir)
     with database.session() as session:
         user_id = model.create_user(session, active=True)
         workflow_id = model.create_workflow(session)
@@ -159,20 +200,20 @@ def test_invalid_state_transitions(database, tmpdir):
     with database.session() as session:
         groups = WorkflowGroupManager(session=session, fs=fs)
         runs = RunManager(session=session, fs=fs)
-        with pytest.raises(err.ConstraintViolationError):
-            runs.update_run(run_id=run_id, state=state.cancel())
+        assert runs.update_run(run_id=run_id, state=state.cancel()) is None
         with pytest.raises(err.ConstraintViolationError):
             runs.update_run(run_id=run_id, state=state.error())
         with pytest.raises(err.ConstraintViolationError):
             runs.update_run(run_id=run_id, state=state.success())
 
 
-def test_list_runs(database, tmpdir):
+@pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
+def test_list_runs(fscls, database, tmpdir):
     """Test retrieving a list of run descriptors."""
     # -- Setup ----------------------------------------------------------------
     #
     # Create two runs: one in running state and one in error state.
-    fs = WorkflowFileSystem(tmpdir)
+    fs = fscls(tmpdir)
     with database.session() as session:
         user_id = model.create_user(session, active=True)
         workflow_id = model.create_workflow(session)
@@ -204,10 +245,42 @@ def test_list_runs(database, tmpdir):
         assert len(runs.poll_runs(group_id, state=st.STATE_SUCCESS)) == 0
 
 
-def test_run_parameters(database, tmpdir):
+@pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
+def test_obsolete_runs(fscls, database, tmpdir):
+    """Test deleting runs that were created before a given date."""
+    # -- Setup ----------------------------------------------------------------
+    fs = fscls(tmpdir)
+    # Create two runs (one SUCCESS and one ERROR) before a timestamp t1
+    _, _, run_1 = success_run(database, fs, tmpdir)
+    _, _, run_2 = error_run(database, fs, ['There were errors'])
+    time.sleep(1)
+    t1 = util.utc_now()
+    # Create another SUCCESS run after timestamp t1
+    _, _, run_3 = success_run(database, fs, tmpdir)
+    # -- Test delete run with state filter ------------------------------------
+    with database.session() as session:
+        runs = RunManager(session=session, fs=fs)
+        assert runs.delete_obsolete_runs(date=t1, state=st.STATE_ERROR) == 1
+        # After deleting the error run the two success runs still exist.
+        runs.get_run(run_id=run_1)
+        with pytest.raises(err.UnknownRunError):
+            runs.get_run(run_id=run_2)
+        runs.get_run(run_id=run_3)
+    # -- Test delete all runs prior to a given date ---------------------------
+    with database.session() as session:
+        runs = RunManager(session=session, fs=fs)
+        assert runs.delete_obsolete_runs(date=t1) == 1
+        # After deleting the run the only one success runs still exist.
+        with pytest.raises(err.UnknownRunError):
+            runs.get_run(run_id=run_1)
+        runs.get_run(run_id=run_3)
+
+
+@pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
+def test_run_parameters(fscls, database, tmpdir):
     """Test creating run with template arguments."""
     # -- Setup ----------------------------------------------------------------
-    fs = WorkflowFileSystem(tmpdir)
+    fs = fscls(tmpdir)
     with database.session() as session:
         user_id = model.create_user(session, active=True)
         workflow_id = model.create_workflow(session)
@@ -231,31 +304,13 @@ def test_run_parameters(database, tmpdir):
         assert run.arguments == arguments
 
 
-def test_success_run(database, tmpdir):
+@pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
+def test_success_run(fscls, database, tmpdir):
     """Test life cycle for a successful run."""
     # -- Setup ----------------------------------------------------------------
-    fs = WorkflowFileSystem(tmpdir)
-    with database.session() as session:
-        user_id = model.create_user(session, active=True)
-        workflow_id = model.create_workflow(session)
-        group_id = model.create_group(session, workflow_id, users=[user_id])
-    # -- Test set run to success state ----------------------------------------
-    with database.session() as session:
-        groups = WorkflowGroupManager(session=session, fs=fs)
-        runs = RunManager(session=session, fs=fs)
-        group = groups.get_group(group_id)
-        run = runs.create_run(group=group)
-        run_id = run.run_id
-        state = run.state().start()
-        runs.update_run(run_id=run_id, state=state)
-        # Set run to success state
-        workflow_id = group.workflow_id
-        group_id = group.group_id
-        rundir = fs.run_basedir(workflow_id, group_id, run_id)
-        filename = os.path.join(rundir, 'results.json')
-        util.write_object(filename=filename, obj={'A': 1})
-        state = state.success(files=['results.json'])
-        runs.update_run(run_id=run_id, state=state)
+    fs = fscls(tmpdir)
+    workflow_id, _, run_id = success_run(database, fs, tmpdir)
+    rundir = fs.run_basedir(workflow_id=workflow_id, run_id=run_id)
     with database.session() as session:
         runs = RunManager(session=session, fs=fs)
         run = runs.get_run(run_id)
@@ -266,6 +321,10 @@ def test_success_run(database, tmpdir):
         assert not state.is_canceled()
         assert not state.is_error()
         assert state.is_success()
-        assert len(state.files) == 1
-        filename = run.get_file(by_name='results.json').filename
-        assert util.read_object(filename) == {'A': 1}
+        assert len(state.files) == 2
+        key = run.get_file(by_key='A.json').key
+        f = fs.load_file(key=os.path.join(rundir, key))
+        assert read_json(f) == {'A': 1}
+        key = run.get_file(by_key='run/results/B.json').key
+        f = fs.load_file(key=os.path.join(rundir, key))
+        assert read_json(f) == {'B': 1}

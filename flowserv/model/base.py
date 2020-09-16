@@ -9,11 +9,7 @@
 """Define the classes in the Object-Relational Mapping."""
 
 import json
-import mimetypes
-import os
-import shutil
 
-from datetime import datetime
 from sqlalchemy import Boolean, Integer, String, Text
 from sqlalchemy import Column, ForeignKey, UniqueConstraint, Table
 from sqlalchemy.ext.declarative import declarative_base
@@ -142,69 +138,18 @@ class FileHandle(Base):
     and its properties."""
 
     __abstract__ = True
-    _path = None
 
-    @property
-    def created_at(self):
-        """Datetime timestamp for file creation.
-
-        Returns
-        -------
-        string
-        """
-        assert self._path is not None
-        ts = os.path.getmtime(self._path)
-        ts = util.from_utc_datetime(datetime.utcfromtimestamp(ts))
-        return ts.isoformat()
-
-    def created_at_local_time(self):
-        """Get string representation of the creation timestamp in the local
-        timezone.
-
-        Returns
-        -------
-        string
-        """
-        assert self._path is not None
-        ts = os.path.getmtime(self._path)
-        ts = util.from_utc_datetime(datetime.utcfromtimestamp(ts))
-        return ts.isoformat()[:-7]
-
-    def delete(self):
-        """Remove the associated file or directory on disk (if it exists)."""
-        assert self._path is not None
-        if os.path.isfile(self._path):
-            os.remove(self._path)
-        elif os.path.isdir(self._path):
-            shutil.rmtree(self._path)
-
-    @property
-    def filename(self):
-        """Get path to file on disk."""
-        assert self._path is not None
-        return self._path
-
-    @property
-    def mimetype(self):
-        """Get mimetype for file. The type is guessed from the fname."""
-        mimetype, _ = mimetypes.guess_type(url=self.name)
-        return mimetype
-
-    def set_filename(self, path):
-        """Set path to file on disk."""
-        self._path = path
-        return self
-
-    @property
-    def size(self):
-        """Get size of file in bytes.
-
-        Returns
-        -------
-        int
-        """
-        assert self._path is not None
-        return os.stat(self._path).st_size
+    # -- Schema ---------------------------------------------------------------
+    file_id = Column(
+        String(32),
+        default=util.get_unique_identifier,
+        primary_key=True
+    )
+    key = Column(String(1024), nullable=False)
+    name = Column(String(512), nullable=False)
+    created_at = Column(String(32), default=util.utc_now, nullable=False)
+    mime_type = Column(String(64))
+    size = Column(Integer, nullable=False)
 
 
 # -- Association Tables -------------------------------------------------------
@@ -308,6 +253,32 @@ post-processing step over a set of workflow run results are maintained.
 """
 
 
+class WorkflowRankingRun(Base):
+    """Identifier of a run that was input for a workflow's post-processing run.
+    Maintains the run identifier and the ranking position. Note that this class
+    does not provide direct access to the handles for the post-processing input
+    runs.
+    """
+    # -- Schema ---------------------------------------------------------------
+    __tablename__ = 'workflow_ranking'
+
+    run_id = Column(String(32), nullable=False, primary_key=True)
+    workflow_id = Column(
+        String(32),
+        ForeignKey('workflow_template.workflow_id'),
+        primary_key=True
+    )
+    rank = Column(Integer, nullable=False)
+
+    UniqueConstraint('workflow_id', 'rank')
+
+    # -- Relationships --------------------------------------------------------
+    workflow = relationship(
+        'WorkflowHandle',
+        back_populates='postproc_ranking'
+    )
+
+
 class WorkflowHandle(Base):
     """Each workflow has a unique name, an optional short descriptor and long
     instruction text. The five main components of the template are (i) the
@@ -337,7 +308,6 @@ class WorkflowHandle(Base):
     parameters = Column(WorkflowParameters)
     modules = Column(WorkflowModules)
     outputs = Column(WorkflowOutputs)
-    postproc_ranking_key = Column(JsonObject)
     # Omit foreign key here to avaoid circular dependencies. The run will
     # reference the workflow to ensure integrity with respect to deleting
     # the workflow and all dependend runs.
@@ -345,12 +315,14 @@ class WorkflowHandle(Base):
     postproc_spec = Column(JsonObject)
     result_schema = Column(WorkflowResultSchema)
 
-    # -- Internal variables ---------------------------------------------------
-    _staticdir = None
-
     # -- Relationships --------------------------------------------------------
     groups = relationship(
         'GroupHandle',
+        back_populates='workflow',
+        cascade='all, delete, delete-orphan'
+    )
+    postproc_ranking = relationship(
+        'WorkflowRankingRun',
         back_populates='workflow',
         cascade='all, delete, delete-orphan'
     )
@@ -375,10 +347,8 @@ class WorkflowHandle(Base):
         -------
         flowserv.model.template.base.WorkflowTemplate
         """
-        assert self._staticdir is not None
         return WorkflowTemplate(
             workflow_spec=self.workflow_spec if workflow_spec is None else workflow_spec,  # noqa: E501
-            sourcedir=self._staticdir,
             parameters=self.parameters if parameters is None else parameters,
             modules=self.modules,
             outputs=self.outputs,
@@ -386,15 +356,16 @@ class WorkflowHandle(Base):
             result_schema=self.result_schema
         )
 
-    def set_staticdir(self, dirname):
-        """Set the path to the directory containing static template files.
+    def ranking(self):
+        """Get list of identifier for runs in the current ranking sorted by
+        their rank.
 
-        Parameters
-        ----------
-        dirname: string
-            Path to directory for staic workflow files.
+        Returns
+        -------
+        list(string)
         """
-        self._staticdir = dirname
+        ranking = sorted(self.postproc_ranking, key=lambda r: r.rank)
+        return [r.run_id for r in ranking]
 
 
 # -- Workflow Groups ----------------------------------------------------------
@@ -465,14 +436,7 @@ class UploadFile(FileHandle):
     # -- Schema ---------------------------------------------------------------
     __tablename__ = 'group_upload_file'
 
-    file_id = Column(
-        String(32),
-        default=util.get_unique_identifier,
-        primary_key=True
-    )
     group_id = Column(String(32), ForeignKey('workflow_group.group_id'))
-    name = Column(String(512), nullable=False)
-    file_type = Column(String(255))
 
     # -- Relationships --------------------------------------------------------
     group = relationship('GroupHandle', back_populates='uploads')
@@ -513,65 +477,42 @@ class RunHandle(Base):
     arguments = Column(JsonObject)
     result = Column(JsonObject)
 
-    # -- Internal variables ---------------------------------------------------
-    _rundir = None
-
     # -- Relationships --------------------------------------------------------
     files = relationship('RunFile', cascade='all, delete, delete-orphan')
     group = relationship('GroupHandle', back_populates='runs')
     log = relationship('RunMessage', cascade='all, delete, delete-orphan')
     workflow = relationship('WorkflowHandle', back_populates='runs')
 
-    def archive(self):
-        """Create a gzipped tar file containing all files in the given resource
-        set.
-
-        Returns
-        -------
-        io.BytesIO
-        """
-        return util.archive_files([(r.filename, r.name) for r in self.files])
-
-    def get_file(self, by_id=None, by_name=None):
+    def get_file(self, by_id=None, by_key=None):
         """Get handle for identified file. A file can either be identified by
-        the unique identifier or the unique relative path (name). Returns None
-        if the file is not found.
+        the unique identifier or file key (i.e., relative path name). Returns
+        None if the file is not found.
 
         Raises a ValueError if an invalid combination of parameters is given.
 
         Patameters
         ----------
-        relative_path: string
+        by_id: string
+            Unique file identifier.
+        by_key: string
             Relative path to the file in the run directory.
 
         Returns
         -------
         flowserv.model.base.RunFile
         """
-        if by_id is None and by_name is None:
+        if by_id is None and by_key is None:
             raise ValueError('invalid argument combination')
-        if by_id is not None and by_name is not None:
+        if by_id is not None and by_key is not None:
             raise ValueError('invalid argument combination')
         if by_id is not None:
             for f in self.files:
                 if f.file_id == by_id:
-                    f.set_filename(os.path.join(self._rundir, f.relative_path))
                     return f
-        if by_name is not None:
+        if by_key is not None:
             for f in self.files:
-                if f.name == by_name:
-                    f.set_filename(os.path.join(self._rundir, f.relative_path))
+                if f.key == by_key:
                     return f
-
-    def get_rundir(self):
-        """Get the path to the base directory for run files.
-
-        Returns
-        -------
-        string
-        """
-        assert self._rundir is not None
-        return self._rundir
 
     def is_active(self):
         """A run is in active state if it is either pending or running.
@@ -649,16 +590,6 @@ class RunHandle(Base):
                 outputs = [WorkflowOutputFile.from_dict(f) for f in outputs]
             return outputs
 
-    def set_rundir(self, dirname):
-        """Set the path to the base directory for run files.
-
-        Parameters
-        ----------
-        dirname: string
-            Path to directory for run files and folders.
-        """
-        self._rundir = dirname
-
     def state(self):
         """Get an instance of the workflow state for the given run.
 
@@ -692,7 +623,7 @@ class RunHandle(Base):
                 created_at=self.created_at,
                 started_at=self.started_at,
                 finished_at=self.ended_at,
-                files=[f.relative_path for f in self.files]
+                files=[f.key for f in self.files]
             )
 
 
@@ -701,26 +632,15 @@ class RunFile(FileHandle):
     # -- Schema ---------------------------------------------------------------
     __tablename__ = 'run_file'
 
-    file_id = Column(
-        String(32),
-        default=util.get_unique_identifier,
-        primary_key=True
-    )
     run_id = Column(
         String(32),
         ForeignKey('workflow_run.run_id')
     )
-    relative_path = Column(Text, nullable=False)
 
     UniqueConstraint('run_id', 'name')
 
     # Relationships -----------------------------------------------------------
     run = relationship('RunHandle', back_populates='files')
-
-    @property
-    def name(self):
-        """Implement file handle property 'name'."""
-        return self.relative_path
 
 
 class RunMessage(Base):

@@ -10,6 +10,10 @@
 delete, and upload files for workflow groups.
 """
 
+from flowserv.config.base import get_variable
+from flowserv.model.files.base import FileStore
+
+import flowserv.config.files as config
 import flowserv.error as err
 
 
@@ -80,7 +84,7 @@ class UploadFileService(object):
 
         Returns
         -------
-        flowserv.model.base.FileHandle, dict
+        flowserv.model.base.FileHandle, string or FileObject
 
         Raises
         ------
@@ -98,10 +102,9 @@ class UploadFileService(object):
             )
             if not is_member:
                 raise err.UnauthorizedAccessError()
-        # Return the file handle and a serialization of tit
-        fh = self.group_manager.get_file(group_id=group_id, file_id=file_id)
-        doc = self.serialize.file_handle(group_id=group_id, fh=fh)
-        return fh, doc
+        # Return the file handle and object that provides read access to
+        # the file object.
+        return self.group_manager.get_file(group_id=group_id, file_id=file_id)
 
     def list_files(self, group_id, user_id):
         """Get a listing of all files that have been uploaded for the given
@@ -132,22 +135,19 @@ class UploadFileService(object):
             files=self.group_manager.list_files(group_id)
         )
 
-    def upload_file(self, group_id, file, name, user_id, file_type=None):
+    def upload_file(self, group_id, file, name, user_id):
         """Create a file for a given workflow group.
 
         Parameters
         ----------
         group_id: string
             Unique workflow group identifier
-        file: werkzeug.datastructures.FileStorage
+        file: file-like object
             File object (e.g., uploaded via HTTP request)
         name: string
             Name of the file
         user_id: string
             Unique user identifier
-        file_type: string, default=None
-            Identifier for the file type (e.g., the file MimeType). This could
-            also by the identifier of a content handler.
 
         Returns
         -------
@@ -163,11 +163,50 @@ class UploadFileService(object):
         # the workflow group or if the workflow group does not exist.
         if not self.auth.is_group_member(group_id=group_id, user_id=user_id):
             raise err.UnauthorizedAccessError()
-        # Return serialization of the uploaded file
+        # Convert the uploaded FileStorage object into a bytes buffer before
+        # passing it to the group manager. Return serialization of the handle
+        # for the uploaded file.
         fh = self.group_manager.upload_file(
             group_id=group_id,
             file=file,
-            name=name,
-            file_type=file_type
+            name=name
         )
         return self.serialize.file_handle(group_id=group_id, fh=fh)
+
+
+# -- Factory pattern for file stores ------------------------------------------
+
+def get_filestore(raise_error: bool = True) -> FileStore:
+    """Factory pattern to create file store instances for the service API. Uses
+    the environment variables FLOWSERV_FILESTORE_MODULE and
+    FLOWSERV_FILESTORE_CLASS to create an instance of the file store. If the
+    environment variables are not set the FileSystemStore is returned as the
+    default file store.
+
+    Parameters
+    ----------
+    raise_error: bool, default=True
+        Flag to indicate whether an error is raised if a value for a
+        configuration variable is missing or not.
+
+    Returns
+    -------
+    flowserv.model.files.base.FileStore
+    """
+    module_name = get_variable(name=config.FLOWSERV_FILESTORE_MODULE)
+    class_name = get_variable(name=config.FLOWSERV_FILESTORE_CLASS)
+    # If both environment variables are None return the default file store.
+    # Otherwise, import the specified module and return an instance of the
+    # controller class. An error is raised if only one of the two environment
+    # variables is set.
+    if module_name is None and class_name is None:
+        from flowserv.model.files.fs import FileSystemStore
+        return FileSystemStore()
+    elif module_name is not None and class_name is not None:
+        from importlib import import_module
+        module = import_module(module_name)
+        return getattr(module, class_name)()
+    elif module_name is None and raise_error:
+        raise err.MissingConfigurationError(config.FLOWSERV_FILESTORE_MODULE)
+    elif raise_error:
+        raise err.MissingConfigurationError(config.FLOWSERV_FILESTORE_CLASS)

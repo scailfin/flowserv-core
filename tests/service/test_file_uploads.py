@@ -8,6 +8,7 @@
 
 """Unit test for uploaded files that are associated with workflow groups."""
 
+import os
 import pytest
 
 from flowserv.tests.files import FakeStream
@@ -30,7 +31,7 @@ def test_delete_group_file_view(service, hello_world):
         file_id = upload_file(
             api=api,
             group_id=group_id,
-            file=FakeStream(data={'group': 1, 'file': 1}),
+            file=FakeStream(data={'group': 1, 'file': 1}).save(),
             user_id=user_id
         )
     # -- Error when unknown user attempts to delete the file ------------------
@@ -60,7 +61,7 @@ def test_list_group_files_view(service, hello_world):
             upload_file(
                 api=api,
                 group_id=group_id,
-                file=FakeStream(data={'group': 1, 'file': i}),
+                file=FakeStream(data={'group': 1, 'file': i}).save(),
                 user_id=user_id
             )
     # -- Get file listing -----------------------------------------------------
@@ -87,7 +88,7 @@ def test_upload_group_file_view(service, hello_world):
     with service() as api:
         r = api.uploads().upload_file(
             group_id=group_id,
-            file=FakeStream(data={'group': 1, 'file': 1}),
+            file=FakeStream(data={'group': 1, 'file': 1}).save(),
             name='group1.json',
             user_id=user_id
         )
@@ -97,8 +98,8 @@ def test_upload_group_file_view(service, hello_world):
     # -- Get serialized handle for the file and the group ---------------------
     for uid in [user_id, None]:
         with service() as api:
-            fh, r = api.uploads().get_file(group_id, file_id, uid)
-            assert r['name'] == 'group1.json'
+            fh, filename = api.uploads().get_file(group_id, file_id, uid)
             assert fh.name == 'group1.json'
+            assert os.path.exists(filename)
             gh = api.groups().get_group(group_id=group_id)
             serialize.validate_group_handle(gh)

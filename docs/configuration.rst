@@ -63,6 +63,12 @@ The environment settings for the Docker engine are as follows:
     export FLOWSERV_BACKEND_CLASS=DockerWorkflowEngine
 
 
+Temporary Run Files
+-------------------
+
+The default engine and the Docker engine maintain run files in a temporary folder before they are moved to persistent storage (as defined by the file store parameters). The base folder for these temporary files can be configured using the environment variable *FLOWSERV_RUNSDIR*. If the variable is not set all workflow runs will use the sub-folder `runs` in the *FLOWSERV_API_DIR* as the default base directory.
+
+
 --------
 Database
 --------
@@ -78,7 +84,7 @@ When using SQLite as the underlying database system, an example value for *FLOWS
 .. code-block:: bash
 
     export FLOWSERV_DATABASE=sqlite:////absolute/path/to/foo.db
-    
+
 
 Connect to PostgreSQL
 ---------------------
@@ -106,3 +112,41 @@ The following steps are an example for creating an initial empty database for **
     ALTER USER flowserv WITH PASSWORD 'flowserv';
     -- Create an empty database with owner flowserv
     CREATE DATABASE flowserv WITH OWNER flowserv;
+
+
+----------
+File Store
+----------
+
+**flowServ** needs to store and access files for a variety of components and tasks. The files that are maintaind by the system include:
+
+- static files that are associated with a workflow template,
+- files that are uploaded by users as input to workflow runs, and
+- result files of successful workflow runs.
+
+By default, files are stored on the local file system in the directory that is specified by the *FLOWSERV_API_DIR* variable. Alternative storage backends can be configured using the environment variables *FLOWSERV_FILESTORE_CLASS* and *FLOWSERV_FILESTORE_MODULE*. These two variables are used to identify an existing implementation for the `flowserv.model.files.base.FileStore` interface. The package currently includes two implementations of the file store.
+
+
+File System Store
+-----------------
+
+The default file store maintains all files in subfolders under the directory that is specified by the environment variable *FLOWSERV_API_DIR*. To configure this option set the environment variables as follows:
+
+.. code-block:: base
+
+    export FLOWSERV_FILESTORE_MODULE=flowserv.model.files.fs
+    export FLOWSERV_FILESTORE_CLASS=FileSystemStore
+
+
+S3 Bucket Store
+---------------
+
+The **S3 Bucket Store** allows storage of all files using `AWS Simple Cloud Storage (S3) <https://aws.amazon.com/s3/>`_. To configure this option set the environment variables as follows:
+
+
+.. code-block:: base
+
+    export FLOWSERV_FILESTORE_MODULE=flowserv.model.files.s3
+    export FLOWSERV_FILESTORE_CLASS=BucketStore
+
+This file store defines the additional environment variable *FLOWSERV_S3BUCKET*. This variable is used to get the uniuqe identifier of the S3 storage bucket. During development when running test cases, the value of this variable should not be set.

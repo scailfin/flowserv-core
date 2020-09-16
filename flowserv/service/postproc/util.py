@@ -51,16 +51,22 @@ def prepare_postproc_data(input_files, ranking, run_manager):
     for entry in ranking:
         # Create a sub-folder for the run in the ranking result. Then copy the
         # requested files from the run resources to that folder.
-        run = run_manager.get_run(entry.run_id)
-        rundir = util.create_dir(os.path.join(basedir, run.run_id))
+        run_id = entry.run_id
+        rundir = os.path.join(basedir, run_id)
+        os.makedirs(rundir, exist_ok=True)
         for in_key in input_files:
-            fh = run.get_file(by_name=in_key)
-            source_file = fh.filename
+            _, filename = run_manager.get_runfile(run_id=run_id, key=in_key)
             target_file = os.path.join(rundir, in_key)
-            util.create_dir(os.path.dirname(target_file))
-            shutil.copy(src=source_file, dst=target_file)
+            os.makedirs(os.path.dirname(target_file), exist_ok=True)
+            # The run file may either be the path to a local file on disk or
+            # a BytesIO buffer.
+            if isinstance(filename, str):
+                shutil.copy(src=filename, dst=target_file)
+            else:
+                with open(target_file, 'wb') as f:
+                    f.write(filename.read())
         run_listing.append({
-            base.LABEL_ID: run.run_id,
+            base.LABEL_ID: run_id,
             base.LABEL_NAME: entry.group_name,
             base.LABEL_FILES: input_files
         })

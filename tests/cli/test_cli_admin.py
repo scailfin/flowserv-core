@@ -9,7 +9,6 @@
 """Unit tests for the command-line interface."""
 
 import os
-import pytest
 
 from click.testing import CliRunner
 
@@ -34,16 +33,9 @@ def test_basedir_argument(tmpdir):
     del os.environ[FLOWSERV_API_BASEDIR]
 
 
-@pytest.mark.parametrize(
-    'option',
-    [None, '--all', '--database', '--auth', '--backend', '--service']
-)
-def test_config_options(flowserv_cli, option):
+def test_config_options(flowserv_cli):
     """Test different options for the config command."""
-    if option is None:
-        result = flowserv_cli.invoke(cli, ['config'])
-    else:
-        result = flowserv_cli.invoke(cli, ['config', option])
+    result = flowserv_cli.invoke(cli, ['config'])
     assert result.exit_code == 0
 
 
@@ -66,7 +58,7 @@ def test_config_error():
     runner = CliRunner()
     result = runner.invoke(cli, ['init', '-f'])
     assert result.exit_code == -1
-    result = runner.invoke(cli, ['config', '--database'])
+    result = runner.invoke(cli, ['config'])
     assert 'export FLOWSERV_DATABASE=None' in result.output
     assert result.exit_code == 0
 

@@ -13,6 +13,7 @@ import os
 import pytest
 
 from flowserv.model.database import DB, TEST_URL
+from flowserv.model.files.fs import FileSystemStore
 from flowserv.service.api import service as serviceapi
 from flowserv.tests.controller import StateEngine
 
@@ -30,7 +31,7 @@ def service(database, tmpdir):
         return serviceapi(
             db=database,
             engine=engine,
-            basedir=tmpdir,
+            fs=FileSystemStore(basedir=tmpdir),
             auth=auth,
             view=view
         )

@@ -171,10 +171,7 @@ class RunService(object):
         # Get the run handle. If the run is not in success state raise an
         # unknown run error. The files in the handle are keyed by their unique
         # name. All files are added to an im-memory tar archive.
-        run = self.run_manager.get_run(run_id)
-        if not run.is_success():
-            raise err.UnknownRunError(run_id)
-        return run.archive()
+        return self.run_manager.get_runarchive(run_id=run_id)
 
     def get_result_file(self, run_id, file_id, user_id=None):
         """Get file handle for a resource file that was generated as the result
@@ -194,7 +191,7 @@ class RunService(object):
 
         Returns
         -------
-        flowserv.model.base.RunFile
+        flowserv.model.base.RunFile, string or io.BytesIO
 
         Raises
         ------
@@ -214,12 +211,7 @@ class RunService(object):
                 raise err.UnauthorizedAccessError()
         # Get the run handle to retrieve the resource. Raise error if the
         # resource does not exist
-        run = self.run_manager.get_run(run_id)
-        fh = run.get_file(by_id=file_id)
-        if fh is None:
-            raise err.UnknownFileError(file_id)
-        # Return file handle for resource file
-        return fh
+        return self.run_manager.get_runfile(run_id=run_id, file_id=file_id)
 
     def get_run(self, run_id, user_id):
         """Get handle for the given run.
@@ -380,12 +372,12 @@ class RunService(object):
                 # The argument value is expected to be the identifier of an
                 # previously uploaded file. This will raise an exception if the
                 # file identifier is unknown.
-                fh = self.group_manager.get_file(
+                _, fileobj = self.group_manager.get_file(
                     group_id=group_id,
                     file_id=file_id
                 )
                 run_args[arg_id] = para.to_argument(
-                    value=fh.filename,
+                    value=fileobj,
                     target=target
                 )
             else:
@@ -402,7 +394,7 @@ class RunService(object):
         run_id = run.run_id
         # Execute the benchmark workflow for the given set of arguments.
         from flowserv.service.api import service
-        state = self.backend.exec_workflow(
+        state, rundir = self.backend.exec_workflow(
             run=run,
             template=template,
             arguments=run_args,
@@ -414,33 +406,46 @@ class RunService(object):
         if not state.is_pending():
             self.update_run(
                 run_id=run_id,
-                state=state
+                state=state,
+                rundir=rundir
             )
             return self.get_run(run_id, user_id)
         return self.serialize.run_handle(run, group)
 
-    def update_run(self, run_id, state):
+    def update_run(self, run_id, state, rundir=None):
         """Update the state of the given run. For runs that are in a SUCCESS
         state the workflow evaluation ranking is updated (if a result schema
         is defined for the corresponding template). If the ranking results
         change, an optional post-processing step is executed (synchronously).
         These changes occur before the state of the workflow is updated in the
-        underlying database
+        underlying database.
+
+        All run result files are maintained in a temporary folder on local disk
+        before being moved to the file storage. For runs that are incative the
+        rundir parameter is expected to reference the run folder.
 
         Parameters
         ----------
         run_id: string
             Unique identifier for the run
         state: flowserv.model.workflow.state.WorkflowState
-            New workflow state
+            New workflow state.
+        rundir: string, default=None
+            Path to folder with run (result) files on the local disk. This
+            parameter should be given for all sucessful runs and potentially
+            also for runs in an error state.
 
         Raises
         ------
         flowserv.error.ConstraintViolationError
         """
         # Commit new run state.
-        run = self.run_manager.update_run(run_id=run_id, state=state)
-        if state.is_success():
+        run = self.run_manager.update_run(
+            run_id=run_id,
+            state=state,
+            rundir=rundir
+        )
+        if run is not None and state.is_success():
             logging.info('run {} is a success'.format(run_id))
             result_schema = run.workflow.result_schema
             postproc_spec = run.workflow.postproc_spec
@@ -454,7 +459,7 @@ class RunService(object):
                 # Run post-processing task synchronously if the current
                 # post-processing resources where generated for a different
                 # set of runs than those in the ranking.
-                if runs != workflow.postproc_ranking_key:
+                if runs != workflow.ranking():
                     msg = 'Run post-processing workflow for {}'
                     logging.info(msg.format(workflow.workflow_id))
                     run_postproc_workflow(
@@ -490,14 +495,13 @@ def run_postproc_workflow(
         dst = pp_inputs.get('runs', postbase.RUNS_DIR)
         run_args = {postbase.PARA_RUNS: InputFile(source=datadir, target=dst)}
         arg_list = [ARG(postbase.PARA_RUNS, FILE(datadir, dst))]
-    except (AttributeError, OSError, IOError) as ex:
+    except Exception as ex:
         logging.error(ex)
         strace = util.stacktrace(ex)
         run_args = dict()
         arg_list = []
     # Create a new run for the workflow. The identifier for the run group is
     # None.
-    workflow.postproc_ranking_key = runs
     run = run_manager.create_run(
         workflow=workflow,
         arguments=arg_list,
@@ -514,11 +518,10 @@ def run_postproc_workflow(
         # Execute the post-processing workflow asynchronously if
         # there were no data preparation errors.
         from flowserv.service.api import service
-        postproc_state = backend.exec_workflow(
+        postproc_state, rundir = backend.exec_workflow(
             run=run,
             template=WorkflowTemplate(
                 workflow_spec=workflow_spec,
-                sourcedir=workflow.get_template().sourcedir,
                 parameters=postbase.PARAMETERS
             ),
             arguments=run_args,
@@ -529,7 +532,8 @@ def run_postproc_workflow(
         if not postproc_state.is_pending():
             run_manager.update_run(
                 run_id=run.run_id,
-                state=postproc_state
+                state=postproc_state,
+                rundir=rundir
             )
         # Remove the temporary input folder
         shutil.rmtree(datadir)

@@ -13,7 +13,6 @@ identifiers.
 """
 
 import datetime
-import errno
 import io
 import json
 import os
@@ -24,7 +23,9 @@ import traceback
 import uuid
 import yaml
 
+from dateutil.parser import isoparse
 from dateutil.tz import UTC
+from typing import IO, List, Tuple, Union
 
 
 """Identifier for supported data formats."""
@@ -32,7 +33,7 @@ FORMAT_JSON = 'JSON'
 FORMAT_YAML = 'YAML'
 
 
-def archive_files(files):
+def archive_files(files: List[Tuple[Union[str, IO], str]]):
     """Create a gzipped tar file containing all files in the given list. The
     input is expected to be a list of 2-tupes of (filename, archive-name).
 
@@ -48,8 +49,13 @@ def archive_files(files):
     """
     file_out = io.BytesIO()
     tar_handle = tarfile.open(fileobj=file_out, mode='w:gz')
-    for filename, arcname in files:
-        tar_handle.add(name=filename, arcname=arcname)
+    for file, arcname in files:
+        if isinstance(file, str):
+            tar_handle.add(name=file, arcname=arcname)
+        else:
+            info = tarfile.TarInfo(name=arcname)
+            info.size = file.getbuffer().nbytes
+            tar_handle.addfile(tarinfo=info, fileobj=file)
     tar_handle.close()
     file_out.seek(0)
     return file_out
@@ -72,6 +78,10 @@ def copy_files(files, target_dir, overwrite=True, raise_error=False):
     raise_error: bool, default=False
         Raise an error when an existing target file is encountered if this flag
         is true and overwrite is False.
+
+    Raises
+    ------
+    ValueError
     """
     for source, target in files:
         # The target path is relative to the target directory. Create the
@@ -102,34 +112,6 @@ def copy_files(files, target_dir, overwrite=True, raise_error=False):
             shutil.copy(src=source, dst=dst)
 
 
-def create_dir(directory, abs=False):
-    """Safely create the given directory path if it does not exist.
-
-    Parameters
-    ----------
-    directory: string
-        Path to directory that is being created.
-    abs: boolean, optional
-        Return absolute path if true
-
-    Returns
-    -------
-    string
-    """
-    # Based on https://stackoverflow.com/questions/273192/
-    # how-can-i-safely-create-a-nested-directory
-    if not os.path.exists(directory):
-        try:
-            os.makedirs(directory)
-        except OSError as e:  # pragma: no cover
-            if e.errno != errno.EEXIST:
-                raise
-    if abs:
-        return os.path.abspath(directory)
-    else:
-        return directory
-
-
 def create_directories(basedir, files):
     """Create top-level folder for all files in a given list. The file list
     contains the path names of (result) files relative to a given base
@@ -158,17 +140,6 @@ def get_unique_identifier():
     string
     """
     return str(uuid.uuid4()).replace('-', '')
-
-
-def get_short_identifier():
-    """Create a unique identifier that contains only eigth characters. Uses the
-    prefix of a unique identifier as the result.
-
-    Returns
-    -------
-    string
-    """
-    return get_unique_identifier()[:8]
 
 
 def from_utc_datetime(utc_datetime):
@@ -228,7 +199,7 @@ def read_object(filename, format=None):
 
     Parameters
     ----------
-    filename: string
+    filename: string or io.BytesIO
         Path to file on disk
     format: string, optional
         Optional file format identifier. The default is YAML
@@ -241,6 +212,14 @@ def read_object(filename, format=None):
     ------
     ValueError
     """
+    # If the file is of type BytesIO we cannot guess the format from the file
+    # name. In this case the format is expected to be given as a parameter.
+    # By default, JSON is assumed.
+    if isinstance(filename, io.BytesIO):
+        if format == FORMAT_YAML:
+            return yaml.load(filename, Loader=yaml.FullLoader)
+        else:
+            return json.load(filename)
     # Guess format based on file suffix if not given
     if format is None:
         if filename.endswith('.json'):
@@ -255,6 +234,25 @@ def read_object(filename, format=None):
             return json.load(f)
     else:
         raise ValueError('unknown data format \'' + str(format) + '\'')
+
+
+def read_text(file: Union[str, IO]) -> str:
+    """Read string either from a file on disk or a BytesIO buffer.
+
+    Parameters
+    ----------
+    file: string or io.BytesIO
+        Input file or bytes buffer.
+
+    Returns
+    -------
+    string
+    """
+    if isinstance(file, str):
+        with open(file, 'r') as f:
+            return f.read()
+    else:
+        return file.read().decode('utf-8')
 
 
 def stacktrace(ex):
@@ -290,10 +288,12 @@ def to_datetime(timestamp):
         Datetime object
     """
     # Assumes a string in ISO format (with or without milliseconds)
-    try:
-        return datetime.datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%f')
-    except ValueError:
-        return datetime.datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S')
+    for format in ['%Y-%m-%dT%H:%M:%S.%f', '%Y-%m-%dT%H:%M:%S']:
+        try:
+            return datetime.datetime.strptime(timestamp, format)
+        except ValueError:
+            pass
+    return isoparse(timestamp)
 
 
 def utc_now():

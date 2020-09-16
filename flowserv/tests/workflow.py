@@ -11,6 +11,7 @@ import os
 import shutil
 import tempfile
 
+from flowserv.model.files.fs import FileSystemStore
 from flowserv.model.parameter.files import InputFile
 from flowserv.model.template.base import WorkflowTemplate
 from flowserv.model.workflow.manifest import WorkflowManifest
@@ -69,7 +70,6 @@ def prepare_postproc_data(templatefile, runs):
     # Read workflow templatefrom the given file.
     template = WorkflowTemplate.from_dict(
         doc=util.read_object(templatefile),
-        sourcedir=os.path.dirname(templatefile),
         validate=True
     )
     postproc_spec = template.postproc_spec
@@ -144,10 +144,10 @@ def run_postproc_workflow(
     wf = SerialWorkflow(
         template=WorkflowTemplate(
             workflow_spec=workflow_spec,
-            sourcedir=template.sourcedir,
             parameters=postbase.PARAMETERS
         ),
-        arguments=runargs
+        arguments=runargs,
+        sourcedir=rundir
     )
     util.copy_files(
         files=wf.upload_files(),
@@ -155,7 +155,7 @@ def run_postproc_workflow(
         overwrite=False
     )
     util.create_directories(basedir=rundir, files=wf.output_files())
-    _, state_dict = serial.run_workflow(
+    _, _, state_dict = serial.run_workflow(
         util.get_unique_identifier(),
         rundir,
         StatePending().start(),
@@ -257,14 +257,18 @@ def run_workflow(
     )
     # Prepare workflow. Ensure to copy only those files that are not part of
     # the workflow template directory.
-    wf = SerialWorkflow(template, template.parse_arguments(arguments))
+    wf = SerialWorkflow(
+        template=template,
+        arguments=template.parse_arguments(arguments),
+        sourcedir=sourcedir
+    )
     util.copy_files(
         files=wf.upload_files(),
         target_dir=rundir,
         overwrite=False
     )
     util.create_directories(basedir=rundir, files=wf.output_files())
-    _, state_dict = exec_func(
+    _, _, state_dict = exec_func(
         util.get_unique_identifier(),
         rundir,
         StatePending().start(),
@@ -288,31 +292,22 @@ class Entry(object):
         self.rundir = rundir
         self.group_name = os.path.basename(rundir)
 
-    def get_file(self, by_name):
+    def get_file(self, key):
         """Get handle for run result file with the given relative path."""
-        return ResultFile(os.path.join(self.rundir, by_name))
-
-
-class ResultFile(object):
-    """Wrapper providing file handle functionality for run files."""
-    def __init__(self, filename):
-        """Initialize the file name which is the only property that is being
-        accessed by the post-processing preparation code.
-        """
-        self.filename = filename
+        return os.path.join(self.rundir, key)
 
 
 class RunIndex(object):
     """Run manager that provides access to post-processing input runs."""
     def __init__(self, ranking):
-        """Initialize the run inex from list of ranking entries."""
+        """Initialize the run index from list of ranking entries."""
         self.runs = dict()
         for entry in ranking:
             self.runs[entry.run_id] = entry
 
-    def get_run(self, run_id):
+    def get_runfile(self, run_id, key):
         """Get run with the given identifier."""
-        return self.runs[run_id]
+        return None, self.runs[run_id].get_file(key)
 
 
 # -- Helper functions ---------------------------------------------------------
@@ -366,10 +361,10 @@ def read_template(sourcedir, rundir, specfile=None, manifestfile=None):
     )
     # Read the template specification file in the template workflow folder. If
     # the template is not found an error is raised.
-    template = manifest.template(templatedir=rundir)
+    template = manifest.template()
     if template is None:
         raise err.InvalidTemplateError('no template file found')
     # Copy files from the workflow folder to the template's static file
     # folder. By default all files in the project folder are copied.
-    manifest.copyfiles(targetdir=rundir)
+    manifest.copyfiles(targetdir='', fs=FileSystemStore(rundir))
     return template

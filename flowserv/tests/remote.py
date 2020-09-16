@@ -28,6 +28,19 @@ class RemoteTestClient(RemoteClient):
     def __init__(self, runcount=5, error=None, data=['no data']):
         """Initialize the internal state that maintains the created workflow.
         The client only supports execution for a single workflow at a time.
+
+        Parameters
+        ----------
+        runcount: int, default=5
+            Number of poll counts before the workflow state changes. This is
+            used to simulate asynchronous workflow excution.
+        error: string
+            Error message. If given the resulting workflow run will be in
+            error state and this string will be the only error message.
+        data: list or dict, default=['no data']
+            Result file content for successful workflow runs. Writes this data
+            item to the result file when the poll counter reaches the run count
+            and the error message is None.
         """
         self.runcount = runcount
         self.error = error
@@ -56,7 +69,7 @@ class RemoteTestClient(RemoteClient):
         flowserv.model.workflow.remote.RemoteWorkflowHandle
         """
         # Create a serial workfow to have a workflow handle.
-        wf = SerialWorkflow(template, arguments)
+        wf = SerialWorkflow(template, arguments, sourcedir=None)
         self.state = StatePending()
         self._pollcount = 0
         return RemoteWorkflowHandle(
@@ -79,7 +92,7 @@ class RemoteTestClient(RemoteClient):
         target: string
             Path to target file on local disk.
         """
-        FakeStream(data=self.data).save(target)
+        FakeStream(data=self.data).write(target)
 
     def get_workflow_state(self, workflow_id, current_state):
         """Get information about the current state of a given workflow.

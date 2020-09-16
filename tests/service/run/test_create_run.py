@@ -8,7 +8,9 @@
 
 """Unit test for creating workflow runs."""
 
+import os
 import pytest
+import tempfile
 
 from flowserv.service.run.argument import IS_FILE
 from flowserv.tests.service import (
@@ -26,6 +28,7 @@ def test_create_successful_run_view(service, hello_world):
     #
     # Start a new run for a group of the 'Hello World' workflow and set it into
     # success state.
+    tmpdir = tempfile.mkdtemp()
     with service() as api:
         user_1 = create_user(api)
         user_2 = create_user(api)
@@ -34,9 +37,8 @@ def test_create_successful_run_view(service, hello_world):
         run_id, file_id = start_hello_world(api, group_id, user_1)
         result = {'group': group_id, 'run': run_id}
         write_results(
-            api,
-            run_id,
-            [
+            rundir=tmpdir,
+            files=[
                 (result, None, 'results/data.json'),
                 ([group_id, run_id], 'txt/plain', 'values.txt')
             ]
@@ -46,8 +48,10 @@ def test_create_successful_run_view(service, hello_world):
             state=api.engine.success(
                 run_id,
                 files=['results/data.json', 'values.txt']
-            )
+            ),
+            rundir=tmpdir
         )
+    assert not os.path.exists(tmpdir)
     # -- Validate run handle --------------------------------------------------
     with service() as api:
         r = api.runs().get_run(run_id=run_id, user_id=user_1)

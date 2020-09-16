@@ -10,9 +10,15 @@
 modules.
 """
 
+from typing import List, Tuple
+
+from flowserv.model.base import RunHandle
+from flowserv.model.files.base import FileStore
 from flowserv.model.parameter.numeric import PARA_FLOAT, PARA_INT
 from flowserv.model.parameter.string import PARA_STRING
+from flowserv.model.template.base import WorkflowTemplate
 from flowserv.model.template.schema import ResultColumn, ResultSchema
+from flowserv.model.workflow.state import WorkflowState
 from flowserv.controller.base import WorkflowController
 
 import flowserv.model.workflow.state as st
@@ -34,11 +40,19 @@ class StateEngine(WorkflowController):
     """Workflow controller for test purposes. Maintains a dictionary of run
     states. Allows to modify the state of maintained runs
     """
-    def __init__(self):
-        """Initialize the run index."""
+    def __init__(self, fs: FileStore = None):
+        """Initialize the run index. The file store argument is included for
+        API completness.
+
+        Parameters
+        ----------
+        fs: flowserv.model.files.base.FileStore
+            File store that is passed to the engine by the controller init
+            method.
+        """
         self.runs = dict()
 
-    def cancel_run(self, run_id):
+    def cancel_run(self, run_id: str):
         """Request to cancel execution of the given run.
 
         Parameters
@@ -49,7 +63,7 @@ class StateEngine(WorkflowController):
         state = self.runs[run_id].cancel()
         self.runs[run_id] = state
 
-    def configuration(self):  # pragma: no cover
+    def configuration(self) -> List:  # pragma: no cover
         """Get a list of tuples with the names of additional configuration
         variables and their current values.
 
@@ -59,7 +73,7 @@ class StateEngine(WorkflowController):
         """
         return list()
 
-    def error(self, run_id, messages=None):
+    def error(self, run_id: str, messages: List[str] = None) -> WorkflowState:
         """Set the run with the given identifier into error state.
 
         Parameters
@@ -77,7 +91,10 @@ class StateEngine(WorkflowController):
         self.runs[run_id] = state
         return state
 
-    def exec_workflow(self, run, template, arguments, service=None):
+    def exec_workflow(
+        self, run: RunHandle, template: WorkflowTemplate, arguments: dict,
+        service=None
+    ) -> Tuple[WorkflowState, str]:
         """Fake execute method that returns the workflow state that the was
         provided when the object was instantiated. Ignores all given arguments.
 
@@ -95,13 +112,13 @@ class StateEngine(WorkflowController):
 
         Returns
         -------
-        flowserv.model.workflow.state.WorkflowState
+        flowserv.model.workflow.state.WorkflowState, string
         """
         state = st.StatePending()
         self.runs[run.run_id] = state
-        return state
+        return state, None
 
-    def start(self, run_id):
+    def start(self, run_id: str) -> WorkflowState:
         """Set the run with the given identifier into running state. Returns
         the modified workflow state.
 
@@ -118,7 +135,7 @@ class StateEngine(WorkflowController):
         self.runs[run_id] = state
         return state
 
-    def success(self, run_id, files=None):
+    def success(self, run_id: str, files: List[str] = None) -> WorkflowState:
         """Set the default state to SUCCESS.
 
         Parameters

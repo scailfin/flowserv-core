@@ -133,7 +133,11 @@ class RemoteWorkflowController(WorkflowController):
             # necessary files to the remote engine. Workflow execution may not
             # be started (indicated by the state property of the returned
             # handle for the remote workflow).
-            wf = self.client.create_workflow(run, template, arguments)
+            wf = self.client.create_workflow(
+                run=run,
+                template=template,
+                arguments=arguments
+            )
             workflow_id = wf.workflow_id
             # Run the workflow. Depending on the values of the is_async and
             # run_async flags the process will either block execution while
@@ -143,7 +147,6 @@ class RemoteWorkflowController(WorkflowController):
                 # Start monitor tread for asynchronous monitoring.
                 monitor.WorkflowMonitor(
                     run_id=run.run_id,
-                    rundir=run.get_rundir(),
                     state=wf.state,
                     workflow_id=workflow_id,
                     output_files=wf.output_files(),
@@ -152,24 +155,23 @@ class RemoteWorkflowController(WorkflowController):
                     service=service,
                     tasks=self.tasks
                 ).start()
-                return wf.state
+                return wf.state, None
             else:
                 # Run workflow synchronously. This will lock the calling thread
                 # while waiting (i.e., polling the remote engine) for the
                 # workflow execution to finish.
-                return monitor.monitor_workflow(
+                state, rundir = monitor.monitor_workflow(
                     run_id=run.run_id,
-                    rundir=run.get_rundir(),
                     state=wf.state,
                     workflow_id=workflow_id,
                     output_files=wf.output_files(),
                     client=self.client,
-                    poll_interval=self.poll_interval,
-                    service=service
+                    poll_interval=self.poll_interval
                 )
+                return state, rundir
         except Exception as ex:
             # Set the workflow runinto an ERROR state
             logging.error(ex)
             strace = util.stacktrace(ex)
             logging.debug('\n'.join(strace))
-            return run.state().error(messages=strace)
+            return run.state().error(messages=strace), None
