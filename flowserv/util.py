@@ -235,6 +235,25 @@ def read_object(filename, format=None):
         raise ValueError('unknown data format \'' + str(format) + '\'')
 
 
+def read_text(file: Union[str, IO]) -> str:
+    """Read string either from a file on disk or a BytesIO buffer.
+
+    Parameters
+    ----------
+    file: string or io.BytesIO
+        Input file or bytes buffer.
+
+    Returns
+    -------
+    string
+    """
+    if isinstance(file, str):
+        with open(file, 'r') as f:
+            return f.read()
+    else:
+        return file.read().decode('utf-8')
+
+
 def stacktrace(ex):
     """Get list of strings representing the stack trace for a given exception.
 

@@ -179,12 +179,3 @@ def read_json(file):
             return json.load(f)
     else:
         return json.load(file)
-
-
-def read_text(file):
-    """Read string either from a file on disk or a BytesIO buffer."""
-    if isinstance(file, str):
-        with open(file, 'r') as f:
-            return f.read()
-    else:
-        return file.read().decode('utf-8')

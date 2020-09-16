@@ -23,9 +23,9 @@ from flowserv.model.files.fs import FileSystemStore
 from flowserv.model.files.s3 import FLOWSERV_S3BUCKET
 
 from flowserv.tests.controller import StateEngine
-from flowserv.tests.files import read_text
 
 import flowserv.model.workflow.state as state
+import flowserv.util as util
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))
@@ -77,7 +77,7 @@ def test_run_app_from_env(fsconfig, tmpdir):
     file_id = files['results/greetings.txt']
     filename, mimetype = app.get_file(run_id=r['id'], file_id=file_id)
     assert mimetype == 'text/plain'
-    text = read_text(file=filename).strip()
+    text = util.read_text(file=filename).strip()
     assert text == 'Hi Alice!'
     # -- Clean-up -------------------------------------------------------------
     del os.environ[FLOWSERV_DB]

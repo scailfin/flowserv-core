@@ -15,7 +15,7 @@ upload_file()
 import botocore
 import os
 
-from io import BytesIO
+from io import BytesIO, StringIO
 from typing import IO, List, Set, Tuple, TypeVar, Union
 
 from flowserv.model.files.base import FileStore
@@ -252,11 +252,13 @@ class BucketStore(FileStore):
         if isinstance(file, str):
             self.bucket.upload_file(file, dst)
             return os.stat(file).st_size
-        else:
+        if isinstance(file, StringIO):
             file.seek(0)
-            f_size = file.getbuffer().nbytes
-            self.bucket.upload_fileobj(file, dst)
-            return f_size
+            file = BytesIO(bytes(file.read(), 'utf-8'))
+        file.seek(0)
+        f_size = file.getbuffer().nbytes
+        self.bucket.upload_fileobj(file, dst)
+        return f_size
 
 
 # -- Helper Methods -----------------------------------------------------------

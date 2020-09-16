@@ -16,6 +16,8 @@ import pytest
 import shutil
 import tarfile
 
+from io import StringIO
+
 from flowserv.model.files.s3 import BucketStore
 from flowserv.tests.files import FakeStream, DiskBucket
 
@@ -175,11 +177,14 @@ def test_file_upload_and_load(tmpdir):
     # -- Upload files ---------------------------------------------------------
     fs.upload_file(file=file1, dst='files/A.json')
     fs.upload_file(file=file2, dst='B.json')
+    fs.upload_file(file=StringIO('Hello World'), dst='C.txt')
     # -- Load files -------------------------------------------------------
     buf = fs.load_file('files/A.json')
     assert json.load(buf) == DATA1
     buf = fs.load_file('B.json')
     assert json.load(buf) == DATA2
+    buf = fs.load_file('C.txt')
+    print(buf.read())
     # -- Error cases ----------------------------------------------------------
     with pytest.raises(err.UnknownFileError):
         fs.load_file('unknown')

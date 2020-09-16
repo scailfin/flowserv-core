@@ -20,13 +20,14 @@ from flowserv.config.files import (
 from flowserv.controller.serial.engine import SerialWorkflowEngine
 from flowserv.service.api import service
 from flowserv.service.run.argument import ARG, FILE
-from flowserv.tests.files import FakeStream, read_json, read_text
+from flowserv.tests.files import FakeStream, read_json
 from flowserv.tests.service import (
     create_group, create_user, create_workflow, start_run, upload_file
 )
 
 
 import flowserv.model.workflow.state as st
+import flowserv.util as util
 
 
 # Template directory
@@ -133,7 +134,7 @@ def test_run_helloworld_async(fsconfig, target, tmpdir):
         file_id=files['results/greetings.txt'],
         user_id=user_id
     )
-    greetings = read_text(file=filename)
+    greetings = util.read_text(file=filename)
     assert 'Hi Alice' in greetings
     assert 'Hi Bob' in greetings
     assert 'Hi Zoe' in greetings
