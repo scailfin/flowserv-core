@@ -57,6 +57,7 @@
 
 ### 0.4.0 - 2020-09-16
 
-* Refactor code to include abstract file store for alternative storage backends.
+* Refactor code to include abstract file store for alternative storage backends (\#54).
 * Implement file store for S3 buckets.
-* Remove old workflow runs from database.
+* Avoid redundant storage of static files for workflow runs (\#55).
+* Remove old workflow runs from database (\#9).
