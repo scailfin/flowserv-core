@@ -78,6 +78,10 @@ class DiskBucket(object):
         """Initialize the internal object dictionary."""
         self.basedir = basedir if basedir is not None else config.API_BASEDIR()
 
+    def __repr__(self):
+        """Get object representation ."""
+        return "<DiskBucket dir='{}' />".format(self.basedir)
+
     @property
     def objects(self):
         """Simulate .objects call by returning a reference to self."""

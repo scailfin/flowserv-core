@@ -57,6 +57,10 @@ class BucketStore(FileStore):
                 bucket = boto3.resource('s3').Bucket(bucket_id)
         self.bucket = bucket
 
+    def __repr__(self):
+        """Get object representation ."""
+        return "<BucketStore bucket={} />".format(self.bucket)
+
     def copy_files(self, src: str, files: List[Tuple[str, str]]):
         """Copy a list of files or dirctories from a given source directory on
         the local file system to the file store. The list of files contains
@@ -154,17 +158,28 @@ class BucketStore(FileStore):
             # The source may either reference an object in the bucket via its
             # key or be a bytes buffer that has previously been loaded.
             if isinstance(source, str):
-                downloads = download_list(
-                    source=source,
-                    target=target,
-                    bucket=self.bucket
-                )
-                for key, target in downloads:
-                    outfile = os.path.join(dst, target)
-                    os.makedirs(os.path.dirname(outfile), exist_ok=True)
-                    data = self.load_file(key)
-                    with open(outfile, 'wb') as f:
-                        f.write(data.read())
+                # Object keys are expected to be relative paths. If the source
+                # string is an absolute path it is assumed that a file on disk
+                # is referenced.
+                if os.path.isabs(source):
+                    util.copy_files(
+                        files=[(source, target)],
+                        target_dir=dst,
+                        overwrite=False,
+                        raise_error=True
+                    )
+                else:
+                    downloads = download_list(
+                        source=source,
+                        target=target,
+                        bucket=self.bucket
+                    )
+                    for key, target in downloads:
+                        outfile = os.path.join(dst, target)
+                        os.makedirs(os.path.dirname(outfile), exist_ok=True)
+                        data = self.load_file(key)
+                        with open(outfile, 'wb') as f:
+                            f.write(data.read())
             else:
                 outfile = os.path.join(dst, target)
                 os.makedirs(os.path.dirname(outfile), exist_ok=True)

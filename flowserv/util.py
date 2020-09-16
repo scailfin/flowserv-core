@@ -198,7 +198,7 @@ def read_object(filename, format=None):
 
     Parameters
     ----------
-    filename: string
+    filename: string or io.BytesIO
         Path to file on disk
     format: string, optional
         Optional file format identifier. The default is YAML
@@ -211,6 +211,14 @@ def read_object(filename, format=None):
     ------
     ValueError
     """
+    # If the file is of type BytesIO we cannot guess the format from the file
+    # name. In this case the format is expected to be given as a parameter.
+    # By default, JSON is assumed.
+    if isinstance(filename, io.BytesIO):
+        if format == FORMAT_YAML:
+            return yaml.load(filename, Loader=yaml.FullLoader)
+        else:
+            return json.load(filename)
     # Guess format based on file suffix if not given
     if format is None:
         if filename.endswith('.json'):
