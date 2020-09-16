@@ -17,6 +17,7 @@ from typing import IO, List, Tuple, Union
 from flowserv.model.files.base import FileStore
 
 import flowserv.config.api as config
+import flowserv.config.files as fconfig
 import flowserv.util as util
 
 
@@ -39,6 +40,19 @@ class FileSystemStore(FileStore):
     def __repr__(self):
         """Get object representation ."""
         return "<FileSystemStore dir='{}' />".format(self.basedir)
+
+    def configuration(self) -> List[Tuple[str, str]]:
+        """Get a list of tuples with the names of additional configuration
+        variables and their current values.
+
+        Returns
+        -------
+        list((string, string))
+        """
+        return [
+            (fconfig.FLOWSERV_FILESTORE_CLASS, 'FileSystemStore'),
+            (fconfig.FLOWSERV_FILESTORE_MODULE, 'flowserv.model.files.fs')
+        ]
 
     def copy_files(self, src: str, files: List[Tuple[str, str]]):
         """Copy a list of files or dirctories from a given source directory.

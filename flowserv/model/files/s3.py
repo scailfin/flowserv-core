@@ -21,6 +21,7 @@ from typing import IO, List, Set, Tuple, TypeVar, Union
 from flowserv.model.files.base import FileStore
 
 import flowserv.config.base as config
+import flowserv.config.files as fconfig
 import flowserv.error as err
 import flowserv.util as util
 
@@ -60,6 +61,20 @@ class BucketStore(FileStore):
     def __repr__(self):
         """Get object representation ."""
         return "<BucketStore bucket={} />".format(self.bucket)
+
+    def configuration(self) -> List[Tuple[str, str]]:
+        """Get a list of tuples with the names of additional configuration
+        variables and their current values.
+
+        Returns
+        -------
+        list((string, string))
+        """
+        return [
+            (fconfig.FLOWSERV_FILESTORE_CLASS, 'BucketStore'),
+            (fconfig.FLOWSERV_FILESTORE_MODULE, 'flowserv.model.files.s3'),
+            (FLOWSERV_S3BUCKET, config.get_variable(FLOWSERV_S3BUCKET))
+        ]
 
     def copy_files(self, src: str, files: List[Tuple[str, str]]):
         """Copy a list of files or dirctories from a given source directory on
