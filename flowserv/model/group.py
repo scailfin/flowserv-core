@@ -14,7 +14,9 @@ database.
 import mimetypes
 
 from flowserv.model.base import UploadFile, GroupHandle, WorkflowHandle
+from flowserv.model.constraint import validate_identifier
 from flowserv.model.user import UserManager
+from flowserv.util import get_unique_identifier as unique_identifier
 
 import flowserv.error as err
 import flowserv.model.constraint as constraint
@@ -45,7 +47,7 @@ class WorkflowGroupManager(object):
 
     def create_group(
         self, workflow_id, name, user_id, parameters, workflow_spec,
-        members=None
+        members=None, identifier=None
     ):
         """Create a new group for a given workflow. Within each workflow,
         the names of groups are expected to be unique.
@@ -78,6 +80,8 @@ class WorkflowGroupManager(object):
             Workflow specification
         members: list(string), optional
             Optional list of user identifiers for other group members
+        identifier: string, default=None
+            Optional user-provided group identifier.
 
         Returns
         -------
@@ -88,6 +92,9 @@ class WorkflowGroupManager(object):
         flowserv.error.ConstraintViolationError
         flowserv.error.UnknownUserError
         """
+        # Validate the given group identifier. This will raise a ValueError
+        # if the identifier is invalid.
+        validate_identifier(identifier)
         # Ensure that the given name is valid and unique for the workflow
         constraint.validate_name(name)
         group = self.session.query(GroupHandle)\
@@ -98,7 +105,7 @@ class WorkflowGroupManager(object):
             msg = "group '{}' exists".format(name)
             raise err.ConstraintViolationError(msg)
         # Create the group object
-        identifier = util.get_unique_identifier()
+        identifier = identifier if identifier else unique_identifier()
         group = GroupHandle(
             group_id=identifier,
             name=name,

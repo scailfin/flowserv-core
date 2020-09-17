@@ -65,4 +65,4 @@
 
 ### 0.4.1 - 2020-09-17
 
-* Allow user-defined workflow identifier (\#59)
+* Allow user-defined workflow and group identifier (\#59)

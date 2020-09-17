@@ -169,8 +169,8 @@ class App(object):
 # -- App commands -------------------------------------------------------------
 
 def install_app(
-    source, name=None, description=None, instructions=None, specfile=None,
-    manifestfile=None, db=None, fs=None
+    source, identifier=None, name=None, description=None, instructions=None,
+    specfile=None, manifestfile=None, db=None, fs=None
 ):
     """Create database objects for a application that is defined by a workflow
     template. For each application the workflow is created, a single unser and
@@ -181,13 +181,16 @@ def install_app(
     ----------
     source: string
         Path to local template, name or URL of the template in the repository.
-    name: string, optional
+    identifier: string, default=None
+        Unique user-provided workflow identifier. If no identifier is given a
+        unique identifier will be generated for the application.
+    name: string, default=None
         Unique workflow name
-    description: string, optional
+    description: string, default=None
         Optional short description for display in workflow listings
-    instructions: string, optional
+    instructions: string, default=None
         File containing instructions for workflow users.
-    specfile: string, optional
+    specfile: string, default=None
         Path to the workflow template specification file (absolute or
         relative to the workflow directory)
     manifestfile: string, default=None
@@ -214,6 +217,7 @@ def install_app(
         repo = WorkflowManager(session=session, fs=fs)
         workflow = repo.create_workflow(
             source=source,
+            identifier=identifier,
             name=name,
             description=description,
             instructions=instructions,
@@ -240,6 +244,7 @@ def install_app(
         manager = WorkflowGroupManager(session=session, fs=fs)
         group = manager.create_group(
             workflow_id=workflow_id,
+            identifier=workflow_id,
             name=name,
             user_id=user_id,
             parameters=template.parameters,

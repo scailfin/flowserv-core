@@ -15,10 +15,7 @@ import os
 import pytest
 
 from flowserv.model.files.fs import FileSystemStore
-from flowserv.model.workflow.manager import (
-    WorkflowManager,
-    validate_identifier
-)
+from flowserv.model.workflow.manager import WorkflowManager
 from flowserv.tests.files import DiskStore
 
 import flowserv.error as err
@@ -328,33 +325,6 @@ def test_update_workflow_name(database, tmpdir):
         # Cannot change name to existing name.
         with pytest.raises(err.ConstraintViolationError):
             manager.update_workflow(workflow_id=workflow_2, name='B')
-
-
-@pytest.mark.parametrize(
-    'identifier,valid',
-    [
-        (None, True),
-        ('', False),
-        ('12345', True),
-        ('aAfshdksdfhgksdfjh_5849', True),
-        ('__aAfshdksdfhgks___jh_5849', True),
-        ('aAfshdksdfhgksdfjh-5849', False),
-        ('.', False),
-        ('aAfshdksdfhgksdfjh#$%5849', False),
-        ('a' * 32, True),
-        ('a' * 33, False)
-    ]
-)
-def test_valid_workflow_identifier(identifier, valid):
-    """Test function that validates user-provided workflow identifier."""
-    if not valid:
-        # If an identifier is invalid a ValueError will be raised.
-        with pytest.raises(ValueError):
-            validate_identifier(identifier)
-    else:
-        # If an identifier is valid no exception is raised and the resutl will
-        # be True.
-        assert validate_identifier(identifier)
 
 
 def test_workflow_name(database, tmpdir):

@@ -13,7 +13,6 @@ underlying database.
 
 import git
 import os
-import re
 import shutil
 import tempfile
 
@@ -21,6 +20,7 @@ from contextlib import contextmanager
 from typing import Optional
 
 from flowserv.model.base import WorkflowHandle
+from flowserv.model.constraint import validate_identifier
 from flowserv.model.workflow.manifest import WorkflowManifest
 from flowserv.model.workflow.repository import WorkflowRepository
 from flowserv.util import get_unique_identifier as unique_identifier
@@ -314,31 +314,3 @@ def clone(source, repository=None):
         finally:
             # Make sure to cleanup by removing the created teporary folder.
             shutil.rmtree(sourcedir)
-
-
-def validate_identifier(identifier: str) -> bool:
-    """Validate the given identifier to ensure that: (i) it's length is between
-    1 and 32, and (ii) it only contains letters (A-Z), digites, or underscore.
-
-    If the idnentifier is None it is considered valid. If an invalid identifier
-    is given a ValueError will be raised.
-
-    Returns True if the identifier is valid.
-
-    Parameters
-    ----------
-    identifier: string
-        Unique identifier string or None
-
-    Raises
-    ------
-    ValueError
-    """
-    if identifier is None:
-        return True
-    errmsg = "invalid workflow identifier '{}'"
-    if not 1 <= len(identifier) <= 32:
-        raise ValueError(errmsg.format(identifier))
-    if not re.match('^[a-zA-Z0-9_]+$', identifier):
-        raise ValueError(errmsg.format(identifier))
-    return True
