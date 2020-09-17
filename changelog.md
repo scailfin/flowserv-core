@@ -61,3 +61,8 @@
 * Implement file store for S3 buckets.
 * Avoid redundant storage of static files for workflow runs (\#55).
 * Remove old workflow runs from database (\#9).
+
+
+### 0.4.1 - 2020-09-17
+
+* Allow user-defined workflow identifier (\#59)

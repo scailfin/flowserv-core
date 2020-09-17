@@ -15,7 +15,10 @@ import os
 import pytest
 
 from flowserv.model.files.fs import FileSystemStore
-from flowserv.model.workflow.manager import WorkflowManager
+from flowserv.model.workflow.manager import (
+    WorkflowManager,
+    validate_identifier
+)
 from flowserv.tests.files import DiskStore
 
 import flowserv.error as err
@@ -41,15 +44,22 @@ TEMPLATE_TOPTAGGER = os.path.join(BENCHMARK_DIR, '../top-tagger.yaml')
 TEMPLATE = dict({'A': 1})
 
 
-@pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
-def test_create_workflow(fscls, database, tmpdir):
+@pytest.mark.parametrize(
+    'fscls,identifier',
+    [(FileSystemStore, 'abc'), (DiskStore, 'def')]
+)
+def test_create_workflow(fscls, identifier, database, tmpdir):
     """Test creating workflows with different levels of detail."""
     # -- Setup ----------------------------------------------------------------
     fs = fscls(tmpdir)
     # -- Add workflow with minimal information --------------------------------
     with database.session() as session:
         manager = WorkflowManager(session=session, fs=fs)
-        wf = manager.create_workflow(source=BENCHMARK_DIR)
+        wf = manager.create_workflow(
+            source=BENCHMARK_DIR,
+            identifier=identifier
+        )
+        assert wf.workflow_id == identifier
         assert wf.name == 'Hello World'
         assert wf.description is None
         assert wf.instructions is None
@@ -318,6 +328,33 @@ def test_update_workflow_name(database, tmpdir):
         # Cannot change name to existing name.
         with pytest.raises(err.ConstraintViolationError):
             manager.update_workflow(workflow_id=workflow_2, name='B')
+
+
+@pytest.mark.parametrize(
+    'identifier,valid',
+    [
+        (None, True),
+        ('', False),
+        ('12345', True),
+        ('aAfshdksdfhgksdfjh_5849', True),
+        ('__aAfshdksdfhgks___jh_5849', True),
+        ('aAfshdksdfhgksdfjh-5849', False),
+        ('.', False),
+        ('aAfshdksdfhgksdfjh#$%5849', False),
+        ('a' * 32, True),
+        ('a' * 33, False)
+    ]
+)
+def test_valid_workflow_identifier(identifier, valid):
+    """Test function that validates user-provided workflow identifier."""
+    if not valid:
+        # If an identifier is invalid a ValueError will be raised.
+        with pytest.raises(ValueError):
+            validate_identifier(identifier)
+    else:
+        # If an identifier is valid no exception is raised and the resutl will
+        # be True.
+        assert validate_identifier(identifier)
 
 
 def test_workflow_name(database, tmpdir):
