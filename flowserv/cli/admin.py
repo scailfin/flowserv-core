@@ -7,7 +7,7 @@
 # terms of the MIT License; see LICENSE file for more details.
 
 """Command line interface for the administrative tasks to configure the
-environment, intialize the underlying database, and the create and maintain
+environment, intialize the underlying database, and to create and maintain
 workflows in the repository.
 """
 
@@ -17,22 +17,15 @@ import os
 import sys
 import tempfile
 
+from flowserv.cli.config import get_configuration
 from flowserv.cli.parameter import read
 from flowserv.cli.repository import list_repository
 from flowserv.cli.run import runscli
 from flowserv.cli.user import register_user
 from flowserv.cli.workflow import add_workflow, workflowcli
-from flowserv.config.api import (
-    API_BASEDIR, API_HOST, API_NAME, API_PATH, API_PORT, API_PROTOCOL,
-    FLOWSERV_API_BASEDIR, FLOWSERV_API_HOST, FLOWSERV_API_NAME,
-    FLOWSERV_API_PATH, FLOWSERV_API_PORT, FLOWSERV_API_PROTOCOL
-)
-from flowserv.config.auth import FLOWSERV_AUTH_LOGINTTL, AUTH_LOGINTTL
-from flowserv.config.backend import (
-    FLOWSERV_BACKEND_CLASS, FLOWSERV_BACKEND_MODULE
-)
+from flowserv.config.api import API_BASEDIR, FLOWSERV_API_BASEDIR
 from flowserv.config.controller import FLOWSERV_ASYNC
-from flowserv.config.database import FLOWSERV_DB, DB_CONNECT
+from flowserv.config.database import FLOWSERV_DB
 from flowserv.model.database import DB, TEST_URL
 from flowserv.model.parameter.files import InputFile
 from flowserv.model.template.parameter import ParameterIndex
@@ -56,46 +49,10 @@ def configuration():
     """Print configuration variables for flowServ."""
     comment = '\n#\n# {}\n#\n'
     envvar = 'export {}={}'
-    # Configuration for the API
-    click.echo(comment.format('Web Service API'))
-    conf = list()
-    conf.append((FLOWSERV_API_BASEDIR, API_BASEDIR()))
-    conf.append((FLOWSERV_API_NAME, '"{}"'.format(API_NAME())))
-    conf.append((FLOWSERV_API_HOST, API_HOST()))
-    conf.append((FLOWSERV_API_PORT, API_PORT()))
-    conf.append((FLOWSERV_API_PROTOCOL, API_PROTOCOL()))
-    conf.append((FLOWSERV_API_PATH, API_PATH()))
-    for var, val in conf:
-        click.echo(envvar.format(var, val))
-    # Configuration for user authentication
-    click.echo(comment.format('Authentication'))
-    conf = [(FLOWSERV_AUTH_LOGINTTL, AUTH_LOGINTTL())]
-    for var, val in conf:
-        click.echo(envvar.format(var, val))
-    # Configuration for the underlying database
-    click.echo(comment.format('Database'))
-    try:
-        connect_url = DB_CONNECT()
-    except err.MissingConfigurationError:
-        connect_url = 'None'
-    click.echo(envvar.format(FLOWSERV_DB, connect_url))
-    # Configuration for the file store
-    from flowserv.service.files import get_filestore
-    click.echo(comment.format('File Store'))
-    for var, val in get_filestore(raise_error=False).configuration():
-        click.echo(envvar.format(var, val))
-    # Configuration for the workflow execution backend
-    from flowserv.service.backend import init_backend
-    click.echo(comment.format('Workflow Controller'))
-    conf = list()
-    backend_class = os.environ.get(FLOWSERV_BACKEND_CLASS, '')
-    conf.append((FLOWSERV_BACKEND_CLASS, backend_class))
-    backend_module = os.environ.get(FLOWSERV_BACKEND_MODULE, '')
-    conf.append((FLOWSERV_BACKEND_MODULE, backend_module))
-    for var, val in conf:
-        click.echo(envvar.format(var, val))
-    for var, val in init_backend(raise_error=False).configuration():
-        click.echo(envvar.format(var, val))
+    for title, envs in get_configuration().items():
+        click.echo(comment.format(title))
+        for var, val in envs.items():
+            click.echo(envvar.format(var, val))
     click.echo()
 
 
