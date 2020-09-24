@@ -182,7 +182,7 @@ class InputFile(object):
         ----------
         source: string or BytesIO
             Path to file on disk.
-        target: string, default=None
+        target: string
             Relative target path for file upload.
         exists: bool, default=True
             Ensure that the source file exists if this flag is True. Raises an

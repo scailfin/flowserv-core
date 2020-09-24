@@ -14,7 +14,7 @@ import os
 import shutil
 
 from io import BytesIO
-from typing import Dict, IO, List
+from typing import Dict, IO, List, Union
 
 import flowserv.config.api as config
 import flowserv.util as util
@@ -126,10 +126,7 @@ class DiskBucket(object):
 
     def upload_file(self, file: str, dst: str):
         """Read file and add the data buffer to the object index."""
-        data = BytesIO()
-        with open(file, 'rb') as f:
-            data.write(f.read())
-        data.seek(0)
+        data = util.read_buffer(file)
         self.upload_fileobj(file=data, dst=dst)
 
     def upload_fileobj(self, file: IO, dst: str):
@@ -172,10 +169,31 @@ def parse_dir(dirname, prefix, result=None):
     return result
 
 
-def read_json(file):
+# -- Helper Functions ---------------------------------------------------------
+
+def read_json(file: Union[IO, str]) -> Dict:
     """Read json object either from a file on disk or a BytesIO buffer."""
     if isinstance(file, str):
         with open(file, 'r') as f:
             return json.load(f)
     else:
         return json.load(file)
+
+
+def read_text(file: Union[str, IO]) -> str:
+    """Read string either from a file on disk or a BytesIO buffer.
+
+    Parameters
+    ----------
+    file: string or io.BytesIO
+        Input file or bytes buffer.
+
+    Returns
+    -------
+    string
+    """
+    if isinstance(file, str):
+        with open(file, 'r') as f:
+            return f.read()
+    else:
+        return file.read().decode('utf-8')

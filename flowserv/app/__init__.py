@@ -19,6 +19,11 @@ def flowapp(identifier: Optional[str] = None):
     API. The context manager ensures that the database conneciton in closed
     after a API request has been processed.
 
+    Parameters
+    ----------
+    identifier: string, default=None
+        Unique application identifier.
+
     Returns
     -------
     flowserv.app.base.App

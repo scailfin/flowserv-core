@@ -11,9 +11,19 @@
 import os
 import pytest
 
-from flowserv.model.parameter.files import FileParameter, PARA_FILE
+from flowserv.model.parameter.files import FileParameter, InputFile, PARA_FILE
 
 import flowserv.error as err
+
+
+def test_input_file():
+    """Test input file handle."""
+    file = InputFile(source='A', target='B', exists=False)
+    assert file.source() == 'A'
+    assert file.target() == 'B'
+    assert repr(file) == '<InputFile src=A dst=B/>'
+    with pytest.raises(err.UnknownFileError):
+        InputFile(source='A', target='B')
 
 
 def test_invalid_serialization():

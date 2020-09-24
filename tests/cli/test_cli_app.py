@@ -17,22 +17,23 @@ DIR = os.path.dirname(os.path.realpath(__file__))
 TEMPLATE_DIR = os.path.join(DIR, '../.files/benchmark/helloworld')
 
 
-def test_app_installation(flowapp_cli):
+def test_app_installation(flowserv_cli):
     """Test installing, lisiting, and uninstalling a workflow app using the
     command-line interface.
     """
     # Create app in a fresh database
-    cmd = ['install', '-c', TEMPLATE_DIR]
-    result = flowapp_cli.invoke(cli, cmd)
+    cmd = ['app', 'install', '--key', 'mykey', TEMPLATE_DIR]
+    result = flowserv_cli.invoke(cli, cmd)
+    print(result.output)
     assert result.exit_code == 0
-    assert 'export FLOWSERV_APP=' in result.output
+    assert 'export FLOWSERV_APP=mykey' in result.output
     app_key = result.output[result.output.rfind('=') + 1:].strip()
     # List apps
-    cmd = ['list']
-    result = flowapp_cli.invoke(cli, cmd)
+    cmd = ['workflows', 'list']
+    result = flowserv_cli.invoke(cli, cmd)
     assert result.exit_code == 0
     assert app_key in result.output
     # Uninstall the app
-    cmd = ['uninstall', app_key]
-    result = flowapp_cli.invoke(cli, cmd)
+    cmd = ['app', 'uninstall', app_key]
+    result = flowserv_cli.invoke(cli, cmd)
     assert result.exit_code == 0

@@ -7,13 +7,14 @@
 # terms of the MIT License; see LICENSE file for more details.
 
 from io import BytesIO, StringIO
-from typing import Dict
+from typing import Callable, Dict, Optional
 
 from flowserv.app.result import ResultFile, RunResult
-from flowserv.model.base import WorkflowHandle
-from flowserv.model.group import WorkflowGroupManager
-from flowserv.model.user import UserManager
+from flowserv.controller.base import WorkflowController
+from flowserv.model.database import DB, SessionScope
+from flowserv.model.files.base import FileStore
 from flowserv.model.workflow.manager import WorkflowManager
+from flowserv.service.auth import get_auth
 from flowserv.service.api import API
 from flowserv.service.files import get_filestore
 from flowserv.service.run.argument import ARG, FILE
@@ -24,15 +25,19 @@ import flowserv.util as util
 
 class App(object):
     """Application object for single workflow applications. Maintains workflow
-    metadata and provides functionality to execute workflow runs. Assumes that
-    the given workflow engine is in synchronous mode.
+    metadata and provides functionality to execute and monitor workflow runs.
     """
-    def __init__(self, db=None, engine=None, fs=None, key=None):
+    def __init__(
+        self, db: Optional[DB] = None,
+        engine: Optional[WorkflowController] = None,
+        fs: Optional[FileStore] = None, auth: Optional[Callable] = None,
+        key: Optional[str] = None
+    ):
         """Initialize the associated database and engine to retrieve workflow
         information and execute workflow runs. Each application has a unique
-        key which is the identifier of the group that was created when the
-        application workflow was installed. If the application key is not
-        given it is expected in the respective environment variable.
+        key which is the identifier of the associated workflow. If the
+        application key is not given it is expected in the respective
+        environment variable 'FLOWSERV_APP'.
 
         Parameters
         ----------
@@ -40,6 +45,11 @@ class App(object):
             Database connection manager.
         engine: flowserv.controller.base.WorkflowController, default=None
             Workflow controller to execute application runs.
+        auth: callable, default=None
+            Fuunction to generate an instance of the authentication policy.
+            To generate an Auth instance we need a database session object.
+            Thus, we cannot pass a default Auth object (for test purposes) to
+            the app class.
         fs: flowserv.model.files.base.FileStore, default=None
             File store to access application files.
         key: string, default=None
@@ -48,26 +58,93 @@ class App(object):
         """
         if db is None:
             # Use the default database object if no database is given.
-            from flowserv.service.database import database
-            db = database
+            from flowserv.app.database import flowdb
+            db = flowdb
         self._db = db
         # Set API components.
         if engine is None:
             from flowserv.controller.init import init_backend
             engine = init_backend()
         self._engine = engine
-        self.fs = fs if fs is not None else get_filestore()
+        self._auth = auth if auth is not None else get_auth
+        self._fs = fs if fs is not None else get_filestore()
         # Get application properties from the database.
-        self._group_id = config.APP_KEY(key)
+        self._workflow_id = config.APP_KEY(key)
         with self._db.session() as session:
-            manager = WorkflowGroupManager(session=session, fs=fs)
-            group = manager.get_group(self._group_id)
-            self._user_id = group.owner_id
-            self._name = group.name
-            workflow = group.workflow
+            manager = WorkflowManager(session=session, fs=fs)
+            workflow = manager.get_workflow(self._workflow_id)
+            self._name = workflow.name
             self._description = workflow.description
             self._instructions = workflow.instructions
-            self._parameters = group.parameters
+            self._parameters = workflow.parameters
+
+    def _api(self, session: SessionScope) -> API:
+        """Get an instance of the service API using a given database session.
+
+        Parameters
+        ----------
+        session: flowserv.model.database.SessionScope
+            Database session object.
+
+        Returns
+        -------
+        flowserv.service.api.API
+        """
+        return API(
+            session=session,
+            engine=self._engine,
+            auth=self._auth(session),
+            fs=self._fs
+        )
+
+    def cancel_run(self, run_id, user_id, reason=None):
+        """Cancel the run with the given identifier. Returns a serialization of
+        the handle for the canceled run.
+
+        Raises an unauthorized access error if the user does not have the
+        necessary access rights to cancel the run.
+
+        Parameters
+        ----------
+        run_id: string
+            Unique run identifier
+        user_id: string
+            Unique user identifier
+        reason: string, optional
+            Optional text describing the reason for cancelling the run
+
+        Returns
+        -------
+        dict
+
+        Raises
+        ------
+        flowserv.error.UnauthorizedAccessError
+        flowserv.error.UnknownRunError
+        flowserv.error.InvalidRunStateError
+        """
+        raise NotImplementedError()
+
+    def delete_run(self, run_id, user_id):
+        """Delete the run with the given identifier.
+
+        Raises an unauthorized access error if the user does not have the
+        necessary access rights to delete the run.
+
+        Parameters
+        ----------
+        run_id: string
+            Unique run identifier
+        user_id: string
+            Unique user identifier
+
+        Raises
+        ------
+        flowserv.error.UnauthorizedAccessError
+        flowserv.error.UnknownRunError
+        flowserv.error.InvalidRunStateError
+        """
+        raise NotImplementedError()
 
     def description(self) -> str:
         """Get descriptive header for the application.
@@ -78,7 +155,9 @@ class App(object):
         """
         return self._description
 
-    def get_file(self, run_id: str, file_id: str) -> ResultFile:
+    def get_file(
+        self, run_id: str, file_id: str, user_id: Optional[str] = None
+    ) -> ResultFile:
         """Get buffer, name and mime type for a run result file.
 
         Parameters
@@ -87,19 +166,21 @@ class App(object):
             Unique run identifier.
         file_id: string
             Unique file identifier.
+        user_id: string, default=None
+            Identifier for user that is making the request.
 
         Returns
         -------
         flowserv.app.result.ResultFile
         """
         with self._db.session() as session:
-            api = API(session=session, engine=self._engine, fs=self.fs)
+            api = self._api(session=session)
             fh, fileobj = api.runs().get_result_file(
                 run_id=run_id,
                 file_id=file_id,
-                user_id=self._user_id
+                user_id=user_id
             )
-            return ResultFile(fileobj, fh)
+            return ResultFile(file_handle=fh, fileobj=fileobj)
 
     def instructions(self) -> str:
         """Get instructions text for the application.
@@ -109,6 +190,30 @@ class App(object):
         string
         """
         return self._instructions
+
+    def list_runs(self, group_id, user_id):
+        """Get a listing of all run handles for the given workflow group.
+
+        Raises an unauthorized access error if the user does not have read
+        access to the workflow group.
+
+        Parameters
+        ----------
+        group_id: string
+            Unique workflow group identifier
+        user_id: string
+            Unique user identifier
+
+        Returns
+        -------
+        dict
+
+        Raises
+        ------
+        flowserv.error.UnauthorizedAccessError
+        flowserv.error.UnknownWorkflowGroupError
+        """
+        raise NotImplementedError()
 
     def name(self) -> str:
         """Get application title.
@@ -128,39 +233,74 @@ class App(object):
         """
         return self._parameters
 
-    def start_run(self, arguments: Dict) -> RunResult:
+    def poll_run(self, run_id, user_id):
+        """Get handle for the given run.
+
+        Raises an unauthorized access error if the user does not have read
+        access to the run.
+
+        Parameters
+        ----------
+        run_id: string
+            Unique run identifier
+        user_id: string
+            Unique user identifier
+
+        Returns
+        -------
+        dict
+
+        Raises
+        ------
+        flowserv.error.UnauthorizedAccessError
+        flowserv.error.UnknownRunError
+        """
+        raise NotImplementedError()
+
+    def start_run(
+        self, arguments: Dict, user_id: Optional[str] = None
+    ) -> RunResult:
         """Run the associated workflow for the given set of arguments.
 
         Parameters
         ----------
         arguments: dict
             Dictionary of user-provided arguments.
+        user_id: string, default=None
+            Identifier for user that is making the request.
 
         Returns
         -------
         flowserv.app.result.RunResult
         """
         with self._db.session() as session:
-            api = API(session=session, engine=self._engine, fs=self.fs)
+            api = self._api(session=session)
+            # Create a new group for the run.
+            group_id = api.groups().create_group(
+                workflow_id=self._workflow_id,
+                name=util.get_unique_identifier(),
+                user_id=user_id
+            )['id']
             # Upload any argument values as files that are either of type
             # StringIO or BytesIO.
             arglist = list()
             for key, val in arguments.items():
                 if isinstance(val, StringIO) or isinstance(val, BytesIO):
                     fh = api.uploads().upload_file(
-                        group_id=self._group_id,
+                        group_id=group_id,
                         file=val,
                         name=key,
-                        user_id=self._user_id
+                        user_id=user_id
                     )
                     val = FILE(fh['id'])
                 arglist.append(ARG(key, val))
             # Execute the run and return the serialized run handle.
-            return api.runs().start_run(
-                group_id=self._group_id,
+            run = api.runs().start_run(
+                group_id=group_id,
                 arguments=arglist,
-                user_id=self._user_id
+                user_id=user_id
             )
+            return RunResult(doc=run, loader=self.get_file)
 
 
 # -- App commands -------------------------------------------------------------
@@ -170,9 +310,8 @@ def install_app(
     specfile=None, manifestfile=None, db=None, fs=None
 ):
     """Create database objects for a application that is defined by a workflow
-    template. For each application the workflow is created, a single unser and
-    a workflow group that is used to run the application. The unique group
-    identifer is returned as the application key.
+    template. An application is simply a different representation for the
+    workflow that defines the application.
 
     Parameters
     ----------
@@ -209,7 +348,6 @@ def install_app(
     if fs is None:
         fs = get_filestore()
     # Create a new workflow for the application from the specified template.
-    # For applications, any post-processing workflow is currently ignored.
     with db.session() as session:
         repo = WorkflowManager(session=session, fs=fs)
         workflow = repo.create_workflow(
@@ -219,72 +357,14 @@ def install_app(
             description=description,
             instructions=instructions,
             specfile=specfile,
-            manifestfile=manifestfile,
-            ignore_postproc=True
+            manifestfile=manifestfile
         )
         workflow_id = workflow.workflow_id
-        template = workflow.get_template()
-        name = workflow.name
-    # Create a default user for the application.
-    with db.session() as session:
-        manager = UserManager(session=session)
-        user = manager.register_user(
-            username=util.get_unique_identifier(),
-            password=util.get_unique_identifier(),
-            verify=False
-        )
-        user_id = user.user_id
-    # Create a single group for the application. This group is used to run
-    # the application. The unique group identifier is returned as the
-    # application identifier.
-    with db.session() as session:
-        manager = WorkflowGroupManager(session=session, fs=fs)
-        group = manager.create_group(
-            workflow_id=workflow_id,
-            identifier=workflow_id,
-            name=name,
-            user_id=user_id,
-            parameters=template.parameters,
-            workflow_spec=template.workflow_spec
-        )
-        app_id = group.group_id
-    return app_id
-
-
-def list_apps(db=None):
-    """List all applications in the database. There currently is no information
-    in the database about which workflow is an application or a benchmark. For
-    now we use the assumption that applications a workflows with a single group
-    that has the same name as the workflow.
-
-    Returns a list of tuples containing the application name and the unique
-    application key.
-
-    Parameters
-    ----------
-    db: flowserv.model.database.DB, default=None
-        Database connection manager.
-
-    Returns
-    -------
-    list
-    """
-    if db is None:
-        # Use the default database object if no database is given.
-        from flowserv.service.database import database
-        db = database
-    result = list()
-    with db.session() as session:
-        for wf in session.query(WorkflowHandle).all():
-            if len(wf.groups) == 1:
-                group = wf.groups[0]
-                if group.name == wf.name:
-                    result.append((wf.name, group.group_id))
-    return result
+    return workflow_id
 
 
 def uninstall_app(app_key, db=None, fs=None):
-    """Remove workflow and group associated with the given application key.
+    """Remove the workflow that is associated with the given application key.
 
     Parameters
     ----------
@@ -303,10 +383,6 @@ def uninstall_app(app_key, db=None, fs=None):
         fs = get_filestore()
     # Delete workflow and all related files.
     with db.session() as session:
-        # Get the identifier for the workflow that is associated with the
-        # application key (workflow group).
-        group = WorkflowGroupManager(session=session, fs=fs).get_group(app_key)
-        workflow_id = group.workflow_id
         # Delete workflow using the workflow manager.
-        WorkflowManager(session=session, fs=fs).delete_workflow(workflow_id)
+        WorkflowManager(session=session, fs=fs).delete_workflow(app_key)
         session.commit()

@@ -152,7 +152,10 @@ class WorkflowTemplate(object):
         # -- Output file specifications --------------------------------------
         outputs = None
         if 'outputs' in doc:
-            outputs = [WorkflowOutputFile.from_dict(f) for f in doc['outputs']]
+            outputs = [WorkflowOutputFile.from_dict(
+                f,
+                validate=validate
+            ) for f in doc['outputs']]
         # -- Result schema ---------------------------------------------------
         schema = ResultSchema.from_dict(doc.get('results'), validate=validate)
         # Return template instance

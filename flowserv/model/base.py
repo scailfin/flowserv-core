@@ -569,9 +569,11 @@ class RunHandle(Base):
         return self.state_type == st.STATE_SUCCESS
 
     def outputs(self):
-        """Get specification of output file properties. If the workflow
-        template does not contain any output file specifications the result
-        is None.
+        """Get specification of output file properties. The result is a
+        dictionary ofworkflow output file specifications keyed by either the
+        user-specified key or the file source. If the workflow template does
+        not contain any output file specifications the result is an empty
+        dictionary.
 
         If the run is associated with a group, then the output file
         specification of the associated workflow is returned. If the run is a
@@ -580,15 +582,23 @@ class RunHandle(Base):
 
         Returns
         -------
-        list(flowserv.model.template.files.WorkflowOutputFile)
+        dict(string: flowserv.model.template.files.WorkflowOutputFile)
         """
         if self.group_id is not None:
-            return self.workflow.outputs
+            outputs = self.workflow.outputs
         else:
             outputs = self.workflow.postproc_spec.get('outputs')
             if outputs is not None:
                 outputs = [WorkflowOutputFile.from_dict(f) for f in outputs]
-            return outputs
+        # Return an empty dictionary if no output specification was found.
+        if not outputs:
+            return dict()
+        # Create dictionary that maps user-defined key or file source to the
+        # workflow output file specifications.
+        result = dict()
+        for f in outputs:
+            result[f.key] = f
+        return result
 
     def state(self):
         """Get an instance of the workflow state for the given run.

@@ -13,8 +13,11 @@ database.
 
 import mimetypes
 
+from typing import Dict, List, Optional
+
 from flowserv.model.base import UploadFile, GroupHandle, WorkflowHandle
 from flowserv.model.constraint import validate_identifier
+from flowserv.model.parameter.base import ParameterBase
 from flowserv.model.user import UserManager
 from flowserv.util import get_unique_identifier as unique_identifier
 
@@ -46,8 +49,9 @@ class WorkflowGroupManager(object):
         self.users = users if users else UserManager(session=session)
 
     def create_group(
-        self, workflow_id, name, user_id, parameters, workflow_spec,
-        members=None, identifier=None
+        self, workflow_id: str, name: str, parameters: List[ParameterBase],
+        workflow_spec: Dict, user_id: Optional[str] = None,
+        members: List[str] = None, identifier: Optional[str] = None
     ):
         """Create a new group for a given workflow. Within each workflow,
         the names of groups are expected to be unique.
@@ -118,7 +122,7 @@ class WorkflowGroupManager(object):
         # the group owner. Ensure that all group members exist. This will also
         # ensure that the group owner exists.
         member_set = set() if members is None else set(members)
-        if user_id not in member_set:
+        if user_id is not None and user_id not in member_set:
             member_set.add(user_id)
         for member_id in member_set:
             group.members.append(self.users.get_user(member_id, active=True))

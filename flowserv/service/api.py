@@ -14,12 +14,12 @@ closed properly after every API request has been handled.
 
 from contextlib import contextmanager
 
-from flowserv.model.auth import DefaultAuthPolicy
 from flowserv.model.group import WorkflowGroupManager
 from flowserv.model.ranking import RankingManager
 from flowserv.model.run import RunManager
 from flowserv.model.user import UserManager
 from flowserv.model.workflow.manager import WorkflowManager
+from flowserv.service.auth import get_auth
 from flowserv.service.files import UploadFileService, get_filestore
 from flowserv.service.group import WorkflowGroupService
 from flowserv.service.run.base import RunService
@@ -76,31 +76,19 @@ class API(object):
         self.engine = engine
         # Initialize the file store.
         self.fs = fs if fs is not None else get_filestore()
+        # Set the authentication policy.
+        self.auth = auth if auth is not None else get_auth(session)
         # Set the serializer factory
         self.view = view if view is not None else DefaultView()
         # Keep an instance of objects that may be used by multiple components
         # of the API. Use the respective property for each of them to ensure
         # that the object is instantiated before access.
-        self._auth = auth
-        self._engine = None
         self._group_manager = None
         self._ranking_manager = None
         self._run_manager = None
         self._workflow_repo = None
         self._user_manager = None
         self._users = None
-
-    @property
-    def auth(self):
-        """Get authentication handler. The object is create only once.
-
-        Returns
-        -------
-        flowserv.model.auth.Auth
-        """
-        if self._auth is None:
-            self._auth = DefaultAuthPolicy(session=self.session)
-        return self._auth
 
     def authenticate(self, access_token):
         """Authenticate the user based on the access token that is expected in

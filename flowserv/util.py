@@ -25,7 +25,7 @@ import yaml
 
 from dateutil.parser import isoparse
 from dateutil.tz import UTC
-from typing import IO, List, Tuple, Union
+from typing import Dict, IO, List, Optional, Tuple, Union
 
 
 """Identifier for supported data formats."""
@@ -212,7 +212,26 @@ def jquery(doc, path):
         return jquery(doc=doc.get(path[0], dict()), path=path[1:])
 
 
-def read_object(filename, format=None):
+def read_buffer(filename: str) -> IO:
+    """Read content from specified file into a BytesIO buffer.
+
+    Parameters
+    ----------
+    filename: string
+        Path tpo file on disk.
+
+    Returns
+    -------
+    io.BytesIO
+    """
+    buf = io.BytesIO()
+    with open(filename, 'rb') as f:
+        buf.write(f.read())
+    buf.seek(0)
+    return buf
+
+
+def read_object(filename: str, format: Optional[str] = None) -> Dict:
     """Load a Json object from a file. The file may either be in Yaml or in
     Json format.
 
@@ -253,25 +272,6 @@ def read_object(filename, format=None):
             return json.load(f)
     else:
         raise ValueError('unknown data format \'' + str(format) + '\'')
-
-
-def read_text(file: Union[str, IO]) -> str:
-    """Read string either from a file on disk or a BytesIO buffer.
-
-    Parameters
-    ----------
-    file: string or io.BytesIO
-        Input file or bytes buffer.
-
-    Returns
-    -------
-    string
-    """
-    if isinstance(file, str):
-        with open(file, 'r') as f:
-            return f.read()
-    else:
-        return file.read().decode('utf-8')
 
 
 def stacktrace(ex):

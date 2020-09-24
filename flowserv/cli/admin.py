@@ -106,7 +106,7 @@ def init(force=False):
     help='Directory for output files.'
 )
 @click.argument('template')
-def run_workflow(specfile, manifest, ignorepp, output, source):  # pragma: no cover  # noqa: E501
+def run_workflow(specfile, manifest, ignorepp, output, source):
     """Run a workflow template for test purposes."""
     # -- Logging --------------------------------------------------------------
     root = logging.getLogger()
