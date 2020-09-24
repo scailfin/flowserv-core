@@ -7,7 +7,9 @@
 # terms of the MIT License; see LICENSE file for more details.
 
 from io import BytesIO, StringIO
+from typing import Dict
 
+from flowserv.app.result import ResultFile, RunResult
 from flowserv.model.base import WorkflowHandle
 from flowserv.model.group import WorkflowGroupManager
 from flowserv.model.user import UserManager
@@ -51,7 +53,6 @@ class App(object):
         self._db = db
         # Set API components.
         if engine is None:
-            config.SYNC()
             from flowserv.controller.init import init_backend
             engine = init_backend()
         self._engine = engine
@@ -66,12 +67,9 @@ class App(object):
             workflow = group.workflow
             self._description = workflow.description
             self._instructions = workflow.instructions
-            self._parameters = sorted(
-                group.parameters.values(),
-                key=lambda p: p.index
-            )
+            self._parameters = group.parameters
 
-    def description(self):
+    def description(self) -> str:
         """Get descriptive header for the application.
 
         Returns
@@ -80,8 +78,8 @@ class App(object):
         """
         return self._description
 
-    def get_file(self, run_id, file_id):
-        """Get handle for a run result file with the given identifier.
+    def get_file(self, run_id: str, file_id: str) -> ResultFile:
+        """Get buffer, name and mime type for a run result file.
 
         Parameters
         ----------
@@ -92,7 +90,7 @@ class App(object):
 
         Returns
         -------
-        flowserv.model.base.RunFile
+        flowserv.app.result.ResultFile
         """
         with self._db.session() as session:
             api = API(session=session, engine=self._engine, fs=self.fs)
@@ -101,9 +99,9 @@ class App(object):
                 file_id=file_id,
                 user_id=self._user_id
             )
-            return (fileobj, fh.mime_type)
+            return ResultFile(fileobj, fh)
 
-    def instructions(self):
+    def instructions(self) -> str:
         """Get instructions text for the application.
 
         Returns
@@ -112,7 +110,7 @@ class App(object):
         """
         return self._instructions
 
-    def name(self):
+    def name(self) -> str:
         """Get application title.
 
         Returns
@@ -121,7 +119,7 @@ class App(object):
         """
         return self._name
 
-    def parameters(self):
+    def parameters(self) -> Dict:
         """Get parameter declaration for application runs.
 
         Returns
@@ -130,7 +128,7 @@ class App(object):
         """
         return self._parameters
 
-    def run(self, arguments):
+    def start_run(self, arguments: Dict) -> RunResult:
         """Run the associated workflow for the given set of arguments.
 
         Parameters
@@ -140,7 +138,7 @@ class App(object):
 
         Returns
         -------
-        dict
+        flowserv.app.result.RunResult
         """
         with self._db.session() as session:
             api = API(session=session, engine=self._engine, fs=self.fs)
@@ -157,8 +155,7 @@ class App(object):
                     )
                     val = FILE(fh['id'])
                 arglist.append(ARG(key, val))
-            # Execute the run. Since we are using a synchronized engine this
-            # will block execution until the run is finished.
+            # Execute the run and return the serialized run handle.
             return api.runs().start_run(
                 group_id=self._group_id,
                 arguments=arglist,

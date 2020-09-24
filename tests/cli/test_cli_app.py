@@ -10,7 +10,7 @@
 
 import os
 
-from flowserv.cli.app import cli
+from flowserv.cli.admin import cli
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))

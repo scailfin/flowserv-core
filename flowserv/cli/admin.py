@@ -17,6 +17,7 @@ import os
 import sys
 import tempfile
 
+from flowserv.cli.app import appcli
 from flowserv.cli.config import get_configuration
 from flowserv.cli.parameter import read
 from flowserv.cli.repository import list_repository
@@ -184,6 +185,10 @@ def run_workflow(specfile, manifest, ignorepp, output, source):  # pragma: no co
     if postrun is not None:
         click.echo('\nPost-processing results\n-----------------------')
         run_results(postrun, user_id, postout)
+
+
+# App
+cli.add_command(appcli)
 
 
 # Repository

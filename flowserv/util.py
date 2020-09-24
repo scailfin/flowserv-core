@@ -142,6 +142,25 @@ def get_unique_identifier():
     return str(uuid.uuid4()).replace('-', '')
 
 
+def flask_upload(file):
+    """Convert an uploaded Werkzeug FileStorage into a BytesIO buffer that
+    can be passed to flowserv as a workflow run input argument.
+
+    Parameters
+    ----------
+    file: werkzeug.FileStorage
+        File that is uploaded as part of a request in Flask.
+
+    Returns
+    -------
+    io.BytesIO
+    """
+    buf = io.BytesIO()
+    file.save(buf)
+    buf.seek(0)
+    return buf
+
+
 def from_utc_datetime(utc_datetime):
     """Convert a timestamp in UTC time to local time. This code is based on
     https://stackoverflow.com/questions/4770297/

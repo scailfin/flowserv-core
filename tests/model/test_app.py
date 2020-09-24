@@ -11,7 +11,7 @@
 import os
 import pytest
 
-from flowserv.app import App, install_app, list_apps, uninstall_app
+from flowserv.app.base import App, install_app, list_apps, uninstall_app
 from flowserv.config.api import FLOWSERV_API_BASEDIR
 from flowserv.config.database import FLOWSERV_DB
 from flowserv.model.files.fs import FileSystemStore

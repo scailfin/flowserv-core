@@ -13,7 +13,7 @@ import pytest
 
 from io import BytesIO
 
-from flowserv.app import App, install_app
+from flowserv.app.base import App, install_app
 from flowserv.config.api import FLOWSERV_API_BASEDIR
 from flowserv.config.database import FLOWSERV_DB
 from flowserv.config.files import (
