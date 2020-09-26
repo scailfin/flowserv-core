@@ -11,46 +11,11 @@ it easier for a developer that uses the flowserv application object to access
 the results and resources of workflow runs.
 """
 
-from typing import Callable, Dict, IO, List, Optional, Union
+from typing import Callable, Dict, List, Optional
 
-from flowserv.model.base import RunFile
+from flowserv.model.files.base import DatabaseFile
 
 import flowserv.model.workflow.state as st
-import flowserv.util as util
-
-
-class ResultFile(object):
-    """Wrapper for run result files. Maintains the reference to the file
-    object together with the file name and mime type. Depending on the file
-    store this object may either be a string (path to a file on disk) or a
-    BytesIO buffer.
-    """
-    def __init__(self, file_handle: RunFile, fileobj: Union[str, IO]):
-        """Initialize the file object and file handle.
-
-        Parameters
-        ----------
-        file_handle: flowserv.model.base.RunFile
-            Handle for the run result file.
-        fileobj: string or io.BytesIO
-            File object providing access to the file content.
-        """
-        self.fileobj = fileobj
-        self.mime_type = file_handle.mime_type
-        self.name = file_handle.name
-
-    def load(self) -> IO:
-        """Get an BytesIO buffer containing the file content. If the associated
-        file object is a path to a file on disk the file is being read.
-
-        Returns
-        -------
-        io.BytesIO
-        """
-        if isinstance(self.fileobj, str):
-            return util.read_buffer(self.fileobj)
-        else:
-            return self.fileobj
 
 
 class RunResult(object):
@@ -76,7 +41,7 @@ class RunResult(object):
 
     def get_file(
         self, key: str, raise_error: Optional[bool] = True
-    ) -> ResultFile:
+    ) -> DatabaseFile:
         """Get result file object for the file with the given identifier.
         Raises a ValueError if no file with the given key exists and the raise
         error flag is True.
@@ -90,7 +55,7 @@ class RunResult(object):
 
         Returns
         -------
-        flowserv.app.result.ResultFile
+        flowserv.model.files.base.DatabaseFile
 
         Raises
         ------
@@ -133,6 +98,16 @@ class RunResult(object):
         if file_id is None and raise_error:
             raise ValueError("unknown file '{}'".format(key))
         return file_id
+
+    def is_active(self) -> bool:
+        """Check if the run state is in an active state (either PENDING or
+        RUNNING).
+
+        Returns
+        -------
+        bool
+        """
+        return self.is_pending() or self.is_running()
 
     def is_canceled(self) -> bool:
         """Check if the run state is CANCELED.

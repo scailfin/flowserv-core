@@ -14,12 +14,11 @@ import os
 
 from flowserv.controller.serial.engine import SerialWorkflowEngine
 from flowserv.service.run.argument import ARG, FILE
-from flowserv.tests.files import FakeStream
+from flowserv.tests.files import io_file
 from flowserv.tests.service import (
     create_group, create_user, create_workflow, start_run, upload_file
 )
 
-import flowserv.util as util
 import flowserv.model.workflow.state as st
 import flowserv.tests.serialize as serialize
 
@@ -44,8 +43,8 @@ def test_run_workflow_with_outputs(service):
         )
         user_id = create_user(api)
         group_id = create_group(api, workflow_id, [user_id])
-        names = FakeStream(data=['Alice', 'Bob'], format='plain/text')
-        file_id = upload_file(api, group_id, user_id, names.save())
+        names = io_file(data=['Alice', 'Bob'], format='plain/text')
+        file_id = upload_file(api, group_id, user_id, names)
         args = [ARG('names', FILE(file_id, 'data/names.txt'))]
         run_id = start_run(api, group_id, user_id, arguments=args)
     # -- Validate the run handle ----------------------------------------------
@@ -57,9 +56,10 @@ def test_run_workflow_with_outputs(service):
         for obj in r['files']:
             files[obj['name']] = obj['id']
         assert len(files) == 1
-        fh, filename = api.runs().get_result_file(
+        fh = api.runs().get_result_file(
             run_id=run_id,
             file_id=files['results/greetings.txt'],
             user_id=user_id
         )
-        assert util.read_object(filename) == 'Hello Alice! Hello Bob!'
+        value = fh.open().read().decode('utf-8').strip()
+        assert value == 'Hello Alice!\nHello Bob!'

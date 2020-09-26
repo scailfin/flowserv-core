@@ -27,10 +27,154 @@ The folder structure is currently as follows:
 """
 
 from abc import ABCMeta, abstractmethod
-from typing import IO, List, Tuple, Union
+from typing import IO, List, Tuple
 
 import os
 
+
+# -- File objects for file stores ---------------------------------------------
+
+class FileObject(metaclass=ABCMeta):
+    """Wrapper around different file objects (i.e., files on disk or files on
+    the file system). Provides functionality to load file content as a bytes
+    buffer and to write file contents to disk.
+    """
+    @abstractmethod
+    def open(self) -> IO:
+        """Get file contents as a BytesIO buffer.
+
+        Returns
+        -------
+        io.BytesIO
+
+        Raises
+        ------
+        flowserv.error.UnknownFileError
+        """
+        raise NotImplementedError()  # pragma: no cover
+
+    @abstractmethod
+    def size(self) -> int:
+        """Get size of the file in the number of bytes.
+
+        Returns
+        -------
+        int
+        """
+        raise NotImplementedError()  # pragma: no cover
+
+    @abstractmethod
+    def store(self, filename: str):
+        """Write file content to disk.
+
+        Parameters
+        ----------
+        filename: string
+            Name of the file to which the content is written.
+        """
+        raise NotImplementedError()  # pragma: no cover
+
+
+class IOFile(FileObject):
+    """Implementation of the file object interface for bytes IO buffers."""
+    def __init__(self, buf: IO):
+        """Initialize the IO buffer.
+
+        Parameters
+        ----------
+        buf: io.BytesIO
+            IO buffer containing the file contents.
+        """
+        self.buf = buf
+
+    def open(self) -> IO:
+        """Get the associated BytesIO buffer.
+
+        Returns
+        -------
+        io.BytesIO
+        """
+        self.buf.seek(0)
+        return self.buf
+
+    def size(self) -> int:
+        """Get size of the file in the number of bytes.
+
+        Returns
+        -------
+        int
+        """
+        return self.buf.getbuffer().nbytes
+
+    def store(self, filename: str):
+        """Write buffer contents to disk.
+
+        Parameters
+        ----------
+        filename: string
+            Name of the file to which the content is written.
+        """
+        with open(filename, 'wb') as f:
+            f.write(self.open().read())
+
+
+# -- Wrapper for database files -----------------------------------------------
+
+class DatabaseFile(FileObject):
+    """Wrapper around a file handle for a file that is stored in the database
+    and a file object that allows to load the file contents.
+    """
+    def __init__(self, name: str, mime_type: str, fileobj: FileObject):
+        """Initialize the file object and file handle.
+
+        Parameters
+        ----------
+        name: string
+            File name (or relative file path)
+        mime_type: string
+            File content mime type.
+        fileobj: flowserv.model.files.base.FileObject
+            File object providing access to the file content.
+        """
+        self.name = name
+        self.mime_type = mime_type
+        self.fileobj = fileobj
+
+    def open(self) -> IO:
+        """Get an BytesIO buffer containing the file content. If the associated
+        file object is a path to a file on disk the file is being read.
+
+        Returns
+        -------
+        io.BytesIO
+
+        Raises
+        ------
+        flowserv.error.UnknownFileError
+        """
+        return self.fileobj.open()
+
+    def size(self) -> int:
+        """Get size of the file in the number of bytes.
+
+        Returns
+        -------
+        int
+        """
+        return self.fileobj.size()
+
+    def store(self, filename: str):
+        """Write file contents to disk.
+
+        Parameters
+        ----------
+        filename: string
+            Name of the file to which the content is written.
+        """
+        self.fileobj.store(filename)
+
+
+# -- Abstract file store ------------------------------------------------------
 
 class FileStore(metaclass=ABCMeta):
     """Interface for the file store. Files are identified by unique keys (e.g.,
@@ -48,17 +192,16 @@ class FileStore(metaclass=ABCMeta):
         raise NotImplementedError()  # pragma: no cover
 
     @abstractmethod
-    def copy_files(self, src: str, files: List[Tuple[str, str]]):
-        """Copy a list of files or dirctories from a given source directory.
-        The list of files contains tuples of relative file source and target
-        path. The source path may reference existing files or directories.
+    def copy_folder(self, key: str, dst: str):
+        """Copy all files in the folder with the given key to a target folder
+        on the local file system. Ensures that the target folder exists.
 
         Parameters
         ----------
-        src: string
-            Path to source directory on disk.
-        files: list((string, string))
-            List of file source and target path. All path names are relative.
+        key: string
+            Unique folder key.
+        dst: string
+            Path on the file system to the target folder.
         """
         raise NotImplementedError()  # pragma: no cover
 
@@ -74,42 +217,13 @@ class FileStore(metaclass=ABCMeta):
         raise NotImplementedError()  # pragma: no cover
 
     @abstractmethod
-    def download_archive(self, src: str, files: List[str]) -> IO:
-        """Download all files in the given list from the specified source
-        directory as a tar archive.
+    def delete_folder(self, key: str):
+        """Delete all files in the folder with the given key.
 
         Parameters
         ----------
-        src: string
-            Relative path to the files source directory.
-        files: list(string)
-            List of relative paths to files (or directories) in the specified
-            source directory. Lists the files to include in the returned
-            archive.
-
-        Returns
-        -------
-        io.BytesIO
-        """
-        raise NotImplementedError()  # pragma: no cover
-
-    @abstractmethod
-    def download_files(self, files: List[Tuple[str, str]], dst: str):
-        """Copy a list of files or dirctories from the file store to a given
-        destination directory. The list of files contains tuples of relative
-        file source and target path. The source path may reference files or
-        directories.
-
-        Parameters
-        ----------
-        files: list((string, string))
-            List of file source and target path. All path names are relative.
-        dst: string
-            Path to target directory on disk.
-
-        Raises
-        ------
-        ValueError
+        key: string
+            Unique folder key.
         """
         raise NotImplementedError()  # pragma: no cover
 
@@ -130,32 +244,10 @@ class FileStore(metaclass=ABCMeta):
         groupdir = self.workflow_groupdir(workflow_id, group_id)
         return os.path.join(groupdir, 'files')
 
-    def group_uploadfile(
-        self, workflow_id: str, group_id: str, file_id: str
-    ) -> str:
-        """Get path for a file that was uploaded for a workflow group.
-
-        Parameters
-        ----------
-        workflow_id: string
-            Unique workflow identifier
-        group_id: string
-            Unique workflow group identifier
-        file_id: string
-            Unique file identifier
-
-        Returns
-        -------
-        string
-        """
-        uploaddir = self.group_uploaddir(workflow_id, group_id)
-        return os.path.join(uploaddir, file_id)
-
     @abstractmethod
-    def load_file(self, key: str) -> Union[str, IO]:
-        """Get a file object for the given key. The type of the result is
-        implmentation-dependent. The result may either be the path to a file on
-        disk or a FileObject.
+    def load_file(self, key: str) -> FileObject:
+        """Get a file object for the file with the given key. The key should
+        reference a single file only and not a folder.
 
         Parameters
         ----------
@@ -164,11 +256,7 @@ class FileStore(metaclass=ABCMeta):
 
         Returns
         -------
-        string or FileObject
-
-        Raises
-        ------
-        flowserv.error.UnknownFileError
+        flowserv.model.files.base.FileObject
         """
         raise NotImplementedError()  # pragma: no cover
 
@@ -191,24 +279,18 @@ class FileStore(metaclass=ABCMeta):
         return os.path.join(workflowdir, 'runs', run_id)
 
     @abstractmethod
-    def upload_file(self, file: Union[str, IO], dst: str) -> int:
-        """Upload a given file object to the file store. The destination path
-        is a relative path. The file may reference a file on the local file
-        system or it is a fiile object (StringIO or BytesIO).
-
-        Returns the size of the uploaded file.
+    def store_files(self, files: List[Tuple[FileObject, str]], dst: str):
+        """Store a given list of file objects in the file store. The file
+        destination key is a relative path name. This is used as the base path
+        for all files. The file list contains tuples of file object and target
+        path. The target is relative to the base destination path.
 
         Paramaters
         ----------
-        file: string or FileObject
-            The input file is either a FileObject (buffer) or a reference to a
-            file on the local file system.
+        file: list of (flowserv.model.files.base.FileObject, string)
+            The input file objects.
         dst: string
             Relative target path for the stored file.
-
-        Returns
-        -------
-        int
         """
         raise NotImplementedError()  # pragma: no cover
 

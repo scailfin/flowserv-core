@@ -10,12 +10,10 @@
 REANA serial workflow specifications.
 """
 
-import os
 from string import Template
 
 from flowserv.model.template.base import WorkflowTemplate
 
-import flowserv.error as err
 import flowserv.model.template.parameter as tp
 
 
@@ -151,56 +149,3 @@ class SerialWorkflow(object):
             arguments=self.arguments,
             parameters=self.template.parameters
         )
-
-    def upload_files(self):
-        """Get a list of all input files from the workflow specification that
-        need to be uploaded for a new workflow run.
-
-        Returns a list of tuples containing the full path to the source file on
-        local disk and the relative target path for the uploaded file.
-
-        Raises errors if a parameter value is missing or if an unknown source
-        file is referenced.
-
-        Returns
-        -------
-        list((string, string))
-
-        Raises
-        ------
-        flowserv.error.MissingArgumentError
-        flowserv.error.UnknownFileError
-        """
-        workflow_spec = self.template.workflow_spec
-        files = workflow_spec.get('inputs', {}).get('files', [])
-        result = list()
-        for val in files:
-            # Set source and target values depending on whether the list
-            # entry references a template parameter or not.
-            if tp.is_parameter(val):
-                # If the value in the files listing references a parameter we
-                # first extract the parameter name to get the parameter
-                # declaration.
-                var = tp.get_value(value=val, arguments=self.arguments)
-                para = self.template.parameters.get(var)
-                #  Get the argument value for the file parameter. If no value
-                # is given, the default value will be used as source and target
-                # path. Raises an error if the default value is not defined for
-                # the parameter.
-                arg = self.arguments.get(var)
-                if arg is None:
-                    if para.default_value is None:
-                        raise err.MissingArgumentError(var)
-                    source = os.path.join(self.sourcedir, para.default_value)
-                    target = para.default_value
-                else:
-                    # Get path to source file and the target path from the
-                    # input file handle.
-                    source = arg.source()
-                    target = arg.target()
-            else:
-                source = os.path.join(self.sourcedir, val)
-                target = val
-            # Add upload file source and target path to the result list.
-            result.append((source, target))
-        return result

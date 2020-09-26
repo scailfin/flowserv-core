@@ -11,7 +11,6 @@ post-porcessing workflows.
 """
 
 import os
-import shutil
 import tempfile
 
 import flowserv.util as util
@@ -55,16 +54,11 @@ def prepare_postproc_data(input_files, ranking, run_manager):
         rundir = os.path.join(basedir, run_id)
         os.makedirs(rundir, exist_ok=True)
         for in_key in input_files:
-            _, filename = run_manager.get_runfile(run_id=run_id, key=in_key)
-            target_file = os.path.join(rundir, in_key)
-            os.makedirs(os.path.dirname(target_file), exist_ok=True)
-            # The run file may either be the path to a local file on disk or
-            # a BytesIO buffer.
-            if isinstance(filename, str):
-                shutil.copy(src=filename, dst=target_file)
-            else:
-                with open(target_file, 'wb') as f:
-                    f.write(filename.read())
+            # Create target file parent directory if it does not exist.
+            dst = os.path.join(rundir, in_key)
+            os.makedirs(os.path.dirname(dst), exist_ok=True)
+            # Copy run file to target file.
+            run_manager.get_runfile(run_id=run_id, key=in_key).store(dst)
         run_listing.append({
             base.LABEL_ID: run_id,
             base.LABEL_NAME: entry.group_name,

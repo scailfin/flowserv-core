@@ -11,7 +11,6 @@ runs.
 """
 
 import os
-import pytest
 
 import flowserv.util as util
 
@@ -43,30 +42,9 @@ def test_input_dir_copy(tmpdir):
     assert os.path.isdir(datadir)
     assert os.path.isfile(os.path.join(datadir, 'names.txt'))
     # Overwrite files.
-    util.copy_files(
-        files=files,
-        target_dir=tmpdir,
-        overwrite=True
-    )
+    util.copy_files(files=files, target_dir=tmpdir)
     assert os.path.isdir(dirname)
     assert os.path.isdir(os.path.join(dirname, 'code'))
-    # Ignore existing files.
-    util.copy_files(
-        files=files,
-        target_dir=tmpdir,
-        overwrite=False,
-        raise_error=False
-    )
-    assert os.path.isdir(dirname)
-    assert os.path.isdir(os.path.join(dirname, 'code'))
-    # Error when files exist
-    with pytest.raises(ValueError):
-        util.copy_files(
-            files=files,
-            target_dir=tmpdir,
-            overwrite=False,
-            raise_error=True
-        )
 
 
 def test_input_file_copy(tmpdir):
@@ -81,25 +59,5 @@ def test_input_file_copy(tmpdir):
     util.copy_files(files=files, target_dir=tmpdir)
     assert os.path.isfile(os.path.join(tmpdir, target))
     # Overwrite files.
-    util.copy_files(
-        files=files,
-        target_dir=tmpdir,
-        overwrite=True
-    )
+    util.copy_files(files=files, target_dir=tmpdir)
     assert os.path.isfile(os.path.join(tmpdir, target))
-    # Ignore existing files.
-    util.copy_files(
-        files=files,
-        target_dir=tmpdir,
-        overwrite=False,
-        raise_error=False
-    )
-    assert os.path.isfile(os.path.join(tmpdir, target))
-    # Error when files exist
-    with pytest.raises(ValueError):
-        util.copy_files(
-            files=files,
-            target_dir=tmpdir,
-            overwrite=False,
-            raise_error=True
-        )

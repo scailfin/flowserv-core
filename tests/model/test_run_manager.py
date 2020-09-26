@@ -323,8 +323,8 @@ def test_success_run(fscls, database, tmpdir):
         assert state.is_success()
         assert len(state.files) == 2
         key = run.get_file(by_key='A.json').key
-        f = fs.load_file(key=os.path.join(rundir, key))
+        f = fs.load_file(key=os.path.join(rundir, key)).open()
         assert read_json(f) == {'A': 1}
         key = run.get_file(by_key='run/results/B.json').key
-        f = fs.load_file(key=os.path.join(rundir, key))
+        f = fs.load_file(key=os.path.join(rundir, key)).open()
         assert read_json(f) == {'B': 1}

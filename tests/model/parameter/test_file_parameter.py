@@ -11,19 +11,10 @@
 import os
 import pytest
 
-from flowserv.model.parameter.files import FileParameter, InputFile, PARA_FILE
+from flowserv.model.files.fs import FSFile
+from flowserv.model.parameter.files import FileParameter, PARA_FILE
 
 import flowserv.error as err
-
-
-def test_input_file():
-    """Test input file handle."""
-    file = InputFile(source='A', target='B', exists=False)
-    assert file.source() == 'A'
-    assert file.target() == 'B'
-    assert repr(file) == '<InputFile src=A dst=B/>'
-    with pytest.raises(err.UnknownFileError):
-        InputFile(source='A', target='B')
 
 
 def test_invalid_serialization():
@@ -91,14 +82,14 @@ def test_file_parameter_value(tmpdir):
     filename = os.path.abspath(tmpdir)
     # -- Parameter target value
     para = FileParameter('0000', 'name', 0, target='data/names.txt')
-    file = para.to_argument(filename)
-    assert file.source() == filename
+    file = para.to_argument(FSFile(filename))
+    assert file.source().filename == filename
     assert file.target() == 'data/names.txt'
     assert str(file) == file.target()
     # -- Parameter default value
     para = FileParameter('0000', 'name', 0, default_value='data/names.txt')
-    file = para.to_argument(filename)
-    assert file.source() == filename
+    file = para.to_argument(FSFile(filename))
+    assert file.source().filename == filename
     assert file.target() == 'data/names.txt'
     assert str(file) == file.target()
     # -- Error for missing target
@@ -108,12 +99,9 @@ def test_file_parameter_value(tmpdir):
     # -- Missing file without error
     para = FileParameter('0000', 'name', 0, target='data/names.txt')
     filename = os.path.join(filename, 'missing.txt')
-    file = para.to_argument(filename, exists=False)
-    assert file.source() == filename
+    file = para.to_argument(FSFile(filename))
+    assert file.source().filename == filename
     assert file.target() == 'data/names.txt'
-    # Missing file with error
-    with pytest.raises(err.UnknownFileError):
-        para.to_argument(filename)
     # Invalid argument.
     with pytest.raises(err.InvalidArgumentError):
         para.to_argument(value={'A': 1}, target='/dev/null')

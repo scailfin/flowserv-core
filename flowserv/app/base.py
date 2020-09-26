@@ -6,13 +6,15 @@
 # flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
-from io import BytesIO, StringIO
-from typing import Callable, Dict, Optional
+import time
 
-from flowserv.app.result import ResultFile, RunResult
+from io import BytesIO, StringIO
+from typing import Callable, Dict, List, Optional
+
+from flowserv.app.result import RunResult
 from flowserv.controller.base import WorkflowController
 from flowserv.model.database import DB, SessionScope
-from flowserv.model.files.base import FileStore
+from flowserv.model.files.base import DatabaseFile, FileStore
 from flowserv.model.workflow.manager import WorkflowManager
 from flowserv.service.auth import get_auth
 from flowserv.service.api import API
@@ -97,9 +99,11 @@ class App(object):
             fs=self._fs
         )
 
-    def cancel_run(self, run_id, user_id, reason=None):
-        """Cancel the run with the given identifier. Returns a serialization of
-        the handle for the canceled run.
+    def cancel_run(
+        self, run_id: str, user_id: Optional[str] = None,
+        reason: List[str] = None
+    ):
+        """Cancel the run with the given identifier.
 
         Raises an unauthorized access error if the user does not have the
         necessary access rights to cancel the run.
@@ -113,19 +117,17 @@ class App(object):
         reason: string, optional
             Optional text describing the reason for cancelling the run
 
-        Returns
-        -------
-        dict
-
         Raises
         ------
         flowserv.error.UnauthorizedAccessError
         flowserv.error.UnknownRunError
         flowserv.error.InvalidRunStateError
         """
-        raise NotImplementedError()
+        with self._db.session() as session:
+            api = self._api(session=session)
+            api.runs().cancel_run(run_id=run_id, user_id=user_id)
 
-    def delete_run(self, run_id, user_id):
+    def delete_run(self, run_id: str, user_id: Optional[str] = None):
         """Delete the run with the given identifier.
 
         Raises an unauthorized access error if the user does not have the
@@ -135,7 +137,7 @@ class App(object):
         ----------
         run_id: string
             Unique run identifier
-        user_id: string
+        user_id: string, default=None
             Unique user identifier
 
         Raises
@@ -144,7 +146,9 @@ class App(object):
         flowserv.error.UnknownRunError
         flowserv.error.InvalidRunStateError
         """
-        raise NotImplementedError()
+        with self._db.session() as session:
+            api = self._api(session=session)
+            api.runs().delete_run(run_id=run_id, user_id=user_id)
 
     def description(self) -> str:
         """Get descriptive header for the application.
@@ -157,7 +161,7 @@ class App(object):
 
     def get_file(
         self, run_id: str, file_id: str, user_id: Optional[str] = None
-    ) -> ResultFile:
+    ) -> DatabaseFile:
         """Get buffer, name and mime type for a run result file.
 
         Parameters
@@ -171,16 +175,15 @@ class App(object):
 
         Returns
         -------
-        flowserv.app.result.ResultFile
+        flowserv.model.files.base.DatabaseFile
         """
         with self._db.session() as session:
             api = self._api(session=session)
-            fh, fileobj = api.runs().get_result_file(
+            return api.runs().get_result_file(
                 run_id=run_id,
                 file_id=file_id,
                 user_id=user_id
             )
-            return ResultFile(file_handle=fh, fileobj=fileobj)
 
     def instructions(self) -> str:
         """Get instructions text for the application.
@@ -190,30 +193,6 @@ class App(object):
         string
         """
         return self._instructions
-
-    def list_runs(self, group_id, user_id):
-        """Get a listing of all run handles for the given workflow group.
-
-        Raises an unauthorized access error if the user does not have read
-        access to the workflow group.
-
-        Parameters
-        ----------
-        group_id: string
-            Unique workflow group identifier
-        user_id: string
-            Unique user identifier
-
-        Returns
-        -------
-        dict
-
-        Raises
-        ------
-        flowserv.error.UnauthorizedAccessError
-        flowserv.error.UnknownWorkflowGroupError
-        """
-        raise NotImplementedError()
 
     def name(self) -> str:
         """Get application title.
@@ -233,8 +212,8 @@ class App(object):
         """
         return self._parameters
 
-    def poll_run(self, run_id, user_id):
-        """Get handle for the given run.
+    def poll_run(self, run_id, user_id: Optional[str] = None) -> RunResult:
+        """Get run result handle for a given run.
 
         Raises an unauthorized access error if the user does not have read
         access to the run.
@@ -243,22 +222,28 @@ class App(object):
         ----------
         run_id: string
             Unique run identifier
-        user_id: string
+        user_id: string, default=None
             Unique user identifier
 
         Returns
         -------
-        dict
+        flowserv.app.result.RunResult
 
         Raises
         ------
         flowserv.error.UnauthorizedAccessError
         flowserv.error.UnknownRunError
         """
-        raise NotImplementedError()
+        with self._db.session() as session:
+            api = self._api(session=session)
+            return RunResult(
+                doc=api.runs().get_run(run_id=run_id, user_id=user_id),
+                loader=self.get_file
+            )
 
     def start_run(
-        self, arguments: Dict, user_id: Optional[str] = None
+        self, arguments: Dict, user_id: Optional[str] = None,
+        poll_interval: Optional[int] = None
     ) -> RunResult:
         """Run the associated workflow for the given set of arguments.
 
@@ -268,10 +253,22 @@ class App(object):
             Dictionary of user-provided arguments.
         user_id: string, default=None
             Identifier for user that is making the request.
+        poll_interval: int, default=None
+            Optional poll interval that is used to check the state of a run
+            until it is no longer in active state.
 
         Returns
         -------
         flowserv.app.result.RunResult
+
+        Raises
+        ------
+        flowserv.error.InvalidArgumentError
+        flowserv.error.MissingArgumentError
+        flowserv.error.UnauthorizedAccessError
+        flowserv.error.UnknownFileError
+        flowserv.error.UnknownParameterError
+        flowserv.error.UnknownWorkflowGroupError
         """
         with self._db.session() as session:
             api = self._api(session=session)
@@ -300,7 +297,12 @@ class App(object):
                 arguments=arglist,
                 user_id=user_id
             )
-            return RunResult(doc=run, loader=self.get_file)
+            rh = RunResult(doc=run, loader=self.get_file)
+            # Wait for run to finish if active an poll interval is given.
+            while poll_interval and rh.is_active():
+                time.sleep(poll_interval)
+                rh = self.poll_run(run_id=rh.run_id, iser_id=user_id)
+            return rh
 
 
 # -- App commands -------------------------------------------------------------

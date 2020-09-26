@@ -13,6 +13,7 @@ manipulate workflow runs and their results.
 import logging
 import shutil
 
+from flowserv.model.files.fs import FSFile
 from flowserv.model.parameter.files import InputFile
 from flowserv.model.template.base import WorkflowTemplate
 from flowserv.service.run.argument import ARG, FILE, GET_ARG, GET_FILE, IS_FILE
@@ -191,7 +192,7 @@ class RunService(object):
 
         Returns
         -------
-        flowserv.model.base.RunFile, string or io.BytesIO
+        flowserv.model.files.base.DatabaseFile
 
         Raises
         ------
@@ -372,10 +373,10 @@ class RunService(object):
                 # The argument value is expected to be the identifier of an
                 # previously uploaded file. This will raise an exception if the
                 # file identifier is unknown.
-                _, fileobj = self.group_manager.get_file(
+                fileobj = self.group_manager.get_uploaded_file(
                     group_id=group_id,
                     file_id=file_id
-                )
+                ).fileobj
                 run_args[arg_id] = para.to_argument(
                     value=fileobj,
                     target=target
@@ -477,8 +478,7 @@ class RunService(object):
 def run_postproc_workflow(
     postproc_spec, workflow, ranking, runs, run_manager, backend
 ):
-    """Run post-processing workflow for a workflow template.
-    """
+    """Run post-processing workflow for a workflow template."""
     workflow_spec = postproc_spec.get('workflow')
     pp_inputs = postproc_spec.get('inputs', {})
     pp_files = pp_inputs.get('files', [])
@@ -493,7 +493,12 @@ def run_postproc_workflow(
             run_manager=run_manager
         )
         dst = pp_inputs.get('runs', postbase.RUNS_DIR)
-        run_args = {postbase.PARA_RUNS: InputFile(source=datadir, target=dst)}
+        run_args = {
+            postbase.PARA_RUNS: InputFile(
+                source=FSFile(datadir),
+                target=dst
+            )
+        }
         arg_list = [ARG(postbase.PARA_RUNS, FILE(datadir, dst))]
     except Exception as ex:
         logging.error(ex)

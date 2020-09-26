@@ -218,21 +218,15 @@ def run_results(run, user_id, output):
             click.echo(msg)
     elif run['state'] == 'SUCCESS':
         # Get index of output files.
-        files = dict()
+        click.echo('\nOutput files\n------------')
         for obj in run['files']:
             with service() as api:
                 file_id = obj['id']
-                fh, fileobj = api.runs().get_result_file(
+                fh = api.runs().get_result_file(
                     run_id=run_id,
                     file_id=file_id,
                     user_id=user_id
                 )
-                files[file_id] = (fileobj, obj['name'])
-        # Copy files if output directory is given.
-        if output is not None:
-            util.copy_files(files.values(), output)
-        click.echo('\nOutput files\n------------')
-        for filename, rel_path in files.values():
-            if output is not None:
-                filename = os.path.join(output, rel_path)
-            click.echo(filename)
+                click.echo(fh.name)
+                if output:
+                    fh.store(os.path.join(output, fh.name))

@@ -57,11 +57,11 @@ def test_read_file_parameters(tmpdir):
     ]))
     arguments = cli.read(parameters, sc)
     assert len(arguments) == 3
-    assert arguments['A'].source() == tmpdir
+    assert arguments['A'].source().filename == tmpdir
     assert arguments['A'].target() == 'target1'
-    assert arguments['B'].source() == tmpdir
+    assert arguments['B'].source().filename == tmpdir
     assert arguments['B'].target() == 'target2'
-    assert arguments['C'].source() == tmpdir
+    assert arguments['C'].source().filename == tmpdir
     assert arguments['C'].target() == 'target3'
 
 

@@ -138,7 +138,8 @@ class WorkflowManager(object):
             staticdir = self.fs.workflow_staticdir(workflow_id)
             # Copy files from the project folder to the template's static file
             # folder. By default all files in the project folder are copied.
-            manifest.copyfiles(targetdir=staticdir, fs=self.fs)
+            self.fs.store_files(files=manifest.copyfiles(), dst=staticdir)
+
         # Insert workflow into database and return the workflow handle.
         postproc_spec = template.postproc_spec if not ignore_postproc else None
         workflow = WorkflowHandle(
@@ -176,7 +177,7 @@ class WorkflowManager(object):
         self.session.commit()
         # Delete all files that are associated with the workflow if the changes
         # to the database were successful.
-        self.fs.delete_file(key=self.fs.workflow_basedir(workflow_id))
+        self.fs.delete_folder(key=self.fs.workflow_basedir(workflow_id))
 
     def get_workflow(self, workflow_id):
         """Get handle for the workflow with the given identifier. Raises

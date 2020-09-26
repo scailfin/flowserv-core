@@ -11,11 +11,9 @@ base parameter class with a target path for the file when creating the workflow
 run environment.
 """
 
-import os
-
-from io import BytesIO
 from typing import Dict, IO, Union
 
+from flowserv.model.files.base import FileObject
 from flowserv.model.parameter.base import ParameterBase
 
 import flowserv.error as err
@@ -112,24 +110,18 @@ class FileParameter(ParameterBase):
             target=doc.get('target')
         )
 
-    def to_argument(
-        self, value: Union[str, IO], target: str = None, exists: bool = True
-    ):
+    def to_argument(self, value: FileObject, target: str = None):
         """Get an instance of the InputFile class for a given argument value.
-        The input value can either be a string (filename) or a dictionary. If
-        the argument value is a dictionary it is expected to be the
+        The input value can either be a string (filename) or a dictionary.
 
         Parameters
         ----------
-        value: string or BytesIO
-            Path to the source file.
+        value: flowserv.model.files.base.FileObject
+            Handle for a file object.
         target: string, default=None
             Optional user-provided target path. If None the defined target path
             is used or the defined default value. If neither is given an error
             is raised.
-        exists: bool, default=True
-            Ensure that the source file exists if this flag is True. Raises an
-            error if the file does not exist.
 
         Returns
         -------
@@ -151,7 +143,7 @@ class FileParameter(ParameterBase):
         # The InputFile constructor may raise a TypeError if the source
         # argument is not a string.
         try:
-            return InputFile(source=value, target=target, exists=exists)
+            return InputFile(source=value, target=target)
         except TypeError as ex:
             raise err.InvalidArgumentError(str(ex))
 
@@ -173,45 +165,24 @@ class InputFile(object):
     'file'. This class contains the path to the sourcefor an uploaded file as
     well as the target path for the Upload.
     """
-    def __init__(
-        self, source: Union[str, IO], target: str, exists: bool = True
-    ):
+    def __init__(self, source: FileObject, target: str):
         """Initialize the object properties.
 
         Parameters
         ----------
-        source: string or BytesIO
-            Path to file on disk.
+        source: flowserv.model.files.base.FileObject
+            Handle for a file object.
         target: string
             Relative target path for file upload.
-        exists: bool, default=True
-            Ensure that the source file exists if this flag is True. Raises an
-            error if the file does not exist.
 
         Raises
         ------
-        flowserv.error.UnknownFileError
+        TypeError
         """
-        # Only if the source argument is a string (i.e., a file path) we need
-        # to check if the file exists.
-        if isinstance(source, str):
-            if exists and not os.path.exists(source):
-                raise err.UnknownFileError(source)
-        elif not isinstance(source, BytesIO):
-            raise TypeError(type(source))
+        if not isinstance(source, FileObject):
+            raise TypeError("invalid source type '{}'".format(type(source)))
         self._source = source
         self._target = target
-
-    def __repr__(self):
-        """The string representation of an input file is the path to the target
-        file. This is important since the parameter replacement function
-        converts input arguments to string using str().
-
-        Returns
-        -------
-        string
-        """
-        return "<InputFile src={} dst={}/>".format(self._source, self._target)
 
     def __str__(self):
         """The string representation of an input file is the path to the target
@@ -229,7 +200,7 @@ class InputFile(object):
 
         Returns
         -------
-        string or BytesIO
+        flowserv.model.files.base.FileObject
         """
         return self._source
 

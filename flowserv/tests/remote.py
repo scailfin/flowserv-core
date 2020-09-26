@@ -8,12 +8,15 @@
 
 """Implementation of the remote client for test purposes."""
 
+import os
+
 from flowserv.controller.remote.client import RemoteClient
 from flowserv.controller.remote.engine import RemoteWorkflowController
 from flowserv.model.workflow.remote import RemoteWorkflowHandle
 from flowserv.model.workflow.serial import SerialWorkflow
 from flowserv.model.workflow.state import StatePending
-from flowserv.tests.files import FakeStream
+
+import flowserv.util as util
 
 
 class RemoteTestClient(RemoteClient):
@@ -80,7 +83,7 @@ class RemoteTestClient(RemoteClient):
 
     def download_file(self, workflow_id, source, target):
         """Download file from relative location in the base directory to a
-        given target path. SInce the workflow is executed in the run directory
+        given target path. Since the workflow is executed in the run directory
         no files need to be copied.
 
         Parameters
@@ -92,7 +95,8 @@ class RemoteTestClient(RemoteClient):
         target: string
             Path to target file on local disk.
         """
-        FakeStream(data=self.data).write(target)
+        os.makedirs(os.path.dirname(target), exist_ok=True)
+        util.write_object(obj=self.data, filename=target)
 
     def get_workflow_state(self, workflow_id, current_state):
         """Get information about the current state of a given workflow.

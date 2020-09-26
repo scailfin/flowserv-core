@@ -10,6 +10,9 @@
 
 import os
 
+from typing import List, Tuple
+
+from flowserv.model.files.fs import FSFile, walk
 from flowserv.model.template.base import WorkflowTemplate
 
 import flowserv.error as err
@@ -68,36 +71,28 @@ class WorkflowManifest(object):
         self.instructions = instructions
         self.files = files
 
-    def copyfiles(self, targetdir, fs):
-        """Copy all template files from the base folder to the local template
-        folder a workflow repository. If the list of files in the manifest
-        was None, the complete base directory is copied.
+    def copyfiles(self) -> List[Tuple[FSFile, str]]:
+        """Get list of all template files from the base folder that need to be
+        copied to the template folder a workflow repository. If the list of
+        files in the manifest was None, the complete base directory is copied.
 
-        Parameters
-        ----------
-        targetdir: string
-            Path to the target directory for the local copy of the template
-            directory.
-        fs: flowserv.model.files.FileStore
-            File store for workflow files.
-
-        Raises
+        Returns
         ------
-        IOError, KeyError, OSError
+        list of (flowserv.model.files.fs.FSFile, string)
         """
-        # Create a list of (source, target) pairs for the file copy statement.
+        # Create a list of (source, target) pairs for the walk function that
+        # recursively adds all files in folders to the list of stored files.
         filelist = list()
         if self.files is None:
             # If no files listing is present in the project metadata dictionary
-            # copy the whole project directory to the source.
-            for filename in os.listdir(self.basedir):
-                filelist.append((filename, os.path.join(targetdir, filename)))
+            # weccopy the whole project directory to the source.
+            filelist.append((self.basedir, None))
         else:
             for fspec in self.files:
                 source = fspec['source']
-                target = os.path.join(targetdir, fspec.get('target', source))
-                filelist.append((source, target))
-        fs.copy_files(src=self.basedir, files=filelist)
+                target = fspec.get('target', source)
+                filelist.append((os.path.join(self.basedir, source), target))
+        return walk(files=filelist)
 
     @staticmethod
     def load(

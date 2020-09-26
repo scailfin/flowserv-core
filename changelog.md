@@ -63,7 +63,7 @@
 * Remove old workflow runs from database (\#9).
 
 
-### 0.4.1 - 2020-09-24
+### 0.5.0 - 2020-09-24
 
 * Allow user-defined workflow and group identifier (\#59).
 * Merge `flowserv` and `flowapp` console scripts.

@@ -8,11 +8,12 @@
 
 """Unit tests for the file store functionality of a workflow group handle."""
 
+import json
 import pytest
 
 from flowserv.model.files.fs import FileSystemStore
 from flowserv.model.group import WorkflowGroupManager
-from flowserv.tests.files import FakeStream, DiskStore, read_json
+from flowserv.tests.files import DiskStore, io_file
 
 import flowserv.error as err
 import flowserv.tests.model as model
@@ -25,7 +26,7 @@ def test_delete_file(fscls, database, tmpdir):
     #
     # Create a database with two groups for a single workflow. Upload one file
     # for each group.
-    file = FakeStream(data={'A': 1}).save()
+    file = io_file(data={'A': 1})
     fn = 'data.json'
     fs = fscls(tmpdir)
     with database.session() as session:
@@ -41,12 +42,12 @@ def test_delete_file(fscls, database, tmpdir):
     # -- Test delete file -----------------------------------------------------
     with database.session() as session:
         manager = WorkflowGroupManager(session=session, fs=fs)
-        fh, filename = manager.get_file(group_id=group_1, file_id=file_1)
+        fh = manager.get_uploaded_file(group_id=group_1, file_id=file_1)
         manager.delete_file(group_id=group_1, file_id=file_1)
         # File 1 can no longer be accessed while file 2 is still present.
         with pytest.raises(err.UnknownFileError):
-            manager.get_file(group_id=group_1, file_id=file_1)
-        fh, filename = manager.get_file(group_id=group_2, file_id=file_2)
+            manager.get_uploaded_file(group_id=group_1, file_id=file_1).open()
+        fh = manager.get_uploaded_file(group_id=group_2, file_id=file_2)
     # -- Error cases ----------------------------------------------------------
     with database.session() as session:
         # - Delete unknown file
@@ -64,8 +65,8 @@ def test_get_file(fscls, database, tmpdir):
     # for each group.
     data_1 = {'A': 1}
     data_2 = {'B': 2}
-    f1 = FakeStream(data=data_1).save()
-    f2 = FakeStream(data=data_2).save()
+    f1 = io_file(data=data_1)
+    f2 = io_file(data=data_2)
     fn = 'data.json'
     fs = fscls(tmpdir)
     with database.session() as session:
@@ -81,19 +82,19 @@ def test_get_file(fscls, database, tmpdir):
     with database.session() as session:
         manager = WorkflowGroupManager(session=session, fs=fs)
         for g_id, f_id, data in files:
-            fh, filename = manager.get_file(group_id=g_id, file_id=f_id)
+            fh = manager.get_uploaded_file(group_id=g_id, file_id=f_id)
             assert fh.name == fn
             assert fh.mime_type == 'application/json'
-            assert read_json(file=filename) == data
+            assert json.load(fh.open()) == data
     # -- Test error cases -----------------------------------------------------
     # - File handle is unknown for s2
     with database.session() as session:
         manager = WorkflowGroupManager(session=session, fs=fs)
         with pytest.raises(err.UnknownFileError):
-            manager.get_file(group_id=group_2, file_id=file_1)
+            manager.get_uploaded_file(group_id=group_2, file_id=file_1).open()
         # - Access file with unknown file identifier
         with pytest.raises(err.UnknownFileError):
-            manager.get_file(group_id=group_1, file_id='UNK')
+            manager.get_uploaded_file(group_id=group_1, file_id='UNK').open()
 
 
 @pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
@@ -103,7 +104,7 @@ def test_list_files(fscls, database, tmpdir):
     #
     # Create a database with two groups for a single workflow. The first group
     # has one uploaded file and the second group has one file.
-    file = FakeStream(data={'A': 1}).save()
+    file = io_file(data={'A': 1})
     fn = 'data.json'
     fs = fscls(tmpdir)
     with database.session() as session:
@@ -118,9 +119,9 @@ def test_list_files(fscls, database, tmpdir):
     # -- Test list files for groups -------------------------------------------
     with database.session() as session:
         manager = WorkflowGroupManager(session=session, fs=fs)
-        files = manager.list_files(group_id=group_1)
+        files = manager.list_uploaded_files(group_id=group_1)
         assert len(files) == 2
-        files = manager.list_files(group_id=group_2)
+        files = manager.list_uploaded_files(group_id=group_2)
         assert len(files) == 1
 
 
@@ -142,25 +143,25 @@ def test_upload_file(fscls, database, tmpdir):
         manager = WorkflowGroupManager(session=session, fs=fs)
         fh = manager.upload_file(
             group_id=group_1,
-            file=FakeStream(data={'A': 1}).save(),
+            file=io_file(data={'A': 1}),
             name='A.json'
         )
         assert fh.name == 'A.json'
         assert fh.mime_type == 'application/json'
-        fh, filename = manager.get_file(group_id=group_1, file_id=fh.file_id)
-        assert read_json(file=filename) == data
+        fh = manager.get_uploaded_file(group_id=group_1, file_id=fh.file_id)
+        assert json.load(fh.open()) == data
     # -- Test error case ------------------------------------------------------
     data = {'A': 1}
     with database.session() as session:
         with pytest.raises(err.ConstraintViolationError):
             manager.upload_file(
                 group_id=group_1,
-                file=FakeStream(data={'A': 1}).save(),
+                file=io_file(data={'A': 1}),
                 name=' '
             )
         with pytest.raises(err.UnknownWorkflowGroupError):
             manager.upload_file(
                 group_id='UNKNOWN',
-                file=FakeStream(data={'A': 1}).save(),
+                file=io_file(data={'A': 1}),
                 name=' '
             )

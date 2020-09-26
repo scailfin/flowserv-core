@@ -21,7 +21,8 @@ from flowserv.config.database import FLOWSERV_DB
 from flowserv.config.files import (
     FLOWSERV_FILESTORE_MODULE, FLOWSERV_FILESTORE_CLASS
 )
-from flowserv.model.auth import OpenAccessAuth
+from flowserv.model.auth import open_access
+from flowserv.model.files.base import IOFile
 from flowserv.model.files.fs import FileSystemStore
 from flowserv.model.files.s3 import FLOWSERV_S3BUCKET
 
@@ -35,22 +36,15 @@ DIR = os.path.dirname(os.path.realpath(__file__))
 TEMPLATE_DIR = os.path.join(DIR, '../.files/benchmark/helloworld')
 
 
-# -- Helper functions ---------------------------------------------------------
-
-def open_auth(session):
-    """Create an open access policy object."""
-    return OpenAccessAuth(session)
-
-
 def test_app_start_run(database, tmpdir):
     """Simulate running the test workflow app."""
     fs = FileSystemStore(basedir=tmpdir)
     app_key = install_app(source=TEMPLATE_DIR, db=database, fs=fs)
     engine = StateEngine()
-    app = App(db=database, engine=engine, fs=fs, auth=open_auth, key=app_key)
+    app = App(db=database, engine=engine, fs=fs, auth=open_access, key=app_key)
     # -- Pending run ----------------------------------------------------------
     r = app.start_run({
-        'names': BytesIO(b'Alice'),
+        'names': IOFile(BytesIO(b'Alice')),
         'sleeptime': 0,
         'greeting': 'Hi'
     })
@@ -69,10 +63,10 @@ def test_run_app_error(database, tmpdir):
     fs = FileSystemStore(basedir=tmpdir)
     app_key = install_app(source=TEMPLATE_DIR, db=database, fs=fs)
     engine = StateEngine(state=st.StatePending().error(messages=['The error']))
-    app = App(db=database, engine=engine, fs=fs, auth=open_auth, key=app_key)
+    app = App(db=database, engine=engine, fs=fs, auth=open_access, key=app_key)
     # -- Pending run ----------------------------------------------------------
     r = app.start_run({
-        'names': BytesIO(b'Alice'),
+        'names': IOFile(BytesIO(b'Alice')),
         'sleeptime': 0,
         'greeting': 'Hi'
     })
@@ -114,7 +108,7 @@ def test_run_app_from_env(fsconfig, tmpdir):
     # -- Run workflow ---------------------------------------------------------
     app = App(key=app_key)
     r = app.start_run({
-        'names': BytesIO(b'Alice'),
+        'names': IOFile(BytesIO(b'Alice')),
         'sleeptime': 0,
         'greeting': 'Hi'
     })

@@ -12,10 +12,12 @@ database.
 """
 
 import mimetypes
+import os
 
 from typing import Dict, List, Optional
 
 from flowserv.model.base import UploadFile, GroupHandle, WorkflowHandle
+from flowserv.model.files.base import DatabaseFile, FileObject
 from flowserv.model.constraint import validate_identifier
 from flowserv.model.parameter.base import ParameterBase
 from flowserv.model.user import UserManager
@@ -183,37 +185,6 @@ class WorkflowGroupManager(object):
         self.session.commit()
         self.fs.delete_file(key=groupdir)
 
-    def get_file(self, group_id, file_id):
-        """Get handle for an uploaded group file with the given identifier.
-        Raises an error if the group or the file does not exists.
-
-        Returns the file handle and an object that provides read access to the
-        file contents. The object may either be the path to the file on disk
-        or a FileObject.
-
-        Parameters
-        ----------
-        group_id: string
-            Unique group identifier
-        file_id: string
-            Unique file identifier
-
-        Returns
-        -------
-        flowserv.model.base.UploadFile, string or FileObject
-
-        Raises
-        ------
-        flowserv.error.UnknownWorkflowGroupError
-        flowserv.error.UnknownFileError
-        """
-        group = self.get_group(group_id)
-        for fh in group.uploads:
-            if fh.file_id == file_id:
-                return fh, self.fs.load_file(key=fh.key)
-        # No file with matching identifier was found.
-        raise err.UnknownFileError(file_id)
-
     def get_group(self, group_id):
         """Get handle for the workflow group with the given identifier.
 
@@ -237,24 +208,40 @@ class WorkflowGroupManager(object):
             raise err.UnknownWorkflowGroupError(group_id)
         return group
 
-    def list_files(self, group_id):
-        """Get list of file handles for all files that have been uploaded to
-        a given workflow group.
+    def get_uploaded_file(self, group_id: str, file_id: str) -> DatabaseFile:
+        """Get handle for an uploaded group file with the given identifier.
+        Raises an error if the group or the file does not exists.
+
+        Returns the file handle and an object that provides read access to the
+        file contents. The object may either be the path to the file on disk
+        or a FileObject.
 
         Parameters
         ----------
         group_id: string
             Unique group identifier
+        file_id: string
+            Unique file identifier
 
         Returns
         -------
-        list(flowserv.model.base.UploadFile)
+        flowserv.model.files.base.DatabaseFile
 
         Raises
         ------
         flowserv.error.UnknownWorkflowGroupError
+        flowserv.error.UnknownFileError
         """
-        return self.get_group(group_id).uploads
+        group = self.get_group(group_id)
+        for fh in group.uploads:
+            if fh.file_id == file_id:
+                return DatabaseFile(
+                    name=fh.name,
+                    mime_type=fh.mime_type,
+                    fileobj=self.fs.load_file(key=fh.key)
+                )
+        # No file with matching identifier was found.
+        raise err.UnknownFileError(file_id)
 
     def list_groups(self, workflow_id=None, user_id=None):
         """Get a listing of group descriptors. If the user identifier is given,
@@ -294,6 +281,25 @@ class WorkflowGroupManager(object):
             user_groups = self.users.get_user(user_id, active=True).groups
             return [g for g in user_groups if g.workflow_id == workflow_id]
 
+    def list_uploaded_files(self, group_id):
+        """Get list of file handles for all files that have been uploaded to
+        a given workflow group.
+
+        Parameters
+        ----------
+        group_id: string
+            Unique group identifier
+
+        Returns
+        -------
+        list(flowserv.model.base.UploadFile)
+
+        Raises
+        ------
+        flowserv.error.UnknownWorkflowGroupError
+        """
+        return self.get_group(group_id).uploads
+
     def update_group(self, group_id, name=None, members=None):
         """Update the name and/or list of members for a workflow group.
 
@@ -330,7 +336,7 @@ class WorkflowGroupManager(object):
                 group.members.append(self.users.get_user(user_id, active=True))
         return group
 
-    def upload_file(self, group_id, file, name):
+    def upload_file(self, group_id: str, file: FileObject, name: str):
         """Upload a new file for a workflow group. This will create a copy of
         the given file in the file store that is associated with the group. The
         file will be places in a unique folder inside the groups upload folder.
@@ -341,7 +347,7 @@ class WorkflowGroupManager(object):
         ----------
         group_id: string
             Unique group identifier
-        file: file object
+        file: flowserv.model.files.base.FileObject
             File object (e.g., uploaded via HTTP request)
         name: string
             Name of the file
@@ -362,19 +368,20 @@ class WorkflowGroupManager(object):
         # Create a new unique identifier for the file and save the file object
         # to the new file path.
         file_id = util.get_unique_identifier()
-        output_file = self.fs.group_uploadfile(
+        uploaddir = self.fs.group_uploaddir(
             workflow_id=group.workflow_id,
-            group_id=group.group_id,
-            file_id=file_id
+            group_id=group.group_id
         )
-        file_size = self.fs.upload_file(file=file, dst=output_file)
+        # Get file size.
+        file_size = file.size()
         # Attempt to guess the Mime type for the uploaded file from the file
         # name.
         mime_type, _ = mimetypes.guess_type(url=name)
+        self.fs.store_files(files=[(file, file_id)], dst=uploaddir)
         # Insert information into database and return handle for uploaded file.
         fileobj = UploadFile(
             file_id=file_id,
-            key=output_file,
+            key=os.path.join(uploaddir, file_id),
             name=name,
             mime_type=mime_type,
             size=file_size

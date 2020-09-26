@@ -16,8 +16,6 @@ import datetime
 import io
 import json
 import os
-import shutil
-import tarfile
 import time
 import traceback
 import uuid
@@ -25,7 +23,7 @@ import yaml
 
 from dateutil.parser import isoparse
 from dateutil.tz import UTC
-from typing import Dict, IO, List, Optional, Tuple, Union
+from typing import Dict, IO, Optional
 
 
 """Identifier for supported data formats."""
@@ -33,133 +31,7 @@ FORMAT_JSON = 'JSON'
 FORMAT_YAML = 'YAML'
 
 
-def archive_files(files: List[Tuple[Union[str, IO], str]]):
-    """Create a gzipped tar file containing all files in the given list. The
-    input is expected to be a list of 2-tupes of (filename, archive-name).
-
-    Parameters
-    ----------
-    files: list
-        List of (filename, archive-name) for files that are added to the
-        returned archive.
-
-    Returns
-    -------
-    io.BytesIO
-    """
-    file_out = io.BytesIO()
-    tar_handle = tarfile.open(fileobj=file_out, mode='w:gz')
-    for file, arcname in files:
-        if isinstance(file, str):
-            tar_handle.add(name=file, arcname=arcname)
-        else:
-            info = tarfile.TarInfo(name=arcname)
-            info.size = file.getbuffer().nbytes
-            tar_handle.addfile(tarinfo=info, fileobj=file)
-    tar_handle.close()
-    file_out.seek(0)
-    return file_out
-
-
-def copy_files(files, target_dir, overwrite=True, raise_error=False):
-    """Copy list of files to a target directory. Expects a list of tuples that
-    contain the path to the source file on local disk and the relative target
-    path for the file in the given target directory.
-
-    Parameters
-    ----------
-    files: list((string, string))
-        List of source,target path pairs for files that are being copied
-    target_dir: string
-        Target directory for copied files (e.g., base directory for a
-        workflow run)
-    overwrite: bool, default=True
-        Do not copy files if flag is False and the destination exists.
-    raise_error: bool, default=False
-        Raise an error when an existing target file is encountered if this flag
-        is true and overwrite is False.
-
-    Raises
-    ------
-    ValueError
-    """
-    for source, target in files:
-        # The target path is relative to the target directory. Create the
-        # absolute path to the target destination. Ensure that the path does
-        # not end with '/' since this confuses the dirname() method.
-        dst = os.path.join(target_dir, target)
-        while dst.endswith('/'):
-            dst = dst[:-1]
-        # Skip or raise an error if the destination exists and the overwrite
-        # flag is False.
-        if not overwrite and os.path.exists(dst):
-            if raise_error:
-                raise ValueError('{} exists'.format(dst))
-            continue
-        # Ensure that the parent directory of the target exists.
-        dst_parent = os.path.dirname(dst)
-        if dst_parent and not os.path.isdir(dst_parent):
-            os.makedirs(dst_parent)
-        # If the source references a directory the whole directory tree is
-        # copied. Otherwise, a single file is copied.
-        if os.path.isdir(source):
-            # If we are overwriting an existing directory we need to remove the
-            # directory first.
-            if os.path.exists(dst):
-                shutil.rmtree(dst)
-            shutil.copytree(src=source, dst=dst)
-        else:
-            shutil.copy(src=source, dst=dst)
-
-
-def create_directories(basedir, files):
-    """Create top-level folder for all files in a given list. The file list
-    contains the path names of (result) files relative to a given base
-    directory. All directories are created under the base directory.
-
-    Parameters
-    ----------
-    basedir: string
-        Base directory under which new directories are created
-    files: list(string)
-        Relative path names for (expected) result files.
-    """
-    for filename in files:
-        dirname = os.path.dirname(filename)
-        # Create the directory if it does not exist
-        parentdir = os.path.join(basedir, dirname)
-        if not os.path.isdir(parentdir):
-            os.makedirs(parentdir)
-
-
-def get_unique_identifier():
-    """Create a new unique identifier.
-
-    Returns
-    -------
-    string
-    """
-    return str(uuid.uuid4()).replace('-', '')
-
-
-def flask_upload(file):
-    """Convert an uploaded Werkzeug FileStorage into a BytesIO buffer that
-    can be passed to flowserv as a workflow run input argument.
-
-    Parameters
-    ----------
-    file: werkzeug.FileStorage
-        File that is uploaded as part of a request in Flask.
-
-    Returns
-    -------
-    io.BytesIO
-    """
-    buf = io.BytesIO()
-    file.save(buf)
-    buf.seek(0)
-    return buf
-
+# -- Datetime -----------------------------------------------------------------
 
 def from_utc_datetime(utc_datetime):
     """Convert a timestamp in UTC time to local time. This code is based on
@@ -182,34 +54,55 @@ def from_utc_datetime(utc_datetime):
     return utc_datetime + offset
 
 
-def jquery(doc, path):
-    """Json query to extract the value at the given path in a nested dictionary
-    object.
-
-    Returns None if the element that is specified by the path does not exist.
+def to_datetime(timestamp):
+    """Converts a timestamp string in ISO format into a datatime object.
 
     Parameters
     ----------
-    doc: dict
-        Nested dictionary
-    path: list(string)
-        List of elements in the query path
+    timstamp : string
+        Timestamp in ISO format
 
     Returns
     -------
-    any
+    datetime.datetime
+        Datetime object
     """
-    if not path or not doc or not isinstance(doc, dict):
-        # If the path or document is empty or the document is not a dictionary
-        # return None.
-        return None
-    elif len(path) == 1:
-        # If there is only one element in the path return the assocuated value
-        # or None if the element does not exist
-        return doc.get(path[0])
-    else:
-        # Recursively traverse the document
-        return jquery(doc=doc.get(path[0], dict()), path=path[1:])
+    # Assumes a string in ISO format (with or without milliseconds)
+    for format in ['%Y-%m-%dT%H:%M:%S.%f', '%Y-%m-%dT%H:%M:%S']:
+        try:
+            return datetime.datetime.strptime(timestamp, format)
+        except ValueError:
+            pass
+    return isoparse(timestamp)
+
+
+def utc_now():
+    """Get the current time in UTC timezone as a string in ISO format.
+
+    Returns
+    -------
+    string
+    """
+    return datetime.datetime.now(UTC).isoformat()
+
+
+# -- I/O ----------------------------------------------------------------------
+
+def create_directories(basedir, files):
+    """Create top-level folder for all files in a given list. The file list
+    contains the path names of (result) files relative to a given base
+    directory. All directories are created under the base directory.
+
+    Parameters
+    ----------
+    basedir: string
+        Base directory under which new directories are created
+    files: list(string)
+        Relative path names for (expected) result files.
+    """
+    for filename in files:
+        dirname = os.path.dirname(filename)
+        os.makedirs(os.path.join(basedir, dirname), exist_ok=True)
 
 
 def read_buffer(filename: str) -> IO:
@@ -274,6 +167,77 @@ def read_object(filename: str, format: Optional[str] = None) -> Dict:
         raise ValueError('unknown data format \'' + str(format) + '\'')
 
 
+def write_object(filename, obj, format=None):
+    """Write given dictionary to file as Json object.
+
+    Parameters
+    ----------
+    filename: string
+        Path to output file
+    obj: dict
+        Output object
+
+    Raises
+    ------
+    ValueError
+    """
+    if format is None:
+        if filename.endswith('.json'):
+            format = FORMAT_JSON
+        else:
+            format = FORMAT_YAML
+    if format.upper() == FORMAT_YAML:
+        with open(filename, 'w') as f:
+            yaml.dump(obj, f)
+    elif format.upper() == FORMAT_JSON:
+        with open(filename, 'w') as f:
+            json.dump(obj, f)
+    else:
+        raise ValueError('unknown data format \'' + str(format) + '\'')
+
+
+# -- Misc ---------------------------------------------------------------------
+
+def get_unique_identifier():
+    """Create a new unique identifier.
+
+    Returns
+    -------
+    string
+    """
+    return str(uuid.uuid4()).replace('-', '')
+
+
+def jquery(doc, path):
+    """Json query to extract the value at the given path in a nested dictionary
+    object.
+
+    Returns None if the element that is specified by the path does not exist.
+
+    Parameters
+    ----------
+    doc: dict
+        Nested dictionary
+    path: list(string)
+        List of elements in the query path
+
+    Returns
+    -------
+    any
+    """
+    if not path or not doc or not isinstance(doc, dict):
+        # If the path or document is empty or the document is not a dictionary
+        # return None.
+        return None
+    elif len(path) == 1:
+        # If there is only one element in the path return the assocuated value
+        # or None if the element does not exist
+        return doc.get(path[0])
+    else:
+        # Recursively traverse the document
+        return jquery(doc=doc.get(path[0], dict()), path=path[1:])
+
+
 def stacktrace(ex):
     """Get list of strings representing the stack trace for a given exception.
 
@@ -291,38 +255,6 @@ def stacktrace(ex):
     except (AttributeError, TypeError):  # pragma: no cover
         st = [str(ex)]
     return [line.strip() for line in st]
-
-
-def to_datetime(timestamp):
-    """Converts a timestamp string in ISO format into a datatime object.
-
-    Parameters
-    ----------
-    timstamp : string
-        Timestamp in ISO format
-
-    Returns
-    -------
-    datetime.datetime
-        Datetime object
-    """
-    # Assumes a string in ISO format (with or without milliseconds)
-    for format in ['%Y-%m-%dT%H:%M:%S.%f', '%Y-%m-%dT%H:%M:%S']:
-        try:
-            return datetime.datetime.strptime(timestamp, format)
-        except ValueError:
-            pass
-    return isoparse(timestamp)
-
-
-def utc_now():
-    """Get the current time in UTC timezone as a string in ISO format.
-
-    Returns
-    -------
-    string
-    """
-    return datetime.datetime.now(UTC).isoformat()
 
 
 def validate_doc(doc, mandatory=None, optional=None):
@@ -359,32 +291,3 @@ def validate_doc(doc, mandatory=None, optional=None):
         if key not in labels:
             raise ValueError("unknown element '{}'".format(key))
     return doc
-
-
-def write_object(filename, obj, format=None):
-    """Write given dictionary to file as Json object.
-
-    Parameters
-    ----------
-    filename: string
-        Path to output file
-    obj: dict
-        Output object
-
-    Raises
-    ------
-    ValueError
-    """
-    if format is None:
-        if filename.endswith('.json'):
-            format = FORMAT_JSON
-        else:
-            format = FORMAT_YAML
-    if format.upper() == FORMAT_YAML:
-        with open(filename, 'w') as f:
-            yaml.dump(obj, f)
-    elif format.upper() == FORMAT_JSON:
-        with open(filename, 'w') as f:
-            json.dump(obj, f)
-    else:
-        raise ValueError('unknown data format \'' + str(format) + '\'')

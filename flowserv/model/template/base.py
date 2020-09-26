@@ -60,7 +60,7 @@ class WorkflowTemplate(object):
         ----------
         workflow_spec: dict
             Workflow specification object
-        parameters: flowserv.model.template.parameter.ParamaterIndex
+        parameters: flowserv.model.template.parameter.ParameterIndex
             Dictionary of workflow template parameter declarations keyed by
             their unique identifier.
         modules: list(flowserv.model.parameter.base.ParameterGroup),
