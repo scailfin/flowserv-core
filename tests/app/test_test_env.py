@@ -24,19 +24,28 @@ TEMPLATE_DIR = os.path.join(DIR, '../.files/benchmark/helloworld')
 BENCHMARK_FILE = os.path.join(TEMPLATE_DIR, 'benchmark-with-outputs.yaml')
 
 
-def test_run_helloworld_in_test_env(tmpdir):
+@pytest.mark.parametrize(
+    'source,specfile,filekey',
+    [
+        (TEMPLATE_DIR, BENCHMARK_FILE, 'greetings'),
+        ('helloworld', None, 'results/greetings.txt')
+    ]
+)
+def test_run_helloworld_from_disk(source, specfile, filekey, tmpdir):
     """Run the hello world workflow in the test environment."""
     db = Flowserv(basedir=os.path.join(tmpdir, 'flowserv'))
     # -- Install and run the workflow -----------------------------------------
-    wf = db.install(source=TEMPLATE_DIR, specfile=BENCHMARK_FILE)
+    wf = db.install(source=source, specfile=specfile)
     run = wf.start_run({
         'names': StringIO('Alice\nBob\nClaire'),
         'greeting': 'Hey',
         'sleeptime': 0.1
     })
     assert run.is_success()
-    text = run.get_file('greetings').open().read().decode('utf-8')
-    assert text.strip() == 'Hey Alice!\nHey Bob!\nHey Claire!'
+    text = run.get_file(filekey).open().read().decode('utf-8')
+    assert 'Hey Alice' in text
+    assert 'Hey Bob' in text
+    assert 'Hey Claire' in text
     # -- Uninstall workflow ---------------------------------------------------
     db.uninstall(wf.identifier)
     # Running the workflow again will raise an error.

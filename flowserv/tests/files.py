@@ -11,7 +11,6 @@
 import botocore.exceptions
 import json
 import os
-import shutil
 
 from io import BytesIO
 from typing import Dict, IO, List, Optional, Union
@@ -51,8 +50,6 @@ class DiskBucket(object):
             filename = os.path.join(self.basedir, obj.get('Key'))
             if os.path.isfile(filename):
                 os.remove(filename)
-            elif os.path.isdir(filename):
-                shutil.rmtree(filename)
 
     def download_fileobj(self, key: str, data: IO):
         """Copy the buffer for the identified object into the given data
@@ -78,11 +75,6 @@ class DiskBucket(object):
             if key.startswith(Prefix):
                 result.append(ObjectSummary(key))
         return result
-
-    def upload_file(self, file: str, dst: str):
-        """Read file and add the data buffer to the object index."""
-        data = util.read_buffer(file)
-        self.upload_fileobj(file=data, dst=dst)
 
     def upload_fileobj(self, file: IO, dst: str):
         """Add given buffer to the object index. Uses the destination as the
