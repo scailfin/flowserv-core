@@ -191,6 +191,20 @@ class App(object):
                 user_id=user_id
             )
 
+    def get_postproc_results(self):
+        """Get results of a post-processing run. The result is None if no
+        entry for a post-porcessing run is found in the workflow handle.
+
+        Returns
+        -------
+        flowserv.app.result.RunResult
+        """
+        with self._db.session() as session:
+            api = self._api(session=session)
+            doc = api.workflows().get_workflow(workflow_id=self._workflow_id)
+            if 'postproc' in doc:
+                return RunResult(doc=doc['postproc'], loader=self.get_file)
+
     @property
     def identifier(self) -> str:
         """Get the identifier of the associated workflow.
@@ -348,8 +362,11 @@ class App(object):
 # -- App commands -------------------------------------------------------------
 
 def install_app(
-    source, identifier=None, name=None, description=None, instructions=None,
-    specfile=None, manifestfile=None, db=None, fs=None
+    source: str, identifier: Optional[str] = None, name: Optional[str] = None,
+    description: Optional[str] = None, instructions: Optional[str] = None,
+    specfile: Optional[str] = None, manifestfile: Optional[str] = None,
+    ignore_postproc: Optional[bool] = False, db: Optional[DB] = None,
+    fs: Optional[FileStore] = None
 ):
     """Create database objects for a application that is defined by a workflow
     template. An application is simply a different representation for the
@@ -374,6 +391,8 @@ def install_app(
     manifestfile: string, default=None
         Path to manifest file. If not given an attempt is made to read one
         of the default manifest file names in the base directory.
+    ignore_postproc: bool, default=False
+        Ignore post-processing workflow specification if True.
     db: flowserv.model.database.DB, default=None
         Database connection manager.
     fs: flowserv.model.files.base.FileStore, default=None
@@ -399,7 +418,8 @@ def install_app(
             description=description,
             instructions=instructions,
             specfile=specfile,
-            manifestfile=manifestfile
+            manifestfile=manifestfile,
+            ignore_postproc=ignore_postproc
         )
         workflow_id = workflow.workflow_id
     return workflow_id
@@ -439,7 +459,9 @@ def open_app(
     return App(db=db, engine=engine, fs=fs, auth=auth, key=identifier)
 
 
-def uninstall_app(app_key, db=None, fs=None):
+def uninstall_app(
+    app_key: str, db: Optional[DB] = None, fs: Optional[FileStore] = None
+):
     """Remove the workflow that is associated with the given application key.
 
     Parameters

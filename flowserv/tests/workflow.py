@@ -33,8 +33,10 @@ class Flowserv(object):
     Python environment or using the Docker engine.
     """
     def __init__(
-        self, basedir: Optional[str] = None,
-        use_docker: Optional[bool] = False, run_async: Optional[bool] = False
+        self,
+        basedir: Optional[str] = None,
+        use_docker: Optional[bool] = False,
+        run_async: Optional[bool] = False
     ):
         """Initialize the components of the test environment.
 
@@ -43,6 +45,10 @@ class Flowserv(object):
         basedir: string, default=None
             Base directory for all workflow files. If no directory is given a
             temporary directory will be created.
+        use_docker: bool, default=False
+            Use Docker workflow engine.
+        run_async: bool, default=False
+            Run workflows in asynchronous mode.
         """
         # Set the base directory and ensure that it exists.
         self.basedir = basedir if basedir is not None else tempfile.mkdtemp()
@@ -68,10 +74,15 @@ class Flowserv(object):
         shutil.rmtree(self.basedir)
 
     def install(
-        self, source: str, identifier: Optional[str] = None,
-        name: Optional[str] = None, description: Optional[str] = None,
-        instructions: Optional[str] = None, specfile: Optional[str] = None,
-        manifestfile: Optional[str] = None
+        self,
+        source: str, identifier: Optional[str] = None,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        instructions: Optional[str] = None,
+        specfile: Optional[str] = None,
+        manifestfile: Optional[str] = None,
+        ignore_postproc: Optional[bool] = False,
+
     ) -> App:
         """Create a new workflow in the environment that is defined by the
         template referenced by the source parameter. Returns the application
@@ -97,6 +108,8 @@ class Flowserv(object):
         manifestfile: string, default=None
             Path to manifest file. If not given an attempt is made to read one
             of the default manifest file names in the base directory.
+        ignore_postproc: bool, default=False
+            Ignore post-processing workflow specification if True.
 
         Returns
         -------
@@ -110,6 +123,7 @@ class Flowserv(object):
             instructions=instructions,
             specfile=specfile,
             manifestfile=manifestfile,
+            ignore_postproc=ignore_postproc,
             db=self.db,
             fs=self.fs
         )
