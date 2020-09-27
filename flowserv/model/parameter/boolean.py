@@ -128,3 +128,20 @@ class BoolParameter(ParameterBase):
         elif strvalue in ['', '0', 'f', 'false']:
             return False
         raise err.InvalidArgumentError("not a Boolean '{}'".format(value))
+
+
+# -- Helper Methods -----------------------------------------------------------
+
+def is_bool(para: ParameterBase) -> bool:
+    """Test if the given parameter is of type PARA_BOOL.
+
+    Parameters
+    ----------
+    para: flowserv.model.parameter.base.ParameterBase
+        Template parameter definition.
+
+    Returns
+    -------
+    bool
+    """
+    return para.type_id == PARA_BOOL

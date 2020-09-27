@@ -212,3 +212,20 @@ class InputFile(object):
         string
         """
         return self._target
+
+
+# -- Helper Methods -----------------------------------------------------------
+
+def is_file(para: ParameterBase) -> bool:
+    """Test if the given parameter is of type PARA_FILE.
+
+    Parameters
+    ----------
+    para: flowserv.model.parameter.base.ParameterBase
+        Template parameter definition.
+
+    Returns
+    -------
+    bool
+    """
+    return para.type_id == PARA_FILE

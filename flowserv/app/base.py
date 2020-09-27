@@ -13,8 +13,13 @@ from typing import Callable, Dict, List, Optional
 
 from flowserv.app.result import RunResult
 from flowserv.controller.base import WorkflowController
+from flowserv.model.auth import open_access
 from flowserv.model.database import DB, SessionScope
-from flowserv.model.files.base import DatabaseFile, FileStore
+from flowserv.model.files.base import (
+    DatabaseFile, FileObject, FileStore, IOFile
+)
+from flowserv.model.files.fs import FSFile
+from flowserv.model.parameter.files import is_file
 from flowserv.model.workflow.manager import WorkflowManager
 from flowserv.service.auth import get_auth
 from flowserv.service.api import API
@@ -22,6 +27,7 @@ from flowserv.service.files import get_filestore
 from flowserv.service.run.argument import ARG, FILE
 
 import flowserv.config.app as config
+import flowserv.error as err
 import flowserv.util as util
 
 
@@ -185,6 +191,16 @@ class App(object):
                 user_id=user_id
             )
 
+    @property
+    def identifier(self) -> str:
+        """Get the identifier of the associated workflow.
+
+        Returns
+        -------
+        string
+        """
+        return self._workflow_id
+
     def instructions(self) -> str:
         """Get instructions text for the application.
 
@@ -282,14 +298,38 @@ class App(object):
             # StringIO or BytesIO.
             arglist = list()
             for key, val in arguments.items():
-                if isinstance(val, StringIO) or isinstance(val, BytesIO):
-                    fh = api.uploads().upload_file(
-                        group_id=group_id,
-                        file=val,
-                        name=key,
-                        user_id=user_id
-                    )
-                    val = FILE(fh['id'])
+                # Convert arguments to the format that is expected by the run
+                # manager. We pay special attention to file parameters. Input
+                # files may be represented as strings, IO buffers or file
+                # objects.
+                para = self._parameters.get(key)
+                if para is None:
+                    raise err.UnknownParameterError(key)
+                if is_file(para):
+                    # Upload a given file prior to running the application.
+                    upload_file = None
+                    if isinstance(val, str):
+                        upload_file = FSFile(val)
+                    elif isinstance(val, StringIO):
+                        buf = BytesIO(val.read().encode('utf8'))
+                        upload_file = IOFile(buf)
+                    elif isinstance(val, BytesIO):
+                        upload_file = IOFile(val)
+                    elif isinstance(val, FileObject):
+                        upload_file = val
+                    else:
+                        msg = 'invalid argument {} for {}'.format(key, val)
+                        raise err.InvalidArgumentError(msg)
+                    if upload_file is not None:
+                        fh = api.uploads().upload_file(
+                            group_id=group_id,
+                            file=upload_file,
+                            name=key,
+                            user_id=user_id
+                        )
+                        val = FILE(fh['id'])
+                else:
+                    val = para.to_argument(val)
                 arglist.append(ARG(key, val))
             # Execute the run and return the serialized run handle.
             run = api.runs().start_run(
@@ -363,6 +403,40 @@ def install_app(
         )
         workflow_id = workflow.workflow_id
     return workflow_id
+
+
+def open_app(
+    identifier: Optional[str] = None, db: Optional[DB] = None,
+    engine: Optional[WorkflowController] = None,
+    fs: Optional[FileStore] = None, auth: Optional[Callable] = None,
+) -> App:
+    """Get an instance of the flowserv application for a given workflow.
+
+    By default an open access authentication policy is used.
+
+    Parameters
+    ----------
+    identifier: string, default=None
+        Unique application identifier.
+    db: flowserv.model.database.DB, default=None
+        Database connection manager.
+    engine: flowserv.controller.base.WorkflowController, default=None
+        Workflow controller to execute application runs.
+    auth: callable, default=None
+        Fuunction to generate an instance of the authentication policy.
+        To generate an Auth instance we need a database session object.
+        Thus, we cannot pass a default Auth object (for test purposes) to
+        the app class.
+    fs: flowserv.model.files.base.FileStore, default=None
+        File store to access application files.
+
+    Returns
+    -------
+    flowserv.app.base.App
+    """
+    # Use open access authentication by default.
+    auth = auth if auth is not None else open_access
+    return App(db=db, engine=engine, fs=fs, auth=auth, key=identifier)
 
 
 def uninstall_app(app_key, db=None, fs=None):

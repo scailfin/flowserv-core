@@ -11,7 +11,7 @@
 import os
 import pytest
 
-from io import BytesIO
+from io import StringIO
 
 from flowserv.app.base import App, install_app
 from flowserv.config.auth import FLOWSERV_AUTH, OPEN_ACCESS
@@ -22,12 +22,10 @@ from flowserv.config.files import (
     FLOWSERV_FILESTORE_MODULE, FLOWSERV_FILESTORE_CLASS
 )
 from flowserv.model.auth import open_access
-from flowserv.model.files.base import IOFile
 from flowserv.model.files.fs import FileSystemStore
 from flowserv.model.files.s3 import FLOWSERV_S3BUCKET
 
 from flowserv.tests.controller import StateEngine
-from flowserv.tests.files import read_text
 
 import flowserv.model.workflow.state as st
 
@@ -44,7 +42,7 @@ def test_app_start_run(database, tmpdir):
     app = App(db=database, engine=engine, fs=fs, auth=open_access, key=app_key)
     # -- Pending run ----------------------------------------------------------
     r = app.start_run({
-        'names': IOFile(BytesIO(b'Alice')),
+        'names': StringIO('Alice'),
         'sleeptime': 0,
         'greeting': 'Hi'
     })
@@ -66,7 +64,7 @@ def test_run_app_error(database, tmpdir):
     app = App(db=database, engine=engine, fs=fs, auth=open_access, key=app_key)
     # -- Pending run ----------------------------------------------------------
     r = app.start_run({
-        'names': IOFile(BytesIO(b'Alice')),
+        'names': StringIO('Alice'),
         'sleeptime': 0,
         'greeting': 'Hi'
     })
@@ -102,13 +100,13 @@ def test_run_app_from_env(fsconfig, tmpdir):
     os.environ[FLOWSERV_FILESTORE_CLASS] = fsconfig[FLOWSERV_FILESTORE_CLASS]
     if FLOWSERV_S3BUCKET in os.environ:
         del os.environ[FLOWSERV_S3BUCKET]
-    from flowserv.service.database import database
-    database.init()
+    from flowserv.app.database import flowdb
+    flowdb.init()
     app_key = install_app(source=TEMPLATE_DIR)
     # -- Run workflow ---------------------------------------------------------
     app = App(key=app_key)
     r = app.start_run({
-        'names': IOFile(BytesIO(b'Alice')),
+        'names': StringIO('Alice'),
         'sleeptime': 0,
         'greeting': 'Hi'
     })
@@ -124,7 +122,7 @@ def test_run_app_from_env(fsconfig, tmpdir):
     file_id = r.get_file_id(key='results/greetings.txt')
     f = app.get_file(run_id=r.run_id, file_id=file_id)
     assert f.mime_type == 'text/plain'
-    text = read_text(file=f.fileobj).strip()
+    text = f.open().read().decode('utf-8').strip()
     assert text == 'Hi Alice!'
     assert r.get_file_id(key='unknown', raise_error=False) is None
     with pytest.raises(ValueError):

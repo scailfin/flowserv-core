@@ -8,6 +8,7 @@
 
 """Unit tests for the asynchronous multiprocess workflow controller."""
 
+import json
 import os
 import pytest
 import time
@@ -20,7 +21,7 @@ from flowserv.config.files import (
 from flowserv.controller.serial.engine import SerialWorkflowEngine
 from flowserv.service.api import service
 from flowserv.service.run.argument import ARG, FILE
-from flowserv.tests.files import io_file, read_json, read_text
+from flowserv.tests.files import io_file
 from flowserv.tests.service import (
     create_group, create_user, create_workflow, start_run, upload_file
 )
@@ -133,7 +134,7 @@ def test_run_helloworld_async(fsconfig, target, tmpdir):
         file_id=files['results/greetings.txt'],
         user_id=user_id
     )
-    greetings = read_text(file=fh.open())
+    greetings = fh.open().read().decode('utf-8').strip()
     assert 'Hi Alice' in greetings
     assert 'Hi Bob' in greetings
     assert 'Hi Zoe' in greetings
@@ -142,7 +143,7 @@ def test_run_helloworld_async(fsconfig, target, tmpdir):
         file_id=files['results/analytics.json'],
         user_id=user_id
     )
-    assert read_json(fh.open()) is not None
+    assert json.load(fh.open()) is not None
     # -- Clean-up environment variables ---------------------------------------
     del os.environ[FLOWSERV_DB]
     del os.environ[FLOWSERV_API_BASEDIR]

@@ -33,27 +33,6 @@ FORMAT_YAML = 'YAML'
 
 # -- Datetime -----------------------------------------------------------------
 
-def from_utc_datetime(utc_datetime):
-    """Convert a timestamp in UTC time to local time. This code is based on
-    https://stackoverflow.com/questions/4770297/
-    convert-utc-datetime-string-to-local-datetime
-
-    Parameters
-    ----------
-    utc_datetime: datetime.datetime
-        Timestamp in UTC timezone
-
-    Returns
-    -------
-    datetime.datetime
-    """
-    now_timestamp = time.time()
-    ts_now = datetime.datetime.fromtimestamp(now_timestamp)
-    ts_utc = datetime.datetime.utcfromtimestamp(now_timestamp)
-    offset = ts_now - ts_utc
-    return utc_datetime + offset
-
-
 def to_datetime(timestamp):
     """Converts a timestamp string in ISO format into a datatime object.
 

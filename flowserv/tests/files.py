@@ -137,31 +137,3 @@ def io_file(data: Union[List, Dict], format: Optional[str] = None) -> IOFile:
         for line in data:
             buf.write(str.encode('{}\n'.format(line)))
     return IOFile(buf)
-
-
-def read_json(file: Union[IO, str]) -> Dict:
-    """Read json object either from a file on disk or a BytesIO buffer."""
-    if isinstance(file, str):
-        with open(file, 'r') as f:
-            return json.load(f)
-    else:
-        return json.load(file)
-
-
-def read_text(file: Union[str, IO]) -> str:
-    """Read string either from a file on disk or a BytesIO buffer.
-
-    Parameters
-    ----------
-    file: string or io.BytesIO
-        Input file or bytes buffer.
-
-    Returns
-    -------
-    string
-    """
-    if isinstance(file, str):
-        with open(file, 'r') as f:
-            return f.read()
-    else:
-        return file.read().decode('utf-8')

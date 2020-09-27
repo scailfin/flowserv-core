@@ -24,7 +24,7 @@ from multiprocessing import Lock, Pool
 
 from flowserv.config.controller import ENGINE_ASYNC, FLOWSERV_ASYNC
 from flowserv.controller.base import WorkflowController
-from flowserv.model.parameter.files import PARA_FILE
+from flowserv.model.parameter.files import is_file
 from flowserv.model.workflow.serial import SerialWorkflow
 
 import flowserv.controller.serial.config as config
@@ -158,7 +158,7 @@ class SerialWorkflowEngine(WorkflowController):
             self.fs.copy_folder(key=sourcedir, dst=rundir)
             # Store any given file arguments in the run folder.
             for key, para in wf.template.parameters.items():
-                if para.type_id == PARA_FILE and key in arguments:
+                if is_file(para) and key in arguments:
                     file = arguments[key]
                     file.source().store(os.path.join(rundir, file.target()))
             # Create top-level folder for all expected result files.

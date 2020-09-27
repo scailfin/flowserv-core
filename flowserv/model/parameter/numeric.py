@@ -305,3 +305,35 @@ class NumericParameter(ParameterBase):
         if self.constraint is not None:
             obj['range'] = self.constraint.to_string()
         return obj
+
+
+# -- Helper Methods -----------------------------------------------------------
+
+def is_float(para: ParameterBase) -> bool:
+    """Test if the given parameter is of type PARA_FLOAT.
+
+    Parameters
+    ----------
+    para: flowserv.model.parameter.base.ParameterBase
+        Template parameter definition.
+
+    Returns
+    -------
+    bool
+    """
+    return para.type_id == PARA_FLOAT
+
+
+def is_int(para: ParameterBase) -> bool:
+    """Test if the given parameter is of type PARA_INT.
+
+    Parameters
+    ----------
+    para: flowserv.model.parameter.base.ParameterBase
+        Template parameter definition.
+
+    Returns
+    -------
+    bool
+    """
+    return para.type_id == PARA_INT

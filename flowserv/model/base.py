@@ -597,7 +597,7 @@ class RunHandle(Base):
         # workflow output file specifications.
         result = dict()
         for f in outputs:
-            result[f.key] = f
+            result[f.source] = f
         return result
 
     def state(self):

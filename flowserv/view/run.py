@@ -142,8 +142,8 @@ class RunSerializer(Serializer):
                         obj[LABELS['FILE_CAPTION']] = fspec.caption
                     if fspec.widget is not None:
                         obj[LABELS['FILE_WIDGET']] = fspec.widget
-                    if fspec.title is not None:
-                        obj[LABELS['FILE_TITLE']] = fspec.title
+                    if fspec.format is not None:
+                        obj[LABELS['FILE_TITLE']] = fspec.format
                 files.append(obj)
             doc[LABELS['RUN_FILES']] = files
         return doc

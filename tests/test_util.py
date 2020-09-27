@@ -8,6 +8,7 @@
 
 """Collection of Unit tests for utility methods."""
 
+import io
 import os
 import pytest
 
@@ -20,7 +21,12 @@ def test_datetime():
     """Ensure that timestamp conversion works for ISO strings with or
     without milliseconds.
     """
-    for ts in ['2019-09-15T11:23:19.044133', '2019-09-15T11:23:19']:
+    dates = [
+        '2019-09-15T11:23:19.044133',
+        '2019-09-15T11:23:19',
+        '20190915T11:23:19'
+    ]
+    for ts in dates:
         dt = util.to_datetime(ts)
         assert dt.year == 2019
         assert dt.month == 9
@@ -90,6 +96,10 @@ def test_read_write_object(tmpdir):
     util.write_object(filename=yaml_file, obj=doc, format=util.FORMAT_JSON)
     obj = util.read_object(filename=yaml_file, format=util.FORMAT_JSON)
     assert obj == doc
+    doc = util.read_object(filename=yaml_file)
+    buf = io.BytesIO(str(doc).encode("utf-8"))
+    obj = util.read_object(filename=buf, format=util.FORMAT_YAML)
+    assert doc == obj
     # The Yaml parser can read Json files
     obj = util.read_object(filename=yaml_file)
     assert obj == doc

@@ -23,7 +23,7 @@ have been replaced by parameter values.
 """
 
 from flowserv.model.parameter.base import ParameterGroup
-from flowserv.model.parameter.files import PARA_FILE
+from flowserv.model.parameter.files import is_file
 from flowserv.model.template.files import WorkflowOutputFile
 from flowserv.model.template.parameter import ParameterIndex
 from flowserv.model.template.schema import ResultSchema
@@ -191,7 +191,7 @@ class WorkflowTemplate(object):
         result = dict()
         for para in self.parameters.values():
             if para.para_id in arguments:
-                if para.type_id == PARA_FILE:
+                if is_file(para):
                     fname, target_path = arguments[para.para_id]
                     val = para.to_argument(value=fname, target=target_path)
                 else:
