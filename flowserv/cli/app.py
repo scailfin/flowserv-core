@@ -38,7 +38,7 @@ import flowserv.config.app as config
     help='File containing detailed instructions.'
 )
 @click.option(
-    '-t', '--specfile',
+    '-s', '--specfile',
     type=click.Path(exists=True, dir_okay=False, readable=True),
     required=False,
     help='Optional path to workflow specification file.'

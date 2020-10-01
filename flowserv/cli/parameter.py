@@ -8,8 +8,6 @@
 
 """Helper methods for reading workflow template parameters."""
 
-import os
-
 from flowserv.model.files.fs import FSFile
 from flowserv.model.parameter.boolean import is_bool
 from flowserv.model.parameter.files import InputFile, is_file
@@ -98,10 +96,8 @@ def read_parameter(para, scanner, files=None):
                 # uploaded files is given or not.
                 if files is not None:
                     return FILE(file_id=filename, target=target_path)
-                elif os.path.exists(filename):
-                    return InputFile(FSFile(filename), target_path)
                 else:
-                    continue
+                    return InputFile(FSFile(filename), target_path)
             elif is_float(para):
                 return scanner.next_float(default_value=para.default_value)
             elif is_int(para):

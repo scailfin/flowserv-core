@@ -48,7 +48,6 @@ def test_read_file_parameters(tmpdir):
         FileParameter(para_id='C', name='C', index=2),
     ]
     sc = Scanner(reader=ListReader([
-        'file1',
         tmpdir,
         tmpdir,
         '',

@@ -11,8 +11,13 @@ workflow templates in the repository.
 """
 
 import click
+import logging
+import os
 import sys
 
+from flowserv.app.base import App
+from flowserv.cli.parameter import read
+from flowserv.model.auth import open_access
 from flowserv.service.api import service
 
 import flowserv.error as err
@@ -37,6 +42,69 @@ def list_workflows():
             click.echo('Name        : {}'.format(wf['name']))
             click.echo('Description : {}'.format(wf.get('description')))
             click.echo('Instructions: {}'.format(wf.get('instructions')))
+
+
+# -- Run Workflow -------------------------------------------------------------
+
+@click.option(
+    '-o', '--output',
+    type=click.Path(exists=False, file_okay=False, readable=True),
+    required=False,
+    help='Directory for output files.'
+)
+@click.option(
+    '-v', '--verbose',
+    is_flag=True,
+    default=False,
+    help='Print run logs'
+)
+@click.command(name='run')
+@click.argument('identifier')
+def run_workflow(identifier, output=None, verbose=False):
+    """Run a workflow."""
+    # -- Logging --------------------------------------------------------------
+    if verbose:
+        root = logging.getLogger()
+        root.setLevel(logging.DEBUG)
+        handler = logging.StreamHandler(sys.stdout)
+        handler.setLevel(logging.DEBUG)
+        formatter = logging.Formatter('%(message)s')
+        handler.setFormatter(formatter)
+        root.addHandler(handler)
+    # -- Setup ----------------------------------------------------------------
+    app = App(key=identifier, auth=open_access)
+    # -- Read input parameter values ------------------------------------------
+    params = app.parameters().sorted()
+    click.echo('\nWorkflow inputs\n---------------')
+    args = read(params)
+    # -- Start workflow run ---------------------------------------------------
+    click.echo('\nStart Workflow\n--------------')
+    run = app.start_run(arguments=args, poll_interval=1)
+    click.echo('Run finished with {}'.format(run))
+    # -- Run results ----------------------------------------------------------
+    if run.is_error():
+        for msg in run.messages():
+            click.echo(msg)
+    else:
+        click.echo('\nRun files\n---------')
+        for _, key in run.files():
+            click.echo(key)
+            if output:
+                out_file = os.path.join(output, key)
+                run.get_file(key).store(out_file)
+        postrun = app.get_postproc_results()
+        if postrun is not None:
+            click.echo('\nPost-Processing finished with {}'.format(postrun))
+            if postrun.is_error():
+                for msg in postrun.messages():
+                    click.echo(msg)
+            else:
+                click.echo('\nPost-Processing files\n---------------------')
+                for _, key in postrun.files():
+                    click.echo(key)
+                    if output:
+                        out_file = os.path.join(output, key)
+                        postrun.get_file(key).store(out_file)
 
 
 # -- Update workflow ----------------------------------------------------------

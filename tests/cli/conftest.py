@@ -18,6 +18,7 @@ from flowserv.config.api import FLOWSERV_API_BASEDIR
 from flowserv.config.database import FLOWSERV_DB
 from flowserv.config.backend import CLEAR_BACKEND
 from flowserv.model.base import WorkflowHandle
+from flowserv.service.api import service
 
 
 @pytest.fixture
@@ -32,6 +33,8 @@ def flowserv_cli(tmpdir):
     CLEAR_BACKEND()
     runner = CliRunner()
     runner.invoke(cli, ['init', '-f'])
+    with service() as api:
+        api.engine.fs = api.fs
     yield runner
     # Using init does not seem to remove workflows from previous test runs.
     # Need to delete them here explicitly:

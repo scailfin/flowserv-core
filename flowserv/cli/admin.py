@@ -20,7 +20,7 @@ from flowserv.cli.config import get_configuration
 from flowserv.cli.repository import list_repository
 from flowserv.cli.run import runscli
 from flowserv.cli.user import register_user
-from flowserv.cli.workflow import workflowcli
+from flowserv.cli.workflow import run_workflow, workflowcli
 from flowserv.config.api import API_BASEDIR
 from flowserv.model.database import DB
 
@@ -87,3 +87,4 @@ cli.add_command(register_user, name='register')
 
 # Workflows
 cli.add_command(workflowcli)
+cli.add_command(run_workflow, name='run')

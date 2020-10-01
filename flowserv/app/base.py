@@ -20,7 +20,8 @@ from flowserv.model.files.base import (
     DatabaseFile, FileObject, FileStore, IOFile
 )
 from flowserv.model.files.fs import FSFile
-from flowserv.model.parameter.files import is_file
+from flowserv.model.parameter.files import is_file, InputFile
+from flowserv.model.template.parameter import ParameterIndex
 from flowserv.model.workflow.manager import WorkflowManager
 from flowserv.service.auth import get_auth
 from flowserv.service.api import API
@@ -236,7 +237,7 @@ class App(object):
         """
         return self._name
 
-    def parameters(self) -> Dict:
+    def parameters(self) -> ParameterIndex:
         """Get parameter declaration for application runs.
 
         Returns
@@ -369,6 +370,7 @@ class App(object):
                 if is_file(para):
                     # Upload a given file prior to running the application.
                     upload_file = None
+                    target = None
                     if isinstance(val, str):
                         upload_file = FSFile(val)
                     elif isinstance(val, StringIO):
@@ -378,17 +380,19 @@ class App(object):
                         upload_file = IOFile(val)
                     elif isinstance(val, FileObject):
                         upload_file = val
+                    elif isinstance(val, InputFile):
+                        upload_file = val.source()
+                        target = val.target()
                     else:
                         msg = 'invalid argument {} for {}'.format(key, val)
                         raise err.InvalidArgumentError(msg)
-                    if upload_file is not None:
-                        fh = api.uploads().upload_file(
-                            group_id=group_id,
-                            file=upload_file,
-                            name=key,
-                            user_id=user_id
-                        )
-                        val = FILE(fh['id'])
+                    fh = api.uploads().upload_file(
+                        group_id=group_id,
+                        file=upload_file,
+                        name=key,
+                        user_id=user_id
+                    )
+                    val = FILE(fh['id'], target=target)
                 else:
                     val = para.to_argument(val)
                 arglist.append(ARG(key, val))
@@ -402,7 +406,12 @@ class App(object):
             # Wait for run to finish if active an poll interval is given.
             while poll_interval and rh.is_active():
                 time.sleep(poll_interval)
-                rh = self.poll_run(run_id=rh.run_id, iser_id=user_id)
+                rh = self.poll_run(run_id=rh.run_id, user_id=user_id)
+            pprun = self.get_postproc_results()
+            if pprun is not None:
+                while poll_interval and pprun.is_active():
+                    time.sleep(poll_interval)
+                    pprun = self.get_postproc_results()
             return rh
 
 
