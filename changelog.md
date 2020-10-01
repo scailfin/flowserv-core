@@ -71,6 +71,6 @@
 * Add functionality for asynchronous runs to flowserv application object.
 * Change flowserv application run result object (\#61).
 * Configure authentication policy via environment variables.
-* Create separate groups for each workflow run in the app (#62)
-* RunResults `get_file` returns a single file object (#63)
-* Flowserv class for running workflows in notebook environments (#64, #65))
+* Create separate groups for each workflow run in the app (\#62)
+* RunResults `get_file` returns a single file object (\#63)
+* Flowserv class for running workflows in notebook environments (\#64, \#65)
