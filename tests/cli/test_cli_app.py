@@ -22,7 +22,7 @@ def test_app_installation(flowserv_cli):
     command-line interface.
     """
     # Create app in a fresh database
-    cmd = ['app', 'install', '--key', 'mykey', TEMPLATE_DIR]
+    cmd = ['install', '--key', 'mykey', TEMPLATE_DIR]
     result = flowserv_cli.invoke(cli, cmd)
     print(result.output)
     assert result.exit_code == 0
@@ -34,6 +34,6 @@ def test_app_installation(flowserv_cli):
     assert result.exit_code == 0
     assert app_key in result.output
     # Uninstall the app
-    cmd = ['app', 'uninstall', app_key]
+    cmd = ['uninstall', app_key]
     result = flowserv_cli.invoke(cli, cmd)
     assert result.exit_code == 0

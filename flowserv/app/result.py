@@ -11,7 +11,7 @@ it easier for a developer that uses the flowserv application object to access
 the results and resources of workflow runs.
 """
 
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Callable, Dict, IO, List, Optional, Tuple
 
 from flowserv.model.files.base import DatabaseFile
 
@@ -38,6 +38,16 @@ class RunResult(object):
         """
         self.doc = doc
         self.loader = loader
+
+    def __str__(self) -> str:
+        """The string representation of a run result is the value for the run
+        state.
+
+        Returns
+        -------
+        string
+        """
+        return self.doc['state']
 
     def files(self) -> List[Tuple[str, str]]:
         """Get list of (id, name)-pairs for run result files.
@@ -173,6 +183,21 @@ class RunResult(object):
         list
         """
         return self.doc.get('messages', [])
+
+    def open(self, key: str) -> IO:
+        """Shortcut to open a runresult file. Returns the IO buffer for the
+        opened file.
+
+        Parameters
+        ----------
+        key: string
+            User-provided file identifier or the file source name.
+
+        Returns
+        -------
+        io.BytesIO
+        """
+        return self.get_file(key).open()
 
     @property
     def run_id(self) -> str:

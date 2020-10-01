@@ -17,6 +17,29 @@ from json.decoder import JSONDecodeError
 import flowserv.util as util
 
 
+def test_cleardir(tmpdir):
+    """Test removong all files in a given directory."""
+    # Clear an empty directory should not do anything.
+    util.cleardir(tmpdir)
+    # Create two file and one folder in the temp. directory.
+    file_1 = os.path.join(tmpdir, 'myfile.txt')
+    open(file_1, 'w').close()
+    dir_1 = os.path.join(tmpdir, 'mydir')
+    os.makedirs(dir_1)
+    file_2 = os.path.join(dir_1, 'somefile.txt')
+    open(file_2, 'w').close()
+    assert os.path.isfile(file_1)
+    assert os.path.isfile(file_2)
+    assert os.path.isdir(dir_1)
+    # Clearing the temp. directory will remove all created files and folders,
+    # but the tmpdir will still exist.
+    util.cleardir(tmpdir)
+    assert not os.path.isfile(file_1)
+    assert not os.path.isfile(file_2)
+    assert not os.path.isdir(dir_1)
+    assert os.path.isdir(tmpdir)
+
+
 def test_datetime():
     """Ensure that timestamp conversion works for ISO strings with or
     without milliseconds.

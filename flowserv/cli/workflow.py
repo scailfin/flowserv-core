@@ -18,77 +18,6 @@ from flowserv.service.api import service
 import flowserv.error as err
 
 
-# -- Add workflow -------------------------------------------------------------
-
-@click.command(name='create')
-@click.option(
-    '-n', '--name',
-    required=False,
-    help='Unique workflow name.'
-)
-@click.option(
-    '-d', '--description',
-    required=False,
-    help='Short workflow description.'
-)
-@click.option(
-    '-i', '--instructions',
-    type=click.Path(exists=False),
-    required=False,
-    help='File containing instructions for running the workflow.'
-)
-@click.option(
-    '-f', '--specfile',
-    type=click.Path(exists=True, dir_okay=False, readable=True),
-    required=False,
-    help='Optional path to workflow specification file.'
-)
-@click.option(
-    '-m', '--manifest',
-    type=click.Path(exists=True, dir_okay=False, readable=True),
-    required=False,
-    help='Optional path to workflow manifest file.'
-)
-@click.argument('template')
-def add_workflow(
-    name, description, instructions, specfile, manifest, template
-):
-    """Create a new workflow."""
-    # Add workflow template to repository
-    try:
-        # Use the workflow service component to create the workflow. This
-        # ensures that the result table is also created if the template
-        # specifies a result schema.
-        with service() as api:
-            wf = api.workflows().create_workflow(
-                source=template,
-                name=name,
-                description=description,
-                instructions=read_instructions(instructions),
-                specfile=specfile,
-                manifestfile=manifest
-            )
-        click.echo('export FLOWSERV_WORKFLOW={}'.format(wf['id']))
-    except (err.ConstraintViolationError, ValueError) as ex:
-        click.echo(str(ex))
-        sys.exit(-1)
-
-
-# -- Delete workflow ----------------------------------------------------------
-
-@click.command(name='delete')
-@click.argument('identifier')
-def delete_workflow(identifier):
-    """Delete a given workflow."""
-    try:
-        with service() as api:
-            api.workflows().delete_workflow(identifier)
-        click.echo('deleted workflow {}'.format(identifier))
-    except err.UnknownObjectError as ex:
-        click.echo(str(ex))
-        sys.exit(-1)
-
-
 # -- List workflows -----------------------------------------------------------
 
 @click.command(name='list')
@@ -160,8 +89,6 @@ def workflowcli():
     pass
 
 
-workflowcli.add_command(add_workflow)
-workflowcli.add_command(delete_workflow)
 workflowcli.add_command(list_workflows)
 workflowcli.add_command(update_workflow)
 

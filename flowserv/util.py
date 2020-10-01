@@ -16,13 +16,14 @@ import datetime
 import io
 import json
 import os
+import shutil
 import traceback
 import uuid
 import yaml
 
 from dateutil.parser import isoparse
 from dateutil.tz import UTC
-from typing import Dict, IO, Optional
+from typing import Any, Dict, IO, List, Optional, Union
 
 
 """Identifier for supported data formats."""
@@ -32,7 +33,7 @@ FORMAT_YAML = 'YAML'
 
 # -- Datetime -----------------------------------------------------------------
 
-def to_datetime(timestamp):
+def to_datetime(timestamp: str) -> datetime.datetime:
     """Converts a timestamp string in ISO format into a datatime object.
 
     Parameters
@@ -54,7 +55,7 @@ def to_datetime(timestamp):
     return isoparse(timestamp)
 
 
-def utc_now():
+def utc_now() -> str:
     """Get the current time in UTC timezone as a string in ISO format.
 
     Returns
@@ -66,7 +67,23 @@ def utc_now():
 
 # -- I/O ----------------------------------------------------------------------
 
-def create_directories(basedir, files):
+def cleardir(directory: str):
+    """Remove all files in the given directory.
+
+    Parameters
+    ----------
+    directory: string
+        Path to directory that is being created.
+    """
+    for filename in os.listdir(directory):
+        file = os.path.join(directory, filename)
+        if os.path.isfile(file) or os.path.islink(file):
+            os.unlink(file)
+        else:
+            shutil.rmtree(file)
+
+
+def create_directories(basedir: str, files: List[str]):
     """Create top-level folder for all files in a given list. The file list
     contains the path names of (result) files relative to a given base
     directory. All directories are created under the base directory.
@@ -145,7 +162,9 @@ def read_object(filename: str, format: Optional[str] = None) -> Dict:
         raise ValueError('unknown data format \'' + str(format) + '\'')
 
 
-def write_object(filename, obj, format=None):
+def write_object(
+    filename: str, obj: Union[Dict, List], format: Optional[str] = None
+):
     """Write given dictionary to file as Json object.
 
     Parameters
@@ -176,7 +195,7 @@ def write_object(filename, obj, format=None):
 
 # -- Misc ---------------------------------------------------------------------
 
-def get_unique_identifier():
+def get_unique_identifier() -> str:
     """Create a new unique identifier.
 
     Returns
@@ -186,7 +205,7 @@ def get_unique_identifier():
     return str(uuid.uuid4()).replace('-', '')
 
 
-def jquery(doc, path):
+def jquery(doc: Dict, path: List[str]) -> Any:
     """Json query to extract the value at the given path in a nested dictionary
     object.
 
@@ -235,7 +254,11 @@ def stacktrace(ex):
     return [line.strip() for line in st]
 
 
-def validate_doc(doc, mandatory=None, optional=None):
+def validate_doc(
+    doc: Dict,
+    mandatory: Optional[List[str]] = None,
+    optional: Optional[List[str]] = None
+):
     """Raises error if a dictionary contains labels that are not in the given
     label lists or if there are labels in the mandatory list that are not in
     the dictionary. Returns the given dictionary (if valid).

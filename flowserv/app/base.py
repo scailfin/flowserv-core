@@ -6,6 +6,7 @@
 # flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
+import tempfile
 import time
 
 from io import BytesIO, StringIO
@@ -25,6 +26,7 @@ from flowserv.service.auth import get_auth
 from flowserv.service.api import API
 from flowserv.service.files import get_filestore
 from flowserv.service.run.argument import ARG, FILE
+from flowserv.service.postproc.util import copy_postproc_files
 
 import flowserv.config.app as config
 import flowserv.error as err
@@ -85,6 +87,7 @@ class App(object):
             self._description = workflow.description
             self._instructions = workflow.instructions
             self._parameters = workflow.parameters
+            self._postproc_spec = workflow.postproc_spec
 
     def _api(self, session: SessionScope) -> API:
         """Get an instance of the service API using a given database session.
@@ -270,6 +273,50 @@ class App(object):
                 doc=api.runs().get_run(run_id=run_id, user_id=user_id),
                 loader=self.get_file
             )
+
+    def prepare_postproc_data(
+        self,
+        runs: List[RunResult],
+        outputdir: Optional[str] = None
+    ) -> str:
+        """Prepare input data for a post-processing workflow from a given list
+        of workflow runs.
+
+        Creates the data in a given output directory. If no directory is given,
+        a temporary directory is created. Returns the path to the directory
+        containing the collected run result files for the post-processing run.
+
+        Parameters
+        ----------
+        runs: list(flowserv.app.result.RunResult)
+            List of run results that are included in the post processing.
+        outputdir: string, default=None
+            Output directory where the post-processing data files will be
+            created.
+
+        Returns
+        -------
+        string
+        """
+        # If no directory was given a temporary directory is created.
+        outputdir = outputdir if outputdir is not None else tempfile.mkdtemp()
+        # Get the relative path names of the run result files that are expected
+        # by the post-processing workflow.
+        input_files = self._postproc_spec.get('inputs', {}).get('files', [])
+        # Collect required run result files for all runs.
+        input_runs = list()
+        for run in runs:
+            run_id = run.run_id
+            run_files = list()
+            for key in input_files:
+                run_files.append((key, run.get_file(key)))
+            input_runs.append((run_id, run_id, run_files))
+        # Copy run result files to the output directory.
+        copy_postproc_files(
+            runs=input_runs,
+            outputdir=outputdir
+        )
+        return outputdir
 
     def start_run(
         self, arguments: Dict, user_id: Optional[str] = None,

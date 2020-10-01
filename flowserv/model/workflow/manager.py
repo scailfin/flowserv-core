@@ -141,7 +141,6 @@ class WorkflowManager(object):
             self.fs.store_files(files=manifest.copyfiles(), dst=staticdir)
 
         # Insert workflow into database and return the workflow handle.
-        postproc_spec = template.postproc_spec if not ignore_postproc else None
         workflow = WorkflowHandle(
             workflow_id=workflow_id,
             name=manifest.name,
@@ -151,7 +150,8 @@ class WorkflowManager(object):
             parameters=template.parameters,
             modules=template.modules,
             outputs=template.outputs,
-            postproc_spec=postproc_spec,
+            postproc_spec=template.postproc_spec,
+            ignore_postproc=ignore_postproc,
             result_schema=template.result_schema
         )
         self.session.add(workflow)

@@ -10,6 +10,8 @@
 
 import requests
 
+from typing import Dict, List, Tuple
+
 
 """Repository URL."""
 URL = 'https://raw.githubusercontent.com/scailfin/flowserv-workflow-repository/master/templates.json'  # noqa: E501
@@ -27,7 +29,7 @@ class WorkflowRepository(object):
     - manifest: optional (relative) path for manifest file in the workflow
         repository.
     """
-    def __init__(self, templates=None):
+    def __init__(self, templates: List[Dict] = None):
         """Initialize the list of templates in the global repository. Reads the
         repository file if no list is given.
 
@@ -42,7 +44,7 @@ class WorkflowRepository(object):
             templates = r.json()
         self.templates = templates
 
-    def get(self, identifier):
+    def get(self, identifier: str) -> Tuple[str, str]:
         """Get the URL and the optional (relative) manifest file path for the
         repository entry with the given identifier. If no entry matches the
         identifier it is returned as the function result.
@@ -64,7 +66,7 @@ class WorkflowRepository(object):
                 return obj.get('url'), obj.get('manifest')
         return identifier, None
 
-    def list(self):
+    def list(self) -> List[Tuple[str, str, str]]:
         """Get list of tuples containing the template identifier, descriptions,
         and repository URL.
 

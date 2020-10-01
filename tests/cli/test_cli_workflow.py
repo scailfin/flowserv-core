@@ -17,33 +17,6 @@ DIR = os.path.dirname(os.path.realpath(__file__))
 TEMPLATE_DIR = os.path.join(DIR, '../.files/benchmark/helloworld')
 
 
-def test_create_workflow(flowserv_cli):
-    """Test creating a new workflow via the command-line interface."""
-    cmd = ['workflows', 'create', TEMPLATE_DIR]
-    result = flowserv_cli.invoke(cli, cmd)
-    assert result.exit_code == 0
-    assert 'export FLOWSERV_WORKFLOW=' in result.output
-    # Error when using an invalid name.
-    cmd = ['workflows', 'create', TEMPLATE_DIR, '-n', 'X'*600]
-    result = flowserv_cli.invoke(cli, cmd)
-    assert result.exit_code == -1
-
-
-def test_delete_workflow(flowserv_cli):
-    """Test deleting a workflow via the command-line interface."""
-    cmd = ['workflows', 'create', TEMPLATE_DIR]
-    result = flowserv_cli.invoke(cli, cmd)
-    pos = result.output.find('export FLOWSERV_WORKFLOW=') + 25
-    workflow_id = result.output[pos:].strip()
-    cmd = ['workflows', 'delete', workflow_id]
-    result = flowserv_cli.invoke(cli, cmd)
-    assert result.exit_code == 0
-    assert 'deleted workflow {}'.format(workflow_id) in result.output
-    # -- Delete the same workflow again will raise error ----------------------
-    result = flowserv_cli.invoke(cli, cmd)
-    assert result.exit_code == -1
-
-
 def test_list_workflows(flowserv_cli):
     """Test listing workflows via the command-line interface."""
     # -- Test empty listing ---------------------------------------------------
@@ -52,9 +25,9 @@ def test_list_workflows(flowserv_cli):
     assert result.exit_code == 0
     assert result.output == ''
     # -- Test listing with two workflows --------------------------------------
-    cmd = ['workflows', 'create', TEMPLATE_DIR]
+    cmd = ['install', TEMPLATE_DIR]
     assert flowserv_cli.invoke(cli, cmd).exit_code == 0
-    cmd = ['workflows', 'create', TEMPLATE_DIR]
+    cmd = ['install', TEMPLATE_DIR]
     assert flowserv_cli.invoke(cli, cmd).exit_code == 0
     cmd = ['workflows', 'list']
     result = flowserv_cli.invoke(cli, cmd)
@@ -65,9 +38,9 @@ def test_list_workflows(flowserv_cli):
 def test_update_workflow(flowserv_cli, tmpdir):
     """Test updating workflow properties via the command-line interface."""
     # -- Setup ----------------------------------------------------------------
-    cmd = ['workflows', 'create', TEMPLATE_DIR]
+    cmd = ['install', TEMPLATE_DIR]
     result = flowserv_cli.invoke(cli, cmd)
-    pos = result.output.find('export FLOWSERV_WORKFLOW=') + 25
+    pos = result.output.find('export FLOWSERV_APP=') + 20
     workflow_id = result.output[pos:].strip()
     # -- Update without any arguments -----------------------------------------
     cmd = ['workflows', 'update', workflow_id]

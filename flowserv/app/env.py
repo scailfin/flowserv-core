@@ -12,7 +12,7 @@ import os
 import shutil
 import tempfile
 
-from typing import Optional
+from typing import List, Optional, Tuple
 
 from flowserv.app.base import App, install_app, open_app, uninstall_app
 from flowserv.controller.serial.docker import DockerWorkflowEngine
@@ -20,10 +20,16 @@ from flowserv.controller.serial.engine import SerialWorkflowEngine
 from flowserv.model.auth import open_access
 from flowserv.model.database import DB
 from flowserv.model.files.fs import FileSystemStore
+from flowserv.model.workflow.repository import WorkflowRepository
+
+import flowserv.util as util
 
 
 class Flowserv(object):
-    """Test environment for installing an running workflow templates.
+    """Environment for installing an running workflow templates. This class
+    provides additional functionality for installing flowserv components. It
+    is primarily intended for testing and/or  running flowserv in a notebook
+    environment.
 
     The test environment will keep all workflow files in a folder on the file
     system. The environment uses SQLite as the database backend.
@@ -35,6 +41,7 @@ class Flowserv(object):
     def __init__(
         self,
         basedir: Optional[str] = None,
+        clear: Optional[bool] = False,
         use_docker: Optional[bool] = False,
         run_async: Optional[bool] = False
     ):
@@ -45,6 +52,9 @@ class Flowserv(object):
         basedir: string, default=None
             Base directory for all workflow files. If no directory is given a
             temporary directory will be created.
+        clear: bool, default=False
+            Remove all existing files and folders in the base directory if the
+            clear flag is True.
         use_docker: bool, default=False
             Use Docker workflow engine.
         run_async: bool, default=False
@@ -53,6 +63,10 @@ class Flowserv(object):
         # Set the base directory and ensure that it exists.
         self.basedir = basedir if basedir is not None else tempfile.mkdtemp()
         os.makedirs(self.basedir, exist_ok=True)
+        # Remove all existing files and folders in the base directory if the
+        # clear flag is True.
+        if clear:
+            util.cleardir(self.basedir)
         # Create a fresh database in the base directory.
         url = 'sqlite:///{}/flowserv.db'.format(os.path.abspath(self.basedir))
         self.db = DB(connect_url=url)
@@ -149,6 +163,16 @@ class Flowserv(object):
             fs=self.fs,
             auth=self.auth
         )
+
+    def repository(self) -> List[Tuple[str, str]]:
+        """Get list of tuples containing the identifier and description for
+        each registered workflow template in the global repository.
+
+        Returns
+        -------
+        list
+        """
+        return [(tid, desc) for tid, desc, _ in WorkflowRepository().list()]
 
     def uninstall(self, identifier: str):
         """Remove the workflow with the given identifier. This will also remove

@@ -53,7 +53,7 @@ import flowserv.config.app as config
 def install_application(
     key, name, description, instructions, specfile, manifest, template
 ):
-    """Install application from local folder or repository."""
+    """Install workflow from local folder or repository."""
     # Install the application from the given workflow template.
     app_key = install_app(
         source=template,
@@ -70,17 +70,5 @@ def install_application(
 @click.command('uninstall')
 @click.argument('appkey')
 def uninstall_application(appkey):
-    """Uninstall application with the given key."""
+    """Uninstall workflow with the given key."""
     uninstall_app(app_key=appkey)
-
-
-# -- Command Group ------------------------------------------------------------
-
-@click.group(name='app')
-def appcli():
-    """Install and uninstall application templates."""
-    pass
-
-
-appcli.add_command(install_application)
-appcli.add_command(uninstall_application)

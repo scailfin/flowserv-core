@@ -448,13 +448,11 @@ class RunService(object):
         )
         if run is not None and state.is_success():
             logging.info('run {} is a success'.format(run_id))
-            result_schema = run.workflow.result_schema
-            postproc_spec = run.workflow.postproc_spec
-            if result_schema is not None and postproc_spec is not None:
+            workflow = run.workflow
+            if workflow.run_postproc:
                 # Get the latest ranking for the workflow and create a
                 # sorted list of run identifier to compare agains the
                 # current post-processing key for the workflow.
-                workflow = run.workflow
                 ranking = self.ranking_manager.get_ranking(workflow=workflow)
                 runs = sorted([r.run_id for r in ranking])
                 # Run post-processing task synchronously if the current
@@ -464,7 +462,7 @@ class RunService(object):
                     msg = 'Run post-processing workflow for {}'
                     logging.info(msg.format(workflow.workflow_id))
                     run_postproc_workflow(
-                        postproc_spec=postproc_spec,
+                        postproc_spec=workflow.postproc_spec,
                         workflow=workflow,
                         ranking=ranking,
                         runs=runs,

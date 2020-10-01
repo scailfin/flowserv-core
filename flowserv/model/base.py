@@ -313,6 +313,7 @@ class WorkflowHandle(Base):
     # the workflow and all dependend runs.
     postproc_run_id = Column(String(32), nullable=True)
     postproc_spec = Column(JsonObject)
+    ignore_postproc = Column(Boolean, nullable=False, default=False)
     result_schema = Column(WorkflowResultSchema)
 
     # -- Relationships --------------------------------------------------------
@@ -366,6 +367,19 @@ class WorkflowHandle(Base):
         """
         ranking = sorted(self.postproc_ranking, key=lambda r: r.rank)
         return [r.run_id for r in ranking]
+
+    @property
+    def run_postproc(self):
+        """Returns True iff the result schema and post-processing workflow are
+        defined and the ignore_postproc flag is False.
+
+        Returns
+        -------
+        bool
+        """
+        has_schema = self.result_schema is not None
+        has_postproc = self.postproc_spec is not None
+        return has_schema and has_postproc and not self.ignore_postproc
 
 
 # -- Workflow Groups ----------------------------------------------------------
@@ -570,7 +584,7 @@ class RunHandle(Base):
 
     def outputs(self):
         """Get specification of output file properties. The result is a
-        dictionary ofworkflow output file specifications keyed by either the
+        dictionary of workflow output file specifications keyed by either the
         user-specified key or the file source. If the workflow template does
         not contain any output file specifications the result is an empty
         dictionary.
@@ -585,8 +599,12 @@ class RunHandle(Base):
         dict(string: flowserv.model.template.files.WorkflowOutputFile)
         """
         if self.group_id is not None:
+            # The run is for a workflow group submission.
             outputs = self.workflow.outputs
         else:
+            # The run was for a ppst-processing workflow. In this case the
+            # postproc sepecification will contain the output file definitions
+            # that we are interested in.
             outputs = self.workflow.postproc_spec.get('outputs')
             if outputs is not None:
                 outputs = [WorkflowOutputFile.from_dict(f) for f in outputs]
