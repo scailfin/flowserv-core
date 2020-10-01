@@ -41,15 +41,22 @@ TEMPLATE_TOPTAGGER = os.path.join(BENCHMARK_DIR, '../top-tagger.yaml')
 TEMPLATE = dict({'A': 1})
 
 
-@pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
-def test_create_workflow(fscls, database, tmpdir):
+@pytest.mark.parametrize(
+    'fscls,identifier',
+    [(FileSystemStore, 'abc'), (DiskStore, 'def')]
+)
+def test_create_workflow(fscls, identifier, database, tmpdir):
     """Test creating workflows with different levels of detail."""
     # -- Setup ----------------------------------------------------------------
     fs = fscls(tmpdir)
     # -- Add workflow with minimal information --------------------------------
     with database.session() as session:
         manager = WorkflowManager(session=session, fs=fs)
-        wf = manager.create_workflow(source=BENCHMARK_DIR)
+        wf = manager.create_workflow(
+            source=BENCHMARK_DIR,
+            identifier=identifier
+        )
+        assert wf.workflow_id == identifier
         assert wf.name == 'Hello World'
         assert wf.description is None
         assert wf.instructions is None

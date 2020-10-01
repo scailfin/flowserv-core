@@ -22,7 +22,7 @@ from flowserv.controller.serial.engine import SerialWorkflowEngine
 from flowserv.service.api import service
 from flowserv.service.files import get_filestore
 from flowserv.service.run.argument import ARG, FILE
-from flowserv.tests.files import FakeStream
+from flowserv.tests.files import io_file
 from flowserv.tests.service import (
     create_group, create_user, create_workflow, start_run, upload_file
 )
@@ -85,8 +85,8 @@ def test_postproc_workflow(fsconfig, tmpdir):
     for i in range(4):
         with service(engine=engine) as api:
             group_id = create_group(api, workflow_id, [user_id])
-            names = FakeStream(data=NAMES[:(i+1)], format='plain/text')
-            file_id = upload_file(api, group_id, user_id, names.save())
+            names = io_file(data=NAMES[:(i+1)], format='plain/text')
+            file_id = upload_file(api, group_id, user_id, names)
             # Set the template argument values
             arguments = [
                 ARG('names', FILE(file_id)),
@@ -123,12 +123,12 @@ def test_postproc_workflow(fsconfig, tmpdir):
             if fobj['name'] == 'results/compare.json':
                 file_id = fobj['id']
         with service(engine=engine) as api:
-            fh, filename = api.runs().get_result_file(
+            fh = api.runs().get_result_file(
                 run_id=wh['postproc']['id'],
                 file_id=file_id,
                 user_id=None
             )
-        compare = util.read_object(filename)
+        compare = util.read_object(fh.open())
         assert len(compare) == (i + 1)
     # -- Clean-up environment variables ---------------------------------------
     del os.environ[FLOWSERV_DB]
@@ -185,7 +185,7 @@ def run_erroneous_workflow(service, engine, specfile):
         user_id = create_user(api)
         group_id = create_group(api, workflow_id, [user_id])
         # Upload the names file.
-        names = FakeStream(data=NAMES, format='txt/plain').save()
+        names = io_file(data=NAMES, format='txt/plain')
         file_id = upload_file(api, group_id, user_id, names)
         # Run the workflow.
         arguments = [

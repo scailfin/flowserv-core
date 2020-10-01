@@ -61,7 +61,7 @@ def list_obsolete_runs(before, state):
                 state=state
             )
             for run in runs:
-                click.echo('{}\t{}\t'.format(
+                click.echo('{}\t{}\t{}'.format(
                     run.run_id,
                     run.created_at,
                     run.state

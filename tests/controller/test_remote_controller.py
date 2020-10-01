@@ -93,8 +93,10 @@ def test_run_remote_workflow(tmpdir, is_async):
     # Poll workflow state every second.
     with service(engine=engine) as api:
         run = api.runs().get_run(run_id=run_id, user_id=user_id)
-    while run['state'] in st.ACTIVE_STATES:
+    count = 0
+    while run['state'] in st.ACTIVE_STATES and count < 60:
         time.sleep(1)
+        count += 1
         with service(engine=engine) as api:
             run = api.runs().get_run(run_id=run_id, user_id=user_id)
     serialize.validate_run_handle(run, state=st.STATE_SUCCESS)
@@ -102,14 +104,13 @@ def test_run_remote_workflow(tmpdir, is_async):
     for obj in run['files']:
         files[obj['name']] = obj['id']
     f_id = files['results/data.txt']
-    fh, filename = api.runs().get_result_file(
+    fh = api.runs().get_result_file(
         run_id=run_id,
         file_id=f_id,
         user_id=user_id
     )
-    with open(filename) as f:
-        data = f.read()
-        assert 'success' in data
+    data = fh.open().read().decode('utf-8')
+    assert 'success' in data
 
 
 def test_run_remote_workflow_with_error(tmpdir):

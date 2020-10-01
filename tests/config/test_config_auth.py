@@ -15,7 +15,17 @@ import os
 import flowserv.config.auth as config
 
 
-def test_config_auth():
+def test_config_auth_policy():
+    """Test getting authentication policy name from the configuration."""
+    # Test with environment variable set.
+    os.environ[config.FLOWSERV_AUTH] = config.OPEN_ACCESS
+    assert config.AUTH_POLICY() == config.OPEN_ACCESS
+    # Test default value.
+    del os.environ[config.FLOWSERV_AUTH]
+    assert config.AUTH_POLICY() == config.DEFAULT_AUTH
+
+
+def test_config_auth_ttl():
     """Test public methods to get login timeout configuration."""
     # -- Test get value with environment variable set ---------------------
     os.environ[config.FLOWSERV_AUTH_LOGINTTL] = '100'

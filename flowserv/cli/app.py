@@ -10,29 +10,16 @@
 
 import click
 
-from flowserv.app import install_app, list_apps, uninstall_app
-from flowserv.cli.repository import list_repository
-from flowserv.model.database import DB
+from flowserv.app.base import install_app, uninstall_app
 
 import flowserv.config.app as config
 
 
-# -- Command group ------------------------------------------------------------
-
-@click.group()
-def cli():
-    """Command line interface for administrative tasks."""
-    pass
-
-
-# -- CLI commands -------------------------------------------------------------
-
-@cli.command(name='install')
+@click.command(name='install')
 @click.option(
-    '-c', '--initdb',
-    is_flag=True,
-    default=False,
-    help='Create a fresh database.'
+    '-k', '--key',
+    required=False,
+    help='Workflow application key.'
 )
 @click.option(
     '-n', '--name',
@@ -51,7 +38,7 @@ def cli():
     help='File containing detailed instructions.'
 )
 @click.option(
-    '-t', '--specfile',
+    '-s', '--specfile',
     type=click.Path(exists=True, dir_okay=False, readable=True),
     required=False,
     help='Optional path to workflow specification file.'
@@ -63,18 +50,14 @@ def cli():
     help='Optional path to workflow manifest file.'
 )
 @click.argument('template')
-def install_workflow(
-    initdb, name, description, instructions, specfile, manifest, template
+def install_application(
+    key, name, description, instructions, specfile, manifest, template
 ):
-    """Install application from local folder or repository."""
-    if initdb:
-        click.echo('This will erase an existing database.')
-        click.confirm('Continue?', default=True, abort=True)
-        # Create a new instance of the database
-        DB().init()
+    """Install workflow from local folder or repository."""
     # Install the application from the given workflow template.
     app_key = install_app(
         source=template,
+        identifier=key,
         name=name,
         description=description,
         instructions=instructions,
@@ -84,18 +67,8 @@ def install_workflow(
     click.echo('export {}={}'.format(config.FLOWSERV_APP, app_key))
 
 
-@cli.command(name='list')
-def list_applications():
-    """Listing of installed applications."""
-    for name, key in list_apps():
-        click.echo('{}\t{}'.format(key, name))
-
-
-@cli.command('uninstall')
+@click.command('uninstall')
 @click.argument('appkey')
 def uninstall_application(appkey):
-    """Uninstall application with the given key."""
+    """Uninstall workflow with the given key."""
     uninstall_app(app_key=appkey)
-
-
-cli.add_command(list_repository, name='repository')

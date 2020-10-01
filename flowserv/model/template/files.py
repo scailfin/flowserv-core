@@ -8,6 +8,8 @@
 
 """Classes to maintain of workflow output file specifications."""
 
+from typing import Dict, Optional
+
 import flowserv.util as util
 
 
@@ -19,13 +21,16 @@ class WorkflowOutputFile(object):
     may be specified:
 
     - source: relative path the the file in the run folder
+    - key: Unique key that is assigned to the resource for dictionary access
     - title: optional title for display purposes
     - caption: optional caption for display purposes
     - format: optional format information for file contents.
     - widget: optional instructions for widget used to display file contents.
     """
     def __init__(
-        self, source, title=None, caption=None, format=None, widget=None
+        self, source: str, title: Optional[str] = None,
+        key: Optional[str] = None, caption: Optional[str] = None,
+        format: Optional[Dict] = None, widget: Optional[Dict] = None
     ):
         """Initialize the object properties.
 
@@ -33,6 +38,10 @@ class WorkflowOutputFile(object):
         ----------
         source: string
             Relative path the the file in the run folder.
+        key: string, default=None
+            Unique user-defined key for the resource that can be used for
+            accessing the resource in a dictionary (e.g., in the flowapp result
+            object).
         title: string, default=None
             Optional title for display purposes.
         caption: string, default=None
@@ -43,6 +52,7 @@ class WorkflowOutputFile(object):
             Optional instructions for widget used to display file contents.
         """
         self.source = source
+        self.key = key if key is not None else source
         self.title = title
         self.caption = caption
         self.format = format
@@ -72,10 +82,11 @@ class WorkflowOutputFile(object):
             util.validate_doc(
                 doc=doc,
                 mandatory=['source'],
-                optional=['title', 'caption', 'widget', 'format']
+                optional=['key', 'title', 'caption', 'widget', 'format']
             )
         return cls(
             source=doc['source'],
+            key=doc.get('key'),
             title=doc.get('title'),
             caption=doc.get('caption'),
             format=doc.get('format'),
@@ -89,7 +100,7 @@ class WorkflowOutputFile(object):
         -------
         dict
         """
-        doc = {'source': self.source}
+        doc = {'source': self.source, 'key': self.key}
         if self.title is not None:
             doc['title'] = self.title
         if self.caption is not None:

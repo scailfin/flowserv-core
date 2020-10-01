@@ -15,7 +15,6 @@ from dateutil.parser import isoparse
 from flowserv.model.base import GroupHandle, RunHandle
 
 import flowserv.model.workflow.state as st
-import flowserv.util as util
 
 
 class RunResult(object):

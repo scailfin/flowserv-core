@@ -14,6 +14,10 @@ are in upper case to emphasize that they access configuration values that are
 expected to remain constant throughout the lifespan of a running application.
 """
 
+import os
+
+from typing import Optional
+
 from flowserv.config.base import get_variable
 
 
@@ -22,14 +26,21 @@ module.
 """
 # Time period for which an API key is valid
 FLOWSERV_AUTH_LOGINTTL = 'FLOWSERV_AUTH_TTL'
+# Authentication policy
+FLOWSERV_AUTH = 'FLOWSERV_AUTH'
+
 
 """Default values for environment variables."""
 DEFAULT_LOGINTTL = 24 * 60 * 60
+# Access policies
+DEFAULT_AUTH = 'DEFAULT'
+OPEN_ACCESS = 'OPEN'
+
 
 # -- Public helper methods to access configuration values ---------------------
 
 
-def AUTH_LOGINTTL(value=None):
+def AUTH_LOGINTTL(value: Optional[str] = None) -> str:
     """Get the connect string for the database from the respective environment
     variable 'FLOWSERV_AUTH_LOGINTTL'. If a user-provided value is given it
     will be returned. If the environment variable is not set the default value
@@ -57,3 +68,14 @@ def AUTH_LOGINTTL(value=None):
         return int(val)
     except ValueError:
         return DEFAULT_LOGINTTL
+
+
+def AUTH_POLICY() -> str:
+    """Get the authentication policy variable value from the environment
+    variable 'FLOWSERV_AUTH'. The default authentication policy is 'DEFAULT.'
+
+    Returns
+    -------
+    string
+    """
+    return os.environ.get(FLOWSERV_AUTH, DEFAULT_AUTH)

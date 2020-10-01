@@ -27,6 +27,10 @@ class RunSerializer(Serializer):
                 'ARG_VALUE': 'value',
                 'FILE_ID': 'id',
                 'FILE_NAME': 'name',
+                'FILE_TITLE': 'title',
+                'FILE_CAPTION': 'caption',
+                'FILE_WIDGET': 'widget',
+                'FILE_FORMAT': 'format',
                 'RUN_ARGUMENTS': 'arguments',
                 'RUN_CREATED': 'createdAt',
                 'RUN_ERRORS': 'messages',
@@ -118,26 +122,29 @@ class RunSerializer(Serializer):
             doc[LABELS['RUN_ERRORS']] = run.state().messages
         elif run.is_success():
             doc[LABELS['RUN_FINISHED']] = run.state().finished_at
-            # Create serialization of output files if specification is present
-            # in the workflow handle.
-            filespec = dict()
-            outspec = run.outputs()
-            if outspec is not None:
-                for file in outspec:
-                    obj = file.to_dict()
-                    source = obj['source']
-                    del obj['source']
-                    filespec[source] = obj
-            # Serialize file resources
+            output_spec = run.outputs()
+            # Serialize file resources. The default serialization contains the
+            # file identifier and name. If an output specification is present
+            # for the file the values for that specification will be added
+            # to the serialization.
             files = list()
             for f in run.files:
-                fileobj = {
+                obj = {
                     LABELS['FILE_ID']: f.file_id,
                     LABELS['FILE_NAME']: f.name
                 }
-                if f.name in filespec:
-                    fileobj.update(filespec[f.name])
-                files.append(fileobj)
+                if f.name in output_spec:
+                    fspec = output_spec[f.name]
+                    obj[LABELS['FILE_NAME']] = fspec.key
+                    if fspec.title is not None:
+                        obj[LABELS['FILE_TITLE']] = fspec.title
+                    if fspec.caption is not None:
+                        obj[LABELS['FILE_CAPTION']] = fspec.caption
+                    if fspec.widget is not None:
+                        obj[LABELS['FILE_WIDGET']] = fspec.widget
+                    if fspec.format is not None:
+                        obj[LABELS['FILE_TITLE']] = fspec.format
+                files.append(obj)
             doc[LABELS['RUN_FILES']] = files
         return doc
 

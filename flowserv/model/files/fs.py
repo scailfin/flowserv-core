@@ -11,14 +11,63 @@
 import os
 import shutil
 
-from io import StringIO
-from typing import IO, List, Tuple, Union
+from typing import IO, List, Optional, Tuple
 
-from flowserv.model.files.base import FileStore
+from flowserv.model.files.base import FileStore, FileObject
 
 import flowserv.config.api as config
 import flowserv.config.files as fconfig
+import flowserv.error as err
 import flowserv.util as util
+
+
+class FSFile(FileObject):
+    """Implementation of the file object interface for files that are stored on
+    the file system.
+    """
+    def __init__(self, filename):
+        """Initialize the file name that points to a file on disk.
+
+        Parameters
+        ----------
+        filename: string
+            Path to an existing file on disk.
+        """
+        self.filename = filename
+
+    def open(self) -> IO:
+        """Get file contents as a BytesIO buffer.
+
+        Returns
+        -------
+        io.BytesIO
+
+        Raises
+        ------
+        flowserv.error.UnknownFileError
+        """
+        if not os.path.isfile(self.filename):
+            raise err.UnknownFileError(self.filename)
+        return util.read_buffer(self.filename)
+
+    def size(self) -> int:
+        """Get size of the file in the number of bytes.
+
+        Returns
+        -------
+        int
+        """
+        return os.stat(self.filename).st_size
+
+    def store(self, filename: str):
+        """Write file content to disk.
+
+        Parameters
+        ----------
+        filename: string
+            Name of the file to which the content is written.
+        """
+        copy(src=self.filename, dst=filename)
 
 
 class FileSystemStore(FileStore):
@@ -54,35 +103,29 @@ class FileSystemStore(FileStore):
             (fconfig.FLOWSERV_FILESTORE_MODULE, 'flowserv.model.files.fs')
         ]
 
-    def copy_files(self, src: str, files: List[Tuple[str, str]]):
-        """Copy a list of files or dirctories from a given source directory.
-        The list of files contains tuples of relative file source and target
-        path. The source path may reference existing files or directories.
-
-        Raises a ValueError if an attempt is made to overwrite an existing
-        file.
+    def copy_folder(self, key: str, dst: str):
+        """Copy all files in the folder with the given key to a target folder.
+        Creates the destination folder if it does not exist.
 
         Parameters
         ----------
-        src: string
-            Path to source directory on disk.
-        files: list((string, string))
-            List of file source and target path. All path names are relative.
-
-        Raises
-        ------
-        ValueError
+        key: string
+            Unique folder key.
+        dst: string
+            Path on the file system to the target folder.
         """
-        filelist = list()
-        for source, target in files:
-            source = os.path.join(src, source)
-            filelist.append((source, target))
-        util.copy_files(
-            files=filelist,
-            target_dir=self.basedir,
-            overwrite=False,
-            raise_error=True
-        )
+        # Create target directory if it does not exist.
+        os.makedirs(dst, exist_ok=True)
+        # Copy all files and folders from the source folder to the target
+        # folder.
+        src = os.path.join(self.basedir, key)
+        for filename in os.listdir(src):
+            source = os.path.join(src, filename)
+            target = os.path.join(dst, filename)
+            if os.path.isdir(source):
+                shutil.copytree(src=source, dst=target)
+            else:
+                shutil.copy(src=source, dst=target)
 
     def delete_file(self, key: str):
         """Delete the file with the given key.
@@ -93,60 +136,24 @@ class FileSystemStore(FileStore):
             Unique file key.
         """
         filename = os.path.join(self.basedir, key)
-        if os.path.isfile(filename):
+        # Only attempt to delete the file if it exists.
+        if os.path.exists(filename):
             os.remove(filename)
-        elif os.path.isdir(filename):
+
+    def delete_folder(self, key: str):
+        """Delete the file with the given key.
+
+        Parameters
+        ----------
+        key: string
+            Unique file key.
+        """
+        filename = os.path.join(self.basedir, key)
+        # Only attempt to delete the folder if it exists.
+        if os.path.exists(filename):
             shutil.rmtree(filename)
 
-    def download_archive(self, src: str, files: List[str]) -> IO:
-        """Download all files in the given list from the specified source
-        directory as a tar archive.
-
-        Parameters
-        ----------
-        src: string
-            Relative path to the files source directory.
-        files: list(string)
-            List of relative paths to files (or directories) in the specified
-            source directory. Lists the files to include in the returned
-            archive.
-
-        Returns
-        -------
-        io.BytesIO
-        """
-        src = os.path.join(self.basedir, src)
-        return util.archive_files([(os.path.join(src, f), f) for f in files])
-
-    def download_files(self, files: List[Tuple[str, str]], dst: str):
-        """Copy a list of files or dirctories from the file store to a given
-        destination directory. The list of files contains tuples of relative
-        file source and target path. The source path may reference files or
-        directories.
-
-        Parameters
-        ----------
-        files: list((string, string))
-            List of file source and target path. All path names are relative.
-        dst: string
-            Path to target directory on disk.
-
-        Raises
-        ------
-        ValueError
-        """
-        filelist = list()
-        for source, target in files:
-            source = os.path.join(self.basedir, source)
-            filelist.append((source, target))
-        util.copy_files(
-            files=filelist,
-            target_dir=dst,
-            overwrite=False,
-            raise_error=True
-        )
-
-    def load_file(self, key: str) -> str:
+    def load_file(self, key: str) -> FSFile:
         """Get a file object for the given key. Returns the path to the file on
         the local file system.
 
@@ -157,45 +164,105 @@ class FileSystemStore(FileStore):
 
         Returns
         -------
-        string
-
-        Raises
-        ------
-        flowserv.error.UnknownFileError
+        flowserv.model.files.fs.FSFile
         """
-        return os.path.join(self.basedir, key)
+        return FSFile(os.path.join(self.basedir, key))
 
-    def upload_file(self, file: Union[str, IO], dst: str) -> int:
-        """Upload a given file object to the file store. The destination path
-        is a relative path. The file may reference a file on the local file
-        system or it is a file object (StringIO or BytesIO).
-
-        Returns the size of the uploaded file on disk.
+    def store_files(self, files: List[Tuple[FileObject, str]], dst: str):
+        """Store a given list of file objects in the file store. The file
+        destination key is a relative path name. This is used as the base path
+        for all files. The file list contains tuples of file object and target
+        path. The target is relative to the base destination path.
 
         Paramaters
         ----------
-        file: string or io.BytesIO or io.StringIO
-            The input file is either a FileObject (buffer) or a reference to a
-            file on the local file system.
+        file: flowserv.model.files.base.FileObject
+            The input file object.
         dst: string
             Relative target path for the stored file.
-
-        Returns
-        -------
-        int
         """
+        # Ensure that the target directory exists.
         target = os.path.join(self.basedir, dst)
-        os.makedirs(os.path.dirname(target), exist_ok=True)
-        # Depending on the type of the file parameter copy an input file or
-        # write the contents of a file buffer object to disk.
-        if isinstance(file, str):
-            shutil.copy(src=file, dst=target)
-        elif isinstance(file, StringIO):
-            with open(target, 'w') as fd:
-                file.seek(0)
-                shutil.copyfileobj(file, fd)
-        else:  # assumes isinstance(file, BytesIO)
-            with open(target, 'wb') as fd:
-                fd.write(file.getbuffer())
-        # Return size of the created file.
-        return os.stat(target).st_size
+        os.makedirs(target, exist_ok=True)
+        # Use the file object's store method to store the file at the target
+        # destination.
+        for file, filename in files:
+            file.store(os.path.join(target, filename))
+
+
+# -- Helper Methods -----------------------------------------------------------
+
+def copy(src: str, dst: str):
+    """Copy a file or folder from a given source to a given destination. This
+    function accounts for the case where we copy an existing folder.
+
+    Parameters
+    ----------
+    src: string
+        Path to the source folder
+    dst: string
+        Path to the target folder.
+    """
+    os.makedirs(os.path.dirname(dst), exist_ok=True)
+    if os.path.isdir(src):
+        if os.path.exists(dst):
+            for file in os.listdir(src):
+                copy(os.path.join(src, file), os.path.join(dst, file))
+        else:
+            shutil.copytree(src=src, dst=dst)
+    else:
+        shutil.copyfile(src=src, dst=dst)
+
+
+def walk(
+    files: List[Tuple[str, str]], result: Optional[Tuple[FSFile, str]] = None
+) -> List[Tuple[FSFile, str]]:
+    """Recursively add all files in a given (source, target) list folder to a
+    file upload list.
+
+    Returns a list of (FSObject, relative targetpath) pairs.
+
+    Parameters
+    ----------
+    files: list of (string, string)
+        Pairs of absolute source file path and relative target file path for
+        files and folders that are included in the returned list.
+    reult: list of (flowserv.model.files.fs.FSFile, string)
+        Result list that is appended to while the file system tree is
+        traversed recursively for each element in the input file list.
+
+    Returns
+    -------
+    list of (flowserv.model.files.fs.FSFile, string)
+    """
+    result = list() if result is None else result
+    for source, target in files:
+        if os.path.isdir(source):
+            walkdir(src=source, dst=target, files=result)
+        else:
+            result.append((FSFile(source), target))
+    return result
+
+
+def walkdir(src: str, dst: str, files: List[Tuple[FSFile, str]]):
+    """Recursively add all files in a given source folder to a file upload list.
+    The elements in the list are tuples of file object and relative target
+    path.
+
+    Parameters
+    ----------
+    str: stirng
+        Path to folder of the local file system.
+    dst: string
+        Relative destination path for all files in the folder.
+    files: list of (flowserv.model.files.fs.FSFile, string)
+        Pairs of file objects and their relative target path for upload to a
+        file store.
+    """
+    for filename in os.listdir(src):
+        file = os.path.join(src, filename)
+        target = filename if dst is None else os.path.join(dst, filename)
+        if os.path.isdir(file):
+            walkdir(src=file, dst=target, files=files)
+        else:
+            files.append((FSFile(file), target))

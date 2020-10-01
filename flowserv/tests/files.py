@@ -11,60 +11,14 @@
 import botocore.exceptions
 import json
 import os
-import shutil
 
 from io import BytesIO
-from typing import Dict, IO, List
+from typing import Dict, IO, List, Optional, Union
+
+from flowserv.model.files.base import IOFile
 
 import flowserv.config.api as config
 import flowserv.util as util
-
-
-class FakeStream(object):
-    """Fake stream object to test upload from stream. Needs to implement the
-    save(filename) method.
-    """
-    def __init__(self, data=None, format=None):
-        """Set the file data object that will be written when the save method
-        is called.
-
-        Parameters
-        ----------
-        data: dict, optional
-            File data object
-
-        Returns
-        -------
-        string
-        """
-        self.data = data if data is not None else dict()
-        self.format = format if format is not None else util.FORMAT_JSON
-
-    def save(self, buf=None):
-        """Write simple text to given bytes buffer."""
-        buf = BytesIO() if buf is None else buf
-        buf.seek(0)
-        if self.format == util.FORMAT_JSON:
-            buf.write(str.encode(json.dumps(self.data)))
-        else:
-            for line in self.data:
-                buf.write(str.encode('{}\n'.format(line)))
-        return buf
-
-    def write(self, filename):
-        """Write data to given file."""
-        # Ensure that the directory for the file exists.
-        os.makedirs(os.path.dirname(filename), exist_ok=True)
-        if self.format == util.FORMAT_JSON:
-            util.write_object(
-                filename=filename,
-                obj=self.data,
-                format=util.FORMAT_JSON
-            )
-        else:
-            with open(filename, 'w') as f:
-                for line in self.data:
-                    f.write('{}\n'.format(line))
 
 
 # -- S3 Buckets ---------------------------------------------------------------
@@ -96,8 +50,6 @@ class DiskBucket(object):
             filename = os.path.join(self.basedir, obj.get('Key'))
             if os.path.isfile(filename):
                 os.remove(filename)
-            elif os.path.isdir(filename):
-                shutil.rmtree(filename)
 
     def download_fileobj(self, key: str, data: IO):
         """Copy the buffer for the identified object into the given data
@@ -123,14 +75,6 @@ class DiskBucket(object):
             if key.startswith(Prefix):
                 result.append(ObjectSummary(key))
         return result
-
-    def upload_file(self, file: str, dst: str):
-        """Read file and add the data buffer to the object index."""
-        data = BytesIO()
-        with open(file, 'rb') as f:
-            data.write(f.read())
-        data.seek(0)
-        self.upload_fileobj(file=data, dst=dst)
 
     def upload_fileobj(self, file: IO, dst: str):
         """Add given buffer to the object index. Uses the destination as the
@@ -172,10 +116,16 @@ def parse_dir(dirname, prefix, result=None):
     return result
 
 
-def read_json(file):
-    """Read json object either from a file on disk or a BytesIO buffer."""
-    if isinstance(file, str):
-        with open(file, 'r') as f:
-            return json.load(f)
+# -- Helper Functions ---------------------------------------------------------
+
+
+def io_file(data: Union[List, Dict], format: Optional[str] = None) -> IOFile:
+    """Write simple text to given bytes buffer."""
+    buf = BytesIO()
+    buf.seek(0)
+    if format is None or format == util.FORMAT_JSON:
+        buf.write(str.encode(json.dumps(data)))
     else:
-        return json.load(file)
+        for line in data:
+            buf.write(str.encode('{}\n'.format(line)))
+    return IOFile(buf)

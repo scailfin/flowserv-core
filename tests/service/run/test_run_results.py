@@ -62,20 +62,20 @@ def test_access_run_result_files(service, hello_world):
         for fh in r['files']:
             files[fh['name']] = fh['id']
         # Read content of result files.
-        fh, filename = api.runs().get_result_file(
+        fh = api.runs().get_result_file(
             run_id=run_id,
             file_id=files['results/data.json'],
             user_id=user_1
         )
-        results = util.read_object(filename)
+        results = util.read_object(fh.open())
         assert results == {'group': group_id, 'run': run_id}
-        fh, filename = api.runs().get_result_file(
+        fh = api.runs().get_result_file(
             run_id=run_id,
             file_id=files['values.txt'],
             user_id=user_1
         )
-        values = util.read_object(filename)
-        assert values == '{} {}'.format(group_id, run_id)
+        values = fh.open().read().decode('utf-8').strip()
+        assert values == '{}\n{}'.format(group_id, run_id)
     # -- Error when user 2 attempts to read file ------------------------------
     with service() as api:
         with pytest.raises(err.UnauthorizedAccessError):

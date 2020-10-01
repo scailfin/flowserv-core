@@ -13,6 +13,7 @@ manipulate workflow runs and their results.
 import logging
 import shutil
 
+from flowserv.model.files.fs import FSFile
 from flowserv.model.parameter.files import InputFile
 from flowserv.model.template.base import WorkflowTemplate
 from flowserv.service.run.argument import ARG, FILE, GET_ARG, GET_FILE, IS_FILE
@@ -191,7 +192,7 @@ class RunService(object):
 
         Returns
         -------
-        flowserv.model.base.RunFile, string or io.BytesIO
+        flowserv.model.files.base.DatabaseFile
 
         Raises
         ------
@@ -372,10 +373,10 @@ class RunService(object):
                 # The argument value is expected to be the identifier of an
                 # previously uploaded file. This will raise an exception if the
                 # file identifier is unknown.
-                _, fileobj = self.group_manager.get_file(
+                fileobj = self.group_manager.get_uploaded_file(
                     group_id=group_id,
                     file_id=file_id
-                )
+                ).fileobj
                 run_args[arg_id] = para.to_argument(
                     value=fileobj,
                     target=target
@@ -447,13 +448,11 @@ class RunService(object):
         )
         if run is not None and state.is_success():
             logging.info('run {} is a success'.format(run_id))
-            result_schema = run.workflow.result_schema
-            postproc_spec = run.workflow.postproc_spec
-            if result_schema is not None and postproc_spec is not None:
+            workflow = run.workflow
+            if workflow.run_postproc:
                 # Get the latest ranking for the workflow and create a
                 # sorted list of run identifier to compare agains the
                 # current post-processing key for the workflow.
-                workflow = run.workflow
                 ranking = self.ranking_manager.get_ranking(workflow=workflow)
                 runs = sorted([r.run_id for r in ranking])
                 # Run post-processing task synchronously if the current
@@ -463,7 +462,7 @@ class RunService(object):
                     msg = 'Run post-processing workflow for {}'
                     logging.info(msg.format(workflow.workflow_id))
                     run_postproc_workflow(
-                        postproc_spec=postproc_spec,
+                        postproc_spec=workflow.postproc_spec,
                         workflow=workflow,
                         ranking=ranking,
                         runs=runs,
@@ -477,8 +476,7 @@ class RunService(object):
 def run_postproc_workflow(
     postproc_spec, workflow, ranking, runs, run_manager, backend
 ):
-    """Run post-processing workflow for a workflow template.
-    """
+    """Run post-processing workflow for a workflow template."""
     workflow_spec = postproc_spec.get('workflow')
     pp_inputs = postproc_spec.get('inputs', {})
     pp_files = pp_inputs.get('files', [])
@@ -493,7 +491,12 @@ def run_postproc_workflow(
             run_manager=run_manager
         )
         dst = pp_inputs.get('runs', postbase.RUNS_DIR)
-        run_args = {postbase.PARA_RUNS: InputFile(source=datadir, target=dst)}
+        run_args = {
+            postbase.PARA_RUNS: InputFile(
+                source=FSFile(datadir),
+                target=dst
+            )
+        }
         arg_list = [ARG(postbase.PARA_RUNS, FILE(datadir, dst))]
     except Exception as ex:
         logging.error(ex)

@@ -17,13 +17,15 @@ import shutil
 import tempfile
 
 from contextlib import contextmanager
+from typing import Optional
 
 from flowserv.model.base import WorkflowHandle
+from flowserv.model.constraint import validate_identifier
 from flowserv.model.workflow.manifest import WorkflowManifest
 from flowserv.model.workflow.repository import WorkflowRepository
+from flowserv.util import get_unique_identifier as unique_identifier
 
 import flowserv.error as err
-import flowserv.util as util
 import flowserv.model.constraint as constraint
 
 
@@ -53,9 +55,12 @@ class WorkflowManager(object):
         self.fs = fs
 
     def create_workflow(
-        self, source, name=None, description=None, instructions=None,
-        specfile=None, manifestfile=None, ignore_postproc=False
-    ):
+        self, source: str, identifier: Optional[str] = None,
+        name: Optional[str] = None, description: Optional[str] = None,
+        instructions: Optional[str] = None, specfile: Optional[str] = None,
+        manifestfile: Optional[str] = None,
+        ignore_postproc: Optional[bool] = False
+    ) -> WorkflowHandle:
         """Add new workflow to the repository. The associated workflow template
         is created in the template repository from either the given source
         directory or a Git repository. The template repository will raise an
@@ -84,15 +89,17 @@ class WorkflowManager(object):
         source: string
             Path to local template, name or URL of the template in the
             repository.
+        identifier: string, default=None
+            Unique user-defined workflow identifier.
         name: string, default=None
-            Unique workflow name
+            Unique workflow name.
         description: string, default=None
-            Optional short description for display in workflow listings
+            Optional short description for display in workflow listings.
         instructions: string, default=None
             File containing instructions for workflow users.
         specfile: string, default=None
             Path to the workflow template specification file (absolute or
-            relative to the workflow directory)
+            relative to the workflow directory).
         manifestfile: string, default=None
             Path to manifest file. If not given an attempt is made to read one
             of the default manifest file names in the base directory.
@@ -110,6 +117,9 @@ class WorkflowManager(object):
         flowserv.error.InvalidManifestError
         ValueError
         """
+        # Validate the given workflow identifier. This will raise a ValueError
+        # if the identifier is invalid.
+        validate_identifier(identifier)
         # If a repository Url is given we first clone the repository into a
         # temporary directory that is used as the workflow source directory.
         with clone(source) as (sourcedir, manifestpath):
@@ -124,13 +134,13 @@ class WorkflowManager(object):
             )
             template = manifest.template()
             # Create identifier for the workflow template.
-            workflow_id = util.get_unique_identifier()
+            workflow_id = identifier if identifier else unique_identifier()
             staticdir = self.fs.workflow_staticdir(workflow_id)
             # Copy files from the project folder to the template's static file
             # folder. By default all files in the project folder are copied.
-            manifest.copyfiles(targetdir=staticdir, fs=self.fs)
+            self.fs.store_files(files=manifest.copyfiles(), dst=staticdir)
+
         # Insert workflow into database and return the workflow handle.
-        postproc_spec = template.postproc_spec if not ignore_postproc else None
         workflow = WorkflowHandle(
             workflow_id=workflow_id,
             name=manifest.name,
@@ -140,7 +150,8 @@ class WorkflowManager(object):
             parameters=template.parameters,
             modules=template.modules,
             outputs=template.outputs,
-            postproc_spec=postproc_spec,
+            postproc_spec=template.postproc_spec,
+            ignore_postproc=ignore_postproc,
             result_schema=template.result_schema
         )
         self.session.add(workflow)
@@ -166,7 +177,7 @@ class WorkflowManager(object):
         self.session.commit()
         # Delete all files that are associated with the workflow if the changes
         # to the database were successful.
-        self.fs.delete_file(key=self.fs.workflow_basedir(workflow_id))
+        self.fs.delete_folder(key=self.fs.workflow_basedir(workflow_id))
 
     def get_workflow(self, workflow_id):
         """Get handle for the workflow with the given identifier. Raises

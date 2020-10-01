@@ -26,6 +26,7 @@ def test_maximal_output_specification():
     """Test maximal spcification for a workflow output file."""
     doc = WorkflowOutputFile(
         source='myfile.txt',
+        key='The file',
         title='My title',
         caption='A caption',
         widget='vega',
@@ -33,6 +34,7 @@ def test_maximal_output_specification():
     ).to_dict()
     obj = WorkflowOutputFile.from_dict(doc)
     assert obj.source == 'myfile.txt'
+    assert obj.key == 'The file'
     assert obj.title == 'My title'
     assert obj.caption == 'A caption'
     assert obj.widget == 'vega'
@@ -44,6 +46,7 @@ def test_minimal_output_specification():
     doc = WorkflowOutputFile(source='myfile.txt').to_dict()
     obj = WorkflowOutputFile.from_dict(doc)
     assert obj.source == 'myfile.txt'
+    assert obj.key == obj.source
     assert obj.title is None
     assert obj.caption is None
     assert obj.widget is None

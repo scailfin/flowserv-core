@@ -23,7 +23,6 @@ have been replaced by parameter values.
 """
 
 from flowserv.model.parameter.base import ParameterGroup
-from flowserv.model.parameter.files import PARA_FILE
 from flowserv.model.template.files import WorkflowOutputFile
 from flowserv.model.template.parameter import ParameterIndex
 from flowserv.model.template.schema import ResultSchema
@@ -60,7 +59,7 @@ class WorkflowTemplate(object):
         ----------
         workflow_spec: dict
             Workflow specification object
-        parameters: flowserv.model.template.parameter.ParamaterIndex
+        parameters: flowserv.model.template.parameter.ParameterIndex
             Dictionary of workflow template parameter declarations keyed by
             their unique identifier.
         modules: list(flowserv.model.parameter.base.ParameterGroup),
@@ -152,7 +151,10 @@ class WorkflowTemplate(object):
         # -- Output file specifications --------------------------------------
         outputs = None
         if 'outputs' in doc:
-            outputs = [WorkflowOutputFile.from_dict(f) for f in doc['outputs']]
+            outputs = [WorkflowOutputFile.from_dict(
+                f,
+                validate=validate
+            ) for f in doc['outputs']]
         # -- Result schema ---------------------------------------------------
         schema = ResultSchema.from_dict(doc.get('results'), validate=validate)
         # Return template instance
@@ -164,41 +166,6 @@ class WorkflowTemplate(object):
             modules=modules,
             outputs=outputs
         )
-
-    def parse_arguments(self, arguments):
-        """Parse a dictionary of user provided argument values into a list
-        of workflow arguments. Converts arguments to the representation defined
-        by the respective parameters. Missing parameter values are repalced by
-        a default value. If no default value is defined for a missing parameter
-        an error is raised.
-
-        Parameters
-        ----------
-        args: dict
-            Dictionary of user provided argument values.
-
-        Returns
-        -------
-        dict
-
-        Raises
-        ------
-        flowserv.error.MissingArgumentError
-        """
-        result = dict()
-        for para in self.parameters.values():
-            if para.para_id in arguments:
-                if para.type_id == PARA_FILE:
-                    fname, target_path = arguments[para.para_id]
-                    val = para.to_argument(value=fname, target=target_path)
-                else:
-                    val = para.to_argument(arguments[para.para_id])
-                result[para.para_id] = val
-            elif para.default_value is not None:
-                result[para.para_id] = para.default_value
-            else:
-                raise err.MissingArgumentError(para.para_id)
-        return result
 
     def to_dict(self):
         """Get dictionary serialization for the workflow template.

@@ -246,3 +246,10 @@ class OpenAccessAuth(Auth):
             run_id=run_id
         )
         return True
+
+
+# -- Helper Functions ---------------------------------------------------------
+
+def open_access(session):
+    """Create an open access policy object."""
+    return OpenAccessAuth(session)

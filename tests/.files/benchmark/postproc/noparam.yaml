@@ -1,0 +1,75 @@
+workflow:
+    version: 0.3.0
+    inputs:
+      files:
+        - code/analyze.py
+        - code/helloworld.py
+        - data/names.txt
+      parameters:
+        inputfile: data/names.txt
+        outputfile: results/greetings.txt
+        greeting: 'Hello'
+    workflow:
+      type: serial
+      specification:
+        steps:
+          - environment: 'python:3.7'
+            commands:
+              - python code/helloworld.py
+                  --inputfile "${inputfile}"
+                  --outputfile "${outputfile}"
+                  --sleeptime 0
+                  --greeting ${greeting}
+              - python code/analyze.py
+                  --inputfile "${outputfile}"
+                  --outputfile results/analytics.json
+    outputs:
+      files:
+       - 'results/greetings.txt'
+       - 'results/analytics.json'
+postproc:
+    workflow:
+        version: 0.3.0
+        inputs:
+          files:
+            - code/postproc.py
+            - $[[runs]]
+          parameters:
+            rundir: $[[runs]]
+        workflow:
+          type: serial
+          specification:
+            steps:
+              - environment: 'python:3.7'
+                commands:
+                  - python code/postproc.py
+                      --runs "${rundir}"
+                      --outputfile results/compare.json
+        outputs:
+            files:
+                - 'results/compare.json'
+    inputs:
+        files:
+            - 'results/analytics.json'
+        runs: 'runs/'
+    outputs:
+        - source: 'results/compare.json'
+          title: 'Results'
+          caption: 'The results.'
+modules:
+    - id: 'main'
+      name: 'Main Step'
+      index: 0
+results:
+    file: 'results/analytics.json'
+    schema:
+        - id: avg_count
+          name: 'Avg. Characters per Line'
+          dtype: float
+        - id: max_len
+          name: 'Max. Output Line Length'
+          dtype: float
+        - id: max_line
+          name: 'Longest Output Line'
+          dtype: string
+          required: False

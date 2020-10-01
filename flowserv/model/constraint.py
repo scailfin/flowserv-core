@@ -10,7 +10,37 @@
 defined for the objects that are stored in the database.
 """
 
+import re
+
 import flowserv.error as err
+
+
+def validate_identifier(identifier: str) -> bool:
+    """Validate the given identifier to ensure that: (i) it's length is between
+    1 and 32, and (ii) it only contains letters (A-Z), digites, or underscore.
+
+    If the idnentifier is None it is considered valid. If an invalid identifier
+    is given a ValueError will be raised.
+
+    Returns True if the identifier is valid.
+
+    Parameters
+    ----------
+    identifier: string
+        Unique identifier string or None
+
+    Raises
+    ------
+    ValueError
+    """
+    if identifier is None:
+        return True
+    errmsg = "invalid workflow identifier '{}'"
+    if not 1 <= len(identifier) <= 32:
+        raise ValueError(errmsg.format(identifier))
+    if not re.match('^[a-zA-Z0-9_]+$', identifier):
+        raise ValueError(errmsg.format(identifier))
+    return True
 
 
 def validate_name(name):

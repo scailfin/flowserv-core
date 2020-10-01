@@ -24,6 +24,7 @@ from multiprocessing import Lock, Pool
 
 from flowserv.config.controller import ENGINE_ASYNC, FLOWSERV_ASYNC
 from flowserv.controller.base import WorkflowController
+from flowserv.model.parameter.files import is_file
 from flowserv.model.workflow.serial import SerialWorkflow
 
 import flowserv.controller.serial.config as config
@@ -153,17 +154,16 @@ class SerialWorkflowEngine(WorkflowController):
         sourcedir = self.fs.workflow_staticdir(run.workflow.workflow_id)
         wf = SerialWorkflow(template, arguments, sourcedir)
         try:
-            # Copy all necessary files to the run folder.
-            self.fs.download_files(
-                files=wf.upload_files(),
-                dst=rundir
-            )
+            # Copy template files to the run folder.
+            self.fs.copy_folder(key=sourcedir, dst=rundir)
+            # Store any given file arguments in the run folder.
+            for key, para in wf.template.parameters.items():
+                if is_file(para) and key in arguments:
+                    file = arguments[key]
+                    file.source().store(os.path.join(rundir, file.target()))
             # Create top-level folder for all expected result files.
             outputs = wf.output_files()
-            util.create_directories(
-                basedir=rundir,
-                files=outputs
-            )
+            util.create_directories(basedir=rundir, files=outputs)
             # Get list of commands to execute.
             commands = wf.commands()
             # Start a new process to run the workflow. Make sure to catch all
@@ -206,6 +206,7 @@ class SerialWorkflowEngine(WorkflowController):
                 )
                 return serialize.deserialize_state(state_dict), rundir
         except Exception as ex:
+            print(ex)
             # Set the workflow runinto an ERROR state
             logging.error(ex)
             return state.error(messages=util.stacktrace(ex)), rundir

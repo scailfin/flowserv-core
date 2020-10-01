@@ -12,6 +12,8 @@ and workflow result rankings.
 
 import flowserv.error as err
 
+from typing import Optional
+
 
 class WorkflowService(object):
     """API component that provides methods to access workflows and workflow
@@ -43,8 +45,11 @@ class WorkflowService(object):
         self.serialize = serializer
 
     def create_workflow(
-        self, source, name=None, description=None, instructions=None,
-        specfile=None, manifestfile=None, ignore_postproc=False
+        self, source: str, identifier: Optional[str] = None,
+        name: Optional[str] = None, description: Optional[str] = None,
+        instructions: Optional[str] = None, specfile: Optional[str] = None,
+        manifestfile: Optional[str] = None,
+        ignore_postproc: Optional[bool] = False
     ):
         """Create a new workflow in the repository. If the workflow template
         includes a result schema the workflow is also registered with the
@@ -85,6 +90,7 @@ class WorkflowService(object):
         # Create workflow in the repository to get the workflow handle.
         workflow = self.workflow_repo.create_workflow(
             source=source,
+            identifier=identifier,
             name=name,
             description=description,
             instructions=instructions,
@@ -194,7 +200,7 @@ class WorkflowService(object):
 
         Returns
         -------
-        (flowserv.model.base.RunFile, string or io.BytesIO)
+        flowserv.model.files.base.DatabaseFile
 
         Raises
         ------
@@ -208,15 +214,11 @@ class WorkflowService(object):
         # state.
         if workflow.postproc_run_id is None:
             raise err.UnknownFileError(file_id)
-        # Retrieve the resource. Raise error if the resource does not exist.
-        fh, fileobj = self.run_manager.get_runfile(
+        # Return the result file from the ru manager.
+        return self.run_manager.get_runfile(
             run_id=workflow.postproc_run_id,
             file_id=file_id
         )
-        if fh is None:
-            raise err.UnknownFileError(file_id)
-        # Return file handle for resource file
-        return fh, fileobj
 
     def get_workflow(self, workflow_id):
         """Get serialization of the handle for the given workflow.

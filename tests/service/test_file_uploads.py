@@ -8,10 +8,9 @@
 
 """Unit test for uploaded files that are associated with workflow groups."""
 
-import os
 import pytest
 
-from flowserv.tests.files import FakeStream
+from flowserv.tests.files import io_file
 from flowserv.tests.service import create_group, create_user, upload_file
 
 import flowserv.error as err
@@ -31,7 +30,7 @@ def test_delete_group_file_view(service, hello_world):
         file_id = upload_file(
             api=api,
             group_id=group_id,
-            file=FakeStream(data={'group': 1, 'file': 1}).save(),
+            file=io_file(data={'group': 1, 'file': 1}),
             user_id=user_id
         )
     # -- Error when unknown user attempts to delete the file ------------------
@@ -44,7 +43,7 @@ def test_delete_group_file_view(service, hello_world):
     # After deletion the file cannot be accessed anymore.
     with service() as api:
         with pytest.raises(err.UnknownFileError):
-            api.uploads().get_file(group_id, file_id, user_id)
+            api.uploads().get_uploaded_file(group_id, file_id, user_id).load()
 
 
 def test_list_group_files_view(service, hello_world):
@@ -61,17 +60,23 @@ def test_list_group_files_view(service, hello_world):
             upload_file(
                 api=api,
                 group_id=group_id,
-                file=FakeStream(data={'group': 1, 'file': i}).save(),
+                file=io_file(data={'group': 1, 'file': i}),
                 user_id=user_id
             )
     # -- Get file listing -----------------------------------------------------
     with service() as api:
-        files = api.uploads().list_files(group_id=group_id, user_id=user_id)
+        files = api.uploads().list_uploaded_files(
+            group_id=group_id,
+            user_id=user_id
+        )
         serialize.validate_file_listing(files, 2)
     # -- Error when listing files as unknonw user -----------------------------
     with service() as api:
         with pytest.raises(err.UnauthorizedAccessError):
-            api.uploads().list_files(group_id=group_id, user_id='UNKNOWN')
+            api.uploads().list_uploaded_files(
+                group_id=group_id,
+                user_id='UNKNOWN'
+            )
 
 
 def test_upload_group_file_view(service, hello_world):
@@ -88,7 +93,7 @@ def test_upload_group_file_view(service, hello_world):
     with service() as api:
         r = api.uploads().upload_file(
             group_id=group_id,
-            file=FakeStream(data={'group': 1, 'file': 1}).save(),
+            file=io_file(data={'group': 1, 'file': 1}),
             name='group1.json',
             user_id=user_id
         )
@@ -98,8 +103,7 @@ def test_upload_group_file_view(service, hello_world):
     # -- Get serialized handle for the file and the group ---------------------
     for uid in [user_id, None]:
         with service() as api:
-            fh, filename = api.uploads().get_file(group_id, file_id, uid)
+            fh = api.uploads().get_uploaded_file(group_id, file_id, uid)
             assert fh.name == 'group1.json'
-            assert os.path.exists(filename)
             gh = api.groups().get_group(group_id=group_id)
             serialize.validate_group_handle(gh)

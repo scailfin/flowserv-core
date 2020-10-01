@@ -8,6 +8,7 @@
 
 """Unit tests for the workflow run manager."""
 
+import json
 import os
 import pytest
 import time
@@ -16,7 +17,7 @@ from flowserv.model.files.fs import FileSystemStore
 from flowserv.model.group import WorkflowGroupManager
 from flowserv.model.run import RunManager
 from flowserv.model.workflow.manager import WorkflowManager
-from flowserv.tests.files import DiskStore, read_json
+from flowserv.tests.files import DiskStore
 
 import flowserv.error as err
 import flowserv.util as util
@@ -323,8 +324,8 @@ def test_success_run(fscls, database, tmpdir):
         assert state.is_success()
         assert len(state.files) == 2
         key = run.get_file(by_key='A.json').key
-        f = fs.load_file(key=os.path.join(rundir, key))
-        assert read_json(f) == {'A': 1}
+        f = fs.load_file(key=os.path.join(rundir, key)).open()
+        assert json.load(f) == {'A': 1}
         key = run.get_file(by_key='run/results/B.json').key
-        f = fs.load_file(key=os.path.join(rundir, key))
-        assert read_json(f) == {'B': 1}
+        f = fs.load_file(key=os.path.join(rundir, key)).open()
+        assert json.load(f) == {'B': 1}

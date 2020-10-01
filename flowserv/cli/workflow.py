@@ -11,82 +11,16 @@ workflow templates in the repository.
 """
 
 import click
+import logging
+import os
 import sys
 
+from flowserv.app.base import App
+from flowserv.cli.parameter import read
+from flowserv.model.auth import open_access
 from flowserv.service.api import service
 
 import flowserv.error as err
-
-
-# -- Add workflow -------------------------------------------------------------
-
-@click.command(name='create')
-@click.option(
-    '-n', '--name',
-    required=False,
-    help='Unique workflow name.'
-)
-@click.option(
-    '-d', '--description',
-    required=False,
-    help='Short workflow description.'
-)
-@click.option(
-    '-i', '--instructions',
-    type=click.Path(exists=False),
-    required=False,
-    help='File containing instructions for running the workflow.'
-)
-@click.option(
-    '-f', '--specfile',
-    type=click.Path(exists=True, dir_okay=False, readable=True),
-    required=False,
-    help='Optional path to workflow specification file.'
-)
-@click.option(
-    '-m', '--manifest',
-    type=click.Path(exists=True, dir_okay=False, readable=True),
-    required=False,
-    help='Optional path to workflow manifest file.'
-)
-@click.argument('template')
-def add_workflow(
-    name, description, instructions, specfile, manifest, template
-):
-    """Create a new workflow."""
-    # Add workflow template to repository
-    try:
-        # Use the workflow service component to create the workflow. This
-        # ensures that the result table is also created if the template
-        # specifies a result schema.
-        with service() as api:
-            wf = api.workflows().create_workflow(
-                source=template,
-                name=name,
-                description=description,
-                instructions=read_instructions(instructions),
-                specfile=specfile,
-                manifestfile=manifest
-            )
-        click.echo('export FLOWSERV_WORKFLOW={}'.format(wf['id']))
-    except (err.ConstraintViolationError, ValueError) as ex:
-        click.echo(str(ex))
-        sys.exit(-1)
-
-
-# -- Delete workflow ----------------------------------------------------------
-
-@click.command(name='delete')
-@click.argument('identifier')
-def delete_workflow(identifier):
-    """Delete a given workflow."""
-    try:
-        with service() as api:
-            api.workflows().delete_workflow(identifier)
-        click.echo('deleted workflow {}'.format(identifier))
-    except err.UnknownObjectError as ex:
-        click.echo(str(ex))
-        sys.exit(-1)
 
 
 # -- List workflows -----------------------------------------------------------
@@ -108,6 +42,69 @@ def list_workflows():
             click.echo('Name        : {}'.format(wf['name']))
             click.echo('Description : {}'.format(wf.get('description')))
             click.echo('Instructions: {}'.format(wf.get('instructions')))
+
+
+# -- Run Workflow -------------------------------------------------------------
+
+@click.option(
+    '-o', '--output',
+    type=click.Path(exists=False, file_okay=False, readable=True),
+    required=False,
+    help='Directory for output files.'
+)
+@click.option(
+    '-v', '--verbose',
+    is_flag=True,
+    default=False,
+    help='Print run logs'
+)
+@click.command(name='run')
+@click.argument('identifier')
+def run_workflow(identifier, output=None, verbose=False):
+    """Run a workflow."""
+    # -- Logging --------------------------------------------------------------
+    if verbose:
+        root = logging.getLogger()
+        root.setLevel(logging.DEBUG)
+        handler = logging.StreamHandler(sys.stdout)
+        handler.setLevel(logging.DEBUG)
+        formatter = logging.Formatter('%(message)s')
+        handler.setFormatter(formatter)
+        root.addHandler(handler)
+    # -- Setup ----------------------------------------------------------------
+    app = App(key=identifier, auth=open_access)
+    # -- Read input parameter values ------------------------------------------
+    params = app.parameters().sorted()
+    click.echo('\nWorkflow inputs\n---------------')
+    args = read(params)
+    # -- Start workflow run ---------------------------------------------------
+    click.echo('\nStart Workflow\n--------------')
+    run = app.start_run(arguments=args, poll_interval=1)
+    click.echo('Run finished with {}'.format(run))
+    # -- Run results ----------------------------------------------------------
+    if run.is_error():
+        for msg in run.messages():
+            click.echo(msg)
+    else:
+        click.echo('\nRun files\n---------')
+        for _, key in run.files():
+            click.echo(key)
+            if output:
+                out_file = os.path.join(output, key)
+                run.get_file(key).store(out_file)
+        postrun = app.get_postproc_results()
+        if postrun is not None:
+            click.echo('\nPost-Processing finished with {}'.format(postrun))
+            if postrun.is_error():
+                for msg in postrun.messages():
+                    click.echo(msg)
+            else:
+                click.echo('\nPost-Processing files\n---------------------')
+                for _, key in postrun.files():
+                    click.echo(key)
+                    if output:
+                        out_file = os.path.join(output, key)
+                        postrun.get_file(key).store(out_file)
 
 
 # -- Update workflow ----------------------------------------------------------
@@ -160,8 +157,6 @@ def workflowcli():
     pass
 
 
-workflowcli.add_command(add_workflow)
-workflowcli.add_command(delete_workflow)
 workflowcli.add_command(list_workflows)
 workflowcli.add_command(update_workflow)
 

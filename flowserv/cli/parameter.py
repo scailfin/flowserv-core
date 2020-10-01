@@ -8,14 +8,13 @@
 
 """Helper methods for reading workflow template parameters."""
 
-from flowserv.model.parameter.boolean import PARA_BOOL
-from flowserv.model.parameter.files import InputFile, PARA_FILE
-from flowserv.model.parameter.numeric import PARA_FLOAT, PARA_INT
+from flowserv.model.files.fs import FSFile
+from flowserv.model.parameter.boolean import is_bool
+from flowserv.model.parameter.files import InputFile, is_file
+from flowserv.model.parameter.numeric import is_float, is_int
 from flowserv.service.run.argument import FILE
 
 from flowserv.scanner import Scanner
-
-import flowserv.error as err
 
 
 def read(parameters, scanner=None, files=None):
@@ -72,9 +71,9 @@ def read_parameter(para, scanner, files=None):
     while True:
         print(para.prompt(), end='')
         try:
-            if para.type_id == PARA_BOOL:
+            if is_bool(para):
                 return scanner.next_bool(default_value=para.default_value)
-            elif para.type_id == PARA_FILE:
+            elif is_file(para):
                 # Distinguish between the case where a list of uploaded files
                 # is given or not.
                 if files is not None:
@@ -98,11 +97,11 @@ def read_parameter(para, scanner, files=None):
                 if files is not None:
                     return FILE(file_id=filename, target=target_path)
                 else:
-                    return InputFile(filename, target_path)
-            elif para.type_id == PARA_FLOAT:
+                    return InputFile(FSFile(filename), target_path)
+            elif is_float(para):
                 return scanner.next_float(default_value=para.default_value)
-            elif para.type_id == PARA_INT:
+            elif is_int(para):
                 return scanner.next_int(default_value=para.default_value)
             return scanner.next_string(default_value=para.default_value)
-        except (ValueError, err.UnknownFileError) as ex:
+        except ValueError as ex:
             print(ex)

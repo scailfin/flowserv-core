@@ -10,7 +10,7 @@
 modules.
 """
 
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 from flowserv.model.base import RunHandle
 from flowserv.model.files.base import FileStore
@@ -40,7 +40,9 @@ class StateEngine(WorkflowController):
     """Workflow controller for test purposes. Maintains a dictionary of run
     states. Allows to modify the state of maintained runs
     """
-    def __init__(self, fs: FileStore = None):
+    def __init__(
+        self, fs: FileStore = None, state: Optional[WorkflowState] = None
+    ):
         """Initialize the run index. The file store argument is included for
         API completness.
 
@@ -49,8 +51,11 @@ class StateEngine(WorkflowController):
         fs: flowserv.model.files.base.FileStore
             File store that is passed to the engine by the controller init
             method.
+        state: flowserv.model.workflow.state.WorkflowState, default=None
+            Default initial state for new workflow runs.
         """
         self.runs = dict()
+        self.state = state if state is not None else st.StatePending()
 
     def cancel_run(self, run_id: str):
         """Request to cancel execution of the given run.
@@ -114,7 +119,7 @@ class StateEngine(WorkflowController):
         -------
         flowserv.model.workflow.state.WorkflowState, string
         """
-        state = st.StatePending()
+        state = self.state
         self.runs[run.run_id] = state
         return state, None
 

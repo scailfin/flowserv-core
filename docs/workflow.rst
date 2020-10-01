@@ -111,7 +111,7 @@ The structure for the ``modules`` element in a workflow template is as follows:
         - id: 'Unique module identifier'
           name: 'Module name/title for display purposes'
           index: 'Index position of the parameter block for ordering during visualization'
-        
+
 The module that a parameter belongs to is reference by the module identifier in the ``module`` element of the parameter declaration.
 
 
@@ -128,14 +128,18 @@ The structure for the ``outputs`` element in a workflow template is as follows:
 
     outputs:
         - source: 'Relative path to the file in the run result folder'
+          key: 'Unique user-defined key for the resource that can be used for
+            accessing the resource in a dictionary (e.g., in the flowapp
+            result object)'
           title: 'Header when displaying the file contents (optional)'
-          caption: 'Caption when displaying the file contents (optionla)'
+          caption: 'Caption when displaying the file contents (optional)'
           format: 'Object containing information about file format (optional)'
-          widget: 'Object containing information that specifies the widget to be used for displaying the file content (optional)'
-          
+          widget: 'Object containing information that specifies the widget to be
+            used for displaying the file content (optional)'
+
 The structure of the ``format`` and ``widget`` element is not further specified. These elements are interpreted by the front-end applications only. See the definition of default file formats and widgets page for details on the supported values for these elements.
 
-        
+
 Benchmark Templates
 ===================
 
