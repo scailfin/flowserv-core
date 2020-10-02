@@ -87,7 +87,7 @@ def run_workflow(identifier, output=None, verbose=False):
             click.echo(msg)
     else:
         click.echo('\nRun files\n---------')
-        for _, key in run.files():
+        for _, key, _ in run.files():
             click.echo(key)
             if output:
                 out_file = os.path.join(output, key)
@@ -100,7 +100,7 @@ def run_workflow(identifier, output=None, verbose=False):
                     click.echo(msg)
             else:
                 click.echo('\nPost-Processing files\n---------------------')
-                for _, key in postrun.files():
+                for _, key, _ in postrun.files():
                     click.echo(key)
                     if output:
                         out_file = os.path.join(output, key)

@@ -24,7 +24,7 @@ class RunResult(object):
     of a successful workflow run.
     """
     def __init__(self, doc: Dict, loader: Callable):
-        """initialize the run information and the file loader function. The
+        """Initialize the run information and the file loader function. The
         loader function is a callable that takes two arguments, the run
         identifier and the file identifier.
 
@@ -49,14 +49,17 @@ class RunResult(object):
         """
         return self.doc['state']
 
-    def files(self) -> List[Tuple[str, str]]:
-        """Get list of (id, name)-pairs for run result files.
+    def files(self) -> List[Tuple[str, str, Dict]]:
+        """Get list of (id, name, obj)-pairs for run result files. The id and
+        name are extracted from the serialized file object (obj) for
+        convenience.
 
         Returns
         -------
-        list of tuples (string, string)
+        list of tuples (string, string, dict)
         """
-        return [(obj['id'], obj['name']) for obj in self.doc.get('files', {})]
+        files = self.doc.get('files', {})
+        return [(obj['id'], obj['name'], obj) for obj in files]
 
     def get_file(
         self, key: str, raise_error: Optional[bool] = True

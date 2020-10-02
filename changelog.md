@@ -80,3 +80,4 @@
 
 * Create directory for SQLite database files (\#68).
 * Type tests for enum and numeric parameters.
+* Add serialized file handle to file listing in the application run result.
