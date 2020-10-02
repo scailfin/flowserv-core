@@ -10,7 +10,7 @@
 
 import pytest
 
-from flowserv.model.parameter.enum import EnumParameter, PARA_ENUM
+from flowserv.model.parameter.enum import EnumParameter, is_enum, PARA_ENUM
 
 import flowserv.error as err
 
@@ -66,6 +66,7 @@ def test_enum_parameter_from_dict():
             })
         )
     )
+    assert is_enum(para)
     assert para.para_id == '0000'
     assert para.type_id == PARA_ENUM
     assert para.name == 'Options'
