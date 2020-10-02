@@ -10,6 +10,8 @@
 sessions as well as to create a fresh database.
 """
 
+import os
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 
@@ -46,6 +48,12 @@ class DB(object):
         """
         # Ensure that the connection URL is set.
         connect_url = config.DB_CONNECT(value=connect_url)
+        # If the URL references a SQLite database ensure that the directory for
+        # the database file exists (Issue #68).
+        if connect_url.startswith('sqlite://'):
+            dbdir = os.path.dirname(connect_url[9:])
+            if dbdir:
+                os.makedirs(dbdir, exist_ok=True)
         if echo:
             import logging
             logging.info('Connect to database Url %s' % (connect_url))

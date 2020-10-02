@@ -92,7 +92,7 @@ def test_run_app_from_env(fsconfig, tmpdir):
     environment variables.
     """
     # -- Setup ----------------------------------------------------------------
-    os.environ[FLOWSERV_DB] = 'sqlite:///{}/flowserv.db'.format(str(tmpdir))
+    os.environ[FLOWSERV_DB] = 'sqlite:///{}/db/flowserv.db'.format(str(tmpdir))
     os.environ[FLOWSERV_API_BASEDIR] = str(tmpdir)
     os.environ[FLOWSERV_AUTH] = OPEN_ACCESS
     os.environ[FLOWSERV_ASYNC] = 'False'
