@@ -97,7 +97,7 @@ def docker_run(run_id, rundir, state, output_files, steps):
         strace = util.stacktrace(ex)
         logging.debug('\n'.join(strace))
         result_state = state.error(messages=strace)
-        return run_id, serialize.serialize_state(result_state)
+        return run_id, rundir, serialize.serialize_state(result_state)
     # Create list of output files that were generated.
     files = list()
     for relative_path in output_files:
