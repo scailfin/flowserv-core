@@ -279,6 +279,8 @@ class NumericParameter(ParameterBase):
         elif self.type_id == PARA_INT:
             try:
                 value = int(value)
+            except OverflowError:
+                value = float('inf')
             except (TypeError, ValueError):
                 raise err.InvalidArgumentError("no int '{}'".format(value))
         else:
