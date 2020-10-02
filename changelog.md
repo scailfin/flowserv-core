@@ -85,3 +85,4 @@
 * Fix bug in Docker engine (return rundir in error case).
 * Add ignore postproc option to `flowserv install` (\#69).
 * File object for files that are uploaded as part of Flask requests.
+* Make database web_app flag configurable using environment variable (\#70).

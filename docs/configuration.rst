@@ -119,6 +119,9 @@ The following steps are an example for creating an initial empty database for **
     CREATE DATABASE flowserv WITH OWNER flowserv;
 
 
+If the environment variable *FLOWSERV_WEBAPP* is set to `True` scoped database sessions are used for web applications.
+
+
 ----------
 File Store
 ----------
