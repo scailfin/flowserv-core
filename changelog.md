@@ -83,3 +83,4 @@
 * Add serialized file handle to file listing in the application run result.
 * Fix bug in run handle serialization for output files.
 * Fix bug in Docker engine (return rundir in error case).
+* Add ignore postproc option to `flowserv install` (\#69).
