@@ -72,6 +72,17 @@ def test_run_helloworld_in_env(source, specfile, filekey, tmpdir):
     assert not run.is_active()
     assert str(run) == st.STATE_SUCCESS
     assert len(run.files()) == 2
+    file_handles = dict()
+    for _, key, obj in run.files():
+        file_handles[key] = obj
+    assert file_handles[filekey]['name'] == filekey
+    assert file_handles[filekey]['title'] == 'Saying Hello to ...'
+    assert file_handles[filekey]['caption'] == 'Greetings for all persons.'
+    assert file_handles[filekey]['format'] == {'type': 'plaintext'}
+    assert file_handles['results/analytics.json']['name'] == 'results/analytics.json'  # noqa: E501
+    assert file_handles['results/analytics.json']['title'] == 'Score'
+    assert 'caption' not in file_handles['results/analytics.json']
+    assert file_handles['results/analytics.json']['format'] == {'type': 'json'}
     # -- Cancelling a finished run raises an error ----------------------------
     with pytest.raises(err.InvalidRunStateError):
         wf.cancel_run(run.run_id)

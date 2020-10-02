@@ -143,7 +143,7 @@ class RunSerializer(Serializer):
                     if fspec.widget is not None:
                         obj[LABELS['FILE_WIDGET']] = fspec.widget
                     if fspec.format is not None:
-                        obj[LABELS['FILE_TITLE']] = fspec.format
+                        obj[LABELS['FILE_FORMAT']] = fspec.format
                 files.append(obj)
             doc[LABELS['RUN_FILES']] = files
         return doc
