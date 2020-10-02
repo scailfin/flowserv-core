@@ -45,6 +45,7 @@ def test_cancel_run_helloworld(tmpdir):
     os.environ[FLOWSERV_FILESTORE_MODULE] = 'flowserv.model.files.fs'
     os.environ[FLOWSERV_FILESTORE_CLASS] = 'FileSystemStore'
     from flowserv.service.database import database
+    database.__init__()
     database.init()
     engine = SerialWorkflowEngine(is_async=True)
     with service(engine=engine) as api:
@@ -114,6 +115,7 @@ def test_run_helloworld_async(fsconfig, target, tmpdir):
     os.environ[FLOWSERV_FILESTORE_MODULE] = fsconfig[FLOWSERV_FILESTORE_MODULE]
     os.environ[FLOWSERV_FILESTORE_CLASS] = fsconfig[FLOWSERV_FILESTORE_CLASS]
     from flowserv.service.database import database
+    database.__init__()
     database.init()
     engine = SerialWorkflowEngine(is_async=True)
     with service(engine=engine) as api:

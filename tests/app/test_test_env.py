@@ -15,8 +15,10 @@ from io import BytesIO, StringIO
 
 from flowserv.app.env import Flowserv
 from flowserv.controller.serial.docker import DockerWorkflowEngine
+from flowserv.model.files.base import FlaskFile
 from flowserv.model.files.fs import FSFile
 from flowserv.model.parameter.files import InputFile
+from flowserv.tests.files import FileStorage
 
 import flowserv.error as err
 import flowserv.model.workflow.state as st
@@ -113,6 +115,7 @@ def test_run_helloworld_with_diff_inputs(tmpdir):
     files.append(filename)
     files.append(FSFile(filename))
     files.append(InputFile(FSFile(filename), 'output.txt'))
+    files.append(FlaskFile(FileStorage(FSFile(filename))))
     # -- Install and run the workflow -----------------------------------------
     wf = db.install(source=TEMPLATE_DIR, ignore_postproc=True)
     for file in files:

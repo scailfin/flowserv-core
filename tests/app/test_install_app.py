@@ -22,7 +22,7 @@ import flowserv.error as err
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))
-TEMPLATE_DIR = os.path.join(DIR, './.files/benchmark/helloworld')
+TEMPLATE_DIR = os.path.join(DIR, '../.files/benchmark/helloworld')
 
 
 @pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
@@ -46,6 +46,7 @@ def test_install_app_from_env(tmpdir):
     os.environ[FLOWSERV_DB] = 'sqlite:///{}/flowserv.db'.format(str(tmpdir))
     os.environ[FLOWSERV_API_BASEDIR] = str(tmpdir)
     from flowserv.service.database import database
+    database.__init__()
     database.init()
     app_key = install_app(source=TEMPLATE_DIR)
     assert app_key is not None
@@ -80,6 +81,7 @@ def test_uninstall_app_from_env(tmpdir):
     os.environ[FLOWSERV_DB] = 'sqlite:///{}/flowserv.db'.format(str(tmpdir))
     os.environ[FLOWSERV_API_BASEDIR] = str(tmpdir)
     from flowserv.service.database import database
+    database.__init__()
     database.init()
     # -- Install and uninstall app --------------------------------------------
     app_key = install_app(source=TEMPLATE_DIR)

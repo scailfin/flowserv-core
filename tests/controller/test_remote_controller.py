@@ -37,6 +37,7 @@ def test_cancel_remote_workflow(tmpdir):
     os.environ[FLOWSERV_DB] = 'sqlite:///{}/flowserv.db'.format(str(tmpdir))
     os.environ[FLOWSERV_API_BASEDIR] = str(tmpdir)
     from flowserv.service.database import database
+    database.__init__()
     database.init()
     engine = RemoteTestController(
         client=RemoteTestClient(runcount=100),
@@ -79,6 +80,7 @@ def test_run_remote_workflow(tmpdir, is_async):
     os.environ[FLOWSERV_DB] = 'sqlite:///{}/flowserv.db'.format(str(tmpdir))
     os.environ[FLOWSERV_API_BASEDIR] = str(tmpdir)
     from flowserv.service.database import database
+    database.__init__()
     database.init()
     engine = RemoteTestController(
         client=RemoteTestClient(runcount=3, data=['success']),
@@ -123,6 +125,7 @@ def test_run_remote_workflow_with_error(tmpdir):
     os.environ[FLOWSERV_DB] = 'sqlite:///{}/flowserv.db'.format(str(tmpdir))
     os.environ[FLOWSERV_API_BASEDIR] = str(tmpdir)
     from flowserv.service.database import database
+    database.__init__()
     database.init()
     engine = RemoteTestController(
         client=RemoteTestClient(runcount=3, error='some error'),

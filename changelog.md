@@ -84,3 +84,4 @@
 * Fix bug in run handle serialization for output files.
 * Fix bug in Docker engine (return rundir in error case).
 * Add ignore postproc option to `flowserv install` (\#69).
+* File object for files that are uploaded as part of Flask requests.

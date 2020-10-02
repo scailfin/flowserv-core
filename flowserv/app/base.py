@@ -69,8 +69,8 @@ class App(object):
         """
         if db is None:
             # Use the default database object if no database is given.
-            from flowserv.app.database import flowdb
-            db = flowdb
+            from flowserv.service.database import database
+            db = database
         self._db = db
         # Set API components.
         if engine is None:

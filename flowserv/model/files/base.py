@@ -27,6 +27,7 @@ The folder structure is currently as follows:
 """
 
 from abc import ABCMeta, abstractmethod
+from io import BytesIO
 from typing import IO, List, Tuple
 
 import os
@@ -172,6 +173,58 @@ class DatabaseFile(FileObject):
             Name of the file to which the content is written.
         """
         self.fileobj.store(filename)
+
+
+# -- Wrapper for files that are uploaded as part of a Flask request -----------
+
+class FlaskFile(FileObject):
+    """File object implementation for files that are uploaded via Flask
+    requests as werkzeug.FileStorage objects.
+    """
+    def __init__(self, file):
+        """Initialize the reference to the uploaded file object.
+
+        Parameters
+        ----------
+        file: werkzeug.FileStorage
+            File object that was uploaded as part of a Flask request.
+        """
+        self.file = file
+
+    def open(self) -> IO:
+        """Get file contents as a BytesIO buffer.
+
+        Returns
+        -------
+        io.BytesIO
+
+        Raises
+        ------
+        flowserv.error.UnknownFileError
+        """
+        buf = BytesIO()
+        self.file.save(buf)
+        buf.seek(0)
+        return buf
+
+    def size(self) -> int:
+        """Get size of the file in the number of bytes.
+
+        Returns
+        -------
+        int
+        """
+        return self.file.content_length
+
+    def store(self, filename: str):
+        """Write file content to disk.
+
+        Parameters
+        ----------
+        filename: string
+            Name of the file to which the content is written.
+        """
+        self.file.save(filename)
 
 
 # -- Abstract file store ------------------------------------------------------

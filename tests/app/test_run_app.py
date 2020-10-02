@@ -100,8 +100,9 @@ def test_run_app_from_env(fsconfig, tmpdir):
     os.environ[FLOWSERV_FILESTORE_CLASS] = fsconfig[FLOWSERV_FILESTORE_CLASS]
     if FLOWSERV_S3BUCKET in os.environ:
         del os.environ[FLOWSERV_S3BUCKET]
-    from flowserv.app.database import flowdb
-    flowdb.init()
+    from flowserv.service.database import database
+    database.__init__()
+    database.init()
     app_key = install_app(source=TEMPLATE_DIR)
     # -- Run workflow ---------------------------------------------------------
     app = App(key=app_key)
