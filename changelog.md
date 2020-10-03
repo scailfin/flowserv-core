@@ -76,7 +76,7 @@
 * Flowserv class for running workflows in notebook environments (\#64, \#65).
 
 
-### 0.5.1 - 2020-10-02
+### 0.5.1 - 2020-10-03
 
 * Create directory for SQLite database files (\#68).
 * Type tests for enum and numeric parameters.
