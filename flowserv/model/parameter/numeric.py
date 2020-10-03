@@ -279,6 +279,8 @@ class NumericParameter(ParameterBase):
         elif self.type_id == PARA_INT:
             try:
                 value = int(value)
+            except OverflowError:
+                value = float('inf')
             except (TypeError, ValueError):
                 raise err.InvalidArgumentError("no int '{}'".format(value))
         else:
@@ -337,3 +339,18 @@ def is_int(para: ParameterBase) -> bool:
     bool
     """
     return para.type_id == PARA_INT
+
+
+def is_numeric(para: ParameterBase) -> bool:
+    """Test if the given parameter is of type PARA_FLOAT or PARA_INT.
+
+    Parameters
+    ----------
+    para: flowserv.model.parameter.base.ParameterBase
+        Template parameter definition.
+
+    Returns
+    -------
+    bool
+    """
+    return para.type_id in NUMERIC_TYPES

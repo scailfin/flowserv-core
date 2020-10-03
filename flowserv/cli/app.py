@@ -49,9 +49,16 @@ import flowserv.config.app as config
     required=False,
     help='Optional path to workflow manifest file.'
 )
+@click.option(
+    '-g', '--ignore_postproc',
+    is_flag=True,
+    default=False,
+    help='Print run logs'
+)
 @click.argument('template')
 def install_application(
-    key, name, description, instructions, specfile, manifest, template
+    key, name, description, instructions, specfile, manifest, template,
+    ignore_postproc
 ):
     """Install workflow from local folder or repository."""
     # Install the application from the given workflow template.
@@ -62,7 +69,8 @@ def install_application(
         description=description,
         instructions=instructions,
         specfile=specfile,
-        manifestfile=manifest
+        manifestfile=manifest,
+        ignore_postproc=ignore_postproc
     )
     click.echo('export {}={}'.format(config.FLOWSERV_APP, app_key))
 

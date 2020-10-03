@@ -65,6 +65,7 @@ def test_postproc_workflow(fsconfig, tmpdir):
     os.environ[FLOWSERV_FILESTORE_CLASS] = fsconfig[FLOWSERV_FILESTORE_CLASS]
     DEFAULT_BACKEND()
     from flowserv.service.database import database
+    database.__init__()
     database.init()
     engine = SerialWorkflowEngine(is_async=True)
     with service(engine=engine) as api:
@@ -147,6 +148,7 @@ def test_postproc_workflow_errors(tmpdir):
     os.environ[FLOWSERV_API_BASEDIR] = str(tmpdir)
     DEFAULT_BACKEND()
     from flowserv.service.database import database
+    database.__init__()
     database.init()
     engine = SerialWorkflowEngine(is_async=True)
     # Error during data preparation

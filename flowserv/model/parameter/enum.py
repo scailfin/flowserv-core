@@ -152,3 +152,20 @@ class EnumParameter(ParameterBase):
         obj = super().to_dict()
         obj['values'] = self.values
         return obj
+
+
+# -- Helper Methods -----------------------------------------------------------
+
+def is_enum(para: ParameterBase) -> bool:
+    """Test if the given parameter is of type PARA_ENUM.
+
+    Parameters
+    ----------
+    para: flowserv.model.parameter.base.ParameterBase
+        Template parameter definition.
+
+    Returns
+    -------
+    bool
+    """
+    return para.type_id == PARA_ENUM

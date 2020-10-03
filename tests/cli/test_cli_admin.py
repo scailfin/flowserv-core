@@ -26,6 +26,9 @@ def test_basedir_argument(tmpdir):
     """Test passing the base directory as an argument."""
     os.environ[FLOWSERV_DB] = TEST_URL
     os.environ[FLOWSERV_API_BASEDIR] = str(tmpdir)
+    # Make sure to reset the database.
+    from flowserv.service.database import database
+    database.__init__()
     runner = CliRunner()
     result = runner.invoke(cli, ['init', '-f'])
     assert result.exit_code == 0
@@ -44,6 +47,8 @@ def test_create_basedir(tmpdir):
     basedir = os.path.join(tmpdir, 'api')
     os.environ[FLOWSERV_API_BASEDIR] = basedir
     os.environ[FLOWSERV_DB] = TEST_URL
+    from flowserv.service.database import database
+    database.__init__()
     assert not os.path.isdir(basedir)
     runner = CliRunner()
     result = runner.invoke(cli, ['init', '-f'])
@@ -69,6 +74,8 @@ def test_init_without_force(tmpdir):
     """
     os.environ[FLOWSERV_API_BASEDIR] = str(tmpdir)
     os.environ[FLOWSERV_DB] = TEST_URL
+    from flowserv.service.database import database
+    database.__init__()
     runner = CliRunner()
     result = runner.invoke(cli, ['init'])
     assert 'This will erase an existing database.' in result.output

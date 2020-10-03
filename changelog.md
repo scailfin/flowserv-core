@@ -71,6 +71,18 @@
 * Add functionality for asynchronous runs to flowserv application object.
 * Change flowserv application run result object (\#61).
 * Configure authentication policy via environment variables.
-* Create separate groups for each workflow run in the app (\#62)
-* RunResults `get_file` returns a single file object (\#63)
-* Flowserv class for running workflows in notebook environments (\#64, \#65)
+* Create separate groups for each workflow run in the app (\#62).
+* RunResults `get_file` returns a single file object (\#63).
+* Flowserv class for running workflows in notebook environments (\#64, \#65).
+
+
+### 0.5.1 - 2020-10-03
+
+* Create directory for SQLite database files (\#68).
+* Type tests for enum and numeric parameters.
+* Add serialized file handle to file listing in the application run result.
+* Fix bug in run handle serialization for output files.
+* Fix bug in Docker engine (return rundir in error case).
+* Add ignore postproc option to `flowserv install` (\#69).
+* File object for files that are uploaded as part of Flask requests.
+* Make database web_app flag configurable using environment variable (\#70).

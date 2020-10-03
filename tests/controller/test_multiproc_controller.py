@@ -35,11 +35,18 @@ DIR = os.path.dirname(os.path.realpath(__file__))
 TEMPLATE_DIR = os.path.join(DIR, '../.files/benchmark/helloworld')
 
 
-def test_cancel_run_helloworld(service):
+def test_cancel_run_helloworld(tmpdir):
     """Test cancelling a helloworld run."""
     # -- Setup ----------------------------------------------------------------
     #
     # Start a new run for the workflow template.
+    os.environ[FLOWSERV_DB] = 'sqlite:///{}/flowserv.db'.format(str(tmpdir))
+    os.environ[FLOWSERV_API_BASEDIR] = str(tmpdir)
+    os.environ[FLOWSERV_FILESTORE_MODULE] = 'flowserv.model.files.fs'
+    os.environ[FLOWSERV_FILESTORE_CLASS] = 'FileSystemStore'
+    from flowserv.service.database import database
+    database.__init__()
+    database.init()
     engine = SerialWorkflowEngine(is_async=True)
     with service(engine=engine) as api:
         engine.fs = api.fs
@@ -72,6 +79,11 @@ def test_cancel_run_helloworld(service):
         run = api.runs().get_run(run_id=run_id, user_id=user_id)
         assert run['state'] == st.STATE_CANCELED
         assert run['messages'][0] == 'done'
+    # -- Clean-up environment variables ---------------------------------------
+    del os.environ[FLOWSERV_DB]
+    del os.environ[FLOWSERV_API_BASEDIR]
+    del os.environ[FLOWSERV_FILESTORE_MODULE]
+    del os.environ[FLOWSERV_FILESTORE_CLASS]
 
 
 @pytest.mark.parametrize(
@@ -103,6 +115,7 @@ def test_run_helloworld_async(fsconfig, target, tmpdir):
     os.environ[FLOWSERV_FILESTORE_MODULE] = fsconfig[FLOWSERV_FILESTORE_MODULE]
     os.environ[FLOWSERV_FILESTORE_CLASS] = fsconfig[FLOWSERV_FILESTORE_CLASS]
     from flowserv.service.database import database
+    database.__init__()
     database.init()
     engine = SerialWorkflowEngine(is_async=True)
     with service(engine=engine) as api:

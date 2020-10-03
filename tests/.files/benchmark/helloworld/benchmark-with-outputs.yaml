@@ -50,7 +50,12 @@ outputs:
       key: 'greetings'
       title: 'Saying Hello to ...'
       caption: 'Greetings for all persons.'
+      format:
+          type: 'plaintext'
     - source: 'results/analytics.json'
+      title: 'Score'
+      format:
+          type: 'json'
 results:
     file: 'results/analytics.json'
     schema:

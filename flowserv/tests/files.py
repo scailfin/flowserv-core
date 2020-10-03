@@ -15,10 +15,37 @@ import os
 from io import BytesIO
 from typing import Dict, IO, List, Optional, Union
 
-from flowserv.model.files.base import IOFile
+from flowserv.model.files.base import FileObject, IOFile
 
 import flowserv.config.api as config
 import flowserv.util as util
+
+
+class FileStorage(object):
+    """Fake stream object that simulates a werkzeug.FileStorage object to test
+    the FlaskFile object. Wraps araond a given file object.
+    """
+    def __init__(self, file: FileObject):
+        """Initialize the wrapped file object.
+
+        Parameters
+        ----------
+        file: flowserv.model.files.FileObject
+            File data object
+        """
+        self.file = file
+
+    @property
+    def content_length(self) -> int:
+        """Get the size of the wrapped file."""
+        return self.file.size()
+
+    def save(self, filename: Union[str, IO]):
+        """Write file to disk or to a given IO buffer."""
+        if isinstance(filename, str):
+            self.file.store(filename)
+        else:
+            filename.write(self.file.open().read())
 
 
 # -- S3 Buckets ---------------------------------------------------------------

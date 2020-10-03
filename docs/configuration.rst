@@ -25,7 +25,12 @@ The base URL for all API resources is composed from the values in the environmen
 Authentication
 --------------
 
-The environment variable *FLOWSERV_AUTH_TTL* is used to specify the time period (in milliseconds) for which an issued API key is valid after a user login.
+**flowServ** currently supports two modes of authentication. The selected mode is defined by the environment variable *FLOWSERV_AUTH*:
+
+- OPEN: Defines an open-access policy to the API that does not require an authenticated user for API calls.
+- DEFAULT: The default authentication policy requires a valid user identifier to be provided for API calls.
+
+The environment variable *FLOWSERV_AUTH_TTL* is used to specify the time period (in milliseconds) for which an issued API key (used to authenticate users) is valid after a user login.
 
 
 
@@ -112,6 +117,9 @@ The following steps are an example for creating an initial empty database for **
     ALTER USER flowserv WITH PASSWORD 'flowserv';
     -- Create an empty database with owner flowserv
     CREATE DATABASE flowserv WITH OWNER flowserv;
+
+
+If the environment variable *FLOWSERV_WEBAPP* is set to `True` scoped database sessions are used for web applications.
 
 
 ----------

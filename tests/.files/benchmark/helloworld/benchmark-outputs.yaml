@@ -31,10 +31,9 @@ parameters:
       target: data/names.txt
 outputs:
     - source: 'results/greetings.txt'
-      title: 'Greetings'
       caption: 'Say Hello to everyone'
       widget: 'textview'
       format:
           fontSize: 12
     - source: 'results/nothing.txt'
-      title: 'Not a file'
+      title: 'Greetings'

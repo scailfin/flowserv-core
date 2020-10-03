@@ -28,3 +28,20 @@ def test_config_database():
     with pytest.raises(err.MissingConfigurationError):
         assert config.DB_CONNECT()
     assert config.DB_CONNECT(value='ABC') == 'ABC'
+
+
+def test_config_webapp():
+    """Test getting the value for thw web app flag from the environment
+    variable FLOWSERV_WEBAPP.
+    """
+    # -- Get value with environment variable set ------------------------------
+    os.environ[config.FLOWSERV_WEBAPP] = 'False'
+    assert not config.WEBAPP()
+    os.environ[config.FLOWSERV_WEBAPP] = 'false'
+    assert not config.WEBAPP()
+    os.environ[config.FLOWSERV_WEBAPP] = 'True'
+    assert config.WEBAPP()
+    # -- Get value if environment variable is not set -------------------------
+    del os.environ[config.FLOWSERV_WEBAPP]
+    assert not config.WEBAPP()
+    assert config.WEBAPP(value=True)

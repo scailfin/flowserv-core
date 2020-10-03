@@ -8,6 +8,23 @@
 
 """Helper method to create instances of the flowServ application object."""
 
+from flowserv.app.base import App
 from flowserv.app.base import install_app as install  # noqa: F401
 from flowserv.app.base import open_app as open  # noqa: F401
 from flowserv.app.base import uninstall_app as uninstall  # noqa: F401
+
+
+def flowapp(identifier: str) -> App:
+    """Helper method to hide app parameters for code that references a workflow
+    by its identifier.
+
+    Parameters
+    ----------
+    identifier: string
+        Unique workflow identifier.
+
+    Returns
+    -------
+    flowserv.app.base.App
+    """
+    return App(key=identifier)
