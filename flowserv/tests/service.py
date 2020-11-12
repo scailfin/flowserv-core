@@ -13,7 +13,7 @@ import tempfile
 
 from typing import Tuple, Union
 
-from flowserv.service.run.argument import FILE
+from flowserv.service.run.argument import serialize_fh
 from flowserv.tests.files import io_file
 
 import flowserv.util as util
@@ -143,7 +143,10 @@ def start_hello_world(api, group_id, user_id):
     )['id']
     run_id = api.runs().start_run(
         group_id=group_id,
-        arguments=[{'id': 'names', 'value': FILE(file_id=file_id)}],
+        arguments=[{
+            'name': 'names',
+            'value': serialize_fh(file_id=file_id)
+        }],
         user_id=user_id
     )['id']
     api.engine.start(run_id)

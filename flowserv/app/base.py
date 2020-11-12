@@ -26,7 +26,7 @@ from flowserv.model.workflow.manager import WorkflowManager
 from flowserv.service.auth import get_auth
 from flowserv.service.api import API
 from flowserv.service.files import get_filestore
-from flowserv.service.run.argument import ARG, FILE
+from flowserv.service.run.argument import serialize_arg, serialize_fh
 from flowserv.service.postproc.util import copy_postproc_files
 
 import flowserv.config.app as config
@@ -392,10 +392,10 @@ class App(object):
                         name=key,
                         user_id=user_id
                     )
-                    val = FILE(fh['id'], target=target)
+                    val = serialize_fh(fh['id'], target=target)
                 else:
                     val = para.to_argument(val)
-                arglist.append(ARG(key, val))
+                arglist.append(serialize_arg(key, val))
             # Execute the run and return the serialized run handle.
             run = api.runs().start_run(
                 group_id=group_id,

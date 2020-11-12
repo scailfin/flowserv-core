@@ -31,10 +31,9 @@ only the declaration for the runs folder.
 """
 PARA_RUNS = 'runs'
 PARAMETER = FileParameter(
-    para_id=PARA_RUNS,
     name=PARA_RUNS,
     index=0,
     target=os.path.join(RUNS_DIR, RUNS_FILE)
 )
 PARAMETERS = ParameterIndex()
-PARAMETERS[PARAMETER.para_id] = PARAMETER
+PARAMETERS[PARAMETER.name] = PARAMETER

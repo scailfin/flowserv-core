@@ -16,7 +16,8 @@ import shutil
 from flowserv.model.files.fs import FSFile
 from flowserv.model.parameter.files import InputFile
 from flowserv.model.template.base import WorkflowTemplate
-from flowserv.service.run.argument import ARG, FILE, GET_ARG, GET_FILE, IS_FILE
+from flowserv.service.run.argument import serialize_arg, serialize_fh
+from flowserv.service.run.argument import deserialize_arg, deserialize_fh, is_fh
 
 import flowserv.error as err
 import flowserv.util as util
@@ -361,15 +362,15 @@ class RunService(object):
         # stored in the database.
         run_args = dict()
         for arg in arguments:
-            arg_id, arg_val = GET_ARG(arg)
+            arg_id, arg_val = deserialize_arg(arg)
             # Raise an error if multiple values are given for the same argument
             if arg_id in run_args:
                 raise err.DuplicateArgumentError(arg_id)
             para = template.parameters.get(arg_id)
             if para is None:
                 raise err.UnknownParameterError(arg_id)
-            if IS_FILE(arg_val):
-                file_id, target = GET_FILE(arg_val)
+            if is_fh(arg_val):
+                file_id, target = deserialize_fh(arg_val)
                 # The argument value is expected to be the identifier of an
                 # previously uploaded file. This will raise an exception if the
                 # file identifier is unknown.
@@ -497,7 +498,7 @@ def run_postproc_workflow(
                 target=dst
             )
         }
-        arg_list = [ARG(postbase.PARA_RUNS, FILE(datadir, dst))]
+        arg_list = [serialize_arg(postbase.PARA_RUNS, serialize_fh(datadir, dst))]
     except Exception as ex:
         logging.error(ex)
         strace = util.stacktrace(ex)

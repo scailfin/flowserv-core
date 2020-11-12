@@ -78,10 +78,10 @@ class ParameterIndex(dict):
                 'defaultValue' not in obj
             )
             para = cls.from_dict(obj, validate=validate)
-            if para.para_id in parameters:
-                msg = "duplicate parameter '{}'".format(para.para_id)
+            if para.name in parameters:
+                msg = "duplicate parameter '{}'".format(para.name)
                 raise err.InvalidTemplateError(msg)
-            parameters[para.para_id] = para
+            parameters[para.name] = para
         return parameters
 
     def sorted(self):
@@ -159,10 +159,10 @@ def expand_value(value, arguments, parameters):
             # is defined for the parameter.
             if expr in arguments:
                 return str(arguments[expr])
-            elif para.default_value is not None:
+            elif para.default is not None:
                 # Return the parameter default value.
-                return str(para.default_value)
-            raise err.MissingArgumentError(para.para_id)
+                return str(para.default)
+            raise err.MissingArgumentError(para.name)
         # Extract the variable name and the conditional return values.
         var = expr[:pos].strip()
         expr = expr[pos+1:].strip()

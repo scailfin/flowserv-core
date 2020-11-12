@@ -10,33 +10,33 @@
 
 import pytest
 
-from flowserv.service.run.argument import ARG, GET_ARG
-from flowserv.service.run.argument import FILE, GET_FILE, IS_FILE
+from flowserv.service.run.argument import serialize_arg, deserialize_arg
+from flowserv.service.run.argument import serialize_fh, deserialize_fh, is_fh
 
 
 def test_check_file_argument():
     """Test checking an argument value for representing an input file."""
-    assert IS_FILE(FILE('0000'))
-    assert not IS_FILE({'id': 'names'})
-    assert not IS_FILE({'dtype': '$record', 'value': []})
+    assert is_fh(serialize_fh('0000'))
+    assert not is_fh({'id': 'names'})
+    assert not is_fh({'dtype': '$record', 'value': []})
 
 
 def test_deserialize_file_argument():
     """Test deserialization of file arguments."""
-    file_id, target = GET_FILE(FILE('0000', 'names.txt'))
+    file_id, target = deserialize_fh(serialize_fh('0000', 'names.txt'))
     assert file_id == '0000'
     assert target == 'names.txt'
-    file_id, target = GET_FILE(FILE('0000'))
+    file_id, target = deserialize_fh(serialize_fh('0000'))
     assert file_id == '0000'
     assert target is None
     with pytest.raises(ValueError):
-        GET_FILE({'fileId': '0000'})
+        deserialize_fh({'fileId': '0000'})
 
 
 def test_deserialize_run_argument():
     """Test deserialization of run arguments."""
-    key, value = GET_ARG(ARG('names', 'names.txt'))
+    key, value = deserialize_arg(serialize_arg('names', 'names.txt'))
     assert key == 'names'
     assert value == 'names.txt'
     with pytest.raises(ValueError):
-        GET_ARG({'id': 'names'})
+        deserialize_arg({'id': 'names'})

@@ -21,7 +21,7 @@ from flowserv.config.files import (
 from flowserv.controller.serial.engine import SerialWorkflowEngine
 from flowserv.service.api import service
 from flowserv.service.files import get_filestore
-from flowserv.service.run.argument import ARG, FILE
+from flowserv.service.run.argument import serialize_arg, serialize_fh
 from flowserv.tests.files import io_file
 from flowserv.tests.service import (
     create_group, create_user, create_workflow, start_run, upload_file
@@ -90,8 +90,8 @@ def test_postproc_workflow(fsconfig, tmpdir):
             file_id = upload_file(api, group_id, user_id, names)
             # Set the template argument values
             arguments = [
-                ARG('names', FILE(file_id)),
-                ARG('greeting', 'Hi')
+                serialize_arg('names', serialize_fh(file_id)),
+                serialize_arg('greeting', 'Hi')
             ]
             run_id = start_run(api, group_id, user_id, arguments=arguments)
         # Poll workflow state every second.
@@ -191,8 +191,8 @@ def run_erroneous_workflow(service, engine, specfile):
         file_id = upload_file(api, group_id, user_id, names)
         # Run the workflow.
         arguments = [
-            ARG('names', FILE(file_id)),
-            ARG('greeting', 'Hi')
+            serialize_arg('names', serialize_fh(file_id)),
+            serialize_arg('greeting', 'Hi')
         ]
         run_id = start_run(api, group_id, user_id, arguments=arguments)
     # Poll workflow state every second.

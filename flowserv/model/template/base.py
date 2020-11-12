@@ -203,6 +203,6 @@ class WorkflowTemplate(object):
         flowserv.error.MissingArgumentError
         """
         for para in self.parameters.values():
-            if para.is_required and para.default_value is None:
-                if para.para_id not in arguments:
-                    raise err.MissingArgumentError(para.para_id)
+            if para.required and para.default is None:
+                if para.name not in arguments:
+                    raise err.MissingArgumentError(para.name)
