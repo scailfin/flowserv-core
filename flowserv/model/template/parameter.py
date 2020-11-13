@@ -12,12 +12,14 @@
 import re
 
 from flowserv.model.parameter.base import TYPE
-from flowserv.model.parameter.boolean import Bool, PARA_BOOL
-from flowserv.model.parameter.enum import Select, PARA_SELECT
-from flowserv.model.parameter.files import File, PARA_FILE
+from flowserv.model.parameter.base import (
+    PARA_BOOL, PARA_FILE, PARA_FLOAT, PARA_INT, PARA_SELECT, PARA_STRING
+)
+from flowserv.model.parameter.boolean import Bool
+from flowserv.model.parameter.enum import Select
+from flowserv.model.parameter.files import File
 from flowserv.model.parameter.numeric import Int, Float
-from flowserv.model.parameter.numeric import PARA_FLOAT, PARA_INT
-from flowserv.model.parameter.string import String, PARA_STRING
+from flowserv.model.parameter.string import String
 
 import flowserv.error as err
 

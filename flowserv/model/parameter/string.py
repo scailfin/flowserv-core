@@ -12,15 +12,11 @@ additional properties to the base parameter class.
 
 from typing import Any, Dict, Optional
 
-from flowserv.model.parameter.base import Parameter
+from flowserv.model.parameter.base import Parameter, PARA_STRING
 
 import flowserv.error as err
 import flowserv.model.parameter.base as pd
 import flowserv.util as util
-
-
-"""Unique parameter type identifier."""
-PARA_STRING = 'string'
 
 
 class String(Parameter):

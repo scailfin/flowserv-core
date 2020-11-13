@@ -14,15 +14,11 @@ run environment.
 from typing import Dict, IO, Optional, Union
 
 from flowserv.model.files.base import FileObject
-from flowserv.model.parameter.base import Parameter
+from flowserv.model.parameter.base import Parameter, PARA_FILE
 
 import flowserv.error as err
 import flowserv.model.parameter.base as pd
 import flowserv.util as util
-
-
-"""Unique parameter type identifier."""
-PARA_FILE = 'file'
 
 
 class File(Parameter):
@@ -213,20 +209,3 @@ class InputFile(object):
         string
         """
         return self._target
-
-
-# -- Helper Methods -----------------------------------------------------------
-
-def is_file(para: Parameter) -> bool:
-    """Test if the given parameter is of type PARA_FILE.
-
-    Parameters
-    ----------
-    para: flowserv.model.parameter.base.Parameter
-        Template parameter definition.
-
-    Returns
-    -------
-    bool
-    """
-    return para.dtype == PARA_FILE

@@ -13,15 +13,11 @@ printable 'name' and an associated 'value'.
 
 from typing import Any, Dict, List, Optional, Union
 
-from flowserv.model.parameter.base import Parameter
+from flowserv.model.parameter.base import Parameter, PARA_SELECT
 
 import flowserv.error as err
 import flowserv.model.parameter.base as pd
 import flowserv.util as util
-
-
-"""Unique parameter type identifier."""
-PARA_SELECT = 'select'
 
 
 class Select(Parameter):
@@ -172,20 +168,3 @@ def Option(name: str, value: Union[str, int], default: Optional[bool] = None) ->
     if default is not None:
         doc['isDefault'] = default
     return doc
-
-
-# -- Helper Methods -----------------------------------------------------------
-
-def is_select(para: Parameter) -> bool:
-    """Test if the given parameter is of type PARA_SELECT.
-
-    Parameters
-    ----------
-    para: flowserv.model.parameter.base.Parameter
-        Template parameter definition.
-
-    Returns
-    -------
-    bool
-    """
-    return para.dtype == PARA_SELECT

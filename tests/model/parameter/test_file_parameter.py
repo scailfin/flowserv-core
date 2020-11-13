@@ -66,6 +66,7 @@ def test_file_parameter_from_dict():
             })
         )
     )
+    assert para.is_file()
     assert para.name == '0000'
     assert para.dtype == PARA_FILE
     assert para.label == 'Names'

@@ -11,7 +11,7 @@
 import pytest
 
 from flowserv.model.parameter.numeric import Int, Float, Numeric, RangeConstraint
-from flowserv.model.parameter.numeric import is_numeric, PARA_INT, PARA_FLOAT
+from flowserv.model.parameter.numeric import PARA_INT, PARA_FLOAT
 
 import flowserv.error as err
 
@@ -148,7 +148,7 @@ def test_numeric_parameter(dtype, range):
             para.to_argument('5')
     assert para.to_argument('6') == 6
     assert para.to_argument(7) == 7
-    assert is_numeric(para)
+    assert para.is_numeric()
     assert para.to_argument('inf') == float('inf')
     with pytest.raises(err.InvalidArgumentError):
         para.to_argument('x')

@@ -12,7 +12,7 @@ ranges of valid values or minimum and maximum values.
 
 from typing import Any, Dict, Optional, Union
 
-from flowserv.model.parameter.base import Parameter
+from flowserv.model.parameter.base import Parameter, PARA_FLOAT, PARA_INT
 
 import flowserv.error as err
 import flowserv.model.parameter.base as pd
@@ -20,8 +20,6 @@ import flowserv.util as util
 
 
 """Identifier for numeric parameter types."""
-PARA_FLOAT = 'float'
-PARA_INT = 'int'
 NUMERIC_TYPES = [PARA_FLOAT, PARA_INT]
 
 
@@ -401,50 +399,3 @@ class Float(Numeric):
             group=group,
             constraint=constraint
         )
-
-
-# -- Helper Methods -----------------------------------------------------------
-
-def is_float(para: Parameter) -> bool:
-    """Test if the given parameter is of type PARA_FLOAT.
-
-    Parameters
-    ----------
-    para: flowserv.model.parameter.base.Parameter
-        Template parameter definition.
-
-    Returns
-    -------
-    bool
-    """
-    return para.dtype == PARA_FLOAT
-
-
-def is_int(para: Parameter) -> bool:
-    """Test if the given parameter is of type PARA_INT.
-
-    Parameters
-    ----------
-    para: flowserv.model.parameter.base.Parameter
-        Template parameter definition.
-
-    Returns
-    -------
-    bool
-    """
-    return para.dtype == PARA_INT
-
-
-def is_numeric(para: Parameter) -> bool:
-    """Test if the given parameter is of type PARA_FLOAT or PARA_INT.
-
-    Parameters
-    ----------
-    para: flowserv.model.parameter.base.Parameter
-        Template parameter definition.
-
-    Returns
-    -------
-    bool
-    """
-    return para.dtype in NUMERIC_TYPES

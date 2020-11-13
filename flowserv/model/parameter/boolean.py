@@ -11,15 +11,11 @@ additional properties to the base parameter class.
 """
 
 from typing import Any, Dict, Optional
-from flowserv.model.parameter.base import Parameter
+from flowserv.model.parameter.base import Parameter, PARA_BOOL
 
 import flowserv.error as err
 import flowserv.model.parameter.base as pd
 import flowserv.util as util
-
-
-"""Unique parameter type identifier."""
-PARA_BOOL = 'bool'
 
 
 class Bool(Parameter):
@@ -126,20 +122,3 @@ class Bool(Parameter):
         elif strvalue in ['', '0', 'f', 'false']:
             return False
         raise err.InvalidArgumentError("not a Boolean '{}'".format(value))
-
-
-# -- Helper Methods -----------------------------------------------------------
-
-def is_bool(para: Parameter) -> bool:
-    """Test if the given parameter is of type PARA_BOOL.
-
-    Parameters
-    ----------
-    para: flowserv.model.parameter.base.Parameter
-        Template parameter definition.
-
-    Returns
-    -------
-    bool
-    """
-    return para.dtype == PARA_BOOL

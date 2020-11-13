@@ -57,6 +57,7 @@ def test_boolean_parameter_from_dict():
             })
         )
     )
+    assert para.is_bool()
     assert para.name == '0000'
     assert para.dtype == PARA_BOOL
     assert para.label == 'Agree'

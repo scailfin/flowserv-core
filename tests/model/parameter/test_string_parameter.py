@@ -67,6 +67,7 @@ def test_string_parameter_from_dict():
             })
         )
     )
+    assert para.is_string()
     assert para.name == '0000'
     assert para.dtype == PARA_STRING
     assert para.label == 'Firstname'

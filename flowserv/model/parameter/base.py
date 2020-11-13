@@ -33,6 +33,15 @@ MANDATORY = [NAME, TYPE, INDEX, REQUIRED]
 OPTIONAL = [LABEL, HELP, DEFAULT, GROUP]
 
 
+"""Unique parameter type identifier."""
+PARA_BOOL = 'bool'
+PARA_FILE = 'file'
+PARA_FLOAT = 'float'
+PARA_INT = 'int'
+PARA_SELECT = 'select'
+PARA_STRING = 'string'
+
+
 class Parameter(metaclass=ABCMeta):
     """Base class for template parameters. The base class maintains the unique
     parameter name, the data type identifier, the human-readable label and the
@@ -114,6 +123,74 @@ class Parameter(metaclass=ABCMeta):
         flowserv.error.InvalidParameterError
         """
         raise NotImplementedError()  # pragma: no cover
+
+    def is_bool(self) -> bool:
+        """Test if the parameter is of type Bool.
+
+        Returns
+        -------
+        bool
+        """
+        return self.dtype == PARA_BOOL
+
+    def is_file(self) -> bool:
+        """Test if the parameter is of type File.
+
+        Returns
+        -------
+        bool
+        """
+        return self.dtype == PARA_FILE
+
+    def is_float(self) -> bool:
+        """Test if the parameter is of type Float.
+
+        Returns
+        -------
+        bool
+        """
+        return self.dtype == PARA_FLOAT
+
+    def is_int(self) -> bool:
+        """Test if the parameter is of type Int.
+
+        Returns
+        -------
+        bool
+        """
+        return self.dtype == PARA_INT
+
+    def is_numeric(self) -> bool:
+        """Test if the parameter is of type Numeric.
+
+        Parameters
+        ----------
+        para: flowserv.model.parameter.base.Parameter
+            Template parameter definition.
+
+        Returns
+        -------
+        bool
+        """
+        return self.is_float() or self.is_int()
+
+    def is_select(self) -> bool:
+        """Test if the parameter is of type Select.
+
+        Returns
+        -------
+        bool
+        """
+        return self.dtype == PARA_SELECT
+
+    def is_string(self) -> bool:
+        """Test if the parameter is of type String.
+
+        Returns
+        -------
+        bool
+        """
+        return self.dtype == PARA_STRING
 
     def prompt(self) -> str:
         """Get default input prompt for the parameter declaration. The prompt

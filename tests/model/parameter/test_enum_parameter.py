@@ -10,7 +10,7 @@
 
 import pytest
 
-from flowserv.model.parameter.enum import Select, Option, is_select, PARA_SELECT
+from flowserv.model.parameter.enum import Select, Option, PARA_SELECT
 
 import flowserv.error as err
 
@@ -63,7 +63,7 @@ def test_enum_parameter_from_dict():
             })
         )
     )
-    assert is_select(para)
+    assert para.is_select()
     assert para.name == '0000'
     assert para.dtype == PARA_SELECT
     assert para.label == 'Options'

@@ -20,7 +20,7 @@ from flowserv.model.files.base import (
     DatabaseFile, FileObject, FileStore, IOFile
 )
 from flowserv.model.files.fs import FSFile
-from flowserv.model.parameter.files import is_file, InputFile
+from flowserv.model.parameter.files import InputFile
 from flowserv.model.template.parameter import ParameterIndex
 from flowserv.model.workflow.manager import WorkflowManager
 from flowserv.service.auth import get_auth
@@ -367,7 +367,7 @@ class App(object):
                 para = self._parameters.get(key)
                 if para is None:
                     raise err.UnknownParameterError(key)
-                if is_file(para):
+                if para.is_file():
                     # Upload a given file prior to running the application.
                     upload_file = None
                     target = None
