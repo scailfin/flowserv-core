@@ -1227,14 +1227,11 @@ definitions:
   WorkflowParameter:
     type: object
     required:
-    - id
     - name
     - datatype
     - index
     - required
     properties:
-      id:
-        type: string
       name:
         type: string
       datatype:
@@ -1243,13 +1240,11 @@ definitions:
         type: integer
       required:
         type: boolean
-      description:
+      label:
         type: string
-      as:
+      help:
         type: string
       defaultValue:
-        type: string
-      parent:
         type: string
       values:
         type: array
