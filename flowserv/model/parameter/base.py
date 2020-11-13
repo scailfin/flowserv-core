@@ -38,6 +38,7 @@ PARA_BOOL = 'bool'
 PARA_FILE = 'file'
 PARA_FLOAT = 'float'
 PARA_INT = 'int'
+PARA_RECORD = 'record'
 PARA_SELECT = 'select'
 PARA_STRING = 'string'
 
@@ -197,6 +198,15 @@ class Parameter(metaclass=ABCMeta):
         bool
         """
         return self.is_float() or self.is_int()
+
+    def is_record(self) -> bool:
+        """Test if the parameter is of type Record.
+
+        Returns
+        -------
+        bool
+        """
+        return self.dtype == PARA_RECORD
 
     def is_select(self) -> bool:
         """Test if the parameter is of type Select.

@@ -87,5 +87,3 @@ def test_string_parameter_value():
     para = String('0000', 0, required=True)
     assert para.cast(2) == '2'
     assert para.cast('ABC') == 'ABC'
-    with pytest.raises(err.InvalidArgumentError):
-        para.cast(None)

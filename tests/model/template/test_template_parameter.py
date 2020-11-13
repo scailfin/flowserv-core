@@ -135,7 +135,7 @@ def test_parameter_index_serialization():
     # Error case: Unknown parameter type.
     doc = p1.to_dict()
     doc['dtype'] = 'unknown'
-    with pytest.raises(err.InvalidTemplateError):
+    with pytest.raises(err.InvalidParameterError):
         ParameterIndex.from_dict([doc])
 
 

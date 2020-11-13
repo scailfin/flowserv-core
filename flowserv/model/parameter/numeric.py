@@ -170,10 +170,10 @@ class Numeric(Parameter):
     optional range constraint.
     """
     def __init__(
-        self, dtype: str, name: str, index: int, label: Optional[str] = None,
-        help: Optional[str] = None, default: Optional[Union[int, float]] = None,
-        required: Optional[bool] = False, group: Optional[str] = None,
-        constraint: Optional[RangeConstraint] = None
+        self, dtype: str, name: str, index: Optional[int] = 0,
+        label: Optional[str] = None, help: Optional[str] = None,
+        default: Optional[Union[int, float]] = None, required: Optional[bool] = False,
+        group: Optional[str] = None, constraint: Optional[RangeConstraint] = None
     ):
         """Initialize the base properties for a numeric parameter declaration.
 
@@ -318,7 +318,7 @@ class Numeric(Parameter):
 class Int(Numeric):
     """Base class for integer parameter types."""
     def __init__(
-        self, name: str, index: int, label: Optional[str] = None,
+        self, name: str, index: Optional[int] = 0, label: Optional[str] = None,
         help: Optional[str] = None, default: Optional[int] = None,
         required: Optional[bool] = False, group: Optional[str] = None,
         constraint: Optional[RangeConstraint] = None
@@ -361,7 +361,7 @@ class Int(Numeric):
 class Float(Numeric):
     """Base class for float parameter types."""
     def __init__(
-        self, name: str, index: int, label: Optional[str] = None,
+        self, name: str, index: Optional[int] = 0, label: Optional[str] = None,
         help: Optional[str] = None, default: Optional[float] = None,
         required: Optional[bool] = False, group: Optional[str] = None,
         constraint: Optional[RangeConstraint] = None

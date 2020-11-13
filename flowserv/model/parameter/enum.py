@@ -107,20 +107,19 @@ class Select(Parameter):
         flowserv.error.InvalidParameterError
         """
         if validate:
-            try:
+            util.validate_doc(
+                doc,
+                mandatory=pd.MANDATORY + ['values'],
+                optional=pd.OPTIONAL,
+                exception=err.InvalidParameterError
+            )
+            for val in doc['values']:
                 util.validate_doc(
-                    doc,
-                    mandatory=pd.MANDATORY + ['values'],
-                    optional=pd.OPTIONAL
+                    val,
+                    mandatory=['name', 'value'],
+                    optional=['isDefault'],
+                    exception=err.InvalidParameterError
                 )
-                for val in doc['values']:
-                    util.validate_doc(
-                        val,
-                        mandatory=['name', 'value'],
-                        optional=['isDefault']
-                    )
-            except ValueError as ex:
-                raise err.InvalidParameterError(str(ex))
             if doc[pd.TYPE] != PARA_SELECT:
                 raise ValueError("invalid type '{}'".format(doc[pd.TYPE]))
         return Select(

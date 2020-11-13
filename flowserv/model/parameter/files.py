@@ -6,7 +6,7 @@
 # flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
-"""Declarations for file parameter values. Each file parameter extends the
+"""Declarations for file parameter values. A file parameter extends the
 base parameter class with a target path for the file when creating the workflow
 run environment.
 """
@@ -123,14 +123,12 @@ class File(Parameter):
         flowserv.error.InvalidParameterError
         """
         if validate:
-            try:
-                util.validate_doc(
-                    doc,
-                    mandatory=pd.MANDATORY,
-                    optional=pd.OPTIONAL + ['target']
-                )
-            except ValueError as ex:
-                raise err.InvalidParameterError(str(ex))
+            util.validate_doc(
+                doc,
+                mandatory=pd.MANDATORY,
+                optional=pd.OPTIONAL + ['target'],
+                exception=err.InvalidParameterError
+            )
             if doc[pd.TYPE] != PARA_FILE:
                 raise ValueError("invalid type '{}'".format(doc[pd.TYPE]))
         return File(
@@ -159,7 +157,7 @@ class File(Parameter):
 
 class InputFile(object):
     """The InputFile represents the value for a template parameter of type
-    'file'. This class contains the path to the sourcefor an uploaded file as
+    'file'. This class contains the path to the source for an uploaded file as
     well as the target path for the Upload.
     """
     def __init__(self, source: FileObject, target: str):

@@ -58,8 +58,7 @@ class String(Parameter):
         )
 
     def cast(self, value: Any) -> Any:
-        """Convert the given value into a string value. Raises an error if the
-        value is None and the is required flag for the parameter is True.
+        """Convert the given value into a string value.
 
         Parameters
         ----------
@@ -69,13 +68,7 @@ class String(Parameter):
         Returns
         -------
         sting
-
-        Raises
-        ------
-        flowserv.error.InvalidArgumentError
         """
-        if value is None and self.required:
-            raise err.InvalidArgumentError('missing argument')
         return str(value)
 
     @staticmethod
@@ -98,10 +91,12 @@ class String(Parameter):
         flowserv.error.InvalidParameterError
         """
         if validate:
-            try:
-                util.validate_doc(doc, mandatory=pd.MANDATORY, optional=pd.OPTIONAL)
-            except ValueError as ex:
-                raise err.InvalidParameterError(str(ex))
+            util.validate_doc(
+                doc,
+                mandatory=pd.MANDATORY,
+                optional=pd.OPTIONAL,
+                exception=err.InvalidParameterError
+            )
             if doc[pd.TYPE] != PARA_STRING:
                 raise ValueError("invalid type '{}'".format(doc[pd.TYPE]))
         return String(

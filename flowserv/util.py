@@ -23,7 +23,7 @@ import yaml
 
 from dateutil.parser import isoparse
 from dateutil.tz import UTC
-from typing import Any, Dict, IO, List, Optional, Union
+from typing import Any, Dict, IO, List, Optional, Type, Union
 
 
 """Identifier for supported data formats."""
@@ -257,7 +257,8 @@ def stacktrace(ex):
 def validate_doc(
     doc: Dict,
     mandatory: Optional[List[str]] = None,
-    optional: Optional[List[str]] = None
+    optional: Optional[List[str]] = None,
+    exception: Optional[Type] = ValueError
 ):
     """Raises error if a dictionary contains labels that are not in the given
     label lists or if there are labels in the mandatory list that are not in
@@ -271,6 +272,9 @@ def validate_doc(
         List of mandatory labels for the dictionary serialization
     optional: list(string), optional
         List of optional labels for the dictionary serialization
+    exception: Error, default=ValueError
+        Error class that is raised if validation fails. By default, a ValueError
+        is raised.
 
     Returns
     -------
@@ -284,11 +288,11 @@ def validate_doc(
     labels = mandatory if mandatory is not None else list()
     for key in labels:
         if key not in doc:
-            raise ValueError("missing element '{}'".format(key))
+            raise exception("missing element '{}'".format(key))
     # Raise error if additional elements are present in the dictionary
     if optional is not None:
         labels = labels + optional
     for key in doc:
         if key not in labels:
-            raise ValueError("unknown element '{}'".format(key))
+            raise exception("unknown element '{}'".format(key))
     return doc

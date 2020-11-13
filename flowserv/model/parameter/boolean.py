@@ -107,10 +107,12 @@ class Bool(Parameter):
         flowserv.error.InvalidParameterError
         """
         if validate:
-            try:
-                util.validate_doc(doc, mandatory=pd.MANDATORY, optional=pd.OPTIONAL)
-            except ValueError as ex:
-                raise err.InvalidParameterError(str(ex))
+            util.validate_doc(
+                doc,
+                mandatory=pd.MANDATORY,
+                optional=pd.OPTIONAL,
+                exception=err.InvalidParameterError
+            )
             if doc[pd.TYPE] != PARA_BOOL:
                 raise ValueError("invalid type '{}'".format(doc[pd.TYPE]))
         return Bool(
