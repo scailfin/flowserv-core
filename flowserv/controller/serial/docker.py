@@ -10,7 +10,6 @@
 local Docker daemon to execute workflow steps.
 """
 
-import docker
 import logging
 import os
 
@@ -82,6 +81,7 @@ def docker_run(run_id, rundir, state, output_files, steps):
         if os.path.isdir(abs_file):
             volumes[abs_file] = {'bind': '/{}'.format(filename), 'mode': 'rw'}
     # Run the individual workflow steps using the local Docker deamon.
+    import docker
     client = docker.from_env()
     try:
         for step in steps:
