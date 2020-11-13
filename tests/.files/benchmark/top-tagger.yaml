@@ -34,11 +34,11 @@ postproc:
         files:
             - 'results/yProbBest.pkl'
 modules:
-    - id: 'preproc'
-      name: 'Pre-Processing Step'
+    - name: 'preproc'
+      title: 'Pre-Processing Step'
       index: 0
-    - id: 'eval'
-      name: 'ML Evaluation Step'
+    - name: 'eval'
+      title: 'ML Evaluation Step'
       index: 1
 parameters:
     - name: 'env_preproc'

@@ -57,8 +57,8 @@ postproc:
           title: 'Results'
           caption: 'The results.'
 modules:
-    - id: 'main'
-      name: 'Main Step'
+    - name: 'main'
+      title: 'Main Step'
       index: 0
 results:
     file: 'results/analytics.json'

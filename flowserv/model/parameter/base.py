@@ -155,20 +155,20 @@ class ParameterGroup(object):
     group has a display name and an index position that defines the sort order
     for groups.
     """
-    def __init__(self, identifier: str, name: str, index: int):
+    def __init__(self, name: str, title: str, index: int):
         """Initialize the object properties.
 
         Parameters
         ----------
-        identifier: string
-            Unique group identifier
         name: string
+            Unique group identifier
+        title: string
             Human-readable group name
         index: int
             Group sort order index
         """
-        self.identifier = identifier
         self.name = name
+        self.title = title
         self.index = index
 
     @classmethod
@@ -193,11 +193,11 @@ class ParameterGroup(object):
         if validate:
             util.validate_doc(
                 doc,
-                mandatory=['id', 'name', 'index']
+                mandatory=['name', 'title', 'index']
             )
         return cls(
-            identifier=doc['id'],
             name=doc['name'],
+            title=doc['title'],
             index=doc['index']
         )
 
@@ -209,7 +209,7 @@ class ParameterGroup(object):
         dict
         """
         return {
-            'id': self.identifier,
             'name': self.name,
+            'title': self.title,
             'index': self.index
         }

@@ -33,8 +33,8 @@ def test_template_serialization():
             String(name='A', label='P1', index=0).to_dict()
         ],
         'modules': [
-            {'id': '0', 'name': 'G1', 'index': 0},
-            {'id': '1', 'name': 'G2', 'index': 1}
+            {'name': '0', 'title': 'G1', 'index': 0},
+            {'name': '1', 'title': 'G2', 'index': 1}
         ],
         'postproc': {'workflow': dict(), 'inputs': {'files': ['D', 'E']}},
         'results': {
@@ -55,8 +55,8 @@ def test_template_serialization():
         'workflow': {'inputs': ['A', 'B', 'C']},
         'parameters': [para],
         'modules': [
-            {'id': '0', 'name': 'G1', 'index': 0, 'sortDesc': True},
-            {'id': '1', 'name': 'G2', 'index': 1}
+            {'name': '0', 'title': 'G1', 'index': 0, 'sortDesc': True},
+            {'name': '1', 'title': 'G2', 'index': 1}
         ],
         'postproc': {'inputs': {'files': ['D', 'E']}}
     }

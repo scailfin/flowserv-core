@@ -1117,13 +1117,13 @@ definitions:
         items:
           type: object
           required:
-          - id
           - name
+          - title
           - index
           properties:
-            id:
-              type: string
             name:
+              type: string
+            title:
               type: string
             index:
               type: number

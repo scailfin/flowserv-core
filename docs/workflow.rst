@@ -108,8 +108,8 @@ The structure for the ``modules`` element in a workflow template is as follows:
 .. code-block:: yaml
 
     modules:
-        - id: 'Unique module identifier'
-          name: 'Module name/title for display purposes'
+        - name: 'Unique module name'
+          title: 'Module title for display purposes'
           index: 'Index position of the parameter block for ordering during visualization'
 
 The module that a parameter belongs to is reference by the module identifier in the ``module`` element of the parameter declaration.

@@ -313,7 +313,7 @@ def validate_para_module(doc):
     ------
     ValueError
     """
-    util.validate_doc(doc=doc, mandatory=['id', 'name', 'index'])
+    util.validate_doc(doc=doc, mandatory=['name', 'title', 'index'])
 
 
 def validate_workflow_handle(doc, has_optional=False):

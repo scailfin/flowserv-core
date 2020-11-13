@@ -29,15 +29,15 @@ class WorkflowSerializer(Serializer):
         """
         super(WorkflowSerializer, self).__init__(
             labels={
-                'COLUMN_ID': 'name',
-                'COLUMN_NAME': 'label',
+                'COLUMN_NAME': 'name',
+                'COLUMN_TITLE': 'label',
                 'COLUMN_TYPE': 'dtype',
                 'COLUMN_VALUE': 'value',
                 'GROUP_ID': 'id',
                 'GROUP_NAME': 'name',
-                'MODULE_ID': 'id',
                 'MODULE_INDEX': 'index',
                 'MODULE_NAME': 'name',
+                'MODULE_TITLE': 'title',
                 'POSTPROC_RUN': 'postproc',
                 'RANKING': 'ranking',
                 'RUN_CREATED': 'createdAt',
@@ -109,8 +109,8 @@ class WorkflowSerializer(Serializer):
         if modules is not None:
             obj[LABELS['WORKFLOW_MODULES']] = [
                 {
-                    LABELS['MODULE_ID']: m.identifier,
                     LABELS['MODULE_NAME']: m.name,
+                    LABELS['MODULE_TITLE']: m.title,
                     LABELS['MODULE_INDEX']: m.index
                 } for m in modules]
         # Add serialization for post-processing workflow (if present).
@@ -141,7 +141,7 @@ class WorkflowSerializer(Serializer):
             results = list()
             for key in run.values:
                 results.append({
-                    LABELS['COLUMN_ID']: key,
+                    LABELS['COLUMN_NAME']: key,
                     LABELS['COLUMN_VALUE']: run.values[key]
                 })
             entries.append({
@@ -159,8 +159,8 @@ class WorkflowSerializer(Serializer):
             })
         obj = {
             LABELS['WORKFLOW_SCHEMA']: [{
-                    LABELS['COLUMN_ID']: c.column_id,
-                    LABELS['COLUMN_NAME']: c.name,
+                    LABELS['COLUMN_NAME']: c.column_id,
+                    LABELS['COLUMN_TITLE']: c.name,
                     LABELS['COLUMN_TYPE']: c.dtype
                 } for c in workflow.result_schema.columns
             ],
