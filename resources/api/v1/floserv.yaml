@@ -1191,13 +1191,13 @@ definitions:
         items:
           type: object
           required:
-          - id
           - name
+          - label
           - type
           properties:
-            id:
-              type: string
             name:
+              type: string
+            label:
               type: string
             type:
               type: string

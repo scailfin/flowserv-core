@@ -48,13 +48,13 @@ modules:
 results:
     file: 'results/analytics.json'
     schema:
-        - id: avg_count
-          name: 'Avg. Characters per Line'
+        - name: avg_count
+          label: 'Avg. Characters per Line'
           dtype: float
-        - id: max_len
-          name: 'Max. Output Line Length'
+        - name: max_len
+          label: 'Max. Output Line Length'
           dtype: float
-        - id: max_line
-          name: 'Longest Output Line'
+        - name: max_line
+          label: 'Longest Output Line'
           dtype: string
           required: False

@@ -75,20 +75,20 @@ parameters:
 results:
     file: 'results/results.json'
     schema:
-        - id: 'mean_accuracy'
-          name: 'Accuracy (mean)'
+        - name: 'mean_accuracy'
+          label: 'Accuracy (mean)'
           path: 'accuracy/mean'
           dtype: 'float'
-        - id: 'mean_auc'
-          name: 'AUC (mean)'
+        - name: 'mean_auc'
+          label: 'AUC (mean)'
           path: 'auc/mean'
           dtype: 'float'
-        - id: 'mean_loss'
-          name: 'Loss (mean)'
+        - name: 'mean_loss'
+          label: 'Loss (mean)'
           path: 'loss/mean'
           dtype: 'float'
     orderBy:
-        - id: 'mean_accuracy'
+        - name: 'mean_accuracy'
           sortDesc: true
-        - id: 'mean_auc'
+        - name: 'mean_auc'
           sortDesc: true

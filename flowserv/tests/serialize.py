@@ -112,7 +112,7 @@ def validate_ranking(doc):
     )
     # Schema columns
     for col in doc['schema']:
-        util.validate_doc(doc=col, mandatory=['id', 'name', 'dtype'])
+        util.validate_doc(doc=col, mandatory=['name', 'label', 'dtype'])
     # Run results
     for entry in doc['ranking']:
         util.validate_doc(doc=entry, mandatory=['run', 'group', 'results'])
@@ -122,7 +122,7 @@ def validate_ranking(doc):
         )
         util.validate_doc(doc=entry['group'], mandatory=['id', 'name'])
         for result in entry['results']:
-            util.validate_doc(doc=result, mandatory=['id', 'value'])
+            util.validate_doc(doc=result, mandatory=['name', 'value'])
 
 
 # -- Runs ---------------------------------------------------------------------

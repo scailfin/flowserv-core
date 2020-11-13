@@ -29,8 +29,8 @@ class WorkflowSerializer(Serializer):
         """
         super(WorkflowSerializer, self).__init__(
             labels={
-                'COLUMN_ID': 'id',
-                'COLUMN_NAME': 'name',
+                'COLUMN_ID': 'name',
+                'COLUMN_NAME': 'label',
                 'COLUMN_TYPE': 'dtype',
                 'COLUMN_VALUE': 'value',
                 'GROUP_ID': 'id',
@@ -161,7 +161,7 @@ class WorkflowSerializer(Serializer):
             LABELS['WORKFLOW_SCHEMA']: [{
                     LABELS['COLUMN_ID']: c.column_id,
                     LABELS['COLUMN_NAME']: c.name,
-                    LABELS['COLUMN_TYPE']: c.type_id
+                    LABELS['COLUMN_TYPE']: c.dtype
                 } for c in workflow.result_schema.columns
             ],
             LABELS['RANKING']: entries

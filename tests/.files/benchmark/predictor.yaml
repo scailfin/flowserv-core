@@ -32,14 +32,14 @@ parameters:
 results:
     file: results/eval.json
     schema:
-        - id: avg_diff
-          name: 'Deviation'
+        - name: avg_diff
+          label: 'Deviation'
           dtype: float
-        - id: exact_match
-          name: 'Exact Predictions'
+        - name: exact_match
+          label: 'Exact Predictions'
           dtype: int
     orderBy:
-        - id: avg_diff
+        - name: avg_diff
           sortDesc: false
-        - id: exact_match
+        - name: exact_match
           sortDesc: true

@@ -39,7 +39,7 @@ def test_template_serialization():
         'postproc': {'workflow': dict(), 'inputs': {'files': ['D', 'E']}},
         'results': {
             'file': 'results/analytics.json',
-            'schema': [{'id': '0', 'name': 'col0', 'dtype': PARA_STRING}]
+            'schema': [{'name': '0', 'label': 'col0', 'dtype': PARA_STRING}]
         }
     }
     doc = WorkflowTemplate.from_dict(doc).to_dict()

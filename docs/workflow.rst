@@ -83,12 +83,12 @@ An example template for the **Hello World example** is shown below.
           files:
            - results/greetings.txt
     parameters:
-        - id: names
-          name: Person names
+        - name: names
+          label: Person names
           description: Text file containing person names
           dtype: file
-        - id: sleeptime
-          name: Sleep period
+        - name: sleeptime
+          label: Sleep period
           description: Sleep period in seconds
           dtype: int
 
@@ -187,33 +187,33 @@ Benchmark templates add a ``results`` section to a parameterized workflow templa
            - results/greetings.txt
            - results/analytics.json
     parameters:
-        - id: names
-          name: 'Input file'
+        - name: names
+          label: 'Input file'
           datatype: file
           as: data/names.txt
-        - id: sleeptime
+        - name: sleeptime
           datatype: int
           defaultValue: 10
-        - id: greeting
+        - name: greeting
           datatype: string
           defaultValue: 'Hello'
     results:
         file: results/analytics.json
         schema:
-            - id: avg_count
-              name: 'Avg. Chars per Line'
+            - name: avg_count
+              label: 'Avg. Chars per Line'
               type: decimal
-            - id: max_len
-              name: 'Max. Output Line'
+            - name: max_len
+              label: 'Max. Output Line'
               type: decimal
-            - id: max_line
-              name: 'Longest Output'
+            - name: max_line
+              label: 'Longest Output'
               type: string
               required: False
         orderBy:
-            - id: avg_count
+            - name: avg_count
               sortDesc: true
-            - id: max_len
+            - name: max_len
               sortDesc: false
 
 
@@ -288,12 +288,12 @@ Result Schema Specification
 
 The result schema specification defines a list of columns that correspond to columns in a table that is created in an underlying relational database to store benchmark results. For each column specification the following elements are allowed:
 
-- **id**: Unique column identifier. The value is used as the column name in the created database table.
-- **name**: Human-readable name that is used when displaying leader boards in a front-end.
+- **name**: Unique column identifier. The value is used as the column name in the created database table.
+- **label**: Human-readable name that is used when displaying leader boards in a front-end.
 - **type**: Data type of the result values. The supported types are ``decimal``, ``int``, and ``string``. These type are translated into the relational database types ``DOUBLE``, ``INTEGER``, and ``TEXT``, respectively.
 - **required**: Boolean value that corresponds to a ``NOT NULL`` constraint. If the value is ``true`` it is expected that the generated benchmark result contains a value for this column. The default value is ``true``.
 
-The first three elements (``id``, ``name``, and ``type``) are mandatory.
+The first three elements (``name``, ``label``, and ``type``) are mandatory.
 
 
 Generating Leader Board
@@ -303,7 +303,7 @@ Leader boards are generated from benchmark results in the database table. The de
 
 Each entry in the ``orderBy`` list has the following elements:
 
-- **id**: Unique column identifier
+- **name**: Unique column identifier
 - **sortDesc**: Boolean value to determine the sort order (true: DESCENDING or false: ASCENDING).
 
-Only the ``id`` element is mandatory. The value has to match one of the column identifiers in the ``schema`` section. By default all columns are sorted in descending order. If no ``orderBy`` element is given the first column in the ``schema`` is used as the sort column.
+Only the ``name`` element is mandatory. The value has to match one of the column identifiers in the ``schema`` section. By default all columns are sorted in descending order. If no ``orderBy`` element is given the first column in the ``schema`` is used as the sort column.
