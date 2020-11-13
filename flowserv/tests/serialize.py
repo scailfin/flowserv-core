@@ -324,19 +324,19 @@ def validate_workflow_handle(doc, has_optional=False):
     Parameters
     ----------
     doc: dict
-        Workflow handle serialization
+        Workflow handle serialization.
     has_optional: bool, optional
         Flag indicating whether the handle should contain description and
-        instruction elements
+        instruction elements.
 
     Raises
     ------
     ValueError
     """
-    # Note: The modules element is optional but it should be contained in all
-    # local test cases. That is the reason why it is in the list of mandatory
-    # elements here.
-    mandatory = ['id', 'name', 'parameters', 'modules']
+    # Note: The parameter groups element is optional but it should be contained
+    # in all local test cases. That is the reason why it is in the list of
+    # mandatory elements here.
+    mandatory = ['id', 'name', 'parameters', 'parameterGroups']
     if has_optional:
         mandatory = mandatory + ['description', 'instructions']
     util.validate_doc(

@@ -45,7 +45,7 @@ def test_invalid_serialization():
             'help': 'Your first name',
             'defaultValue': 'Alice',
             'isRequired': True,
-            'module': 'person'
+            'group': 'person'
         })
 
 
@@ -63,7 +63,7 @@ def test_string_parameter_from_dict():
                 'help': 'Your first name',
                 'defaultValue': 'Alice',
                 'isRequired': True,
-                'module': 'person'
+                'group': 'person'
             })
         )
     )
@@ -74,7 +74,7 @@ def test_string_parameter_from_dict():
     assert para.help == 'Your first name'
     assert para.default == 'Alice'
     assert para.required
-    assert para.module == 'person'
+    assert para.group == 'person'
 
 
 def test_string_parameter_value():

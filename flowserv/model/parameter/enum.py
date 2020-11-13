@@ -29,9 +29,10 @@ class Select(Parameter):
     with a list of possible argument values.
     """
     def __init__(
-        self, name: str, index: int, values: List[Dict], label: Optional[str] = None,
-        help: Optional[str] = None, default: Optional[bool] = None,
-        required: Optional[bool] = False, module: Optional[str] = None
+        self, name: str, values: List[Dict], index: Optional[int] = 0,
+        label: Optional[str] = None, help: Optional[str] = None,
+        default: Optional[bool] = None, required: Optional[bool] = False,
+        group: Optional[str] = None
     ):
         """Initialize the base properties a enumeration parameter declaration.
 
@@ -39,7 +40,7 @@ class Select(Parameter):
         ----------
         name: string
             Unique parameter identifier
-        index: int
+        index: int, default=0
             Index position of the parameter (for display purposes).
         values: list
             List of dictionary serializations containing enumeration of valid
@@ -52,7 +53,7 @@ class Select(Parameter):
             Optional default value.
         required: bool, default=False
             Is required flag.
-        module: string, default=None
+        group: string, default=None
             Optional identifier for parameter group that this parameter
             belongs to.
         """
@@ -64,7 +65,7 @@ class Select(Parameter):
             help=help,
             default=default,
             required=required,
-            module=module
+            group=group
         )
         self.values = values
 
@@ -111,7 +112,7 @@ class Select(Parameter):
             help=doc.get(pd.HELP),
             default=doc.get(pd.DEFAULT),
             required=doc[pd.REQUIRED],
-            module=doc.get(pd.MODULE),
+            group=doc.get(pd.GROUP),
             values=doc['values']
         )
 

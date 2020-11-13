@@ -33,7 +33,7 @@ postproc:
     inputs:
         files:
             - 'results/yProbBest.pkl'
-modules:
+parameterGroups:
     - name: 'preproc'
       title: 'Pre-Processing Step'
       index: 0
@@ -46,7 +46,7 @@ parameters:
       dtype: 'string'
       defaultValue: 'toptagger:1.0'
       index: 0
-      module: 'preproc'
+      group: 'preproc'
     - name: 'cmd_preproc'
       label: 'Command  (Pre-Processing)'
       dtype: 'string'
@@ -56,13 +56,13 @@ parameters:
         data/preprocess/transformer.pkl
         results/'
       index: 1
-      module: 'preproc'
+      group: 'preproc'
     - name: 'env_eval'
       label: 'Environment (ML)'
       dtype: 'string'
       defaultValue: 'toptagger:1.0'
       index: 2
-      module: 'eval'
+      group: 'eval'
     - name: 'cmd_eval'
       label: 'Command (ML)'
       dtype: 'string'
@@ -71,7 +71,7 @@ parameters:
         data/evaluate/
         results'
       index: 3
-      module: 'eval'
+      group: 'eval'
 results:
     file: 'results/results.json'
     schema:

@@ -65,7 +65,7 @@ parameters:
       label: Greeting
       dtype: string
       defaultValue: 'Hello'
-modules:
+parameterGroups:
     - name: 'main'
       title: 'Main Step'
       index: 0

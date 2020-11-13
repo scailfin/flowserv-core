@@ -53,7 +53,7 @@ def test_boolean_parameter_from_dict():
                 'help': 'Do you agree?',
                 'defaultValue': False,
                 'isRequired': True,
-                'module': 'contract'
+                'group': 'contract'
             })
         )
     )
@@ -64,7 +64,7 @@ def test_boolean_parameter_from_dict():
     assert para.help == 'Do you agree?'
     assert not para.default
     assert para.required
-    assert para.module == 'contract'
+    assert para.group == 'contract'
 
 
 def test_boolean_parameter_value():

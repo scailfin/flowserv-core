@@ -25,9 +25,9 @@ PARA_BOOL = 'bool'
 class Bool(Parameter):
     """Boolean parameter type."""
     def __init__(
-        self, name: str, index: int, label: Optional[str] = None,
+        self, name: str, index: Optional[int] = 0, label: Optional[str] = None,
         help: Optional[str] = None, default: Optional[bool] = None,
-        required: Optional[bool] = False, module: Optional[str] = None
+        required: Optional[bool] = False, group: Optional[str] = None
     ):
         """Initialize the base properties a Boolean parameter declaration.
 
@@ -35,7 +35,7 @@ class Bool(Parameter):
         ----------
         name: string
             Unique parameter identifier
-        index: int
+        index: int, default=0
             Index position of the parameter (for display purposes).
         label: string, default=None
             Human-readable parameter name.
@@ -45,7 +45,7 @@ class Bool(Parameter):
             Optional default value.
         required: bool, default=False
             Is required flag.
-        module: string, default=None
+        group: string, default=None
             Optional identifier for parameter group that this parameter
             belongs to.
         """
@@ -57,7 +57,7 @@ class Bool(Parameter):
             help=help,
             default=default,
             required=required,
-            module=module
+            group=group
         )
 
     @classmethod
@@ -93,7 +93,7 @@ class Bool(Parameter):
             help=doc.get(pd.HELP),
             default=doc.get(pd.DEFAULT),
             required=doc[pd.REQUIRED],
-            module=doc.get(pd.MODULE)
+            group=doc.get(pd.GROUP)
         )
 
     def to_argument(self, value: Any) -> Any:

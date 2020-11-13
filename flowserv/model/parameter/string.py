@@ -26,9 +26,9 @@ PARA_STRING = 'string'
 class String(Parameter):
     """String parameter type."""
     def __init__(
-        self, name: str, index: int, label: Optional[str] = None,
+        self, name: str, index: Optional[int] = 0, label: Optional[str] = None,
         help: Optional[str] = None, default: Optional[str] = None,
-        required: Optional[bool] = False, module: Optional[str] = None
+        required: Optional[bool] = False, group: Optional[str] = None
     ):
         """Initialize the base properties a string parameter declaration.
 
@@ -36,7 +36,7 @@ class String(Parameter):
         ----------
         name: string
             Unique parameter identifier
-        index: int
+        index: int, default=0
             Index position of the parameter (for display purposes).
         label: string
             Human-readable parameter name.
@@ -46,7 +46,7 @@ class String(Parameter):
             Optional default value.
         required: bool, default=False
             Is required flag.
-        module: string, default=None
+        group: string, default=None
             Optional identifier for parameter group that this parameter
             belongs to.
         """
@@ -58,7 +58,7 @@ class String(Parameter):
             help=help,
             default=default,
             required=required,
-            module=module
+            group=group
         )
 
     @classmethod
@@ -94,7 +94,7 @@ class String(Parameter):
             help=doc.get(pd.HELP),
             default=doc.get(pd.DEFAULT),
             required=doc[pd.REQUIRED],
-            module=doc.get(pd.MODULE)
+            group=doc.get(pd.GROUP)
         )
 
     def to_argument(self, value: Any) -> Any:

@@ -50,7 +50,7 @@ class WorkflowTemplate(object):
     generate a benchmark leader board.
     """
     def __init__(
-        self, workflow_spec, parameters, modules=None, outputs=None,
+        self, workflow_spec, parameters, parameter_groups=None, outputs=None,
         postproc_spec=None, result_schema=None
     ):
         """Initialize the components of the workflow template.
@@ -62,9 +62,9 @@ class WorkflowTemplate(object):
         parameters: flowserv.model.template.parameter.ParameterIndex
             Dictionary of workflow template parameter declarations keyed by
             their unique identifier.
-        modules: list(flowserv.model.parameter.base.ParameterGroup),
+        parameter_groups: list(flowserv.model.parameter.base.ParameterGroup),
                 default=None
-            List of workflow modules that group template parameters
+            List of template parameter groups.
         outputs: list(flowserv.model.template.files.WorkflowOutputFile),
                 default=None
             List of specifications for workflow output files.
@@ -77,7 +77,7 @@ class WorkflowTemplate(object):
         self.workflow_spec = workflow_spec
         self.parameters = parameters
         # Optional components (may be None)
-        self.modules = modules
+        self.parameter_groups = parameter_groups
         self.outputs = outputs
         self.postproc_spec = postproc_spec
         self.result_schema = result_schema
@@ -143,11 +143,11 @@ class WorkflowTemplate(object):
                     optional=['runs']
                 )
         # -- Parameter module information -------------------------------------
-        modules = None
-        if 'modules' in doc:
-            modules = list()
-            for m in doc['modules']:
-                modules.append(ParameterGroup.from_dict(m, validate=validate))
+        parameter_groups = None
+        if 'parameterGroups' in doc:
+            parameter_groups = list()
+            for m in doc['parameterGroups']:
+                parameter_groups.append(ParameterGroup.from_dict(m, validate=validate))
         # -- Output file specifications --------------------------------------
         outputs = None
         if 'outputs' in doc:
@@ -163,7 +163,7 @@ class WorkflowTemplate(object):
             postproc_spec=postproc_spec,
             parameters=parameters,
             result_schema=schema,
-            modules=modules,
+            parameter_groups=parameter_groups,
             outputs=outputs
         )
 
@@ -180,8 +180,8 @@ class WorkflowTemplate(object):
         doc['parameters'] = self.parameters.to_dict()
         if self.postproc_spec is not None:
             doc['postproc'] = self.postproc_spec
-        if self.modules is not None:
-            doc['modules'] = [m.to_dict() for m in self.modules]
+        if self.parameter_groups is not None:
+            doc['parameterGroups'] = [m.to_dict() for m in self.parameter_groups]
         if self.result_schema is not None:
             doc['results'] = self.result_schema.to_dict()
         # Return the template serialization

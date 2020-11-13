@@ -32,7 +32,7 @@ def test_template_serialization():
         'parameters': [
             String(name='A', label='P1', index=0).to_dict()
         ],
-        'modules': [
+        'parameterGroups': [
             {'name': '0', 'title': 'G1', 'index': 0},
             {'name': '1', 'title': 'G2', 'index': 1}
         ],
@@ -46,7 +46,7 @@ def test_template_serialization():
     template = WorkflowTemplate.from_dict(doc)
     assert template.workflow_spec == {'inputs': [tp.VARIABLE('A'), 'B', 'C']}
     assert len(template.parameters) == 1
-    assert len(template.modules) == 2
+    assert len(template.parameter_groups) == 2
     assert template.postproc_spec['workflow'] == dict()
     # No error for invalid document only if validate is not set to False.
     para = String(name='0', label='P1', index=0).to_dict()
@@ -54,7 +54,7 @@ def test_template_serialization():
     doc = {
         'workflow': {'inputs': ['A', 'B', 'C']},
         'parameters': [para],
-        'modules': [
+        'parameterGroups': [
             {'name': '0', 'title': 'G1', 'index': 0, 'sortDesc': True},
             {'name': '1', 'title': 'G2', 'index': 1}
         ],

@@ -61,7 +61,7 @@ def test_file_parameter_from_dict():
                 'help': 'List of names',
                 'defaultValue': 'data/default_names.txt',
                 'isRequired': False,
-                'module': 'inputs',
+                'group': 'inputs',
                 'target': 'data/names.txt'
             })
         )
@@ -73,7 +73,7 @@ def test_file_parameter_from_dict():
     assert para.help == 'List of names'
     assert para.default == 'data/default_names.txt'
     assert not para.required
-    assert para.module == 'inputs'
+    assert para.group == 'inputs'
     assert para.target == 'data/names.txt'
 
 

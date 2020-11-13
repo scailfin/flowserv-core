@@ -46,7 +46,7 @@ Assume we want to build a system that allows users to run the Hello world demo v
 What are Parameterized Workflow Templates?
 ==========================================
 
-Similar to REANA workflow specifications, parameterized workflow templates are serialized in YAML or JSON format. Each template has up to six top-level elements: ``workflow``, ``parameters``, ``modules``, ``outputs``, ``results``, and ``postproc``. Only the ``workflow`` element is mandatory in a workflow template.
+Similar to REANA workflow specifications, parameterized workflow templates are serialized in YAML or JSON format. Each template has up to six top-level elements: ``workflow``, ``parameters``, ``parameterGroups``, ``outputs``, ``results``, and ``postproc``. Only the ``workflow`` element is mandatory in a workflow template.
 
 The ``workflow`` element contains the workflow specification. The structure and syntax of this specification is dependent on the backend (engine) that is used to execute the final workflow. If the `REANA Workflow Engine <https://github.com/scailfin/benchmark-reana-backend>`_ is being used, the workflow specification is expected to follow the the common syntax for REANA workflow specifications.
 
@@ -101,18 +101,18 @@ Parameter declarations are intended to be used by front-end tools to render form
 Grouping of Template Parameters
 -------------------------------
 
-Template parameters can be grouped into **modules** for display purposes. In a front-end application, each parameter group should be rendered within a separate visual components. The details are dependent on the application.
+Template parameters can be grouped for display purposes. In a front-end application, each parameter group should be rendered within a separate visual components. The details are dependent on the application.
 
-The structure for the ``modules`` element in a workflow template is as follows:
+The structure for the ``parameterGroups`` element in a workflow template is as follows:
 
 .. code-block:: yaml
 
-    modules:
+    parameterGroups:
         - name: 'Unique module name'
           title: 'Module title for display purposes'
           index: 'Index position of the parameter block for ordering during visualization'
 
-The module that a parameter belongs to is reference by the module identifier in the ``module`` element of the parameter declaration.
+The group that a parameter belongs to is reference by the unique group name in the ``parameterGroups`` element of the parameter declaration.
 
 
 Workflow Outputs

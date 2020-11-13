@@ -58,7 +58,7 @@ def test_enum_parameter_from_dict():
                 'help': 'List of options',
                 'defaultValue': -1,
                 'isRequired': False,
-                'module': 'opts',
+                'group': 'opts',
                 'values': [Option('A', 1), Option('B', 2, default=True)]
             })
         )
@@ -71,7 +71,7 @@ def test_enum_parameter_from_dict():
     assert para.help == 'List of options'
     assert para.default == -1
     assert not para.required
-    assert para.module == 'opts'
+    assert para.group == 'opts'
     assert len(para.values) == 2
     assert para.values[0] == Option('A', 1)
     assert para.values[1] == Option('B', 2, default=True)
@@ -80,7 +80,7 @@ def test_enum_parameter_from_dict():
 def test_enum_parameter_value():
     """Test getting argument value for a enumeration parameter."""
     values = [Option('A', 1), Option('B', 2)]
-    para = Select('0000', 0, values)
+    para = Select('0000', values, 0)
     assert para.to_argument(1) == 1
     assert para.to_argument(2) == 2
     with pytest.raises(err.InvalidArgumentError):

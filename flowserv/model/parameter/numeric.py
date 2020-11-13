@@ -174,7 +174,7 @@ class Numeric(Parameter):
     def __init__(
         self, dtype: str, name: str, index: int, label: Optional[str] = None,
         help: Optional[str] = None, default: Optional[Union[int, float]] = None,
-        required: Optional[bool] = False, module: Optional[str] = None,
+        required: Optional[bool] = False, group: Optional[str] = None,
         constraint: Optional[RangeConstraint] = None
     ):
         """Initialize the base properties for a numeric parameter declaration.
@@ -195,7 +195,7 @@ class Numeric(Parameter):
             Optional default value.
         required: bool, default=False
             Is required flag.
-        module: string, default=None
+        group: string, default=None
             Optional identifier for parameter group that this parameter
             belongs to.
         constraint: flowserv.model.parameter.numeric.RangeConstraint
@@ -211,7 +211,7 @@ class Numeric(Parameter):
             help=help,
             default=default,
             required=required,
-            module=module
+            group=group
         )
         self.constraint = constraint
 
@@ -260,7 +260,7 @@ class Numeric(Parameter):
             help=doc.get(pd.HELP),
             default=doc.get(pd.DEFAULT),
             required=doc[pd.REQUIRED],
-            module=doc.get(pd.MODULE),
+            group=doc.get(pd.GROUP),
             constraint=constraint
         )
 
@@ -322,7 +322,7 @@ class Int(Numeric):
     def __init__(
         self, name: str, index: int, label: Optional[str] = None,
         help: Optional[str] = None, default: Optional[int] = None,
-        required: Optional[bool] = False, module: Optional[str] = None,
+        required: Optional[bool] = False, group: Optional[str] = None,
         constraint: Optional[RangeConstraint] = None
     ):
         """Initialize the base properties for a integer parameter declaration.
@@ -341,7 +341,7 @@ class Int(Numeric):
             Optional default value.
         required: bool, default=False
             Is required flag.
-        module: string, default=None
+        group: string, default=None
             Optional identifier for parameter group that this parameter
             belongs to.
         constraint: flowserv.model.parameter.numeric.RangeConstraint
@@ -355,7 +355,7 @@ class Int(Numeric):
             help=help,
             default=default,
             required=required,
-            module=module,
+            group=group,
             constraint=constraint
         )
 
@@ -365,7 +365,7 @@ class Float(Numeric):
     def __init__(
         self, name: str, index: int, label: Optional[str] = None,
         help: Optional[str] = None, default: Optional[float] = None,
-        required: Optional[bool] = False, module: Optional[str] = None,
+        required: Optional[bool] = False, group: Optional[str] = None,
         constraint: Optional[RangeConstraint] = None
     ):
         """Initialize the base properties for a float parameter declaration.
@@ -384,7 +384,7 @@ class Float(Numeric):
             Optional default value.
         required: bool, default=False
             Is required flag.
-        module: string, default=None
+        group: string, default=None
             Optional identifier for parameter group that this parameter
             belongs to.
         constraint: flowserv.model.parameter.numeric.RangeConstraint
@@ -398,7 +398,7 @@ class Float(Numeric):
             help=help,
             default=default,
             required=required,
-            module=module,
+            group=group,
             constraint=constraint
         )
 

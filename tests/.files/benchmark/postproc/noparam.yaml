@@ -56,7 +56,7 @@ postproc:
         - source: 'results/compare.json'
           title: 'Results'
           caption: 'The results.'
-modules:
+parameterGroups:
     - name: 'main'
       title: 'Main Step'
       index: 0

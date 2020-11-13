@@ -20,16 +20,16 @@ import flowserv.util as util
 """Labels for general workflow declaration elements."""
 
 DEFAULT = 'defaultValue'
+GROUP = 'group'
 HELP = 'help'
 INDEX = 'index'
 LABEL = 'label'
-MODULE = 'module'
 NAME = 'name'
 TYPE = 'dtype'
 REQUIRED = 'isRequired'
 
 MANDATORY = [NAME, TYPE, INDEX, REQUIRED]
-OPTIONAL = [LABEL, HELP, DEFAULT, MODULE]
+OPTIONAL = [LABEL, HELP, DEFAULT, GROUP]
 
 
 class Parameter(metaclass=ABCMeta):
@@ -45,9 +45,10 @@ class Parameter(metaclass=ABCMeta):
     method.
     """
     def __init__(
-        self, dtype: str, name: str, index: int, label: Optional[str] = None,
-        help: Optional[str] = None, default: Optional[Any] = None,
-        required: Optional[bool] = False, module: Optional[str] = None
+        self, dtype: str, name: str, index: Optional[int] = 0,
+        label: Optional[str] = None, help: Optional[str] = None,
+        default: Optional[Any] = None, required: Optional[bool] = False,
+        group: Optional[str] = None
     ):
         """Initialize the base properties for a template parameter.
 
@@ -57,7 +58,7 @@ class Parameter(metaclass=ABCMeta):
             Parameter type identifier.
         name: string
             Unique parameter identifier
-        index: int
+        index: int, default=0
             Index position of the parameter (for display purposes).
         label: string, default=None
             Human-readable parameter name.
@@ -67,7 +68,7 @@ class Parameter(metaclass=ABCMeta):
             Optional default value.
         required: bool, default=False
             Is required flag.
-        module: string, default=None
+        group: string, default=None
             Optional identifier for parameter group that this parameter
             belongs to.
         """
@@ -78,7 +79,7 @@ class Parameter(metaclass=ABCMeta):
         self.help = help
         self.default = default
         self.required = required
-        self.module = module
+        self.group = group
 
     def display_name(self) -> str:
         """Human-readable display name for the parameter. The default display
@@ -145,7 +146,7 @@ class Parameter(metaclass=ABCMeta):
             HELP: self.help,
             DEFAULT: self.default,
             REQUIRED: self.required,
-            MODULE: self.module
+            GROUP: self.group
         }
 
 

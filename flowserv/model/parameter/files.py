@@ -30,9 +30,10 @@ class File(Parameter):
     the file.
     """
     def __init__(
-        self, name: str, index: int, target: str = None, label: Optional[str] = None,
-        help: Optional[str] = None, default: Optional[bool] = None,
-        required: Optional[bool] = False, module: Optional[str] = None
+        self, name: str, index: Optional[int] = 0, target: str = None,
+        label: Optional[str] = None, help: Optional[str] = None,
+        default: Optional[bool] = None, required: Optional[bool] = False,
+        group: Optional[str] = None
     ):
         """Initialize the base properties a enumeration parameter declaration.
 
@@ -40,7 +41,7 @@ class File(Parameter):
         ----------
         name: string
             Unique parameter identifier
-        index: int
+        index: int, default=0
             Index position of the parameter (for display purposes).
         target: string, default=None
             Target path for the file when creating the workflow run
@@ -53,7 +54,7 @@ class File(Parameter):
             Optional default value.
         required: bool, default=False
             Is required flag.
-        module: string, default=None
+        group: string, default=None
             Optional identifier for parameter group that this parameter
             belongs to.
         """
@@ -65,7 +66,7 @@ class File(Parameter):
             help=help,
             default=default,
             required=required,
-            module=module
+            group=group
         )
         self.target = target
 
@@ -106,7 +107,7 @@ class File(Parameter):
             help=doc.get(pd.HELP),
             default=doc.get(pd.DEFAULT),
             required=doc[pd.REQUIRED],
-            module=doc.get(pd.MODULE),
+            group=doc.get(pd.GROUP),
             target=doc.get('target')
         )
 
