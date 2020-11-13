@@ -11,10 +11,10 @@ base parameter class with a target path for the file when creating the workflow
 run environment.
 """
 
-from typing import Dict, IO, Union
+from typing import Dict, IO, Optional, Union
 
 from flowserv.model.files.base import FileObject
-from flowserv.model.parameter.base import ParameterBase
+from flowserv.model.parameter.base import Parameter
 
 import flowserv.error as err
 import flowserv.model.parameter.base as pd
@@ -25,47 +25,47 @@ import flowserv.util as util
 PARA_FILE = 'file'
 
 
-class FileParameter(ParameterBase):
+class File(Parameter):
     """File parameter type. Extends the base parameter with a target path for
     the file.
     """
     def __init__(
-        self, para_id: str, name: str, index: int, target: str = None,
-        description: str = None, default_value: str = None,
-        is_required: bool = False, module_id: str = None
+        self, name: str, index: int, target: str = None, label: Optional[str] = None,
+        help: Optional[str] = None, default: Optional[bool] = None,
+        required: Optional[bool] = False, module: Optional[str] = None
     ):
         """Initialize the base properties a enumeration parameter declaration.
 
         Parameters
         ----------
-        para_id: string
-            Unique parameter identifier
         name: string
-            Human-readable parameter name.
+            Unique parameter identifier
         index: int
             Index position of the parameter (for display purposes).
         target: string, default=None
             Target path for the file when creating the workflow run
             environment.
-        description: string, default=None
+        label: string, default=None
+            Human-readable parameter name.
+        help: string, default=None
             Descriptive text for the parameter.
-        default_value: any, default=None
+        default: any, default=None
             Optional default value.
-        is_required: bool, default=False
+        required: bool, default=False
             Is required flag.
-        module_id: string, default=None
+        module: string, default=None
             Optional identifier for parameter group that this parameter
             belongs to.
         """
-        super(FileParameter, self).__init__(
-            para_id=para_id,
-            type_id=PARA_FILE,
+        super(File, self).__init__(
+            dtype=PARA_FILE,
             name=name,
             index=index,
-            description=description,
-            default_value=default_value,
-            is_required=is_required,
-            module_id=module_id
+            label=label,
+            help=help,
+            default=default,
+            required=required,
+            module=module
         )
         self.target = target
 
@@ -82,7 +82,7 @@ class FileParameter(ParameterBase):
 
         Returns
         -------
-        flowserv.model.parameter.files.FileParameter
+        flowserv.model.parameter.files.File
 
         Raises
         ------
@@ -92,21 +92,21 @@ class FileParameter(ParameterBase):
             try:
                 util.validate_doc(
                     doc,
-                    mandatory=[pd.ID, pd.TYPE, pd.NAME, pd.INDEX, pd.REQUIRED],
-                    optional=[pd.DESC, pd.DEFAULT, pd.MODULE, 'target']
+                    mandatory=pd.MANDATORY,
+                    optional=pd.OPTIONAL + ['target']
                 )
             except ValueError as ex:
                 raise err.InvalidParameterError(str(ex))
             if doc[pd.TYPE] != PARA_FILE:
                 raise ValueError("invalid type '{}'".format(doc[pd.TYPE]))
         return cls(
-            para_id=doc[pd.ID],
             name=doc[pd.NAME],
             index=doc[pd.INDEX],
-            description=doc.get(pd.DESC),
-            default_value=doc.get(pd.DEFAULT),
-            is_required=doc[pd.REQUIRED],
-            module_id=doc.get(pd.MODULE),
+            label=doc[pd.LABEL],
+            help=doc.get(pd.HELP),
+            default=doc.get(pd.DEFAULT),
+            required=doc[pd.REQUIRED],
+            module=doc.get(pd.MODULE),
             target=doc.get('target')
         )
 
@@ -136,8 +136,8 @@ class FileParameter(ParameterBase):
         if target is None:
             if self.target is not None:
                 target = self.target
-            elif self.default_value is not None:
-                target = self.default_value
+            elif self.default is not None:
+                target = self.default
             else:
                 raise err.InvalidArgumentError('missing target path')
         # The InputFile constructor may raise a TypeError if the source
@@ -216,16 +216,16 @@ class InputFile(object):
 
 # -- Helper Methods -----------------------------------------------------------
 
-def is_file(para: ParameterBase) -> bool:
+def is_file(para: Parameter) -> bool:
     """Test if the given parameter is of type PARA_FILE.
 
     Parameters
     ----------
-    para: flowserv.model.parameter.base.ParameterBase
+    para: flowserv.model.parameter.base.Parameter
         Template parameter definition.
 
     Returns
     -------
     bool
     """
-    return para.type_id == PARA_FILE
+    return para.dtype == PARA_FILE

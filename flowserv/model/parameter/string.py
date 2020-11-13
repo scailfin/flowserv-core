@@ -10,7 +10,9 @@
 additional properties to the base parameter class.
 """
 
-from flowserv.model.parameter.base import ParameterBase
+from typing import Any, Dict, Optional
+
+from flowserv.model.parameter.base import Parameter
 
 import flowserv.error as err
 import flowserv.model.parameter.base as pd
@@ -21,45 +23,46 @@ import flowserv.util as util
 PARA_STRING = 'string'
 
 
-class StringParameter(ParameterBase):
+class String(Parameter):
     """String parameter type."""
     def __init__(
-        self, para_id, name, index, description=None,
-        default_value=None, is_required=False, module_id=None
+        self, name: str, index: int, label: Optional[str] = None,
+        help: Optional[str] = None, default: Optional[str] = None,
+        required: Optional[bool] = False, module: Optional[str] = None
     ):
         """Initialize the base properties a string parameter declaration.
 
         Parameters
         ----------
-        para_id: string
-            Unique parameter identifier
         name: string
-            Human-readable parameter name.
+            Unique parameter identifier
         index: int
             Index position of the parameter (for display purposes).
-        description: string, default=None
+        label: string
+            Human-readable parameter name.
+        help: string, default=None
             Descriptive text for the parameter.
-        default_value: any, default=None
+        default: any, default=None
             Optional default value.
-        is_required: bool, default=False
+        required: bool, default=False
             Is required flag.
-        module_id: string, default=None
+        module: string, default=None
             Optional identifier for parameter group that this parameter
             belongs to.
         """
-        super(StringParameter, self).__init__(
-            para_id=para_id,
-            type_id=PARA_STRING,
+        super(String, self).__init__(
+            dtype=PARA_STRING,
             name=name,
             index=index,
-            description=description,
-            default_value=default_value,
-            is_required=is_required,
-            module_id=module_id
+            label=label,
+            help=help,
+            default=default,
+            required=required,
+            module=module
         )
 
     @classmethod
-    def from_dict(cls, doc, validate=True):
+    def from_dict(cls, doc: Dict, validate: Optional[bool] = True):
         """Get string parameter instance from dictionary serialization.
 
         Parameters
@@ -71,7 +74,7 @@ class StringParameter(ParameterBase):
 
         Returns
         -------
-        flowserv.model.parameter.string.StringParameter
+        flowserv.model.parameter.string.String
 
         Raises
         ------
@@ -79,28 +82,24 @@ class StringParameter(ParameterBase):
         """
         if validate:
             try:
-                util.validate_doc(
-                    doc,
-                    mandatory=[pd.ID, pd.TYPE, pd.NAME, pd.INDEX, pd.REQUIRED],
-                    optional=[pd.DESC, pd.DEFAULT, pd.MODULE]
-                )
+                util.validate_doc(doc, mandatory=pd.MANDATORY, optional=pd.OPTIONAL)
             except ValueError as ex:
                 raise err.InvalidParameterError(str(ex))
             if doc[pd.TYPE] != PARA_STRING:
                 raise ValueError("invalid type '{}'".format(doc[pd.TYPE]))
         return cls(
-            para_id=doc[pd.ID],
             name=doc[pd.NAME],
             index=doc[pd.INDEX],
-            description=doc.get(pd.DESC),
-            default_value=doc.get(pd.DEFAULT),
-            is_required=doc[pd.REQUIRED],
-            module_id=doc.get(pd.MODULE)
+            label=doc[pd.LABEL],
+            help=doc.get(pd.HELP),
+            default=doc.get(pd.DEFAULT),
+            required=doc[pd.REQUIRED],
+            module=doc.get(pd.MODULE)
         )
 
-    def to_argument(self, value):
+    def to_argument(self, value: Any) -> Any:
         """Convert the given value into a string value. Raises an error if the
-        value is None and the is_required flag for the parameter is True.
+        value is None and the is required flag for the parameter is True.
 
         Parameters
         ----------
@@ -115,6 +114,6 @@ class StringParameter(ParameterBase):
         ------
         flowserv.error.InvalidArgumentError
         """
-        if value is None and self.is_required:
+        if value is None and self.required:
             raise err.InvalidArgumentError('missing argument')
         return str(value)

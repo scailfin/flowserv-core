@@ -23,10 +23,10 @@ workflow:
       files:
        - results/greetings.txt
 parameters:
-    - id: names
-      name: 'Input file'
+    - name: names
+      label: 'Input file'
       dtype: file
-    - id: sleeptime
-      name: 'Sleeptime (s)'
+    - name: sleeptime
+      label: 'Sleeptime (s)'
       dtype: int
       defaultValue: 10

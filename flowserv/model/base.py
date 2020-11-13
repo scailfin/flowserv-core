@@ -341,7 +341,7 @@ class WorkflowHandle(Base):
         ----------
         workflow_spec: dict, default=None
             Modified workflow specification.
-        parameters: dict(flowserv.model.parameter.base.ParameterBase)
+        parameters: dict(flowserv.model.parameter.base.Parameter)
             Modified wokflow parameter list.
 
         Returns

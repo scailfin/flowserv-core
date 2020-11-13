@@ -12,6 +12,7 @@ parameter structure, and (iii) render UI forms to collect parameter values.
 """
 
 from abc import ABCMeta, abstractmethod
+from typing import Any, Dict, Optional
 
 import flowserv.util as util
 
@@ -19,20 +20,24 @@ import flowserv.util as util
 """Labels for general workflow declaration elements."""
 
 DEFAULT = 'defaultValue'
-DESC = 'description'
-ID = 'id'
+HELP = 'help'
 INDEX = 'index'
+LABEL = 'label'
 MODULE = 'module'
 NAME = 'name'
 TYPE = 'dtype'
 REQUIRED = 'isRequired'
 
+MANDATORY = [NAME, TYPE, INDEX, REQUIRED]
+OPTIONAL = [LABEL, HELP, DEFAULT, MODULE]
 
-class ParameterBase(metaclass=ABCMeta):
+
+class Parameter(metaclass=ABCMeta):
     """Base class for template parameters. The base class maintains the unique
-    parameter identifier, the type identifier, the parameter name, the optional
-    description, an optional default value, the is_required flag, the parameter
-    index position, and the optional parameter group.
+    parameter name, the data type identifier, the human-readable label and the
+    description for display purposes, the is required flag, an optional default
+    value, the index position for input form rendering, and the identifier for
+    the parameter group.
 
     Implementing classes have to provide a static .from_dict() method that
     returns an instance of the class from a dictionary serialization. The
@@ -40,57 +45,68 @@ class ParameterBase(metaclass=ABCMeta):
     method.
     """
     def __init__(
-        self, para_id, type_id, name, index, description=None,
-        default_value=None, is_required=False, module_id=None
+        self, dtype: str, name: str, index: int, label: Optional[str] = None,
+        help: Optional[str] = None, default: Optional[Any] = None,
+        required: Optional[bool] = False, module: Optional[str] = None
     ):
         """Initialize the base properties for a template parameter.
 
         Parameters
         ----------
-        para_id: string
-            Unique parameter identifier
-        type_id: string
+        dtype: string
             Parameter type identifier.
         name: string
-            Human-readable parameter name.
+            Unique parameter identifier
         index: int
             Index position of the parameter (for display purposes).
-        description: string, default=None
+        label: string, default=None
+            Human-readable parameter name.
+        help: string, default=None
             Descriptive text for the parameter.
-        default_value: any, default=None
+        default: any, default=None
             Optional default value.
-        is_required: bool, default=False
+        required: bool, default=False
             Is required flag.
-        module_id: string, default=None
+        module: string, default=None
             Optional identifier for parameter group that this parameter
             belongs to.
         """
-        if para_id is None:
-            raise ValueError('invalid identifier')
-        self.para_id = para_id
-        self.type_id = type_id
+        self.dtype = dtype
         self.name = name
         self.index = index
-        self.description = description
-        self.default_value = default_value
-        self.is_required = is_required
-        self.module_id = module_id
+        self.label = label
+        self.help = help
+        self.default = default
+        self.required = required
+        self.module = module
 
-    def prompt(self):
+    def display_name(self) -> str:
+        """Human-readable display name for the parameter. The default display
+        name is the defined label. If no label is defined the parameter name is
+        returned.
+
+        Returns
+        -------
+        str
+        """
+        return self.label if self.label is not None else self.name
+
+    def prompt(self) -> str:
         """Get default input prompt for the parameter declaration. The prompt
         contains an indication of the data type, the parameter name and the
         default value (if defined).
+
         Returns
         -------
         string
         """
-        val = '{} ({})'.format(self.name, self.type_id)
-        if self.default_value is not None:
-            val += " [default '{}']".format(self.default_value)
+        val = '{} ({})'.format(self.display_name(), self.dtype)
+        if self.default is not None:
+            val += " [default '{}']".format(self.default)
         return val + ' $> '
 
     @abstractmethod
-    def to_argument(self, value):
+    def to_argument(self, value: Any) -> Any:
         """Validate the given argument value for the parameter type. Returns
         the argument representation for the value that is used to replace
         references to the parameter in workflow templates.
@@ -113,7 +129,7 @@ class ParameterBase(metaclass=ABCMeta):
         """
         raise NotImplementedError()  # pragma: no cover
 
-    def to_dict(self):
+    def to_dict(self) -> Dict:
         """Get dictionary serialization for the parameter declaration.
         Implementing classes can add elements to the base dictionary.
 
@@ -122,14 +138,14 @@ class ParameterBase(metaclass=ABCMeta):
         dict
         """
         return {
-            ID: self.para_id,
-            TYPE: self.type_id,
+            TYPE: self.dtype,
             NAME: self.name,
             INDEX: self.index,
-            DESC: self.description,
-            DEFAULT: self.default_value,
-            REQUIRED: self.is_required,
-            MODULE: self.module_id
+            LABEL: self.label,
+            HELP: self.help,
+            DEFAULT: self.default,
+            REQUIRED: self.required,
+            MODULE: self.module
         }
 
 
@@ -139,19 +155,19 @@ class ParameterGroup(object):
     group has a display name and an index position that defines the sort order
     for groups.
     """
-    def __init__(self, module_id, name, index):
+    def __init__(self, identifier: str, name: str, index: int):
         """Initialize the object properties.
 
         Parameters
         ----------
-        module_id: string
+        identifier: string
             Unique group identifier
         name: string
             Human-readable group name
         index: int
             Group sort order index
         """
-        self.module_id = module_id
+        self.identifier = identifier
         self.name = name
         self.index = index
 
@@ -180,7 +196,7 @@ class ParameterGroup(object):
                 mandatory=['id', 'name', 'index']
             )
         return cls(
-            module_id=doc['id'],
+            identifier=doc['id'],
             name=doc['name'],
             index=doc['index']
         )
@@ -193,7 +209,7 @@ class ParameterGroup(object):
         dict
         """
         return {
-            'id': self.module_id,
+            'id': self.identifier,
             'name': self.name,
             'index': self.index
         }

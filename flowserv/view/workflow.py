@@ -109,7 +109,7 @@ class WorkflowSerializer(Serializer):
         if modules is not None:
             obj[LABELS['WORKFLOW_MODULES']] = [
                 {
-                    LABELS['MODULE_ID']: m.module_id,
+                    LABELS['MODULE_ID']: m.identifier,
                     LABELS['MODULE_NAME']: m.name,
                     LABELS['MODULE_INDEX']: m.index
                 } for m in modules]

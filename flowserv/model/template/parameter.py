@@ -12,12 +12,12 @@
 import re
 
 from flowserv.model.parameter.base import TYPE
-from flowserv.model.parameter.boolean import BoolParameter, PARA_BOOL
-from flowserv.model.parameter.enum import EnumParameter, PARA_ENUM
-from flowserv.model.parameter.files import FileParameter, PARA_FILE
-from flowserv.model.parameter.numeric import NumericParameter
+from flowserv.model.parameter.boolean import Bool, PARA_BOOL
+from flowserv.model.parameter.enum import Select, PARA_SELECT
+from flowserv.model.parameter.files import File, PARA_FILE
+from flowserv.model.parameter.numeric import Int, Float
 from flowserv.model.parameter.numeric import PARA_FLOAT, PARA_INT
-from flowserv.model.parameter.string import StringParameter, PARA_STRING
+from flowserv.model.parameter.string import String, PARA_STRING
 
 import flowserv.error as err
 
@@ -30,12 +30,12 @@ REGEX_PARA = r'\$\[\[(.*?)\]\]'
 
 """Dictionary of known parameter types. New types have to be added here."""
 PARAMETER_TYPES = {
-    PARA_BOOL: BoolParameter,
-    PARA_ENUM: EnumParameter,
-    PARA_FILE: FileParameter,
-    PARA_FLOAT: NumericParameter,
-    PARA_INT: NumericParameter,
-    PARA_STRING: StringParameter
+    PARA_BOOL: Bool,
+    PARA_SELECT: Select,
+    PARA_FILE: File,
+    PARA_FLOAT: Float,
+    PARA_INT: Int,
+    PARA_STRING: String
 }
 
 
@@ -90,7 +90,7 @@ class ParameterIndex(dict):
 
         Returns
         -------
-        list(flowserv.model.parameter.base.ParameterBase)
+        list(flowserv.model.parameter.base.Parameter)
         """
         parameters = list(self.values())
         return sorted(parameters, key=lambda p: p.index)

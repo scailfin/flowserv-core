@@ -26,8 +26,8 @@ workflow:
        - results/predictions.txt
        - results/eval.json
 parameters:
-    - id: code
-      name: 'Code file'
+    - name: code
+      label: 'Code file'
       dtype: file
 results:
     file: results/eval.json

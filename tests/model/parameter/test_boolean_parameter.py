@@ -10,7 +10,7 @@
 
 import pytest
 
-from flowserv.model.parameter.boolean import BoolParameter, PARA_BOOL
+from flowserv.model.parameter.boolean import Bool, PARA_BOOL
 
 import flowserv.error as err
 
@@ -18,23 +18,23 @@ import flowserv.error as err
 def test_invalid_serialization():
     """Test errors for invalid serializations."""
     with pytest.raises(err.InvalidParameterError):
-        BoolParameter.from_dict({
-            'id': '0000',
+        Bool.from_dict({
+            'name': '0000',
             'dtype': PARA_BOOL,
         })
-    BoolParameter.from_dict({
-        'id': '0000',
+    Bool.from_dict({
+        'name': '0000',
         'dtype': 'string',
         'index': 0,
-        'name': 'Name',
+        'label': 'Name',
         'isRequired': True
     }, validate=False)
     with pytest.raises(ValueError):
-        BoolParameter.from_dict({
-            'id': '0000',
+        Bool.from_dict({
+            'name': '0000',
             'dtype': 'unknown',
             'index': 0,
-            'name': 'Name',
+            'label': 'Name',
             'isRequired': True
         })
 
@@ -43,33 +43,33 @@ def test_boolean_parameter_from_dict():
     """Test generating a Boolean parameter declaration from a dictionary
     serialization.
     """
-    para = BoolParameter.from_dict(
-        BoolParameter.to_dict(
-            BoolParameter.from_dict({
-                'id': '0000',
+    para = Bool.from_dict(
+        Bool.to_dict(
+            Bool.from_dict({
+                'name': '0000',
                 'dtype': PARA_BOOL,
-                'name': 'Agree',
+                'label': 'Agree',
                 'index': 10,
-                'description': 'Do you agree?',
+                'help': 'Do you agree?',
                 'defaultValue': False,
                 'isRequired': True,
                 'module': 'contract'
             })
         )
     )
-    assert para.para_id == '0000'
-    assert para.type_id == PARA_BOOL
-    assert para.name == 'Agree'
+    assert para.name == '0000'
+    assert para.dtype == PARA_BOOL
+    assert para.label == 'Agree'
     assert para.index == 10
-    assert para.description == 'Do you agree?'
-    assert not para.default_value
-    assert para.is_required
-    assert para.module_id == 'contract'
+    assert para.help == 'Do you agree?'
+    assert not para.default
+    assert para.required
+    assert para.module == 'contract'
 
 
 def test_boolean_parameter_value():
     """Test getting argument value for a boolean parameter."""
-    para = BoolParameter('0000', 'name', 0)
+    para = Bool('0000', 0, 'name')
     # Values that convert to True.
     assert para.to_argument(True)
     assert para.to_argument(1)

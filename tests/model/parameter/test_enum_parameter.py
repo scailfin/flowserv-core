@@ -10,37 +10,37 @@
 
 import pytest
 
-from flowserv.model.parameter.enum import EnumParameter, is_enum, PARA_ENUM
+from flowserv.model.parameter.enum import Select, Option, is_select, PARA_SELECT
 
 import flowserv.error as err
 
 
 def test_invalid_serialization():
     """Test errors for invalid serializations."""
-    EnumParameter.from_dict({
-        'id': '0000',
-        'dtype': PARA_ENUM,
+    Select.from_dict({
+        'name': '0000',
+        'dtype': PARA_SELECT,
         'index': 0,
-        'name': 'Options',
+        'label': 'Options',
         'isRequired': True,
-        'values': [{'name': 'A', 'value': 1}]
+        'values': [Option('A', 1)]
     }, validate=False)
     with pytest.raises(err.InvalidParameterError):
-        EnumParameter.from_dict({
-            'id': '0000',
-            'dtype': PARA_ENUM,
+        Select.from_dict({
+            'name': '0000',
+            'dtype': PARA_SELECT,
             'index': 0,
-            'name': 'Options',
+            'label': 'Options',
             'isRequired': True
         })
     with pytest.raises(ValueError):
-        EnumParameter.from_dict({
-            'id': '0000',
+        Select.from_dict({
+            'name': '0000',
             'dtype': 'string',
             'index': 0,
-            'name': 'Name',
+            'label': 'Name',
             'isRequired': True,
-            'values': [{'name': 'A', 'value': 1}]
+            'values': [Option('A', 1)]
         })
 
 
@@ -48,42 +48,39 @@ def test_enum_parameter_from_dict():
     """Test generating an enumeration parameter declaration from a dictionary
     serialization.
     """
-    para = EnumParameter.from_dict(
-        EnumParameter.to_dict(
-            EnumParameter.from_dict({
-                'id': '0000',
-                'dtype': PARA_ENUM,
-                'name': 'Options',
+    para = Select.from_dict(
+        Select.to_dict(
+            Select.from_dict({
+                'name': '0000',
+                'dtype': PARA_SELECT,
+                'label': 'Options',
                 'index': 0,
-                'description': 'List of options',
+                'help': 'List of options',
                 'defaultValue': -1,
                 'isRequired': False,
                 'module': 'opts',
-                'values': [
-                    {'name': 'A', 'value': 1},
-                    {'name': 'B', 'value': 2}
-                ]
+                'values': [Option('A', 1), Option('B', 2, default=True)]
             })
         )
     )
-    assert is_enum(para)
-    assert para.para_id == '0000'
-    assert para.type_id == PARA_ENUM
-    assert para.name == 'Options'
+    assert is_select(para)
+    assert para.name == '0000'
+    assert para.dtype == PARA_SELECT
+    assert para.label == 'Options'
     assert para.index == 0
-    assert para.description == 'List of options'
-    assert para.default_value == -1
-    assert not para.is_required
-    assert para.module_id == 'opts'
+    assert para.help == 'List of options'
+    assert para.default == -1
+    assert not para.required
+    assert para.module == 'opts'
     assert len(para.values) == 2
-    assert para.values[0] == {'name': 'A', 'value': 1}
-    assert para.values[1] == {'name': 'B', 'value': 2}
+    assert para.values[0] == Option('A', 1)
+    assert para.values[1] == Option('B', 2, default=True)
 
 
 def test_enum_parameter_value():
     """Test getting argument value for a enumeration parameter."""
-    values = [{'name': 'A', 'value': 1}, {'name': 'B', 'value': 2}]
-    para = EnumParameter('0000', 'name', 0, values)
+    values = [Option('A', 1), Option('B', 2)]
+    para = Select('0000', 0, values)
     assert para.to_argument(1) == 1
     assert para.to_argument(2) == 2
     with pytest.raises(err.InvalidArgumentError):

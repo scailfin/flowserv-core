@@ -10,10 +10,8 @@
 
 import pytest
 
-from flowserv.model.parameter.numeric import NumericParameter, RangeConstraint
-from flowserv.model.parameter.numeric import (
-    is_numeric, NUMERIC_TYPES, PARA_FLOAT, PARA_INT
-)
+from flowserv.model.parameter.numeric import Int, Float, Numeric, RangeConstraint
+from flowserv.model.parameter.numeric import is_numeric, PARA_INT, PARA_FLOAT
 
 import flowserv.error as err
 
@@ -94,40 +92,36 @@ def test_create_numeric_parameter_error():
     """Test error cases when creating numeric parameters."""
     # -- Invalid type identifier 'string' -------------------------------------
     with pytest.raises(KeyError):
-        NumericParameter.from_dict({
-            'id': '0000',
-            'dtype': PARA_FLOAT,
-            'name': 'X',
+        Float.from_dict({
+            'name': '0000',
+            'label': 'X',
             'isRequired': False
         }, validate=False)
     with pytest.raises(err.InvalidParameterError):
-        NumericParameter.from_dict({
-            'id': '0000',
-            'dtype': PARA_FLOAT,
-            'name': 'X',
+        Float.from_dict({
+            'name': '0000',
+            'label': 'X',
             'isRequired': False,
             'range': '0-1'
         }, validate=False)
     with pytest.raises(ValueError):
-        NumericParameter.from_dict({
-            'id': '0000',
+        Numeric.from_dict({
+            'name': '0000',
             'dtype': 'string',
-            'name': 'X',
+            'label': 'X',
             'index': 0,
             'isRequired': False
         })
     # -- Invalid document (missing name) --------------------------------------
     with pytest.raises(err.InvalidParameterError):
-        NumericParameter.from_dict({
-            'id': '0000',
-            'dtype': PARA_INT,
+        Int.from_dict({
             'index': 0,
             'isRequired': False
         })
 
 
 @pytest.mark.parametrize(
-    'type_id,range',
+    'dtype,range',
     [
         (PARA_INT, None),
         (PARA_INT, '(5,]'),
@@ -135,20 +129,18 @@ def test_create_numeric_parameter_error():
         (PARA_FLOAT, '(5,]')
     ]
 )
-def test_numeric_parameter(type_id, range):
+def test_numeric_parameter(dtype, range):
     """Test creating numeric parameters from dictinaries."""
     doc = {
-        'id': '0000',
-        'dtype': type_id,
-        'name': 'X',
+        'name': '0000',
+        'dtype': dtype,
+        'label': 'X',
         'index': 0,
         'isRequired': False
     }
     if range is not None:
         doc['range'] = range
-    para = NumericParameter.from_dict(
-        NumericParameter.from_dict(doc).to_dict()
-    )
+    para = Numeric.from_dict(Numeric.from_dict(doc).to_dict())
     if range is None:
         assert para.to_argument('5') == 5
     else:
@@ -156,11 +148,7 @@ def test_numeric_parameter(type_id, range):
             para.to_argument('5')
     assert para.to_argument('6') == 6
     assert para.to_argument(7) == 7
-    if type_id in NUMERIC_TYPES:
-        assert is_numeric(para)
-        assert para.to_argument('inf') == float('inf')
-    else:
-        with pytest.raises(err.InvalidArgumentError):
-            para.to_argument('inf')
+    assert is_numeric(para)
+    assert para.to_argument('inf') == float('inf')
     with pytest.raises(err.InvalidArgumentError):
         para.to_argument('x')

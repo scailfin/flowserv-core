@@ -30,7 +30,7 @@ def read(parameters, scanner=None, files=None):
 
     Parameters
     ----------
-    parameters: list(flowserv.model.parameter.base.ParameterBase)
+    parameters: list(flowserv.model.parameter.base.Parameter)
         List of workflow template parameter declarations
     scanner: flowserv.scanner.Scanner
         Input scanner to read parameter values
@@ -56,7 +56,7 @@ def read_parameter(para, scanner, files=None):
 
     Parameters
     ----------
-    para: flowserv.model.parameter.base.ParameterBase
+    para: flowserv.model.parameter.base.Parameter
         Workflow template parameter declaration
     scanner: flowserv.scanner.Scanner
         Input scanner.

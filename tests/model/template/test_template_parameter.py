@@ -10,7 +10,7 @@
 
 import pytest
 
-from flowserv.model.parameter.string import StringParameter
+from flowserv.model.parameter.string import String
 from flowserv.model.template.parameter import ParameterIndex
 
 import flowserv.error as err
@@ -63,13 +63,13 @@ def spec():
 def test_expand_parameter_value(value, args, result):
     """Test expand parameter reference function."""
     parameters = ParameterIndex()
-    parameters['A'] = StringParameter(para_id='A', name='P1', index=0)
-    parameters['B'] = StringParameter(para_id='B', name='P2', index=0)
-    parameters['C'] = StringParameter(
-        para_id='C',
-        name='P3',
+    parameters['A'] = String(name='A', label='P1', index=0)
+    parameters['B'] = String(name='B', label='P2', index=0)
+    parameters['C'] = String(
+        name='C',
+        label='P3',
         index=2,
-        default_value='default'
+        default='default'
     )
     assert tp.expand_value(value, args, parameters) == result
 
@@ -121,14 +121,14 @@ def test_get_parameter_value_exception(value):
 
 def test_parameter_index_serialization():
     """Test generating parameter index from serializations."""
-    p1 = StringParameter(para_id='0', name='P1', index=1)
-    p2 = StringParameter(para_id='1', name='P2', index=0)
+    p1 = String(name='0', label='P1', index=1)
+    p2 = String(name='1', label='P2', index=0)
     doc = ParameterIndex.from_dict([p1.to_dict(), p2.to_dict()]).to_dict()
     parameters = ParameterIndex.from_dict(doc)
     assert len(parameters) == 2
     assert '0' in parameters
     assert '1' in parameters
-    assert [p.para_id for p in parameters.sorted()] == ['1', '0']
+    assert [p.name for p in parameters.sorted()] == ['1', '0']
     # Error case: Duplicate parameter.
     with pytest.raises(err.InvalidTemplateError):
         ParameterIndex.from_dict([p1.to_dict(), p1.to_dict()])
@@ -162,18 +162,13 @@ def test_parameter_references(spec):
 def test_replace_arguments(spec):
     """Test getting parameter references for a workflow specification."""
     parameters = ParameterIndex()
-    parameters['A'] = StringParameter(para_id='A', name='P1', index=0)
-    parameters['B'] = StringParameter(para_id='B', name='P2', index=1)
-    parameters['C'] = StringParameter(para_id='C', name='P3', index=2)
-    parameters['D'] = StringParameter(
-        para_id='D',
-        name='P4',
-        index=3,
-        default_value='default'
-    )
-    parameters['E'] = StringParameter(para_id='E', name='P5', index=4)
-    parameters['F'] = StringParameter(para_id='F', name='P6', index=5)
-    parameters['G'] = StringParameter(para_id='G', name='P7', index=6)
+    parameters['A'] = String(name='A', label='P1', index=0)
+    parameters['B'] = String(name='B', label='P2', index=1)
+    parameters['C'] = String(name='C', label='P3', index=2)
+    parameters['D'] = String(name='D', label='P4', index=3, default='default')
+    parameters['E'] = String(name='E', label='P5', index=4)
+    parameters['F'] = String(name='F', label='P6', index=5)
+    parameters['G'] = String(name='G', label='P7', index=6)
     doc = tp.replace_args(
         spec,
         arguments={'A': 'x', 'B': 'y', 'C': 'z', 'E': 'a', 'F': 'b', 'G': 'c'},

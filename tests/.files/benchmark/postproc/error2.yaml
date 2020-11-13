@@ -53,12 +53,12 @@ postproc:
             - 'results/analytics.json'
         runs: 'runs/'
 parameters:
-    - id: names
-      name: 'Input file'
+    - name: names
+      label: 'Input file'
       dtype: file
       target: data/names.txt
-    - id: greeting
-      name: Greeting
+    - name: greeting
+      label: Greeting
       dtype: string
       defaultValue: 'Hello'
 modules:

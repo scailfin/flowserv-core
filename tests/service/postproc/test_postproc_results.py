@@ -37,7 +37,7 @@ def create_run(api, workflow_id):
     )['id']
     api.runs().start_run(
         group_id=group_id,
-        arguments=[{'id': 'names', 'value': serialize_fh(file_id)}],
+        arguments=[{'name': 'names', 'value': serialize_fh(file_id)}],
         user_id=user_id
     )
 

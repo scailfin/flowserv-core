@@ -86,3 +86,8 @@
 * Add ignore postproc option to `flowserv install` (\#69).
 * File object for files that are uploaded as part of Flask requests.
 * Make database web_app flag configurable using environment variable (\#70).
+
+
+### 0.6.0 - 2020-11-??
+
+* Rename run argument serialization helper functions.

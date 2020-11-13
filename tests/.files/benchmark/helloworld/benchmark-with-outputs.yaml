@@ -29,16 +29,16 @@ workflow:
        - results/greetings.txt
        - results/analytics.json
 parameters:
-    - id: names
-      name: 'Input file'
+    - name: names
+      label: 'Input file'
       dtype: file
       target: data/names.txt
-    - id: sleeptime
-      name: 'Sleep time (s)'
+    - name: sleeptime
+      label: 'Sleep time (s)'
       dtype: int
       defaultValue: 10
-    - id: greeting
-      name: 'Greeting'
+    - name: greeting
+      label: 'Greeting'
       dtype: string
       defaultValue: 'Hello'
 modules:

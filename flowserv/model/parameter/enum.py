@@ -11,7 +11,9 @@ contain a list of valid parameter values. These values are defined by a
 printable 'name' and an associated 'value'.
 """
 
-from flowserv.model.parameter.base import ParameterBase
+from typing import Any, Dict, List, Optional, Union
+
+from flowserv.model.parameter.base import Parameter
 
 import flowserv.error as err
 import flowserv.model.parameter.base as pd
@@ -19,54 +21,55 @@ import flowserv.util as util
 
 
 """Unique parameter type identifier."""
-PARA_ENUM = 'enum'
+PARA_SELECT = 'select'
 
 
-class EnumParameter(ParameterBase):
-    """Enumeration parameter type. Extends the base parameter with a list of
-    possible argument values.
+class Select(Parameter):
+    """Enumeration parameter type for select boxes. Extends the base parameter
+    with a list of possible argument values.
     """
     def __init__(
-        self, para_id, name, index, values, description=None,
-        default_value=None, is_required=False, module_id=None
+        self, name: str, index: int, values: List[Dict], label: Optional[str] = None,
+        help: Optional[str] = None, default: Optional[bool] = None,
+        required: Optional[bool] = False, module: Optional[str] = None
     ):
         """Initialize the base properties a enumeration parameter declaration.
 
         Parameters
         ----------
-        para_id: string
-            Unique parameter identifier
         name: string
-            Human-readable parameter name.
+            Unique parameter identifier
         index: int
             Index position of the parameter (for display purposes).
         values: list
             List of dictionary serializations containing enumeration of valid
             parameter values.
-        description: string, default=None
+        label: string, default=None
+            Human-readable parameter name.
+        help: string, default=None
             Descriptive text for the parameter.
-        default_value: any, default=None
+        default: bool, default=None
             Optional default value.
-        is_required: bool, default=False
+        required: bool, default=False
             Is required flag.
-        module_id: string, default=None
+        module: string, default=None
             Optional identifier for parameter group that this parameter
             belongs to.
         """
-        super(EnumParameter, self).__init__(
-            para_id=para_id,
-            type_id=PARA_ENUM,
+        super(Select, self).__init__(
+            dtype=PARA_SELECT,
             name=name,
             index=index,
-            description=description,
-            default_value=default_value,
-            is_required=is_required,
-            module_id=module_id
+            label=label,
+            help=help,
+            default=default,
+            required=required,
+            module=module
         )
         self.values = values
 
     @classmethod
-    def from_dict(cls, doc, validate=True):
+    def from_dict(cls, doc: Dict, validate: Optional[bool] = True):
         """Get enumeration parameter instance from dictionary serialization.
 
         Parameters
@@ -78,7 +81,7 @@ class EnumParameter(ParameterBase):
 
         Returns
         -------
-        flowserv.model.parameter.enum.EnumParameter
+        flowserv.model.parameter.enum.Select
 
         Raises
         ------
@@ -88,15 +91,8 @@ class EnumParameter(ParameterBase):
             try:
                 util.validate_doc(
                     doc,
-                    mandatory=[
-                        pd.ID,
-                        pd.TYPE,
-                        pd.NAME,
-                        pd.INDEX,
-                        pd.REQUIRED,
-                        'values'
-                    ],
-                    optional=[pd.DESC, pd.DEFAULT, pd.MODULE]
+                    mandatory=pd.MANDATORY + ['values'],
+                    optional=pd.OPTIONAL
                 )
                 for val in doc['values']:
                     util.validate_doc(
@@ -106,20 +102,20 @@ class EnumParameter(ParameterBase):
                     )
             except ValueError as ex:
                 raise err.InvalidParameterError(str(ex))
-            if doc[pd.TYPE] != PARA_ENUM:
+            if doc[pd.TYPE] != PARA_SELECT:
                 raise ValueError("invalid type '{}'".format(doc[pd.TYPE]))
         return cls(
-            para_id=doc[pd.ID],
             name=doc[pd.NAME],
             index=doc[pd.INDEX],
-            description=doc.get(pd.DESC),
-            default_value=doc.get(pd.DEFAULT),
-            is_required=doc[pd.REQUIRED],
-            module_id=doc.get(pd.MODULE),
+            label=doc[pd.LABEL],
+            help=doc.get(pd.HELP),
+            default=doc.get(pd.DEFAULT),
+            required=doc[pd.REQUIRED],
+            module=doc.get(pd.MODULE),
             values=doc['values']
         )
 
-    def to_argument(self, value):
+    def to_argument(self, value: Any) -> Any:
         """Ensure that the given value is valid. If the value is not contained
         in the enumerated list of values an error is raised.
 
@@ -141,7 +137,7 @@ class EnumParameter(ParameterBase):
                 return value
         raise err.InvalidArgumentError("unknown value '{}'".format(value))
 
-    def to_dict(self):
+    def to_dict(self) -> Dict:
         """Get dictionary serialization for the parameter declaration. Adds
         list of enumerated values to the base serialization.
 
@@ -154,18 +150,41 @@ class EnumParameter(ParameterBase):
         return obj
 
 
-# -- Helper Methods -----------------------------------------------------------
-
-def is_enum(para: ParameterBase) -> bool:
-    """Test if the given parameter is of type PARA_ENUM.
+def Option(name: str, value: Union[str, int], default: Optional[bool] = None) -> Dict:
+    """Get a dictionary serialization for an element in the enumeration of valid
+    values for a select parameter.
 
     Parameters
     ----------
-    para: flowserv.model.parameter.base.ParameterBase
+    name: string
+        Option display name.
+    value: string or int
+        Returned value if this option is selected.
+    default: bool, default=None
+        Indicate if this is the default option for the selection.
+
+    Returns
+    -------
+    dict
+    """
+    doc = {'name': name, 'value': value}
+    if default is not None:
+        doc['isDefault'] = default
+    return doc
+
+
+# -- Helper Methods -----------------------------------------------------------
+
+def is_select(para: Parameter) -> bool:
+    """Test if the given parameter is of type PARA_SELECT.
+
+    Parameters
+    ----------
+    para: flowserv.model.parameter.base.Parameter
         Template parameter definition.
 
     Returns
     -------
     bool
     """
-    return para.type_id == PARA_ENUM
+    return para.dtype == PARA_SELECT

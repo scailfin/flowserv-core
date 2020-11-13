@@ -10,7 +10,7 @@
 
 import pytest
 
-from flowserv.model.parameter.string import StringParameter, PARA_STRING
+from flowserv.model.parameter.string import String, PARA_STRING
 
 import flowserv.error as err
 
@@ -18,32 +18,31 @@ import flowserv.error as err
 def test_invalid_serialization():
     """Test errors for invalid serializations."""
     with pytest.raises(err.InvalidParameterError):
-        StringParameter.from_dict({
-            'id': '0000',
+        String.from_dict({
+            'name': '0000',
             'dtype': PARA_STRING,
         })
-    StringParameter.from_dict({
-        'id': '0000',
+    String.from_dict({
+        'name': '0000',
         'dtype': 'unknown',
         'index': 0,
-        'name': 'Name',
+        'label': 'Name',
         'isRequired': True
     }, validate=False)
     with pytest.raises(ValueError):
-        StringParameter.from_dict({
-            'id': '0000',
+        String.from_dict({
+            'name': '0000',
             'dtype': 'unknown',
             'index': 0,
-            'name': 'Name',
+            'label': 'Name',
             'isRequired': True
         })
-    with pytest.raises(ValueError):
-        StringParameter.from_dict({
-            'id': None,
+    with pytest.raises(err.InvalidParameterError):
+        String.from_dict({
             'dtype': PARA_STRING,
-            'name': 'Firstname',
+            'label': 'Firstname',
             'index': 1,
-            'description': 'Your first name',
+            'help': 'Your first name',
             'defaultValue': 'Alice',
             'isRequired': True,
             'module': 'person'
@@ -54,37 +53,37 @@ def test_string_parameter_from_dict():
     """Test generating a string parameter declaration from a dictionary
     serialization.
     """
-    para = StringParameter.from_dict(
-        StringParameter.to_dict(
-            StringParameter.from_dict({
-                'id': '0000',
+    para = String.from_dict(
+        String.to_dict(
+            String.from_dict({
+                'name': '0000',
                 'dtype': PARA_STRING,
-                'name': 'Firstname',
+                'label': 'Firstname',
                 'index': 1,
-                'description': 'Your first name',
+                'help': 'Your first name',
                 'defaultValue': 'Alice',
                 'isRequired': True,
                 'module': 'person'
             })
         )
     )
-    assert para.para_id == '0000'
-    assert para.type_id == PARA_STRING
-    assert para.name == 'Firstname'
+    assert para.name == '0000'
+    assert para.dtype == PARA_STRING
+    assert para.label == 'Firstname'
     assert para.index == 1
-    assert para.description == 'Your first name'
-    assert para.default_value == 'Alice'
-    assert para.is_required
-    assert para.module_id == 'person'
+    assert para.help == 'Your first name'
+    assert para.default == 'Alice'
+    assert para.required
+    assert para.module == 'person'
 
 
 def test_string_parameter_value():
     """Test getting argument value for a string parameter."""
-    para = StringParameter('0000', 'name', 0)
+    para = String('0000', 0)
     assert para.to_argument(2) == '2'
     assert para.to_argument('ABC') == 'ABC'
     assert para.to_argument(None) == 'None'
-    para = StringParameter('0000', 'name', 0, is_required=True)
+    para = String('0000', 0, required=True)
     assert para.to_argument(2) == '2'
     assert para.to_argument('ABC') == 'ABC'
     with pytest.raises(err.InvalidArgumentError):
