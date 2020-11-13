@@ -11,6 +11,7 @@ properties that are used to (i) identify the parameter, (ii) define a nested
 parameter structure, and (iii) render UI forms to collect parameter values.
 """
 
+from __future__ import annotations
 from abc import ABCMeta, abstractmethod
 from typing import Any, Dict, Optional
 
@@ -91,6 +92,28 @@ class Parameter(metaclass=ABCMeta):
         str
         """
         return self.label if self.label is not None else self.name
+
+    @staticmethod
+    @abstractmethod
+    def from_dict(cls, doc: Dict, validate: Optional[bool] = True) -> Parameter:
+        """Get instance of implementing class from dictionary serialization.
+
+        Parameters
+        ----------
+        doc: dict
+            Dictionary serialization for a parameter.
+        validate: bool, default=True
+            Validate the serialized object if True.
+
+        Returns
+        -------
+        flowserv.model.parameter.base.Parameter
+
+        Raises
+        ------
+        flowserv.error.InvalidParameterError
+        """
+        raise NotImplementedError()  # pragma: no cover
 
     def prompt(self) -> str:
         """Get default input prompt for the parameter declaration. The prompt

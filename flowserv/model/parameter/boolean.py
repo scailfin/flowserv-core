@@ -60,8 +60,8 @@ class Bool(Parameter):
             group=group
         )
 
-    @classmethod
-    def from_dict(cls, doc: Dict, validate: Optional[bool] = True):
+    @staticmethod
+    def from_dict(doc: Dict, validate: Optional[bool] = True):
         """Get Boolean parameter instance from dictionary serialization.
 
         Parameters
@@ -86,7 +86,7 @@ class Bool(Parameter):
                 raise err.InvalidParameterError(str(ex))
             if doc[pd.TYPE] != PARA_BOOL:
                 raise ValueError("invalid type '{}'".format(doc[pd.TYPE]))
-        return cls(
+        return Bool(
             name=doc[pd.NAME],
             index=doc[pd.INDEX],
             label=doc[pd.LABEL],

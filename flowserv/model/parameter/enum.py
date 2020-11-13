@@ -69,8 +69,8 @@ class Select(Parameter):
         )
         self.values = values
 
-    @classmethod
-    def from_dict(cls, doc: Dict, validate: Optional[bool] = True):
+    @staticmethod
+    def from_dict(doc: Dict, validate: Optional[bool] = True):
         """Get enumeration parameter instance from dictionary serialization.
 
         Parameters
@@ -105,7 +105,7 @@ class Select(Parameter):
                 raise err.InvalidParameterError(str(ex))
             if doc[pd.TYPE] != PARA_SELECT:
                 raise ValueError("invalid type '{}'".format(doc[pd.TYPE]))
-        return cls(
+        return Select(
             name=doc[pd.NAME],
             index=doc[pd.INDEX],
             label=doc[pd.LABEL],

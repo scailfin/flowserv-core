@@ -70,8 +70,8 @@ class File(Parameter):
         )
         self.target = target
 
-    @classmethod
-    def from_dict(cls, doc: Dict, validate: bool = True):
+    @staticmethod
+    def from_dict(doc: Dict, validate: bool = True):
         """Get enumeration parameter instance from dictionary serialization.
 
         Parameters
@@ -100,7 +100,7 @@ class File(Parameter):
                 raise err.InvalidParameterError(str(ex))
             if doc[pd.TYPE] != PARA_FILE:
                 raise ValueError("invalid type '{}'".format(doc[pd.TYPE]))
-        return cls(
+        return File(
             name=doc[pd.NAME],
             index=doc[pd.INDEX],
             label=doc[pd.LABEL],

@@ -61,8 +61,8 @@ class String(Parameter):
             group=group
         )
 
-    @classmethod
-    def from_dict(cls, doc: Dict, validate: Optional[bool] = True):
+    @staticmethod
+    def from_dict(doc: Dict, validate: Optional[bool] = True):
         """Get string parameter instance from dictionary serialization.
 
         Parameters
@@ -87,7 +87,7 @@ class String(Parameter):
                 raise err.InvalidParameterError(str(ex))
             if doc[pd.TYPE] != PARA_STRING:
                 raise ValueError("invalid type '{}'".format(doc[pd.TYPE]))
-        return cls(
+        return String(
             name=doc[pd.NAME],
             index=doc[pd.INDEX],
             label=doc[pd.LABEL],
