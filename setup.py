@@ -15,10 +15,8 @@ from setuptools import setup, find_packages
 """Required packages for install, test, docs, and tests."""
 
 install_requires = [
-    'docker',
     'gitpython',
     'passlib',
-    'psycopg2-binary',
     'python-dateutil',
     'pyyaml>=5.1',
     'requests',
@@ -26,6 +24,8 @@ install_requires = [
     'Click',
     'boto3'
 ]
+docker_requires = ['docker']
+postgres_requires = ['psycopg2-binary']
 
 
 tests_require = [
@@ -42,6 +42,9 @@ extras_require = {
         'sphinx-rtd-theme'
     ],
     'tests': tests_require,
+    'docker': docker_requires,
+    'postgres': docker_requires,
+    'full': docker_requires + docker_requires
 }
 
 
