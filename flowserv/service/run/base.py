@@ -378,12 +378,12 @@ class RunService(object):
                     group_id=group_id,
                     file_id=file_id
                 ).fileobj
-                run_args[arg_id] = para.to_argument(
+                run_args[arg_id] = para.cast(
                     value=fileobj,
                     target=target
                 )
             else:
-                run_args[arg_id] = para.to_argument(arg_val)
+                run_args[arg_id] = para.cast(arg_val)
         # Before we start creating directories and copying files make sure that
         # there are values for all template parameters (either in the arguments
         # dictionary or set as default values)

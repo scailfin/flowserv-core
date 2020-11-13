@@ -72,23 +72,23 @@ def test_boolean_parameter_value():
     """Test getting argument value for a boolean parameter."""
     para = Bool('0000', 0, 'name')
     # Values that convert to True.
-    assert para.to_argument(True)
-    assert para.to_argument(1)
-    assert para.to_argument('1')
-    assert para.to_argument('T')
-    assert para.to_argument('true')
+    assert para.cast(True)
+    assert para.cast(1)
+    assert para.cast('1')
+    assert para.cast('T')
+    assert para.cast('true')
     # Values that convert to False
-    assert not para.to_argument(False)
-    assert not para.to_argument(0)
-    assert not para.to_argument('0')
-    assert not para.to_argument('')
-    assert not para.to_argument('f')
-    assert not para.to_argument('FALSE')
-    assert not para.to_argument(None)
+    assert not para.cast(False)
+    assert not para.cast(0)
+    assert not para.cast('0')
+    assert not para.cast('')
+    assert not para.cast('f')
+    assert not para.cast('FALSE')
+    assert not para.cast(None)
     # Values that raise errors
     with pytest.raises(err.InvalidArgumentError):
-        para.to_argument('yes')
+        para.cast('yes')
     with pytest.raises(err.InvalidArgumentError):
-        para.to_argument(10)
+        para.cast(10)
     with pytest.raises(err.InvalidArgumentError):
-        para.to_argument('   ')
+        para.cast('   ')

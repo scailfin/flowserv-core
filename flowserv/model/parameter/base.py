@@ -91,6 +91,30 @@ class Parameter(metaclass=ABCMeta):
         self.required = required
         self.group = group
 
+    @abstractmethod
+    def cast(self, value: Any) -> Any:
+        """Validate the given argument value for the parameter type. Returns
+        the argument representation for the value that is used to replace
+        references to the parameter in workflow templates.
+
+        Raises an InvalidArgumentError if the given value is not valid for the
+        parameter type.
+
+        Parameters
+        ----------
+        value: any
+            User-provided value for a template parameter.
+
+        Returns
+        -------
+        sting, float, or int
+
+        Raises
+        ------
+        flowserv.error.InvalidArgumentError
+        """
+        raise NotImplementedError()  # pragma: no cover
+
     def display_name(self) -> str:
         """Human-readable display name for the parameter. The default display
         name is the defined label. If no label is defined the parameter name is
@@ -205,30 +229,6 @@ class Parameter(metaclass=ABCMeta):
         if self.default is not None:
             val += " [default '{}']".format(self.default)
         return val + ' $> '
-
-    @abstractmethod
-    def to_argument(self, value: Any) -> Any:
-        """Validate the given argument value for the parameter type. Returns
-        the argument representation for the value that is used to replace
-        references to the parameter in workflow templates.
-
-        Raises an InvalidArgumentError if the given value is not valid for the
-        parameter type.
-
-        Parameters
-        ----------
-        value: any
-            User-provided value for a template parameter.
-
-        Returns
-        -------
-        sting, float, or int
-
-        Raises
-        ------
-        flowserv.error.InvalidArgumentError
-        """
-        raise NotImplementedError()  # pragma: no cover
 
     def to_dict(self) -> Dict:
         """Get dictionary serialization for the parameter declaration.

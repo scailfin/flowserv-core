@@ -142,13 +142,13 @@ def test_numeric_parameter(dtype, range):
         doc['range'] = range
     para = Numeric.from_dict(Numeric.from_dict(doc).to_dict())
     if range is None:
-        assert para.to_argument('5') == 5
+        assert para.cast('5') == 5
     else:
         with pytest.raises(err.InvalidArgumentError):
-            para.to_argument('5')
-    assert para.to_argument('6') == 6
-    assert para.to_argument(7) == 7
+            para.cast('5')
+    assert para.cast('6') == 6
+    assert para.cast(7) == 7
     assert para.is_numeric()
-    assert para.to_argument('inf') == float('inf')
+    assert para.cast('inf') == float('inf')
     with pytest.raises(err.InvalidArgumentError):
-        para.to_argument('x')
+        para.cast('x')

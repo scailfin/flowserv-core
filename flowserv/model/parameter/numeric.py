@@ -213,6 +213,44 @@ class Numeric(Parameter):
         )
         self.constraint = constraint
 
+    def cast(self, value: Any) -> Any:
+        """Convert the given value into a numeric value. Raises an error if the
+        value cannot be converted to the respective numeric type of if it does
+        not satisfy the optional range constraint.
+
+        Parameters
+        ----------
+        value: any
+            User-provided value for a template parameter.
+
+        Returns
+        -------
+        sting, float, or int
+
+        Raises
+        ------
+        flowserv.error.InvalidArgumentError
+        """
+        if value in ['-inf', 'inf']:
+            value = float(value)
+        elif self.dtype == PARA_INT:
+            try:
+                value = int(value)
+            except OverflowError:
+                value = float('inf')
+            except (TypeError, ValueError):
+                raise err.InvalidArgumentError("no int '{}'".format(value))
+        else:
+            try:
+                value = float(value)
+            except (TypeError, ValueError):
+                raise err.InvalidArgumentError("no float '{}'".format(value))
+        if self.constraint is not None:
+            if not self.constraint.validate(value):
+                msg = '{} not in {}'.format(value, self.constraint.to_string())
+                raise err.InvalidArgumentError(msg)
+        return value
+
     @staticmethod
     def from_dict(doc: Dict, validate: Optional[bool] = True):
         """Get numeric parameter instance from dictionary serialization.
@@ -261,44 +299,6 @@ class Numeric(Parameter):
             group=doc.get(pd.GROUP),
             constraint=constraint
         )
-
-    def to_argument(self, value: Any) -> Any:
-        """Convert the given value into a numeric value. Raises an error if the
-        value cannot be converted to the respective numeric type of if it does
-        not satisfy the optional range constraint.
-
-        Parameters
-        ----------
-        value: any
-            User-provided value for a template parameter.
-
-        Returns
-        -------
-        sting, float, or int
-
-        Raises
-        ------
-        flowserv.error.InvalidArgumentError
-        """
-        if value in ['-inf', 'inf']:
-            value = float(value)
-        elif self.dtype == PARA_INT:
-            try:
-                value = int(value)
-            except OverflowError:
-                value = float('inf')
-            except (TypeError, ValueError):
-                raise err.InvalidArgumentError("no int '{}'".format(value))
-        else:
-            try:
-                value = float(value)
-            except (TypeError, ValueError):
-                raise err.InvalidArgumentError("no float '{}'".format(value))
-        if self.constraint is not None:
-            if not self.constraint.validate(value):
-                msg = '{} not in {}'.format(value, self.constraint.to_string())
-                raise err.InvalidArgumentError(msg)
-        return value
 
     def to_dict(self) -> Dict:
         """Get dictionary serialization for the parameter declaration. Adds

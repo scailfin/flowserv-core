@@ -81,9 +81,9 @@ def test_enum_parameter_value():
     """Test getting argument value for a enumeration parameter."""
     values = [Option('A', 1), Option('B', 2)]
     para = Select('0000', values, 0)
-    assert para.to_argument(1) == 1
-    assert para.to_argument(2) == 2
+    assert para.cast(1) == 1
+    assert para.cast(2) == 2
     with pytest.raises(err.InvalidArgumentError):
-        para.to_argument('A')
+        para.cast('A')
     with pytest.raises(err.InvalidArgumentError):
-        para.to_argument(None)
+        para.cast(None)

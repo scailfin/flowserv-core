@@ -57,6 +57,27 @@ class String(Parameter):
             group=group
         )
 
+    def cast(self, value: Any) -> Any:
+        """Convert the given value into a string value. Raises an error if the
+        value is None and the is required flag for the parameter is True.
+
+        Parameters
+        ----------
+        value: any
+            User-provided value for a template parameter.
+
+        Returns
+        -------
+        sting
+
+        Raises
+        ------
+        flowserv.error.InvalidArgumentError
+        """
+        if value is None and self.required:
+            raise err.InvalidArgumentError('missing argument')
+        return str(value)
+
     @staticmethod
     def from_dict(doc: Dict, validate: Optional[bool] = True):
         """Get string parameter instance from dictionary serialization.
@@ -92,24 +113,3 @@ class String(Parameter):
             required=doc[pd.REQUIRED],
             group=doc.get(pd.GROUP)
         )
-
-    def to_argument(self, value: Any) -> Any:
-        """Convert the given value into a string value. Raises an error if the
-        value is None and the is required flag for the parameter is True.
-
-        Parameters
-        ----------
-        value: any
-            User-provided value for a template parameter.
-
-        Returns
-        -------
-        sting
-
-        Raises
-        ------
-        flowserv.error.InvalidArgumentError
-        """
-        if value is None and self.required:
-            raise err.InvalidArgumentError('missing argument')
-        return str(value)

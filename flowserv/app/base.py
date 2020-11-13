@@ -394,7 +394,7 @@ class App(object):
                     )
                     val = serialize_fh(fh['id'], target=target)
                 else:
-                    val = para.to_argument(val)
+                    val = para.cast(val)
                 arglist.append(serialize_arg(key, val))
             # Execute the run and return the serialized run handle.
             run = api.runs().start_run(

@@ -83,26 +83,26 @@ def test_file_parameter_value(tmpdir):
     filename = os.path.abspath(tmpdir)
     # -- Parameter target value
     para = File('0000', 0, target='data/names.txt')
-    file = para.to_argument(FSFile(filename))
+    file = para.cast(FSFile(filename))
     assert file.source().filename == filename
     assert file.target() == 'data/names.txt'
     assert str(file) == file.target()
     # -- Parameter default value
     para = File('0000', 0, default='data/names.txt')
-    file = para.to_argument(FSFile(filename))
+    file = para.cast(FSFile(filename))
     assert file.source().filename == filename
     assert file.target() == 'data/names.txt'
     assert str(file) == file.target()
     # -- Error for missing target
     para = File('0000', 0)
     with pytest.raises(err.InvalidArgumentError):
-        para.to_argument(filename)
+        para.cast(filename)
     # -- Missing file without error
     para = File('0000', 0, target='data/names.txt')
     filename = os.path.join(filename, 'missing.txt')
-    file = para.to_argument(FSFile(filename))
+    file = para.cast(FSFile(filename))
     assert file.source().filename == filename
     assert file.target() == 'data/names.txt'
     # Invalid argument.
     with pytest.raises(err.InvalidArgumentError):
-        para.to_argument(value={'A': 1}, target='/dev/null')
+        para.cast(value={'A': 1}, target='/dev/null')

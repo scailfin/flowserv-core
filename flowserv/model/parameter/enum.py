@@ -65,6 +65,28 @@ class Select(Parameter):
         )
         self.values = values
 
+    def cast(self, value: Any) -> Any:
+        """Ensure that the given value is valid. If the value is not contained
+        in the enumerated list of values an error is raised.
+
+        Parameters
+        ----------
+        value: any
+            User-provided value for a template parameter.
+
+        Returns
+        -------
+        sting
+
+        Raises
+        ------
+        flowserv.error.InvalidArgumentError
+        """
+        for val in self.values:
+            if val['value'] == value:
+                return value
+        raise err.InvalidArgumentError("unknown value '{}'".format(value))
+
     @staticmethod
     def from_dict(doc: Dict, validate: Optional[bool] = True):
         """Get enumeration parameter instance from dictionary serialization.
@@ -111,28 +133,6 @@ class Select(Parameter):
             group=doc.get(pd.GROUP),
             values=doc['values']
         )
-
-    def to_argument(self, value: Any) -> Any:
-        """Ensure that the given value is valid. If the value is not contained
-        in the enumerated list of values an error is raised.
-
-        Parameters
-        ----------
-        value: any
-            User-provided value for a template parameter.
-
-        Returns
-        -------
-        sting
-
-        Raises
-        ------
-        flowserv.error.InvalidArgumentError
-        """
-        for val in self.values:
-            if val['value'] == value:
-                return value
-        raise err.InvalidArgumentError("unknown value '{}'".format(value))
 
     def to_dict(self) -> Dict:
         """Get dictionary serialization for the parameter declaration. Adds

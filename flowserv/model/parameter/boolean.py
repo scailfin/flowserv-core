@@ -56,6 +56,37 @@ class Bool(Parameter):
             group=group
         )
 
+    def cast(self, value: Any) -> Any:
+        """Convert the given value into a Boolean value. Converts string values
+        to Boolean True if they match either of the string representations '1',
+        't' or 'true' (case-insensitive) and to False if the value is None or
+        it matches '', '0', 'f' or 'false'. Raises an error if a given value is
+        not a valid representation for a Boolean value.
+
+        Parameters
+        ----------
+        value: any
+            User-provided value for a template parameter.
+
+        Returns
+        -------
+        sting
+
+        Raises
+        ------
+        flowserv.error.InvalidArgumentError
+        """
+        if value is None:
+            return False
+        if isinstance(value, bool):
+            return value
+        strvalue = str(value).lower()
+        if strvalue in ['1', 't', 'true']:
+            return True
+        elif strvalue in ['', '0', 'f', 'false']:
+            return False
+        raise err.InvalidArgumentError("not a Boolean '{}'".format(value))
+
     @staticmethod
     def from_dict(doc: Dict, validate: Optional[bool] = True):
         """Get Boolean parameter instance from dictionary serialization.
@@ -91,34 +122,3 @@ class Bool(Parameter):
             required=doc[pd.REQUIRED],
             group=doc.get(pd.GROUP)
         )
-
-    def to_argument(self, value: Any) -> Any:
-        """Convert the given value into a Boolean value. Converts string values
-        to Boolean True if they match either of the string representations '1',
-        't' or 'true' (case-insensitive) and to False if the value is None or
-        it matches '', '0', 'f' or 'false'. Raises an error if a given value is
-        not a valid representation for a Boolean value.
-
-        Parameters
-        ----------
-        value: any
-            User-provided value for a template parameter.
-
-        Returns
-        -------
-        sting
-
-        Raises
-        ------
-        flowserv.error.InvalidArgumentError
-        """
-        if value is None:
-            return False
-        if isinstance(value, bool):
-            return value
-        strvalue = str(value).lower()
-        if strvalue in ['1', 't', 'true']:
-            return True
-        elif strvalue in ['', '0', 'f', 'false']:
-            return False
-        raise err.InvalidArgumentError("not a Boolean '{}'".format(value))

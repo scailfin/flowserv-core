@@ -66,6 +66,43 @@ class File(Parameter):
         )
         self.target = target
 
+    def cast(self, value: FileObject, target: str = None):
+        """Get an instance of the InputFile class for a given argument value.
+        The input value can either be a string (filename) or a dictionary.
+
+        Parameters
+        ----------
+        value: flowserv.model.files.base.FileObject
+            Handle for a file object.
+        target: string, default=None
+            Optional user-provided target path. If None the defined target path
+            is used or the defined default value. If neither is given an error
+            is raised.
+
+        Returns
+        -------
+        flowserv.model.parameter.files.InputFile
+
+        Raises
+        ------
+        flowserv.error.InvalidArgumentError
+        flowserv.error.UnknownFileError
+        """
+        # Ensure that the target path is set.
+        if target is None:
+            if self.target is not None:
+                target = self.target
+            elif self.default is not None:
+                target = self.default
+            else:
+                raise err.InvalidArgumentError('missing target path')
+        # The InputFile constructor may raise a TypeError if the source
+        # argument is not a string.
+        try:
+            return InputFile(source=value, target=target)
+        except TypeError as ex:
+            raise err.InvalidArgumentError(str(ex))
+
     @staticmethod
     def from_dict(doc: Dict, validate: bool = True):
         """Get enumeration parameter instance from dictionary serialization.
@@ -106,43 +143,6 @@ class File(Parameter):
             group=doc.get(pd.GROUP),
             target=doc.get('target')
         )
-
-    def to_argument(self, value: FileObject, target: str = None):
-        """Get an instance of the InputFile class for a given argument value.
-        The input value can either be a string (filename) or a dictionary.
-
-        Parameters
-        ----------
-        value: flowserv.model.files.base.FileObject
-            Handle for a file object.
-        target: string, default=None
-            Optional user-provided target path. If None the defined target path
-            is used or the defined default value. If neither is given an error
-            is raised.
-
-        Returns
-        -------
-        flowserv.model.parameter.files.InputFile
-
-        Raises
-        ------
-        flowserv.error.InvalidArgumentError
-        flowserv.error.UnknownFileError
-        """
-        # Ensure that the target path is set.
-        if target is None:
-            if self.target is not None:
-                target = self.target
-            elif self.default is not None:
-                target = self.default
-            else:
-                raise err.InvalidArgumentError('missing target path')
-        # The InputFile constructor may raise a TypeError if the source
-        # argument is not a string.
-        try:
-            return InputFile(source=value, target=target)
-        except TypeError as ex:
-            raise err.InvalidArgumentError(str(ex))
 
     def to_dict(self) -> Dict:
         """Get dictionary serialization for the parameter declaration. Adds

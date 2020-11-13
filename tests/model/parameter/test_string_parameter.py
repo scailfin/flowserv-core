@@ -81,11 +81,11 @@ def test_string_parameter_from_dict():
 def test_string_parameter_value():
     """Test getting argument value for a string parameter."""
     para = String('0000', 0)
-    assert para.to_argument(2) == '2'
-    assert para.to_argument('ABC') == 'ABC'
-    assert para.to_argument(None) == 'None'
+    assert para.cast(2) == '2'
+    assert para.cast('ABC') == 'ABC'
+    assert para.cast(None) == 'None'
     para = String('0000', 0, required=True)
-    assert para.to_argument(2) == '2'
-    assert para.to_argument('ABC') == 'ABC'
+    assert para.cast(2) == '2'
+    assert para.cast('ABC') == 'ABC'
     with pytest.raises(err.InvalidArgumentError):
-        para.to_argument(None)
+        para.cast(None)

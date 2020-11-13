@@ -9,9 +9,7 @@
 """Helper methods for reading workflow template parameters."""
 
 from flowserv.model.files.fs import FSFile
-from flowserv.model.parameter.boolean import is_bool
-from flowserv.model.parameter.files import InputFile, is_file
-from flowserv.model.parameter.numeric import is_float, is_int
+from flowserv.model.parameter.files import InputFile
 from flowserv.service.run.argument import serialize_fh
 
 from flowserv.scanner import Scanner
@@ -71,9 +69,9 @@ def read_parameter(para, scanner, files=None):
     while True:
         print(para.prompt(), end='')
         try:
-            if is_bool(para):
+            if para.is_bool():
                 return scanner.next_bool(default_value=para.default)
-            elif is_file(para):
+            elif para.is_file():
                 # Distinguish between the case where a list of uploaded files
                 # is given or not.
                 if files is not None:
@@ -98,9 +96,9 @@ def read_parameter(para, scanner, files=None):
                     return serialize_fh(file_id=filename, target=target_path)
                 else:
                     return InputFile(FSFile(filename), target_path)
-            elif is_float(para):
+            elif para.is_float():
                 return scanner.next_float(default_value=para.default)
-            elif is_int(para):
+            elif para.is_int():
                 return scanner.next_int(default_value=para.default)
             return scanner.next_string(default_value=para.default)
         except ValueError as ex:
