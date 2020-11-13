@@ -10,6 +10,8 @@
 ranges of valid values or minimum and maximum values.
 """
 
+from __future__ import annotations
+from dataclasses import dataclass
 from typing import Any, Dict, Optional, Union
 
 from flowserv.model.parameter.base import Parameter, PARA_FLOAT, PARA_INT
@@ -22,6 +24,8 @@ import flowserv.util as util
 """Identifier for numeric parameter types."""
 NUMERIC_TYPES = [PARA_FLOAT, PARA_INT]
 
+
+# -- Range constraints --------------------------------------------------------
 
 class RangeConstraint(object):
     """Range constraint for numeric parameter values. Range constraints are
@@ -165,6 +169,77 @@ class RangeConstraint(object):
         return True
 
 
+@dataclass
+class Boundary(object):
+    """Boundary definition for a range interval. Contains the interval boundary
+    value and a flag defining whether the interval is open (i.e., excludes the
+    defined value) or closed (i.e., includes the defined value).
+    """
+    # Interval boundary value.
+    value: Union[int, float, str] = None
+    # Flag indicating whether the boundary is open or closed.
+    is_closed: Optional[bool] = True
+
+    def to_left_boundary(self) -> str:
+        """Return a left-boundary representation.
+
+        Returns
+        -------
+        string
+        """
+        return '{}{}'.format('[' if self.is_closed else '(', self.value)
+
+    def to_right_boundary(self) -> str:
+        """Return a left-boundary representation.
+
+        Returns
+        -------
+        string
+        """
+        return '{}{}'.format(self.value, ']' if self.is_closed else ')')
+
+
+IntervalBoundary = Union[int, float, str, Boundary]
+
+
+def range_constraint(
+    left: Optional[IntervalBoundary] = None,
+    right: Optional[IntervalBoundary] = None
+) -> RangeConstraint:
+    """Create a range constraint instance from a given pair of interval
+    boundaries. Returns None if no boundary is given.
+
+    Parameters
+    ----------
+    left: flowserv.model.parameter.numeric.IntervalBoundary, default=None
+        Left boundary for range constraint.
+    right: flowserv.model.parameter.numeric.IntervalBoundary, default=None
+        Right boundary for range constraint.
+
+    Returns
+    -------
+    flowserv.model.parameter.numeric.RangeConstraint
+    """
+    # Returns None if neither interval boundary is given.
+    if left is None and right is None:
+        return None
+    if left is None:
+        interval = '[,'
+    elif isinstance(left, Boundary):
+        interval = '{},'.format(left.to_left_boundary())
+    else:
+        interval = '[{},'.format(left)
+    if right is None:
+        interval += ']'
+    elif isinstance(right, Boundary):
+        interval += right.to_right_boundary()
+    else:
+        interval += '{}]'.format(right)
+    return RangeConstraint.from_string(interval)
+
+
+# -- Numeric parameter declarations -------------------------------------------
+
 class Numeric(Parameter):
     """Base class for numeric parameter types. Extends the base class with an
     optional range constraint.
@@ -252,8 +327,8 @@ class Numeric(Parameter):
         return value
 
     @staticmethod
-    def from_dict(doc: Dict, validate: Optional[bool] = True):
-        """Get numeric parameter instance from dictionary serialization.
+    def from_dict(doc: Dict, validate: Optional[bool] = True) -> Numeric:
+        """Get numeric parameter instance from a dictionary serialization.
 
         Parameters
         ----------
@@ -321,7 +396,7 @@ class Int(Numeric):
         self, name: str, index: Optional[int] = 0, label: Optional[str] = None,
         help: Optional[str] = None, default: Optional[int] = None,
         required: Optional[bool] = False, group: Optional[str] = None,
-        constraint: Optional[RangeConstraint] = None
+        min: Optional[IntervalBoundary] = None, max: Optional[IntervalBoundary] = None
     ):
         """Initialize the base properties for a integer parameter declaration.
 
@@ -342,8 +417,10 @@ class Int(Numeric):
         group: string, default=None
             Optional identifier for parameter group that this parameter
             belongs to.
-        constraint: flowserv.model.parameter.numeric.RangeConstraint
-            Optional range constraint defining valid parameter values.
+        min: flowserv.model.parameter.numeric.IntervalBoundary, default=None
+            Optional range constraint minimum value definition.
+        max: flowserv.model.parameter.numeric.IntervalBoundary, default=None
+            Optional range constraint maximum value definition.
         """
         super(Int, self).__init__(
             dtype=PARA_INT,
@@ -354,7 +431,7 @@ class Int(Numeric):
             default=default,
             required=required,
             group=group,
-            constraint=constraint
+            constraint=range_constraint(min, max)
         )
 
 
@@ -364,7 +441,7 @@ class Float(Numeric):
         self, name: str, index: Optional[int] = 0, label: Optional[str] = None,
         help: Optional[str] = None, default: Optional[float] = None,
         required: Optional[bool] = False, group: Optional[str] = None,
-        constraint: Optional[RangeConstraint] = None
+        min: Optional[IntervalBoundary] = None, max: Optional[IntervalBoundary] = None
     ):
         """Initialize the base properties for a float parameter declaration.
 
@@ -385,8 +462,10 @@ class Float(Numeric):
         group: string, default=None
             Optional identifier for parameter group that this parameter
             belongs to.
-        constraint: flowserv.model.parameter.numeric.RangeConstraint
-            Optional range constraint defining valid parameter values.
+        min: flowserv.model.parameter.numeric.IntervalBoundary, default=None
+            Optional range constraint minimum value definition.
+        max: flowserv.model.parameter.numeric.IntervalBoundary, default=None
+            Optional range constraint maximum value definition.
         """
         super(Float, self).__init__(
             dtype=PARA_FLOAT,
@@ -397,5 +476,5 @@ class Float(Numeric):
             default=default,
             required=required,
             group=group,
-            constraint=constraint
+            constraint=range_constraint(min, max)
         )

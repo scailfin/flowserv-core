@@ -10,6 +10,7 @@
 additional properties to the base parameter class.
 """
 
+from __future__ import annotations
 from typing import Any, Dict, Optional
 
 from flowserv.model.parameter.base import Parameter, PARA_STRING
@@ -72,13 +73,13 @@ class String(Parameter):
         return str(value)
 
     @staticmethod
-    def from_dict(doc: Dict, validate: Optional[bool] = True):
-        """Get string parameter instance from dictionary serialization.
+    def from_dict(doc: Dict, validate: Optional[bool] = True) -> String:
+        """Get string parameter instance from a given dictionary serialization.
 
         Parameters
         ----------
         doc: dict
-            Dictionary serialization for string parameter.
+            Dictionary serialization for string parameter delaration.
         validate: bool, default=True
             Validate the serialized object if True.
 

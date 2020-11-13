@@ -85,7 +85,7 @@ def test_record_parameter_from_dict():
 
 
 def test_record_parameter_value():
-    """Test getting argument value for a enumeration parameter."""
+    """Test getting argument value for a record parameter."""
     para = Record('R', fields=[Bool('f1', required=True), Int('f2', default=10)])
     assert para.cast([{'name': 'f1', 'value': True}]) == {'f1': True, 'f2': 10}
     value = [{'name': 'f1', 'value': True}, {'name': 'f2', 'value': '5'}]

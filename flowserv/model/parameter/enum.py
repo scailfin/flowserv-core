@@ -11,6 +11,7 @@ contain a list of valid parameter values. These values are defined by a
 printable 'name' and an associated 'value'.
 """
 
+from __future__ import annotations
 from typing import Any, Dict, List, Optional, Union
 
 from flowserv.model.parameter.base import Parameter, PARA_SELECT
@@ -30,7 +31,7 @@ class Select(Parameter):
         default: Optional[bool] = None, required: Optional[bool] = False,
         group: Optional[str] = None
     ):
-        """Initialize the base properties a enumeration parameter declaration.
+        """Initialize the base properties for a select parameter declaration.
 
         Parameters
         ----------
@@ -88,13 +89,13 @@ class Select(Parameter):
         raise err.InvalidArgumentError("unknown value '{}'".format(value))
 
     @staticmethod
-    def from_dict(doc: Dict, validate: Optional[bool] = True):
-        """Get enumeration parameter instance from dictionary serialization.
+    def from_dict(doc: Dict, validate: Optional[bool] = True) -> Select:
+        """Get select parameter instance from a dictionary serialization.
 
         Parameters
         ----------
         doc: dict
-            Dictionary serialization for enumeration parameter.
+            Dictionary serialization for select parameter declaration.
         validate: bool, default=True
             Validate the serialized object if True.
 

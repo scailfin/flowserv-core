@@ -11,6 +11,7 @@ base parameter class with a target path for the file when creating the workflow
 run environment.
 """
 
+from __future__ import annotations
 from typing import Dict, IO, Optional, Union
 
 from flowserv.model.files.base import FileObject
@@ -104,13 +105,13 @@ class File(Parameter):
             raise err.InvalidArgumentError(str(ex))
 
     @staticmethod
-    def from_dict(doc: Dict, validate: bool = True):
-        """Get enumeration parameter instance from dictionary serialization.
+    def from_dict(doc: Dict, validate: bool = True) -> File:
+        """Get file parameter instance from a dictionary serialization.
 
         Parameters
         ----------
         doc: dict
-            Dictionary serialization for file parameter.
+            Dictionary serialization for file parameter declaration.
         validate: bool, default=True
             Validate the serialized object if True.
 

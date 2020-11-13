@@ -10,6 +10,7 @@
 parameters. Each component (field) of a record is identified by a unique name.
 """
 
+from __future__ import annotations
 from typing import Any, Dict, List, Optional
 
 from flowserv.model.parameter.base import Parameter, PARA_RECORD
@@ -26,10 +27,10 @@ class Record(Parameter):
     def __init__(
         self, name: str, fields: List[Parameter], index: Optional[int] = 0,
         label: Optional[str] = None, help: Optional[str] = None,
-        default: Optional[str] = None, required: Optional[bool] = False,
+        default: Optional[Dict] = None, required: Optional[bool] = False,
         group: Optional[str] = None
     ):
-        """Initialize the base properties a record parameter declaration.
+        """Initialize the base properties for a record parameter declaration.
 
         Parameters
         ----------
@@ -44,7 +45,7 @@ class Record(Parameter):
             Human-readable parameter name.
         help: string, default=None
             Descriptive text for the parameter.
-        default: any, default=None
+        default: dict, default=None
             Optional default value.
         required: bool, default=False
             Is required flag.
@@ -119,19 +120,19 @@ class Record(Parameter):
         return result
 
     @staticmethod
-    def from_dict(doc: Dict, validate: Optional[bool] = True):
-        """Get string parameter instance from dictionary serialization.
+    def from_dict(doc: Dict, validate: Optional[bool] = True) -> Record:
+        """Get record parameter instance from a given dictionary serialization.
 
         Parameters
         ----------
         doc: dict
-            Dictionary serialization for string parameter.
+            Dictionary serialization for record parameter declaration.
         validate: bool, default=True
             Validate the serialized object if True.
 
         Returns
         -------
-        flowserv.model.parameter.string.String
+        flowserv.model.parameter.record.Record
 
         Raises
         ------

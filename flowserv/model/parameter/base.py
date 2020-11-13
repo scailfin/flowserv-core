@@ -38,6 +38,7 @@ PARA_BOOL = 'bool'
 PARA_FILE = 'file'
 PARA_FLOAT = 'float'
 PARA_INT = 'int'
+PARA_LIST = 'list'
 PARA_RECORD = 'record'
 PARA_SELECT = 'select'
 PARA_STRING = 'string'
@@ -184,6 +185,15 @@ class Parameter(metaclass=ABCMeta):
         bool
         """
         return self.dtype == PARA_INT
+
+    def is_list(self) -> bool:
+        """Test if the parameter is of type Array.
+
+        Returns
+        -------
+        bool
+        """
+        return self.dtype == PARA_LIST
 
     def is_numeric(self) -> bool:
         """Test if the parameter is of type Numeric.

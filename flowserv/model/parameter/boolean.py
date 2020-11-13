@@ -10,6 +10,7 @@
 additional properties to the base parameter class.
 """
 
+from __future__ import annotations
 from typing import Any, Dict, Optional
 from flowserv.model.parameter.base import Parameter, PARA_BOOL
 
@@ -88,13 +89,13 @@ class Bool(Parameter):
         raise err.InvalidArgumentError("not a Boolean '{}'".format(value))
 
     @staticmethod
-    def from_dict(doc: Dict, validate: Optional[bool] = True):
-        """Get Boolean parameter instance from dictionary serialization.
+    def from_dict(doc: Dict, validate: Optional[bool] = True) -> Bool:
+        """Get Boolean parameter instance from a dictionary serialization.
 
         Parameters
         ----------
         doc: dict
-            Dictionary serialization for a Boolean parameter.
+            Dictionary serialization for a Boolean parameter declaration.
         validate: bool, default=True
             Validate the serialized object if True.
 

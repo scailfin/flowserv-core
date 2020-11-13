@@ -10,7 +10,8 @@
 
 import pytest
 
-from flowserv.model.parameter.numeric import Int, Float, Numeric, RangeConstraint
+from flowserv.model.parameter.numeric import Boundary, RangeConstraint, range_constraint
+from flowserv.model.parameter.numeric import Int, Float, Numeric
 from flowserv.model.parameter.numeric import PARA_INT, PARA_FLOAT
 
 import flowserv.error as err
@@ -43,6 +44,38 @@ def test_inf_range_constraint_intervals(
     assert constraint.validate(float('-inf')) == assert_neginf
     assert constraint.validate(5) == assert_5
     assert constraint.validate(float('inf')) == assert_inf
+
+
+@pytest.mark.parametrize(
+    'boundary,left,right',
+    [(Boundary(1), '[1', '1]'), (Boundary(1, is_closed=False), '(1', '1)')]
+)
+def test_range_boundary(boundary, left, right):
+    """Test range boundary data class."""
+    assert boundary.to_left_boundary() == left
+    assert boundary.to_right_boundary() == right
+
+
+@pytest.mark.parametrize(
+    'left,right,result',
+    [
+        (Boundary(1), Boundary(5), True),
+        (Boundary(1), Boundary(5, is_closed=False), False),
+        (Boundary(1), None, True),
+        (None, Boundary(1), False)
+    ]
+)
+def test_range_constraint_generator(left, right, result):
+    """Test the range constraint generator function."""
+    constraint = range_constraint(left=left, right=right)
+    assert constraint.validate(5) == result
+    # Ensure that the constraint is set correctly during parameter creation.
+    para = Int('test', min=left, max=right)
+    if result:
+        para.cast(5)
+    else:
+        with pytest.raises(err.InvalidArgumentError):
+            para.cast(5)
 
 
 @pytest.mark.parametrize(
