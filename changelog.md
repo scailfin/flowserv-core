@@ -88,6 +88,7 @@
 * Make database web_app flag configurable using environment variable (\#70).
 
 
-### 0.6.0 - 2020-11-??
+### 0.6.0 - 2020-11-17
 
+* Add parameter declarations for lists and records (\#73).
 * Rename run argument serialization helper functions.
