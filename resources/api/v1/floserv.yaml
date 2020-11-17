@@ -1112,18 +1112,18 @@ definitions:
         type: array
         items:
           $ref: "#/definitions/WorkflowParameter"
-      modules:
+      parameterGroups:
         type: array
         items:
           type: object
           required:
-          - id
           - name
+          - title
           - index
           properties:
-            id:
-              type: string
             name:
+              type: string
+            title:
               type: string
             index:
               type: number
@@ -1191,13 +1191,13 @@ definitions:
         items:
           type: object
           required:
-          - id
           - name
+          - label
           - type
           properties:
-            id:
-              type: string
             name:
+              type: string
+            label:
               type: string
             type:
               type: string
@@ -1227,14 +1227,11 @@ definitions:
   WorkflowParameter:
     type: object
     required:
-    - id
     - name
     - datatype
     - index
     - required
     properties:
-      id:
-        type: string
       name:
         type: string
       datatype:
@@ -1243,13 +1240,11 @@ definitions:
         type: integer
       required:
         type: boolean
-      description:
+      label:
         type: string
-      as:
+      help:
         type: string
       defaultValue:
-        type: string
-      parent:
         type: string
       values:
         type: array

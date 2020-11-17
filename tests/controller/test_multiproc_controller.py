@@ -20,7 +20,7 @@ from flowserv.config.files import (
 )
 from flowserv.controller.serial.engine import SerialWorkflowEngine
 from flowserv.service.api import service
-from flowserv.service.run.argument import ARG, FILE
+from flowserv.service.run.argument import serialize_arg, serialize_fh
 from flowserv.tests.files import io_file
 from flowserv.tests.service import (
     create_group, create_user, create_workflow, start_run, upload_file
@@ -56,9 +56,9 @@ def test_cancel_run_helloworld(tmpdir):
         names = io_file(data=['Alice', 'Bob', 'Zoe'], format='plain/text')
         file_id = upload_file(api, group_id, user_id, names)
         args = [
-            ARG('names', FILE(file_id)),
-            ARG('sleeptime', 10),
-            ARG('greeting', 'Hi')
+            serialize_arg('names', serialize_fh(file_id)),
+            serialize_arg('sleeptime', 10),
+            serialize_arg('greeting', 'Hi')
         ]
         run_id = start_run(api, group_id, user_id, arguments=args)
     # Poll run after sleeping for one second.
@@ -126,9 +126,9 @@ def test_run_helloworld_async(fsconfig, target, tmpdir):
         names = io_file(data=['Alice', 'Bob', 'Zoe'], format='plain/text')
         file_id = upload_file(api, group_id, user_id, names)
         args = [
-            ARG('names', FILE(file_id, target)),
-            ARG('sleeptime', 1),
-            ARG('greeting', 'Hi')
+            serialize_arg('names', serialize_fh(file_id, target)),
+            serialize_arg('sleeptime', 1),
+            serialize_arg('greeting', 'Hi')
         ]
         run_id = start_run(api, group_id, user_id, arguments=args)
     # Poll workflow state every second.

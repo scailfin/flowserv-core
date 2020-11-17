@@ -112,7 +112,7 @@ def validate_ranking(doc):
     )
     # Schema columns
     for col in doc['schema']:
-        util.validate_doc(doc=col, mandatory=['id', 'name', 'dtype'])
+        util.validate_doc(doc=col, mandatory=['name', 'label', 'dtype'])
     # Run results
     for entry in doc['ranking']:
         util.validate_doc(doc=entry, mandatory=['run', 'group', 'results'])
@@ -122,7 +122,7 @@ def validate_ranking(doc):
         )
         util.validate_doc(doc=entry['group'], mandatory=['id', 'name'])
         for result in entry['results']:
-            util.validate_doc(doc=result, mandatory=['id', 'value'])
+            util.validate_doc(doc=result, mandatory=['name', 'value'])
 
 
 # -- Runs ---------------------------------------------------------------------
@@ -296,8 +296,8 @@ def validate_parameter(doc):
     """
     util.validate_doc(
         doc=doc,
-        mandatory=[pd.ID, pd.TYPE, pd.NAME, pd.INDEX, pd.REQUIRED],
-        optional=[pd.DESC, pd.DEFAULT, pd.MODULE, 'target', 'values', 'range']
+        mandatory=pd.MANDATORY,
+        optional=pd.OPTIONAL + ['target', 'values', 'range']
     )
 
 
@@ -313,7 +313,7 @@ def validate_para_module(doc):
     ------
     ValueError
     """
-    util.validate_doc(doc=doc, mandatory=['id', 'name', 'index'])
+    util.validate_doc(doc=doc, mandatory=['name', 'title', 'index'])
 
 
 def validate_workflow_handle(doc, has_optional=False):
@@ -324,19 +324,19 @@ def validate_workflow_handle(doc, has_optional=False):
     Parameters
     ----------
     doc: dict
-        Workflow handle serialization
+        Workflow handle serialization.
     has_optional: bool, optional
         Flag indicating whether the handle should contain description and
-        instruction elements
+        instruction elements.
 
     Raises
     ------
     ValueError
     """
-    # Note: The modules element is optional but it should be contained in all
-    # local test cases. That is the reason why it is in the list of mandatory
-    # elements here.
-    mandatory = ['id', 'name', 'parameters', 'modules']
+    # Note: The parameter groups element is optional but it should be contained
+    # in all local test cases. That is the reason why it is in the list of
+    # mandatory elements here.
+    mandatory = ['id', 'name', 'parameters', 'parameterGroups']
     if has_optional:
         mandatory = mandatory + ['description', 'instructions']
     util.validate_doc(

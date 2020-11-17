@@ -46,7 +46,7 @@ Assume we want to build a system that allows users to run the Hello world demo v
 What are Parameterized Workflow Templates?
 ==========================================
 
-Similar to REANA workflow specifications, parameterized workflow templates are serialized in YAML or JSON format. Each template has up to six top-level elements: ``workflow``, ``parameters``, ``modules``, ``outputs``, ``results``, and ``postproc``. Only the ``workflow`` element is mandatory in a workflow template.
+Similar to REANA workflow specifications, parameterized workflow templates are serialized in YAML or JSON format. Each template has up to six top-level elements: ``workflow``, ``parameters``, ``parameterGroups``, ``outputs``, ``results``, and ``postproc``. Only the ``workflow`` element is mandatory in a workflow template.
 
 The ``workflow`` element contains the workflow specification. The structure and syntax of this specification is dependent on the backend (engine) that is used to execute the final workflow. If the `REANA Workflow Engine <https://github.com/scailfin/benchmark-reana-backend>`_ is being used, the workflow specification is expected to follow the the common syntax for REANA workflow specifications.
 
@@ -83,12 +83,12 @@ An example template for the **Hello World example** is shown below.
           files:
            - results/greetings.txt
     parameters:
-        - id: names
-          name: Person names
+        - name: names
+          label: Person names
           description: Text file containing person names
           dtype: file
-        - id: sleeptime
-          name: Sleep period
+        - name: sleeptime
+          label: Sleep period
           description: Sleep period in seconds
           dtype: int
 
@@ -101,18 +101,18 @@ Parameter declarations are intended to be used by front-end tools to render form
 Grouping of Template Parameters
 -------------------------------
 
-Template parameters can be grouped into **modules** for display purposes. In a front-end application, each parameter group should be rendered within a separate visual components. The details are dependent on the application.
+Template parameters can be grouped for display purposes. In a front-end application, each parameter group should be rendered within a separate visual components. The details are dependent on the application.
 
-The structure for the ``modules`` element in a workflow template is as follows:
+The structure for the ``parameterGroups`` element in a workflow template is as follows:
 
 .. code-block:: yaml
 
-    modules:
-        - id: 'Unique module identifier'
-          name: 'Module name/title for display purposes'
+    parameterGroups:
+        - name: 'Unique module name'
+          title: 'Module title for display purposes'
           index: 'Index position of the parameter block for ordering during visualization'
 
-The module that a parameter belongs to is reference by the module identifier in the ``module`` element of the parameter declaration.
+The group that a parameter belongs to is reference by the unique group name in the ``parameterGroups`` element of the parameter declaration.
 
 
 Workflow Outputs
@@ -187,33 +187,33 @@ Benchmark templates add a ``results`` section to a parameterized workflow templa
            - results/greetings.txt
            - results/analytics.json
     parameters:
-        - id: names
-          name: 'Input file'
+        - name: names
+          label: 'Input file'
           datatype: file
           as: data/names.txt
-        - id: sleeptime
+        - name: sleeptime
           datatype: int
           defaultValue: 10
-        - id: greeting
+        - name: greeting
           datatype: string
           defaultValue: 'Hello'
     results:
         file: results/analytics.json
         schema:
-            - id: avg_count
-              name: 'Avg. Chars per Line'
+            - name: avg_count
+              label: 'Avg. Chars per Line'
               type: decimal
-            - id: max_len
-              name: 'Max. Output Line'
+            - name: max_len
+              label: 'Max. Output Line'
               type: decimal
-            - id: max_line
-              name: 'Longest Output'
+            - name: max_line
+              label: 'Longest Output'
               type: string
               required: False
         orderBy:
-            - id: avg_count
+            - name: avg_count
               sortDesc: true
-            - id: max_len
+            - name: max_len
               sortDesc: false
 
 
@@ -288,12 +288,12 @@ Result Schema Specification
 
 The result schema specification defines a list of columns that correspond to columns in a table that is created in an underlying relational database to store benchmark results. For each column specification the following elements are allowed:
 
-- **id**: Unique column identifier. The value is used as the column name in the created database table.
-- **name**: Human-readable name that is used when displaying leader boards in a front-end.
+- **name**: Unique column identifier. The value is used as the column name in the created database table.
+- **label**: Human-readable name that is used when displaying leader boards in a front-end.
 - **type**: Data type of the result values. The supported types are ``decimal``, ``int``, and ``string``. These type are translated into the relational database types ``DOUBLE``, ``INTEGER``, and ``TEXT``, respectively.
 - **required**: Boolean value that corresponds to a ``NOT NULL`` constraint. If the value is ``true`` it is expected that the generated benchmark result contains a value for this column. The default value is ``true``.
 
-The first three elements (``id``, ``name``, and ``type``) are mandatory.
+The first three elements (``name``, ``label``, and ``type``) are mandatory.
 
 
 Generating Leader Board
@@ -303,7 +303,7 @@ Leader boards are generated from benchmark results in the database table. The de
 
 Each entry in the ``orderBy`` list has the following elements:
 
-- **id**: Unique column identifier
+- **name**: Unique column identifier
 - **sortDesc**: Boolean value to determine the sort order (true: DESCENDING or false: ASCENDING).
 
-Only the ``id`` element is mandatory. The value has to match one of the column identifiers in the ``schema`` section. By default all columns are sorted in descending order. If no ``orderBy`` element is given the first column in the ``schema`` is used as the sort column.
+Only the ``name`` element is mandatory. The value has to match one of the column identifiers in the ``schema`` section. By default all columns are sorted in descending order. If no ``orderBy`` element is given the first column in the ``schema`` is used as the sort column.

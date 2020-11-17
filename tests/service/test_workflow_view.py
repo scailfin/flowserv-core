@@ -43,8 +43,8 @@ def test_get_workflow_view(service, hello_world):
         serialize.validate_workflow_handle(doc=r, has_optional=False)
         r = api.workflows().get_workflow(r['id'])
         serialize.validate_workflow_handle(doc=r, has_optional=False)
-        assert len(r['modules']) == 1
-        serialize.validate_para_module(r['modules'][0])
+        assert len(r['parameterGroups']) == 1
+        serialize.validate_para_module(r['parameterGroups'][0])
         assert len(r['parameters']) == 3
         for para in r['parameters']:
             serialize.validate_parameter(para)

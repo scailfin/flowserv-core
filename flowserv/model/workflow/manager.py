@@ -148,7 +148,7 @@ class WorkflowManager(object):
             instructions=manifest.instructions,
             workflow_spec=template.workflow_spec,
             parameters=template.parameters,
-            modules=template.modules,
+            parameter_groups=template.parameter_groups,
             outputs=template.outputs,
             postproc_spec=template.postproc_spec,
             ignore_postproc=ignore_postproc,

@@ -8,30 +8,15 @@
 
 """Helper functions for run arguments."""
 
+from typing import Any, Dict, Optional, Tuple
+
 import flowserv.util as util
 
 
-# -- General arguments --------------------------------------------------------
+# -- Serialize arguments ------------------------------------------------------
 
-def ARG(para_id, value):
-    """Get serialization for a run argument.
-
-    Parameters
-    ----------
-    para_id: string
-        Unique parameter identifier.
-    value: any
-        Argument value.
-
-    Returns
-    -------
-    dict
-    """
-    return {'id': para_id, 'value': value}
-
-
-def GET_ARG(doc):
-    """Get the parameter identifier and argument value from a run argument.
+def deserialize_arg(doc: Dict) -> Tuple[str, Any]:
+    """Get the parameter name and argument value from a run argument.
 
     Parameters
     ----------
@@ -43,33 +28,31 @@ def GET_ARG(doc):
     string, any
     """
     try:
-        return doc['id'], doc['value']
+        return doc['name'], doc['value']
     except KeyError as ex:
         raise ValueError('missing element {}'.format(str(ex)))
 
 
-# -- Input files --------------------------------------------------------------
-
-def FILE(file_id, target=None):
-    """Get the file identifier and optional target path from an input file
-    argument.
+def serialize_arg(name: str, value: Any) -> Dict:
+    """Get serialization for a run argument.
 
     Parameters
     ----------
-    doc: dict
-        Input file argument value.
+    name: string
+        Unique parameter identifier.
+    value: any
+        Argument value.
 
     Returns
     -------
     dict
     """
-    value = {'fileId': file_id}
-    if target is not None:
-        value['targetPath'] = target
-    return {'type': '$file', 'value': value}
+    return {'name': name, 'value': value}
 
 
-def GET_FILE(doc):
+# -- Serialize input file handles ---------------------------------------------
+
+def deserialize_fh(doc: Dict) -> Tuple[str, str]:
     """Get the file identifier and optional target path from an input file
     argument.
 
@@ -89,7 +72,7 @@ def GET_FILE(doc):
         raise ValueError('missing element {}'.format(str(ex)))
 
 
-def IS_FILE(value):
+def is_fh(value: Any) -> bool:
     """Check whether an argument value is a serialization of an input file.
     Expects a dictionary with the following schema:
 
@@ -106,16 +89,36 @@ def IS_FILE(value):
     -------
     bool
     """
-    if isinstance(value, dict):
-        try:
-            util.validate_doc(value, mandatory=['type', 'value'])
-            if value['type'] == '$file':
-                util.validate_doc(
-                    value['value'],
-                    mandatory=['fileId'],
-                    optional=['targetPath']
-                )
-                return True
-        except ValueError:
-            pass
+    if not isinstance(value, dict):
+        return False
+    try:
+        util.validate_doc(value, mandatory=['type', 'value'])
+        if value['type'] == '$file':
+            util.validate_doc(
+                value['value'],
+                mandatory=['fileId'],
+                optional=['targetPath']
+            )
+            return True
+    except ValueError:
+        pass
     return False
+
+
+def serialize_fh(file_id: str, target: Optional[str] = None) -> Dict:
+    """Get the file identifier and optional target path from an input file
+    argument.
+
+    Parameters
+    ----------
+    doc: dict
+        Input file argument value.
+
+    Returns
+    -------
+    dict
+    """
+    value = {'fileId': file_id}
+    if target is not None:
+        value['targetPath'] = target
+    return {'type': '$file', 'value': value}

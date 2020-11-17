@@ -29,32 +29,32 @@ workflow:
        - results/greetings.txt
        - results/analytics.json
 parameters:
-    - id: names
-      name: 'Input file'
+    - name: names
+      label: 'Input file'
       dtype: file
       target: data/names.txt
-    - id: sleeptime
-      name: 'Sleep time (s)'
+    - name: sleeptime
+      label: 'Sleep time (s)'
       dtype: int
       defaultValue: 10
-    - id: greeting
-      name: 'Greeting'
+    - name: greeting
+      label: 'Greeting'
       dtype: string
       defaultValue: 'Hello'
-modules:
-    - id: 'main'
-      name: 'Main Step'
+parameterGroups:
+    - name: 'main'
+      title: 'Main Step'
       index: 0
 results:
     file: 'results/analytics.json'
     schema:
-        - id: avg_count
-          name: 'Avg. Characters per Line'
+        - name: avg_count
+          label: 'Avg. Characters per Line'
           dtype: float
-        - id: max_len
-          name: 'Max. Output Line Length'
+        - name: max_len
+          label: 'Max. Output Line Length'
           dtype: float
-        - id: max_line
-          name: 'Longest Output Line'
+        - name: max_line
+          label: 'Longest Output Line'
           dtype: string
           required: False

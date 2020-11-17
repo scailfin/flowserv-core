@@ -9,10 +9,8 @@
 """Helper methods for reading workflow template parameters."""
 
 from flowserv.model.files.fs import FSFile
-from flowserv.model.parameter.boolean import is_bool
-from flowserv.model.parameter.files import InputFile, is_file
-from flowserv.model.parameter.numeric import is_float, is_int
-from flowserv.service.run.argument import FILE
+from flowserv.model.parameter.files import InputFile
+from flowserv.service.run.argument import serialize_fh
 
 from flowserv.scanner import Scanner
 
@@ -30,7 +28,7 @@ def read(parameters, scanner=None, files=None):
 
     Parameters
     ----------
-    parameters: list(flowserv.model.parameter.base.ParameterBase)
+    parameters: list(flowserv.model.parameter.base.Parameter)
         List of workflow template parameter declarations
     scanner: flowserv.scanner.Scanner
         Input scanner to read parameter values
@@ -45,7 +43,7 @@ def read(parameters, scanner=None, files=None):
     sc = scanner if scanner is not None else Scanner()
     arguments = dict()
     for para in parameters:
-        arguments[para.para_id] = read_parameter(para, sc, files=files)
+        arguments[para.name] = read_parameter(para, sc, files=files)
     return arguments
 
 
@@ -56,7 +54,7 @@ def read_parameter(para, scanner, files=None):
 
     Parameters
     ----------
-    para: flowserv.model.parameter.base.ParameterBase
+    para: flowserv.model.parameter.base.Parameter
         Workflow template parameter declaration
     scanner: flowserv.scanner.Scanner
         Input scanner.
@@ -71,9 +69,9 @@ def read_parameter(para, scanner, files=None):
     while True:
         print(para.prompt(), end='')
         try:
-            if is_bool(para):
-                return scanner.next_bool(default_value=para.default_value)
-            elif is_file(para):
+            if para.is_bool():
+                return scanner.next_bool(default_value=para.default)
+            elif para.is_file():
                 # Distinguish between the case where a list of uploaded files
                 # is given or not.
                 if files is not None:
@@ -89,19 +87,19 @@ def read_parameter(para, scanner, files=None):
                     print('Target Path:', end='')
                     target_path = scanner.next_string()
                     if target_path == '':
-                        target_path = para.default_value
+                        target_path = para.default
                 else:
                     target_path = para.target
                 # The type of the returned value depends on whether the list of
                 # uploaded files is given or not.
                 if files is not None:
-                    return FILE(file_id=filename, target=target_path)
+                    return serialize_fh(file_id=filename, target=target_path)
                 else:
                     return InputFile(FSFile(filename), target_path)
-            elif is_float(para):
-                return scanner.next_float(default_value=para.default_value)
-            elif is_int(para):
-                return scanner.next_int(default_value=para.default_value)
-            return scanner.next_string(default_value=para.default_value)
+            elif para.is_float():
+                return scanner.next_float(default_value=para.default)
+            elif para.is_int():
+                return scanner.next_int(default_value=para.default)
+            return scanner.next_string(default_value=para.default)
         except ValueError as ex:
             print(ex)

@@ -6,111 +6,68 @@
 # flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
-"""Declarations for file parameter values. Each file parameter extends the
+"""Declarations for file parameter values. A file parameter extends the
 base parameter class with a target path for the file when creating the workflow
 run environment.
 """
 
-from typing import Dict, IO, Union
+from __future__ import annotations
+from typing import Dict, IO, Optional, Union
 
 from flowserv.model.files.base import FileObject
-from flowserv.model.parameter.base import ParameterBase
+from flowserv.model.parameter.base import Parameter, PARA_FILE
 
 import flowserv.error as err
 import flowserv.model.parameter.base as pd
 import flowserv.util as util
 
 
-"""Unique parameter type identifier."""
-PARA_FILE = 'file'
-
-
-class FileParameter(ParameterBase):
+class File(Parameter):
     """File parameter type. Extends the base parameter with a target path for
     the file.
     """
     def __init__(
-        self, para_id: str, name: str, index: int, target: str = None,
-        description: str = None, default_value: str = None,
-        is_required: bool = False, module_id: str = None
+        self, name: str, index: Optional[int] = 0, target: str = None,
+        label: Optional[str] = None, help: Optional[str] = None,
+        default: Optional[bool] = None, required: Optional[bool] = False,
+        group: Optional[str] = None
     ):
         """Initialize the base properties a enumeration parameter declaration.
 
         Parameters
         ----------
-        para_id: string
-            Unique parameter identifier
         name: string
-            Human-readable parameter name.
-        index: int
+            Unique parameter identifier
+        index: int, default=0
             Index position of the parameter (for display purposes).
         target: string, default=None
             Target path for the file when creating the workflow run
             environment.
-        description: string, default=None
+        label: string, default=None
+            Human-readable parameter name.
+        help: string, default=None
             Descriptive text for the parameter.
-        default_value: any, default=None
+        default: any, default=None
             Optional default value.
-        is_required: bool, default=False
+        required: bool, default=False
             Is required flag.
-        module_id: string, default=None
+        group: string, default=None
             Optional identifier for parameter group that this parameter
             belongs to.
         """
-        super(FileParameter, self).__init__(
-            para_id=para_id,
-            type_id=PARA_FILE,
+        super(File, self).__init__(
+            dtype=PARA_FILE,
             name=name,
             index=index,
-            description=description,
-            default_value=default_value,
-            is_required=is_required,
-            module_id=module_id
+            label=label,
+            help=help,
+            default=default,
+            required=required,
+            group=group
         )
         self.target = target
 
-    @classmethod
-    def from_dict(cls, doc: Dict, validate: bool = True):
-        """Get enumeration parameter instance from dictionary serialization.
-
-        Parameters
-        ----------
-        doc: dict
-            Dictionary serialization for file parameter.
-        validate: bool, default=True
-            Validate the serialized object if True.
-
-        Returns
-        -------
-        flowserv.model.parameter.files.FileParameter
-
-        Raises
-        ------
-        flowserv.error.InvalidParameterError
-        """
-        if validate:
-            try:
-                util.validate_doc(
-                    doc,
-                    mandatory=[pd.ID, pd.TYPE, pd.NAME, pd.INDEX, pd.REQUIRED],
-                    optional=[pd.DESC, pd.DEFAULT, pd.MODULE, 'target']
-                )
-            except ValueError as ex:
-                raise err.InvalidParameterError(str(ex))
-            if doc[pd.TYPE] != PARA_FILE:
-                raise ValueError("invalid type '{}'".format(doc[pd.TYPE]))
-        return cls(
-            para_id=doc[pd.ID],
-            name=doc[pd.NAME],
-            index=doc[pd.INDEX],
-            description=doc.get(pd.DESC),
-            default_value=doc.get(pd.DEFAULT),
-            is_required=doc[pd.REQUIRED],
-            module_id=doc.get(pd.MODULE),
-            target=doc.get('target')
-        )
-
-    def to_argument(self, value: FileObject, target: str = None):
+    def cast(self, value: FileObject, target: str = None):
         """Get an instance of the InputFile class for a given argument value.
         The input value can either be a string (filename) or a dictionary.
 
@@ -136,8 +93,8 @@ class FileParameter(ParameterBase):
         if target is None:
             if self.target is not None:
                 target = self.target
-            elif self.default_value is not None:
-                target = self.default_value
+            elif self.default is not None:
+                target = self.default
             else:
                 raise err.InvalidArgumentError('missing target path')
         # The InputFile constructor may raise a TypeError if the source
@@ -146,6 +103,45 @@ class FileParameter(ParameterBase):
             return InputFile(source=value, target=target)
         except TypeError as ex:
             raise err.InvalidArgumentError(str(ex))
+
+    @staticmethod
+    def from_dict(doc: Dict, validate: bool = True) -> File:
+        """Get file parameter instance from a dictionary serialization.
+
+        Parameters
+        ----------
+        doc: dict
+            Dictionary serialization for file parameter declaration.
+        validate: bool, default=True
+            Validate the serialized object if True.
+
+        Returns
+        -------
+        flowserv.model.parameter.files.File
+
+        Raises
+        ------
+        flowserv.error.InvalidParameterError
+        """
+        if validate:
+            util.validate_doc(
+                doc,
+                mandatory=pd.MANDATORY,
+                optional=pd.OPTIONAL + ['target'],
+                exception=err.InvalidParameterError
+            )
+            if doc[pd.TYPE] != PARA_FILE:
+                raise ValueError("invalid type '{}'".format(doc[pd.TYPE]))
+        return File(
+            name=doc[pd.NAME],
+            index=doc[pd.INDEX],
+            label=doc[pd.LABEL],
+            help=doc.get(pd.HELP),
+            default=doc.get(pd.DEFAULT),
+            required=doc[pd.REQUIRED],
+            group=doc.get(pd.GROUP),
+            target=doc.get('target')
+        )
 
     def to_dict(self) -> Dict:
         """Get dictionary serialization for the parameter declaration. Adds
@@ -162,7 +158,7 @@ class FileParameter(ParameterBase):
 
 class InputFile(object):
     """The InputFile represents the value for a template parameter of type
-    'file'. This class contains the path to the sourcefor an uploaded file as
+    'file'. This class contains the path to the source for an uploaded file as
     well as the target path for the Upload.
     """
     def __init__(self, source: FileObject, target: str):
@@ -212,20 +208,3 @@ class InputFile(object):
         string
         """
         return self._target
-
-
-# -- Helper Methods -----------------------------------------------------------
-
-def is_file(para: ParameterBase) -> bool:
-    """Test if the given parameter is of type PARA_FILE.
-
-    Parameters
-    ----------
-    para: flowserv.model.parameter.base.ParameterBase
-        Template parameter definition.
-
-    Returns
-    -------
-    bool
-    """
-    return para.type_id == PARA_FILE

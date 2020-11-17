@@ -25,8 +25,8 @@ workflow:
       files:
        - results/
 parameters:
-    - id: names
-      name: 'Input file'
+    - name: names
+      label: 'Input file'
       dtype: file
       target: data/names.txt
 outputs:

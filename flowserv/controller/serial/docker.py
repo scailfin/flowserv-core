@@ -10,11 +10,8 @@
 local Docker daemon to execute workflow steps.
 """
 
-import docker
 import logging
 import os
-
-from docker.errors import ContainerError, ImageNotFound, APIError
 
 from flowserv.controller.serial.engine import SerialWorkflowEngine
 
@@ -81,7 +78,11 @@ def docker_run(run_id, rundir, state, output_files, steps):
         abs_file = os.path.abspath(os.path.join(rundir, filename))
         if os.path.isdir(abs_file):
             volumes[abs_file] = {'bind': '/{}'.format(filename), 'mode': 'rw'}
-    # Run the individual workflow steps using the local Docker deamon.
+    # Run the individual workflow steps using the local Docker deamon. Import
+    # docker package here to avoid errors for installations that do not intend
+    # to use Docker and therefore did not install the package.
+    import docker
+    from docker.errors import ContainerError, ImageNotFound, APIError
     client = docker.from_env()
     try:
         for step in steps:

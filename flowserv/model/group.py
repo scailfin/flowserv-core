@@ -19,7 +19,7 @@ from typing import Dict, List, Optional
 from flowserv.model.base import UploadFile, GroupHandle, WorkflowHandle
 from flowserv.model.files.base import DatabaseFile, FileObject
 from flowserv.model.constraint import validate_identifier
-from flowserv.model.parameter.base import ParameterBase
+from flowserv.model.parameter.base import Parameter
 from flowserv.model.user import UserManager
 from flowserv.util import get_unique_identifier as unique_identifier
 
@@ -51,7 +51,7 @@ class WorkflowGroupManager(object):
         self.users = users if users else UserManager(session=session)
 
     def create_group(
-        self, workflow_id: str, name: str, parameters: List[ParameterBase],
+        self, workflow_id: str, name: str, parameters: List[Parameter],
         workflow_spec: Dict, user_id: Optional[str] = None,
         members: List[str] = None, identifier: Optional[str] = None
     ):
@@ -79,7 +79,7 @@ class WorkflowGroupManager(object):
             Group name
         user_id: string
             Unique identifier of the user that created the group
-        parameters: list(flowserv.model.parameter.base.ParameterBase)
+        parameters: list(flowserv.model.parameter.base.Parameter)
             List of workflow template parameter declarations that may be
             specific to the group
         workflow_spec: dict

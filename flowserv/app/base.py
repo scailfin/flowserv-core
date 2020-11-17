@@ -20,13 +20,13 @@ from flowserv.model.files.base import (
     DatabaseFile, FileObject, FileStore, IOFile
 )
 from flowserv.model.files.fs import FSFile
-from flowserv.model.parameter.files import is_file, InputFile
+from flowserv.model.parameter.files import InputFile
 from flowserv.model.template.parameter import ParameterIndex
 from flowserv.model.workflow.manager import WorkflowManager
 from flowserv.service.auth import get_auth
 from flowserv.service.api import API
 from flowserv.service.files import get_filestore
-from flowserv.service.run.argument import ARG, FILE
+from flowserv.service.run.argument import serialize_arg, serialize_fh
 from flowserv.service.postproc.util import copy_postproc_files
 
 import flowserv.config.app as config
@@ -367,7 +367,7 @@ class App(object):
                 para = self._parameters.get(key)
                 if para is None:
                     raise err.UnknownParameterError(key)
-                if is_file(para):
+                if para.is_file():
                     # Upload a given file prior to running the application.
                     upload_file = None
                     target = None
@@ -392,10 +392,10 @@ class App(object):
                         name=key,
                         user_id=user_id
                     )
-                    val = FILE(fh['id'], target=target)
+                    val = serialize_fh(fh['id'], target=target)
                 else:
-                    val = para.to_argument(val)
-                arglist.append(ARG(key, val))
+                    val = para.cast(val)
+                arglist.append(serialize_arg(key, val))
             # Execute the run and return the serialized run handle.
             run = api.runs().start_run(
                 group_id=group_id,

@@ -25,23 +25,23 @@ workflow:
       files:
        - results/greetings.txt
 parameters:
-    - id: code
-      name: 'Code file'
+    - name: code
+      label: 'Code file'
       dtype: file
-    - id: names
-      name: 'Input file'
+    - name: names
+      label: 'Input file'
       dtype: file
       target: data/persons.txt
-    - id: friends
-      name: 'Default example'
+    - name: friends
+      label: 'Default example'
       dtype: file
       target: data/friends.txt
       defaultValue: inputs/names.txt
-    - id: sleeptime
-      name: 'Sleep time (s)'
+    - name: sleeptime
+      label: 'Sleep time (s)'
       dtype: int
       defaultValue: 10
-    - id: waittime
-      name: 'Wait time (s)'
+    - name: waittime
+      label: 'Wait time (s)'
       dtype: int
       defaultValue: 5

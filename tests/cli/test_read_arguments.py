@@ -8,14 +8,12 @@
 
 """Unit test for reading arguments for serial workflow templates."""
 
-from flowserv.model.parameter.boolean import BoolParameter
-from flowserv.model.parameter.files import FileParameter
-from flowserv.model.parameter.numeric import (
-    NumericParameter, PARA_FLOAT, PARA_INT
-)
-from flowserv.model.parameter.string import StringParameter
+from flowserv.model.parameter.boolean import Bool
+from flowserv.model.parameter.files import File
+from flowserv.model.parameter.numeric import Int, Float
+from flowserv.model.parameter.string import String
 from flowserv.scanner import Scanner, ListReader
-from flowserv.service.run.argument import FILE
+from flowserv.service.run.argument import serialize_fh
 
 import flowserv.cli.parameter as cli
 
@@ -23,9 +21,9 @@ import flowserv.cli.parameter as cli
 def test_read_boolean_parameters():
     """Test reading lists of boolean parameters."""
     parameters = [
-        BoolParameter(para_id='A', name='A', index=0),
-        BoolParameter(para_id='B', name='B', index=1, default_value=False),
-        BoolParameter(para_id='C', name='C', index=2, default_value=False),
+        Bool(name='A', index=0),
+        Bool(name='B', index=1, default=False),
+        Bool(name='C', index=2, default=False),
     ]
     sc = Scanner(reader=ListReader(['true', 'xyz', '', 'True']))
     arguments = cli.read(parameters, sc)
@@ -43,9 +41,9 @@ def test_read_empty_list():
 def test_read_file_parameters(tmpdir):
     """Test reading lists of file parameters."""
     parameters = [
-        FileParameter(para_id='A', name='A', index=0, target='target1'),
-        FileParameter(para_id='B', name='B', index=1, default_value='target2'),
-        FileParameter(para_id='C', name='C', index=2),
+        File(name='A', index=0, target='target1'),
+        File(name='B', index=1, default='target2'),
+        File(name='C', index=2),
     ]
     sc = Scanner(reader=ListReader([
         tmpdir,
@@ -67,33 +65,21 @@ def test_read_file_parameters(tmpdir):
 def test_read_file_parameter_with_uploads(tmpdir):
     """Test reading a file parameter with a given list of upload files."""
     parameters = [
-        FileParameter(para_id='A', name='A', index=0, target='target1')
+        File(name='A', index=0, target='target1')
     ]
     sc = Scanner(reader=ListReader(['f1']))
     arguments = cli.read(parameters, sc, files=[('f1', 'F', '123')])
     assert len(arguments) == 1
-    assert arguments['A'] == FILE('f1', target='target1')
+    assert arguments['A'] == serialize_fh('f1', target='target1')
 
 
 def test_read_numeric_parameters():
     """Test reading lists of numeric parameters."""
     parameters = [
-        NumericParameter(para_id='A', type_id=PARA_INT, name='A', index=0),
-        NumericParameter(
-            para_id='B',
-            type_id=PARA_INT,
-            name='B',
-            index=1,
-            default_value=10
-        ),
-        NumericParameter(para_id='C', type_id=PARA_FLOAT, name='C', index=2),
-        NumericParameter(
-            para_id='D',
-            type_id=PARA_FLOAT,
-            name='D',
-            index=3,
-            default_value=1.23
-        )
+        Int(name='A', index=0),
+        Int(name='B', index=1, default=10),
+        Float(name='C', index=2),
+        Float(name='D', index=3, default=1.23)
     ]
     sc = Scanner(reader=ListReader(['1', 'xyz', '', 'True', '3.4', '']))
     arguments = cli.read(parameters, sc)
@@ -107,8 +93,8 @@ def test_read_numeric_parameters():
 def test_read_string_parameters():
     """Test reading lists of string parameters."""
     parameters = [
-        StringParameter(para_id='A', name='A', index=0),
-        StringParameter(para_id='B', name='B', index=1, default_value='ABC')
+        String(name='A', index=0),
+        String(name='B', index=1, default='ABC')
     ]
     sc = Scanner(reader=ListReader(['true', '']))
     arguments = cli.read(parameters, sc)

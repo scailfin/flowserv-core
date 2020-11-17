@@ -14,6 +14,7 @@ import pytest
 
 from json.decoder import JSONDecodeError
 
+import flowserv.error as err
 import flowserv.util as util
 
 
@@ -138,3 +139,17 @@ def test_read_write_object(tmpdir):
         util.read_object(filename=txt_file, format='UNKNOWN')
     with pytest.raises(ValueError):
         util.write_object(filename=txt_file, obj=doc, format='UNKNOWN')
+
+
+def test_validate_doc():
+    """Test document validation with custom error classes."""
+    doc = {'name': 'A', 'value': 1}
+    assert util.validate_doc(doc, mandatory=['name', 'value'])
+    assert util.validate_doc(doc, mandatory=['name'], optional=['value'])
+    assert util.validate_doc(doc, mandatory=['name', 'value'], optional=['id'])
+    with pytest.raises(ValueError):
+        util.validate_doc(doc, mandatory=['name'])
+    with pytest.raises(ValueError):
+        util.validate_doc(doc, mandatory=['name', 'value', 'id'])
+    with pytest.raises(err.InvalidArgumentError):
+        util.validate_doc(doc, mandatory=['name'], exception=err.InvalidArgumentError)

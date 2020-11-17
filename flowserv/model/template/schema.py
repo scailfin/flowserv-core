@@ -29,9 +29,9 @@ class ResultColumn(object):
     The optional path element is used to extract the column value from nested
     result files.
     """
-    def __init__(self, column_id, name, type_id, path=None, required=None):
+    def __init__(self, column_id, name, dtype, path=None, required=None):
         """Initialize the unique column identifier, name, and the data type. If
-        the value of type_id is not in the list of supported data types an
+        the value of dtype is not in the list of supported data types an
         error is raised.
 
         The optional path element references the column value in nested result
@@ -43,7 +43,7 @@ class ResultColumn(object):
             Unique column identifier
         name: string
             Unique column name
-        type_id: string
+        dtype: string
             Data type identifier
         path: string, optional
             Path to column value in nested result files.
@@ -57,12 +57,12 @@ class ResultColumn(object):
         """
         # Raise error if the data type value is not in the list of supported
         # data types
-        if type_id not in DATA_TYPES:
+        if dtype not in DATA_TYPES:
             msg = "unknown data type '{}'"
-            raise err.InvalidTemplateError(msg.format(type_id))
+            raise err.InvalidTemplateError(msg.format(dtype))
         self.column_id = column_id
         self.name = name
-        self.type_id = type_id
+        self.dtype = dtype
         self.path = path
         self.required = required if required is not None else True
 
@@ -80,9 +80,9 @@ class ResultColumn(object):
         -------
         int, float, or string
         """
-        if self.type_id == PARA_INT:
+        if self.dtype == PARA_INT:
             return int(value)
-        elif self.type_id == PARA_FLOAT:
+        elif self.dtype == PARA_FLOAT:
             return float(value)
         return str(value)
 
@@ -112,16 +112,16 @@ class ResultColumn(object):
             try:
                 util.validate_doc(
                     doc,
-                    mandatory=['id', 'name', 'dtype'],
+                    mandatory=['name', 'label', 'dtype'],
                     optional=['path', 'required']
                 )
             except ValueError as ex:
                 raise err.InvalidTemplateError(str(ex))
         # Return instance of the column object
         return cls(
-            column_id=doc['id'],
-            name=doc['name'],
-            type_id=doc['dtype'],
+            column_id=doc['name'],
+            name=doc['label'],
+            dtype=doc['dtype'],
             path=doc.get('path'),
             required=doc.get('required')
         )
@@ -149,9 +149,9 @@ class ResultColumn(object):
         dict
         """
         doc = {
-            'id': self.column_id,
-            'name': self.name,
-            'dtype': self.type_id,
+            'name': self.column_id,
+            'label': self.name,
+            'dtype': self.dtype,
             'required': self.required
         }
         # Add the path expression if it is given
@@ -330,7 +330,7 @@ class SortColumn(object):
             try:
                 util.validate_doc(
                     doc,
-                    mandatory=['id'],
+                    mandatory=['name'],
                     optional=['sortDesc']
                 )
             except ValueError as ex:
@@ -339,7 +339,7 @@ class SortColumn(object):
         if 'sortDesc' in doc:
             sort_desc = doc['sortDesc']
         # Return instance of the column object
-        return cls(column_id=doc['id'], sort_desc=sort_desc)
+        return cls(column_id=doc['name'], sort_desc=sort_desc)
 
     def to_dict(self):
         """Get dictionary serialization for the sort column object.
@@ -348,4 +348,4 @@ class SortColumn(object):
         -------
         dict
         """
-        return {'id': self.column_id, 'sortDesc': self.sort_desc}
+        return {'name': self.column_id, 'sortDesc': self.sort_desc}

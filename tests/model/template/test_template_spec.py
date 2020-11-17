@@ -10,7 +10,7 @@
 
 import pytest
 
-from flowserv.model.parameter.string import StringParameter, PARA_STRING
+from flowserv.model.parameter.string import String, PARA_STRING
 from flowserv.model.template.base import WorkflowTemplate
 from flowserv.model.template.parameter import ParameterIndex
 
@@ -30,33 +30,33 @@ def test_template_serialization():
     doc = {
         'workflow': {'inputs': [tp.VARIABLE('A'), 'B', 'C']},
         'parameters': [
-            StringParameter(para_id='A', name='P1', index=0).to_dict()
+            String(name='A', label='P1', index=0).to_dict()
         ],
-        'modules': [
-            {'id': '0', 'name': 'G1', 'index': 0},
-            {'id': '1', 'name': 'G2', 'index': 1}
+        'parameterGroups': [
+            {'name': '0', 'title': 'G1', 'index': 0},
+            {'name': '1', 'title': 'G2', 'index': 1}
         ],
         'postproc': {'workflow': dict(), 'inputs': {'files': ['D', 'E']}},
         'results': {
             'file': 'results/analytics.json',
-            'schema': [{'id': '0', 'name': 'col0', 'dtype': PARA_STRING}]
+            'schema': [{'name': '0', 'label': 'col0', 'dtype': PARA_STRING}]
         }
     }
     doc = WorkflowTemplate.from_dict(doc).to_dict()
     template = WorkflowTemplate.from_dict(doc)
     assert template.workflow_spec == {'inputs': [tp.VARIABLE('A'), 'B', 'C']}
     assert len(template.parameters) == 1
-    assert len(template.modules) == 2
+    assert len(template.parameter_groups) == 2
     assert template.postproc_spec['workflow'] == dict()
     # No error for invalid document only if validate is not set to False.
-    para = StringParameter(para_id='0', name='P1', index=0).to_dict()
+    para = String(name='0', label='P1', index=0).to_dict()
     para['addOn'] = 1
     doc = {
         'workflow': {'inputs': ['A', 'B', 'C']},
         'parameters': [para],
-        'modules': [
-            {'id': '0', 'name': 'G1', 'index': 0, 'sortDesc': True},
-            {'id': '1', 'name': 'G2', 'index': 1}
+        'parameterGroups': [
+            {'name': '0', 'title': 'G1', 'index': 0, 'sortDesc': True},
+            {'name': '1', 'title': 'G2', 'index': 1}
         ],
         'postproc': {'inputs': {'files': ['D', 'E']}}
     }
@@ -71,7 +71,7 @@ def test_template_serialization():
         doc = {
             'workflow': {'inputs': [tp.VARIABLE('0'), 'B', 'C']},
             'parameters': [
-                StringParameter(para_id='A', name='P1', index=0).to_dict()
+                String(name='A', label='P1', index=0).to_dict()
             ]
         }
         WorkflowTemplate.from_dict(doc)
@@ -82,18 +82,8 @@ def test_validate_arguments():
     workflow template.
     """
     parameters = ParameterIndex.from_dict([
-        StringParameter(
-            para_id='A',
-            name='P1',
-            index=0,
-            is_required=True
-        ).to_dict(),
-        StringParameter(
-            para_id='B',
-            name='P2',
-            index=1,
-            default_value='X'
-        ).to_dict()
+        String(name='A', label='P1', index=0, required=True).to_dict(),
+        String(name='B', label='P2', index=1, default='X').to_dict()
     ])
     template = WorkflowTemplate(
         workflow_spec=dict(),

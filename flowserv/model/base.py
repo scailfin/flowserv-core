@@ -71,7 +71,7 @@ class WorkflowParameters(TypeDecorator):
             return ParameterIndex.from_dict(json.loads(value), validate=False)
 
 
-class WorkflowModules(TypeDecorator):
+class WorkflowParameterGroups(TypeDecorator):
     """Decorator for workflow parameters groups that are stored as serialized
     Json objects.
     """
@@ -284,7 +284,7 @@ class WorkflowHandle(Base):
     instruction text. The five main components of the template are (i) the
     workflow specification, (ii) the list of parameter declarations, (iii) an
     optional post-processing workflow specification, (iv) the optional grouping
-    of parameters into modules, and (v) the result schema for workflows that
+    of parameters into sets, and (v) the result schema for workflows that
     generate metrics for individual workflow runs.
 
     With each workflow a reference to the latest run containing post-processing
@@ -306,7 +306,7 @@ class WorkflowHandle(Base):
     instructions = Column(Text)
     workflow_spec = Column(JsonObject, nullable=False)
     parameters = Column(WorkflowParameters)
-    modules = Column(WorkflowModules)
+    parameter_groups = Column(WorkflowParameterGroups)
     outputs = Column(WorkflowOutputs)
     # Omit foreign key here to avaoid circular dependencies. The run will
     # reference the workflow to ensure integrity with respect to deleting
@@ -341,7 +341,7 @@ class WorkflowHandle(Base):
         ----------
         workflow_spec: dict, default=None
             Modified workflow specification.
-        parameters: dict(flowserv.model.parameter.base.ParameterBase)
+        parameters: dict(flowserv.model.parameter.base.Parameter)
             Modified wokflow parameter list.
 
         Returns
@@ -351,7 +351,7 @@ class WorkflowHandle(Base):
         return WorkflowTemplate(
             workflow_spec=self.workflow_spec if workflow_spec is None else workflow_spec,  # noqa: E501
             parameters=self.parameters if parameters is None else parameters,
-            modules=self.modules,
+            parameter_groups=self.parameter_groups,
             outputs=self.outputs,
             postproc_spec=self.postproc_spec,
             result_schema=self.result_schema

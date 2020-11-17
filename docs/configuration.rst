@@ -40,7 +40,7 @@ Workflow Engine
 
 The **flowServ** API uses a workflow controller to handle execution of workflow templates. The interface for the controller ``WorkflowController`` is defined in the module ``flowserv.controller.base``. Different workflow engines will implement their own version of the controller. An instance of **flowServ** will currently use a single controller for the execution of all workflows. This controller is specified using the following two environment variables:
 
-- *FLOWSERV_BACKEND_CLASS*: The name of the Pyhton class that implements the workflow controller interface
+- *FLOWSERV_BACKEND_CLASS*: The name of the Python class that implements the workflow controller interface
 - *FLOWSERV_BACKEND_MODULE*: The full name of the module that contains the implementation of the workflow controller interface
 
 The specified controller module is imported dynamically. Each implementation of the workflow controller may define additional environment variables that are required for configuration.
@@ -49,7 +49,7 @@ The specified controller module is imported dynamically. Each implementation of 
 Default Engine
 --------------
 
-By default, a simple multi-process engine is used that ecexutes every workflow in a separate process. The environment settings for the default engine are as follows:
+By default, a simple multi-process engine is used that executes every workflow in a separate process. The environment settings for the default engine are as follows:
 
 .. code-block:: console
 
@@ -157,4 +157,4 @@ The **S3 Bucket Store** allows storage of all files using `AWS Simple Cloud Stor
     export FLOWSERV_FILESTORE_MODULE=flowserv.model.files.s3
     export FLOWSERV_FILESTORE_CLASS=BucketStore
 
-This file store defines the additional environment variable *FLOWSERV_S3BUCKET*. This variable is used to get the uniuqe identifier of the S3 storage bucket. During development when running test cases, the value of this variable should not be set.
+This file store defines the additional environment variable *FLOWSERV_S3BUCKET*. This variable is used to get the unique identifier of the S3 storage bucket. During development when running test cases, the value of this variable should not be set.

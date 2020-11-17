@@ -12,7 +12,7 @@ import os
 import pytest
 import tempfile
 
-from flowserv.service.run.argument import IS_FILE
+from flowserv.service.run.argument import is_fh
 from flowserv.tests.service import (
     create_group, create_user, start_hello_world, write_results
 )
@@ -56,7 +56,7 @@ def test_create_successful_run_view(service, hello_world):
     with service() as api:
         r = api.runs().get_run(run_id=run_id, user_id=user_1)
         serialize.validate_run_handle(r, st.STATE_SUCCESS)
-        assert IS_FILE(r['arguments'][0]['value'])
+        assert is_fh(r['arguments'][0]['value'])
     # -- Error when non-member attempts to access run -------------------------
     with service() as api:
         with pytest.raises(err.UnauthorizedAccessError):

@@ -9,15 +9,12 @@
 """Collection of helper methods for parameter references in workflow templates.
 """
 
+from typing import Dict, Optional
+
 import re
 
-from flowserv.model.parameter.base import TYPE
-from flowserv.model.parameter.boolean import BoolParameter, PARA_BOOL
-from flowserv.model.parameter.enum import EnumParameter, PARA_ENUM
-from flowserv.model.parameter.files import FileParameter, PARA_FILE
-from flowserv.model.parameter.numeric import NumericParameter
-from flowserv.model.parameter.numeric import PARA_FLOAT, PARA_INT
-from flowserv.model.parameter.string import StringParameter, PARA_STRING
+from flowserv.model.parameter.base import Parameter
+from flowserv.model.parameter.factory import ParameterDeserializer
 
 import flowserv.error as err
 
@@ -28,23 +25,12 @@ REGEX_PARA = r'\$\[\[(.*?)\]\]'
 
 # -- Parameter Index ----------------------------------------------------------
 
-"""Dictionary of known parameter types. New types have to be added here."""
-PARAMETER_TYPES = {
-    PARA_BOOL: BoolParameter,
-    PARA_ENUM: EnumParameter,
-    PARA_FILE: FileParameter,
-    PARA_FLOAT: NumericParameter,
-    PARA_INT: NumericParameter,
-    PARA_STRING: StringParameter
-}
-
-
 class ParameterIndex(dict):
     """Index of parameter declaration. Parameters are indexed by their unique
     identifier.
     """
     @staticmethod
-    def from_dict(doc, validate=True):
+    def from_dict(doc: Dict, validate: Optional[bool] = True) -> Parameter:
         """Create a parameter index from a dictionary serialization. Expects a
         list of dictionaries, each being a serialized parameter declaration.
 
@@ -63,11 +49,6 @@ class ParameterIndex(dict):
         """
         parameters = ParameterIndex()
         for index, obj in enumerate(doc):
-            try:
-                cls = PARAMETER_TYPES[obj[TYPE]]
-            except KeyError as ex:
-                msg = "missing '{}' for {}"
-                raise err.InvalidTemplateError(msg.format(str(ex), obj))
             # Ensure that the 'index' property for the parameter is set. Use
             # the order of parameters in the list as the default order.
             obj['index'] = obj.get('index', index)
@@ -77,11 +58,11 @@ class ParameterIndex(dict):
                 'isRequired',
                 'defaultValue' not in obj
             )
-            para = cls.from_dict(obj, validate=validate)
-            if para.para_id in parameters:
-                msg = "duplicate parameter '{}'".format(para.para_id)
+            para = ParameterDeserializer.from_dict(obj, validate=validate)
+            if para.name in parameters:
+                msg = "duplicate parameter '{}'".format(para.name)
                 raise err.InvalidTemplateError(msg)
-            parameters[para.para_id] = para
+            parameters[para.name] = para
         return parameters
 
     def sorted(self):
@@ -90,7 +71,7 @@ class ParameterIndex(dict):
 
         Returns
         -------
-        list(flowserv.model.parameter.base.ParameterBase)
+        list(flowserv.model.parameter.base.Parameter)
         """
         parameters = list(self.values())
         return sorted(parameters, key=lambda p: p.index)
@@ -159,10 +140,10 @@ def expand_value(value, arguments, parameters):
             # is defined for the parameter.
             if expr in arguments:
                 return str(arguments[expr])
-            elif para.default_value is not None:
+            elif para.default is not None:
                 # Return the parameter default value.
-                return str(para.default_value)
-            raise err.MissingArgumentError(para.para_id)
+                return str(para.default)
+            raise err.MissingArgumentError(para.name)
         # Extract the variable name and the conditional return values.
         var = expr[:pos].strip()
         expr = expr[pos+1:].strip()

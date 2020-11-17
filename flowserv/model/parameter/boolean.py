@@ -10,95 +10,54 @@
 additional properties to the base parameter class.
 """
 
-from flowserv.model.parameter.base import ParameterBase
+from __future__ import annotations
+from typing import Any, Dict, Optional
+from flowserv.model.parameter.base import Parameter, PARA_BOOL
 
 import flowserv.error as err
 import flowserv.model.parameter.base as pd
 import flowserv.util as util
 
 
-"""Unique parameter type identifier."""
-PARA_BOOL = 'bool'
-
-
-class BoolParameter(ParameterBase):
+class Bool(Parameter):
     """Boolean parameter type."""
     def __init__(
-        self, para_id, name, index, description=None,
-        default_value=None, is_required=False, module_id=None
+        self, name: str, index: Optional[int] = 0, label: Optional[str] = None,
+        help: Optional[str] = None, default: Optional[bool] = None,
+        required: Optional[bool] = False, group: Optional[str] = None
     ):
         """Initialize the base properties a Boolean parameter declaration.
 
         Parameters
         ----------
-        para_id: string
-            Unique parameter identifier
         name: string
-            Human-readable parameter name.
-        index: int
+            Unique parameter identifier
+        index: int, default=0
             Index position of the parameter (for display purposes).
-        description: string, default=None
+        label: string, default=None
+            Human-readable parameter name.
+        help: string, default=None
             Descriptive text for the parameter.
-        default_value: any, default=None
+        default: any, default=None
             Optional default value.
-        is_required: bool, default=False
+        required: bool, default=False
             Is required flag.
-        module_id: string, default=None
+        group: string, default=None
             Optional identifier for parameter group that this parameter
             belongs to.
         """
-        super(BoolParameter, self).__init__(
-            para_id=para_id,
-            type_id=PARA_BOOL,
+        super(Bool, self).__init__(
+            dtype=PARA_BOOL,
             name=name,
             index=index,
-            description=description,
-            default_value=default_value,
-            is_required=is_required,
-            module_id=module_id
+            label=label,
+            help=help,
+            default=default,
+            required=required,
+            group=group
         )
 
-    @classmethod
-    def from_dict(cls, doc, validate=True):
-        """Get Boolean parameter instance from dictionary serialization.
-
-        Parameters
-        ----------
-        doc: dict
-            Dictionary serialization for a Boolean parameter.
-        validate: bool, default=True
-            Validate the serialized object if True.
-
-        Returns
-        -------
-        flowserv.model.parameter.boolean.BoolParameter
-
-        Raises
-        ------
-        flowserv.error.InvalidParameterError
-        """
-        if validate:
-            try:
-                util.validate_doc(
-                    doc,
-                    mandatory=[pd.ID, pd.TYPE, pd.NAME, pd.INDEX, pd.REQUIRED],
-                    optional=[pd.DESC, pd.DEFAULT, pd.MODULE]
-                )
-            except ValueError as ex:
-                raise err.InvalidParameterError(str(ex))
-            if doc[pd.TYPE] != PARA_BOOL:
-                raise ValueError("invalid type '{}'".format(doc[pd.TYPE]))
-        return cls(
-            para_id=doc[pd.ID],
-            name=doc[pd.NAME],
-            index=doc[pd.INDEX],
-            description=doc.get(pd.DESC),
-            default_value=doc.get(pd.DEFAULT),
-            is_required=doc[pd.REQUIRED],
-            module_id=doc.get(pd.MODULE)
-        )
-
-    def to_argument(self, value):
+    def cast(self, value: Any) -> Any:
         """Convert the given value into a Boolean value. Converts string values
         to Boolean True if they match either of the string representations '1',
         't' or 'true' (case-insensitive) and to False if the value is None or
@@ -129,19 +88,40 @@ class BoolParameter(ParameterBase):
             return False
         raise err.InvalidArgumentError("not a Boolean '{}'".format(value))
 
+    @staticmethod
+    def from_dict(doc: Dict, validate: Optional[bool] = True) -> Bool:
+        """Get Boolean parameter instance from a dictionary serialization.
 
-# -- Helper Methods -----------------------------------------------------------
+        Parameters
+        ----------
+        doc: dict
+            Dictionary serialization for a Boolean parameter declaration.
+        validate: bool, default=True
+            Validate the serialized object if True.
 
-def is_bool(para: ParameterBase) -> bool:
-    """Test if the given parameter is of type PARA_BOOL.
+        Returns
+        -------
+        flowserv.model.parameter.boolean.Bool
 
-    Parameters
-    ----------
-    para: flowserv.model.parameter.base.ParameterBase
-        Template parameter definition.
-
-    Returns
-    -------
-    bool
-    """
-    return para.type_id == PARA_BOOL
+        Raises
+        ------
+        flowserv.error.InvalidParameterError
+        """
+        if validate:
+            util.validate_doc(
+                doc,
+                mandatory=pd.MANDATORY,
+                optional=pd.OPTIONAL,
+                exception=err.InvalidParameterError
+            )
+            if doc[pd.TYPE] != PARA_BOOL:
+                raise ValueError("invalid type '{}'".format(doc[pd.TYPE]))
+        return Bool(
+            name=doc[pd.NAME],
+            index=doc[pd.INDEX],
+            label=doc[pd.LABEL],
+            help=doc.get(pd.HELP),
+            default=doc.get(pd.DEFAULT),
+            required=doc[pd.REQUIRED],
+            group=doc.get(pd.GROUP)
+        )

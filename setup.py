@@ -15,17 +15,18 @@ from setuptools import setup, find_packages
 """Required packages for install, test, docs, and tests."""
 
 install_requires = [
-    'docker',
+    'future',
     'gitpython',
     'passlib',
-    'psycopg2-binary',
     'python-dateutil',
     'pyyaml>=5.1',
     'requests',
     'SQLAlchemy>=1.3.18',
-    'Click',
-    'boto3'
+    'Click'
 ]
+aws_requires = ['boto3']
+docker_requires = ['docker']
+postgres_requires = ['psycopg2-binary']
 
 
 tests_require = [
@@ -42,6 +43,10 @@ extras_require = {
         'sphinx-rtd-theme'
     ],
     'tests': tests_require,
+    'aws': aws_requires,
+    'docker': docker_requires,
+    'postgres': docker_requires,
+    'full': aws_requires + docker_requires + postgres_requires
 }
 
 

@@ -11,7 +11,9 @@ properties that are used to (i) identify the parameter, (ii) define a nested
 parameter structure, and (iii) render UI forms to collect parameter values.
 """
 
+from __future__ import annotations
 from abc import ABCMeta, abstractmethod
+from typing import Any, Dict, Optional
 
 import flowserv.util as util
 
@@ -19,20 +21,35 @@ import flowserv.util as util
 """Labels for general workflow declaration elements."""
 
 DEFAULT = 'defaultValue'
-DESC = 'description'
-ID = 'id'
+GROUP = 'group'
+HELP = 'help'
 INDEX = 'index'
-MODULE = 'module'
+LABEL = 'label'
 NAME = 'name'
 TYPE = 'dtype'
 REQUIRED = 'isRequired'
 
+MANDATORY = [NAME, TYPE, INDEX, REQUIRED]
+OPTIONAL = [LABEL, HELP, DEFAULT, GROUP]
 
-class ParameterBase(metaclass=ABCMeta):
+
+"""Unique parameter type identifier."""
+PARA_BOOL = 'bool'
+PARA_FILE = 'file'
+PARA_FLOAT = 'float'
+PARA_INT = 'int'
+PARA_LIST = 'list'
+PARA_RECORD = 'record'
+PARA_SELECT = 'select'
+PARA_STRING = 'string'
+
+
+class Parameter(metaclass=ABCMeta):
     """Base class for template parameters. The base class maintains the unique
-    parameter identifier, the type identifier, the parameter name, the optional
-    description, an optional default value, the is_required flag, the parameter
-    index position, and the optional parameter group.
+    parameter name, the data type identifier, the human-readable label and the
+    description for display purposes, the is required flag, an optional default
+    value, the index position for input form rendering, and the identifier for
+    the parameter group.
 
     Implementing classes have to provide a static .from_dict() method that
     returns an instance of the class from a dictionary serialization. The
@@ -40,57 +57,44 @@ class ParameterBase(metaclass=ABCMeta):
     method.
     """
     def __init__(
-        self, para_id, type_id, name, index, description=None,
-        default_value=None, is_required=False, module_id=None
+        self, dtype: str, name: str, index: Optional[int] = 0,
+        label: Optional[str] = None, help: Optional[str] = None,
+        default: Optional[Any] = None, required: Optional[bool] = False,
+        group: Optional[str] = None
     ):
         """Initialize the base properties for a template parameter.
 
         Parameters
         ----------
-        para_id: string
-            Unique parameter identifier
-        type_id: string
+        dtype: string
             Parameter type identifier.
         name: string
-            Human-readable parameter name.
-        index: int
+            Unique parameter identifier
+        index: int, default=0
             Index position of the parameter (for display purposes).
-        description: string, default=None
+        label: string, default=None
+            Human-readable parameter name.
+        help: string, default=None
             Descriptive text for the parameter.
-        default_value: any, default=None
+        default: any, default=None
             Optional default value.
-        is_required: bool, default=False
+        required: bool, default=False
             Is required flag.
-        module_id: string, default=None
+        group: string, default=None
             Optional identifier for parameter group that this parameter
             belongs to.
         """
-        if para_id is None:
-            raise ValueError('invalid identifier')
-        self.para_id = para_id
-        self.type_id = type_id
+        self.dtype = dtype
         self.name = name
         self.index = index
-        self.description = description
-        self.default_value = default_value
-        self.is_required = is_required
-        self.module_id = module_id
-
-    def prompt(self):
-        """Get default input prompt for the parameter declaration. The prompt
-        contains an indication of the data type, the parameter name and the
-        default value (if defined).
-        Returns
-        -------
-        string
-        """
-        val = '{} ({})'.format(self.name, self.type_id)
-        if self.default_value is not None:
-            val += " [default '{}']".format(self.default_value)
-        return val + ' $> '
+        self.label = label
+        self.help = help
+        self.default = default
+        self.required = required
+        self.group = group
 
     @abstractmethod
-    def to_argument(self, value):
+    def cast(self, value: Any) -> Any:
         """Validate the given argument value for the parameter type. Returns
         the argument representation for the value that is used to replace
         references to the parameter in workflow templates.
@@ -113,7 +117,140 @@ class ParameterBase(metaclass=ABCMeta):
         """
         raise NotImplementedError()  # pragma: no cover
 
-    def to_dict(self):
+    def display_name(self) -> str:
+        """Human-readable display name for the parameter. The default display
+        name is the defined label. If no label is defined the parameter name is
+        returned.
+
+        Returns
+        -------
+        str
+        """
+        return self.label if self.label is not None else self.name
+
+    @staticmethod
+    @abstractmethod
+    def from_dict(cls, doc: Dict, validate: Optional[bool] = True) -> Parameter:
+        """Get instance of implementing class from dictionary serialization.
+
+        Parameters
+        ----------
+        doc: dict
+            Dictionary serialization for a parameter.
+        validate: bool, default=True
+            Validate the serialized object if True.
+
+        Returns
+        -------
+        flowserv.model.parameter.base.Parameter
+
+        Raises
+        ------
+        flowserv.error.InvalidParameterError
+        """
+        raise NotImplementedError()  # pragma: no cover
+
+    def is_bool(self) -> bool:
+        """Test if the parameter is of type Bool.
+
+        Returns
+        -------
+        bool
+        """
+        return self.dtype == PARA_BOOL
+
+    def is_file(self) -> bool:
+        """Test if the parameter is of type File.
+
+        Returns
+        -------
+        bool
+        """
+        return self.dtype == PARA_FILE
+
+    def is_float(self) -> bool:
+        """Test if the parameter is of type Float.
+
+        Returns
+        -------
+        bool
+        """
+        return self.dtype == PARA_FLOAT
+
+    def is_int(self) -> bool:
+        """Test if the parameter is of type Int.
+
+        Returns
+        -------
+        bool
+        """
+        return self.dtype == PARA_INT
+
+    def is_list(self) -> bool:
+        """Test if the parameter is of type Array.
+
+        Returns
+        -------
+        bool
+        """
+        return self.dtype == PARA_LIST
+
+    def is_numeric(self) -> bool:
+        """Test if the parameter is of type Numeric.
+
+        Parameters
+        ----------
+        para: flowserv.model.parameter.base.Parameter
+            Template parameter definition.
+
+        Returns
+        -------
+        bool
+        """
+        return self.is_float() or self.is_int()
+
+    def is_record(self) -> bool:
+        """Test if the parameter is of type Record.
+
+        Returns
+        -------
+        bool
+        """
+        return self.dtype == PARA_RECORD
+
+    def is_select(self) -> bool:
+        """Test if the parameter is of type Select.
+
+        Returns
+        -------
+        bool
+        """
+        return self.dtype == PARA_SELECT
+
+    def is_string(self) -> bool:
+        """Test if the parameter is of type String.
+
+        Returns
+        -------
+        bool
+        """
+        return self.dtype == PARA_STRING
+
+    def prompt(self) -> str:
+        """Get default input prompt for the parameter declaration. The prompt
+        contains an indication of the data type, the parameter name and the
+        default value (if defined).
+
+        Returns
+        -------
+        string
+        """
+        val = '{} ({})'.format(self.display_name(), self.dtype)
+        if self.default is not None:
+            val += " [default '{}']".format(self.default)
+        return val + ' $> '
+
+    def to_dict(self) -> Dict:
         """Get dictionary serialization for the parameter declaration.
         Implementing classes can add elements to the base dictionary.
 
@@ -122,14 +259,14 @@ class ParameterBase(metaclass=ABCMeta):
         dict
         """
         return {
-            ID: self.para_id,
-            TYPE: self.type_id,
+            TYPE: self.dtype,
             NAME: self.name,
             INDEX: self.index,
-            DESC: self.description,
-            DEFAULT: self.default_value,
-            REQUIRED: self.is_required,
-            MODULE: self.module_id
+            LABEL: self.label,
+            HELP: self.help,
+            DEFAULT: self.default,
+            REQUIRED: self.required,
+            GROUP: self.group
         }
 
 
@@ -139,20 +276,20 @@ class ParameterGroup(object):
     group has a display name and an index position that defines the sort order
     for groups.
     """
-    def __init__(self, module_id, name, index):
+    def __init__(self, name: str, title: str, index: int):
         """Initialize the object properties.
 
         Parameters
         ----------
-        module_id: string
-            Unique group identifier
         name: string
+            Unique group identifier
+        title: string
             Human-readable group name
         index: int
             Group sort order index
         """
-        self.module_id = module_id
         self.name = name
+        self.title = title
         self.index = index
 
     @classmethod
@@ -177,11 +314,11 @@ class ParameterGroup(object):
         if validate:
             util.validate_doc(
                 doc,
-                mandatory=['id', 'name', 'index']
+                mandatory=['name', 'title', 'index']
             )
         return cls(
-            module_id=doc['id'],
             name=doc['name'],
+            title=doc['title'],
             index=doc['index']
         )
 
@@ -193,7 +330,7 @@ class ParameterGroup(object):
         dict
         """
         return {
-            'id': self.module_id,
             'name': self.name,
+            'title': self.title,
             'index': self.index
         }

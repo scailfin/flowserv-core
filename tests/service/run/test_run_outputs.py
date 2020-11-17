@@ -13,7 +13,7 @@ specification.
 import os
 
 from flowserv.controller.serial.engine import SerialWorkflowEngine
-from flowserv.service.run.argument import ARG, FILE
+from flowserv.service.run.argument import serialize_arg, serialize_fh
 from flowserv.tests.files import io_file
 from flowserv.tests.service import (
     create_group, create_user, create_workflow, start_run, upload_file
@@ -45,7 +45,7 @@ def test_run_workflow_with_outputs(service):
         group_id = create_group(api, workflow_id, [user_id])
         names = io_file(data=['Alice', 'Bob'], format='plain/text')
         file_id = upload_file(api, group_id, user_id, names)
-        args = [ARG('names', FILE(file_id, 'data/names.txt'))]
+        args = [serialize_arg('names', serialize_fh(file_id, 'data/names.txt'))]
         run_id = start_run(api, group_id, user_id, arguments=args)
     # -- Validate the run handle ----------------------------------------------
     with service(engine=engine) as api:

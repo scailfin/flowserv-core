@@ -33,22 +33,22 @@ postproc:
     inputs:
         files:
             - 'results/yProbBest.pkl'
-modules:
-    - id: 'preproc'
-      name: 'Pre-Processing Step'
+parameterGroups:
+    - name: 'preproc'
+      title: 'Pre-Processing Step'
       index: 0
-    - id: 'eval'
-      name: 'ML Evaluation Step'
+    - name: 'eval'
+      title: 'ML Evaluation Step'
       index: 1
 parameters:
-    - id: 'env_preproc'
-      name: 'Environment (Pre-Processing)'
+    - name: 'env_preproc'
+      label: 'Environment (Pre-Processing)'
       dtype: 'string'
       defaultValue: 'toptagger:1.0'
       index: 0
-      module: 'preproc'
-    - id: 'cmd_preproc'
-      name: 'Command  (Pre-Processing)'
+      group: 'preproc'
+    - name: 'cmd_preproc'
+      label: 'Command  (Pre-Processing)'
       dtype: 'string'
       defaultValue: 'python code/preprocess-dataset.py
         data/test_jets.pkl
@@ -56,39 +56,39 @@ parameters:
         data/preprocess/transformer.pkl
         results/'
       index: 1
-      module: 'preproc'
-    - id: 'env_eval'
-      name: 'Environment (ML)'
+      group: 'preproc'
+    - name: 'env_eval'
+      label: 'Environment (ML)'
       dtype: 'string'
       defaultValue: 'toptagger:1.0'
       index: 2
-      module: 'eval'
-    - id: 'cmd_eval'
-      name: 'Command (ML)'
+      group: 'eval'
+    - name: 'cmd_eval'
+      label: 'Command (ML)'
       dtype: 'string'
       defaultValue: 'python code/evaluate-models.py
         results/processed_test_jets.pkl
         data/evaluate/
         results'
       index: 3
-      module: 'eval'
+      group: 'eval'
 results:
     file: 'results/results.json'
     schema:
-        - id: 'mean_accuracy'
-          name: 'Accuracy (mean)'
+        - name: 'mean_accuracy'
+          label: 'Accuracy (mean)'
           path: 'accuracy/mean'
           dtype: 'float'
-        - id: 'mean_auc'
-          name: 'AUC (mean)'
+        - name: 'mean_auc'
+          label: 'AUC (mean)'
           path: 'auc/mean'
           dtype: 'float'
-        - id: 'mean_loss'
-          name: 'Loss (mean)'
+        - name: 'mean_loss'
+          label: 'Loss (mean)'
           path: 'loss/mean'
           dtype: 'float'
     orderBy:
-        - id: 'mean_accuracy'
+        - name: 'mean_accuracy'
           sortDesc: true
-        - id: 'mean_auc'
+        - name: 'mean_auc'
           sortDesc: true
