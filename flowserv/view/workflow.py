@@ -157,13 +157,19 @@ class WorkflowSerializer(Serializer):
                 },
                 LABELS['RUN_RESULTS']: results
             })
-        obj = {
-            LABELS['WORKFLOW_SCHEMA']: [{
+        # Add schema information for the leaderboard. Need to account for
+        # workflow templates that do not have a schema defined. In this case
+        # the list of columns is empty.
+        schema = list()
+        if workflow.result_schema is not None:
+            for c in workflow.result_schema.columns:
+                schema.append({
                     LABELS['COLUMN_NAME']: c.column_id,
                     LABELS['COLUMN_TITLE']: c.name,
                     LABELS['COLUMN_TYPE']: c.dtype
-                } for c in workflow.result_schema.columns
-            ],
+                })
+        obj = {
+            LABELS['WORKFLOW_SCHEMA']: schema,
             LABELS['RANKING']: entries
         }
         # Add serialization for optional workflow post-processing run handle
