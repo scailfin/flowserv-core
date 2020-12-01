@@ -10,9 +10,9 @@
 the environment.
 """
 
-import os
+from typing import Optional
 
-from flowserv.config.api import API_URL
+import os
 
 
 """Environment variables for the command line interface."""
@@ -39,9 +39,14 @@ def ACCESS_TOKEN() -> str:
         return token
 
 
-def BENCHMARK_ID(default_value: Optional[str] = None) -> str:
+def BENCHMARK_ID(default: Optional[str] = None) -> str:
     """Short cut to get the value for the default benchmark identifier from the
     environment.
+
+    Parameters
+    ----------
+    default: str
+        Default value that is returned if the environment variable is not set.
 
     Returns
     -------
@@ -49,14 +54,19 @@ def BENCHMARK_ID(default_value: Optional[str] = None) -> str:
     """
     benchmark_id = os.environ.get(ROB_BENCHMARK)
     if benchmark_id is None:
-        return default_value
+        return default
     else:
         return benchmark_id
 
 
-def SUBMISSION_ID(default_value: Optional[str] = None) -> str:
+def SUBMISSION_ID(default: Optional[str] = None) -> str:
     """Short cut to get the value for the default submission identifier from the
     environment.
+
+    Parameters
+    ----------
+    default: str
+        Default value that is returned if the environment variable is not set.
 
     Returns
     -------
@@ -64,6 +74,6 @@ def SUBMISSION_ID(default_value: Optional[str] = None) -> str:
     """
     submission_id = os.environ.get(ROB_SUBMISSION)
     if submission_id is None:
-        return default_value
+        return default
     else:
         return submission_id
