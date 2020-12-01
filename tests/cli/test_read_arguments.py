@@ -15,7 +15,7 @@ from flowserv.model.parameter.string import String
 from flowserv.scanner import Scanner, ListReader
 from flowserv.service.run.argument import serialize_fh
 
-import flowserv.cli.parameter as cli
+import flowserv.client.cli.parameter as cli
 
 
 def test_read_boolean_parameters():

@@ -8,7 +8,7 @@
 
 """Unit tests for the run command-line interface."""
 
-from flowserv.cli.admin import cli
+from flowserv.client.cli.admin import cli
 
 
 def test_delete_obsolete_runs(flowserv_cli):

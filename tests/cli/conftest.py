@@ -13,7 +13,7 @@ import pytest
 
 from click.testing import CliRunner
 
-from flowserv.cli.admin import cli
+from flowserv.client.cli.admin import cli
 from flowserv.config.api import FLOWSERV_API_BASEDIR
 from flowserv.config.database import FLOWSERV_DB
 from flowserv.config.backend import CLEAR_BACKEND

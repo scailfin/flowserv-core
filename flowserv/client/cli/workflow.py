@@ -16,7 +16,7 @@ import os
 import sys
 
 from flowserv.app.base import App
-from flowserv.cli.parameter import read
+from flowserv.client.cli.parameter import read
 from flowserv.model.auth import open_access
 from flowserv.service.api import service
 

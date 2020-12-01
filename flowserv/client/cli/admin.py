@@ -15,12 +15,12 @@ import click
 import os
 import sys
 
-from flowserv.cli.app import install_application, uninstall_application
-from flowserv.cli.config import get_configuration
-from flowserv.cli.repository import list_repository
-from flowserv.cli.run import runscli
-from flowserv.cli.user import register_user
-from flowserv.cli.workflow import run_workflow, workflowcli
+from flowserv.client.cli.app import install_application, uninstall_application
+from flowserv.client.cli.config import get_configuration
+from flowserv.client.cli.repository import list_repository
+from flowserv.client.cli.run import runscli
+from flowserv.client.cli.user import register_user
+from flowserv.client.cli.workflow import run_workflow, workflowcli
 from flowserv.config.api import API_BASEDIR
 from flowserv.model.database import DB
 
