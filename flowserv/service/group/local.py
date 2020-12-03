@@ -10,22 +10,33 @@
 and manipulate workflow groups.
 """
 
+from typing import Dict, List, Optional
+
+from flowserv.controller.base import WorkflowController
+from flowserv.model.auth import Auth
+from flowserv.model.group import WorkflowGroupManager
+from flowserv.model.workflow.manager import WorkflowManager
+from flowserv.service.group.base import WorkflowGroupService
+from flowserv.view.group import WorkflowGroupSerializer
+
 import flowserv.error as err
 
 
-class WorkflowGroupService(object):
+class LocalWorkflowGroupService(WorkflowGroupService):
     """API component that provides methods to access and manipulate workflow
     groups.
     """
     def __init__(
-        self, group_manager, workflow_repo, backend, auth, serializer
+        self, group_manager: WorkflowGroupManager, workflow_repo: WorkflowManager,
+        backend: WorkflowController, auth: Auth,
+        serializer: Optional[WorkflowGroupSerializer] = None
     ):
         """Initialize the internal reference to the group manager, the workflow
         repository, and the serializer.
 
         Parameters
         ----------
-        group_manager: flowserv.model.group..GroupManager
+        group_manager: flowserv.model.group.WorkflowGroupManager
             Manager for workflow groups
         workflow_repo: flowserv.model.workflow.manager.WorkflowManager
             Repository for workflow templates
@@ -33,16 +44,19 @@ class WorkflowGroupService(object):
             Workflow engine controller
         auth: flowserv.model.auth.Auth
             Implementation of the authorization policy for the API
-        serializer: flowserv.view.group.WorkflowGroupSerialize
+        serializer: flowserv.view.group.WorkflowGroupSerializer
             Override the default serializer
         """
         self.group_manager = group_manager
         self.workflow_repo = workflow_repo
         self.backend = backend
         self.auth = auth
-        self.serialize = serializer
+        self.serialize = serializer if serializer is not None else WorkflowGroupSerializer()
 
-    def create_group(self, workflow_id, name, user_id, members=None):
+    def create_group(
+        self, workflow_id: str, name: str, user_id: str,
+        members: Optional[List[str]] = None
+    ) -> Dict:
         """Create a new user group for a given workflow. Each group has a
         a unique name for the workflow, a group owner, and a list of additional
         group members.
@@ -64,11 +78,6 @@ class WorkflowGroupService(object):
         Returns
         -------
         dict
-
-        Raises
-        ------
-        flowserv.error.ConstraintViolationError
-        flowserv.error.UnknownWorkflowError
         """
         # Get the handle for for the given workflow. This will raise an
         # exception if the workflow is unknown.
@@ -87,7 +96,7 @@ class WorkflowGroupService(object):
         )
         return self.serialize.group_handle(group)
 
-    def delete_group(self, group_id, user_id):
+    def delete_group(self, group_id: str, user_id: str):
         """Delete a given workflow group and all associated runs and uploaded
         files. If the user is not a member of the group an unauthorized access
         error is raised.
@@ -98,11 +107,6 @@ class WorkflowGroupService(object):
             Unique workflow group identifier
         user_id: string
             Unique user identifier
-
-        Raises
-        ------
-        flowserv.error.UnauthorizedAccessError
-        flowserv.error.UnknownWorkflowGroupError
         """
         # Raise an error if the user does not have rights to delete the
         # workflow group or if the workflow group does not exist.
@@ -110,7 +114,7 @@ class WorkflowGroupService(object):
             raise err.UnauthorizedAccessError()
         self.group_manager.delete_group(group_id)
 
-    def get_group(self, group_id):
+    def get_group(self, group_id: str) -> Dict:
         """Get handle for workflow group with the given identifier.
 
         Parameters
@@ -121,15 +125,13 @@ class WorkflowGroupService(object):
         Returns
         -------
         dict
-
-        Raises
-        ------
-        flowserv.error.UnknownWorkflowGroupError
         """
         group = self.group_manager.get_group(group_id)
         return self.serialize.group_handle(group)
 
-    def list_groups(self, workflow_id=None, user_id=None):
+    def list_groups(
+        self, workflow_id: Optional[str] = None, user_id: Optional[str] = None
+    ) -> Dict:
         """Get a listing of all workflow groups. If the user handle is given
         the result contains only those groups that the user is a member of.
         If the workflow identifier is given the result contains groups for that
@@ -152,7 +154,10 @@ class WorkflowGroupService(object):
         )
         return self.serialize.group_listing(groups)
 
-    def update_group(self, group_id, user_id, name=None, members=None):
+    def update_group(
+        self, group_id: str, user_id: str, name: Optional[str] = None,
+        members: Optional[List[str]] = None
+    ) -> Dict:
         """Update the name for the workflow group with the given identifier.
 
         Parameters
@@ -169,12 +174,6 @@ class WorkflowGroupService(object):
         Returns
         -------
         dict
-
-        Raises
-        ------
-        flowserv.error.ConstraintViolationError
-        flowserv.error.UnauthorizedAccessError
-        flowserv.error.UnknownWorkflowGroupError
         """
         # Raise an error if the user does not have rights to update the
         # workflow group or if the workflow group does not exist.
