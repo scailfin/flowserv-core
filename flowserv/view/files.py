@@ -8,32 +8,23 @@
 
 """Serializer for uploaded workflow user group files."""
 
-from flowserv.view.base import Serializer
+from typing import Dict, List
+
+from flowserv.model.base import FileHandle
 
 
-class UploadFileSerializer(Serializer):
-    """Default serializer for handles and= listings of files that were uploaded
+"""Serialization labels."""
+FILE_DATE = 'createdAt'
+FILE_ID = 'id'
+FILE_LIST = 'files'
+FILE_NAME = 'name'
+FILE_SIZE = 'size'
+
+
+class UploadFileSerializer():
+    """Default serializer for handles and listings of files that were uploaded
     for a workflow groups."""
-    def __init__(self, labels=None):
-        """Initialize serialization labels.
-
-        Parameters
-        ----------
-        labels: object, optional
-            Object instance that contains the values for serialization labels
-        """
-        super(UploadFileSerializer, self).__init__(
-            labels={
-                'FILE_DATE': 'createdAt',
-                'FILE_ID': 'id',
-                'FILE_LIST': 'files',
-                'FILE_NAME': 'name',
-                'FILE_SIZE': 'size'
-            },
-            override_labels=labels
-        )
-
-    def file_handle(self, group_id, fh):
+    def file_handle(self, group_id: str, fh: FileHandle) -> Dict:
         """Get serialization for a file handle.
 
         Parameters
@@ -47,15 +38,14 @@ class UploadFileSerializer(Serializer):
         -------
         dict
         """
-        LABELS = self.labels
         return {
-            LABELS['FILE_ID']: fh.file_id,
-            LABELS['FILE_NAME']: fh.name,
-            LABELS['FILE_DATE']: fh.created_at,
-            LABELS['FILE_SIZE']: fh.size
+            FILE_ID: fh.file_id,
+            FILE_NAME: fh.name,
+            FILE_DATE: fh.created_at,
+            FILE_SIZE: fh.size
         }
 
-    def file_listing(self, group_id, files):
+    def file_listing(self, group_id: str, files: List[FileHandle]) -> Dict:
         """Get serialization for listing of uploaded files for a given
         workflow group.
 
@@ -70,5 +60,4 @@ class UploadFileSerializer(Serializer):
         -------
         dict
         """
-        FILES = self.labels['FILE_LIST']
-        return {FILES: [self.file_handle(group_id, fh) for fh in files]}
+        return {FILE_LIST: [self.file_handle(group_id, fh) for fh in files]}

@@ -8,61 +8,54 @@
 
 """Serializer for the service descriptor."""
 
-from flowserv.view.base import Serializer
+from typing import Dict, Optional
 
 
-class ServiceSerializer(Serializer):
+"""Serialization labels."""
+ROUTE_ID = 'id'
+ROUTE_PATTERN = 'pattern'
+
+SERVICE_NAME = 'name'
+SERVICE_ROUTES = 'routes'
+SERVICE_USER = 'username'
+SERVICE_VERSION = 'version'
+
+
+class ServiceSerializer(object):
     """Default serializer for the service descriptor."""
-    def __init__(self, labels=None):
-        """Initialize serialization labels.
-
-        Parameters
-        ----------
-        labels: object, optional
-            Object instance that contains the values for serialization labels
-        """
-        super(ServiceSerializer, self).__init__(
-            labels={
-                'SERVICE_NAME': 'name',
-                'SERVICE_USER': 'username',
-                'SERVICE_TOKEN_VALID': 'validToken',
-                'SERVICE_VERSION': 'version',
-            },
-            override_labels=labels
-        )
-
-    def service_descriptor(self, name, version, username=None):
+    def service_descriptor(
+        self, name: str, version: str, routes: Dict,
+        username: Optional[str] = None
+    ) -> Dict:
         """Serialization of the service descriptor. The descriptor contains the
-        service name, version, and a list of HATEOAS references. The optional
+        service name, version, and a list of route patterns. The optional
         user name indicates whether a request for the service descriptor
         contained a valid access token. If the user name is not None it will be
-        included in the service descriptor and the valid token flag is set to
-        True.
+        included in the service descriptor.
 
         Parameters
         ----------
         name: string
-            Service name
+            Service name.
         version: string
-            Service version number
-        username: string, optional
-            Name of the user that was authenticated by a given access token
+            Service version number.
+        username: string, default=None
+            Name of the user that was authenticated by a given access token.
 
         Returns
         -------
         dict
         """
-        LABELS = self.labels
-        # If the request for the service descriptor contained an API key that
-        # was valid, the name for the respective user will be given. The valid
-        # token flag indicates that the API key was valid and that the
-        # descriptor contains the name of the user.
-        valid_token = username is not None
         obj = {
-            LABELS['SERVICE_NAME']: name,
-            LABELS['SERVICE_VERSION']: version,
-            LABELS['SERVICE_TOKEN_VALID']: valid_token
+            SERVICE_NAME: name,
+            SERVICE_VERSION: version,
+            SERVICE_ROUTES: [
+                {
+                    ROUTE_ID: key,
+                    ROUTE_PATTERN: value
+                } for key, value in routes.items()
+            ]
         }
         if username is not None:
-            obj[LABELS['SERVICE_USER']] = username
+            obj[SERVICE_USER] = username
         return obj

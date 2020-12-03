@@ -1,4 +1,3 @@
-
 # This file is part of the Reproducible and Reusable Data Analysis Workflow
 # Server (flowServ).
 #
@@ -12,7 +11,6 @@
 import os
 import pytest
 
-from flowserv.model.database import DB, TEST_URL
 from flowserv.model.files.fs import FileSystemStore
 from flowserv.service.api import service as serviceapi
 from flowserv.tests.controller import StateEngine
@@ -37,14 +35,6 @@ def service(database, tmpdir):
         )
 
     return _api
-
-
-@pytest.fixture
-def database():
-    """Create a fresh instance of the database."""
-    db = DB(connect_url=TEST_URL, web_app=False)
-    db.init()
-    return db
 
 
 @pytest.fixture

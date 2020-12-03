@@ -6,10 +6,5 @@
 # flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
-include LICENSE
-include *.rst
-recursive-include flowserv *.py *.yaml
-prune docs/_build
-recursive-include docs *.py
-recursive-include docs *.rst
-global-exclude *.py[co]
+"""Name of the header element that contains the access token."""
+HEADER_TOKEN = 'api_key'

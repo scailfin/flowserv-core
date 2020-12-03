@@ -73,7 +73,7 @@ paths:
         name: "workflowId"
         description: "Unique workflow identifier"
         required: true
-        type: string
+        type: "string"
       responses:
         200:
           description: "Workflow handle"
@@ -95,12 +95,12 @@ paths:
         name: "workflowId"
         description: "Unique workflow identifier"
         required: true
-        type: string
+        type: "string"
       - in: "query"
         name: "orderBy"
         description: "List of result column names to order by (can include optional sort order). FOrmat is columnName[:ASC|DESC],"
         required: false
-        type: string
+        type: "string"
       - in: "query"
         name: "includeAll"
         description: "Include all results (if true) or only one per user group (if false)"
@@ -130,7 +130,7 @@ paths:
         name: "workflowId"
         description: "Unique workflow identifier"
         required: true
-        type: string
+        type: "string"
       responses:
         200:
           description: "User Group listing"
@@ -153,24 +153,24 @@ paths:
         name: "workflowId"
         description: "Unique workflow identifier"
         required: true
-        type: string
+        type: "string"
       - name: body
         in: body
         required: true
         description: "User Group name and members"
         schema:
-            type: object
+            type: "object"
             required:
             - name
             properties:
               name:
-                type: string
+                type: "string"
               members:
-                type: array
+                type: "array"
                 items:
-                  type: string
+                  type: "string"
               parameters:
-                type: array
+                type: "array"
                 items:
                   $ref: '#/definitions/WorkflowParameter'
       responses:
@@ -218,7 +218,7 @@ paths:
         name: "userGroupId"
         description: "Unique user group identifier"
         required: true
-        type: string
+        type: "string"
       responses:
         204:
           description: "UserGroup deleted"
@@ -241,7 +241,7 @@ paths:
         name: "userGroupId"
         description: "Unique user group identifier"
         required: true
-        type: string
+        type: "string"
       responses:
         200:
           description: "User Group handle"
@@ -264,20 +264,20 @@ paths:
         name: "userGroupId"
         description: "Unique user group identifier"
         required: true
-        type: string
+        type: "string"
       - name: body
         in: body
         required: true
         description: "User Group name and members"
         schema:
-            type: object
+            type: "object"
             properties:
               name:
-                type: string
+                type: "string"
               members:
-                type: array
+                type: "array"
                 items:
-                  type: string
+                  type: "string"
       responses:
         200:
           description: "Updated user group handle"
@@ -306,7 +306,7 @@ paths:
         name: "userGroupId"
         description: "Unique user group identifier"
         required: true
-        type: string
+        type: "string"
       responses:
         200:
           description: "Run listing"
@@ -331,18 +331,18 @@ paths:
         name: "userGroupId"
         description: "Unique user group identifier"
         required: true
-        type: string
+        type: "string"
       - name: body
         in: body
         required: true
         description: Run arguments
         schema:
-          type: object
+          type: "object"
           required:
           - arguments
           properties:
             arguments:
-              type: array
+              type: "array"
               items:
                 $ref: '#/definitions/RunArgument'
       responses:
@@ -372,7 +372,7 @@ paths:
         name: "runId"
         description: "Unique run identifier"
         required: true
-        type: string
+        type: "string"
       responses:
         204:
           description: "Run deleted"
@@ -397,7 +397,7 @@ paths:
         name: "runId"
         description: "Unique run identifier"
         required: true
-        type: string
+        type: "string"
       responses:
         200:
           description: "Run handle"
@@ -422,16 +422,16 @@ paths:
         name: "runId"
         description: "Unique run identifier"
         required: true
-        type: string
+        type: "string"
       - name: body
         in: body
         required: true
         description: Run arguments
         schema:
-          type: object
+          type: "object"
           properties:
             reason:
-              type: string
+              type: "string"
       responses:
         200:
           description: "Run handle"
@@ -459,7 +459,7 @@ paths:
         name: "runId"
         description: "Unique run identifier"
         required: true
-        type: string
+        type: "string"
       responses:
         200:
           description: "File"
@@ -484,12 +484,12 @@ paths:
         name: "runId"
         description: "Unique run identifier"
         required: true
-        type: string
+        type: "string"
       - in: "path"
         name: "resourceId"
         description: "Unique resource identifier"
         required: true
-        type: string
+        type: "string"
       responses:
         200:
           description: "File"
@@ -514,7 +514,7 @@ paths:
         name: "userGroupId"
         description: "Unique user group identifier"
         required: true
-        type: string
+        type: "string"
       responses:
         200:
           description: "List of uploaded files"
@@ -541,7 +541,7 @@ paths:
         name: "userGroupId"
         description: "Unique user group identifier"
         required: true
-        type: string
+        type: "string"
       - in: "formData"
         name: "file"
         description: "Uploaded file"
@@ -579,12 +579,12 @@ paths:
         name: "userGroupId"
         description: "Unique user group identifier"
         required: true
-        type: string
+        type: "string"
       - in: "path"
         name: "fileId"
         description: "Unique file identifier"
         required: true
-        type: string
+        type: "string"
       responses:
         204:
           description: "List of uploaded files"
@@ -608,12 +608,12 @@ paths:
         name: "userGroupId"
         description: "Unique user group identifier"
         required: true
-        type: string
+        type: "string"
       - in: "path"
         name: "fileId"
         description: "Unique file identifier"
         required: true
-        type: string
+        type: "string"
       responses:
         200:
           description: "File"
@@ -638,7 +638,7 @@ paths:
         name: "query"
         description: "User name"
         required: false
-        type: string
+        type: "string"
       responses:
         200:
           description: "Query result"
@@ -663,13 +663,13 @@ paths:
         description: "Identifier for a registered user"
         required: true
         schema:
-          type: object
+          type: "object"
           description: "Unique user identifier"
           required:
           - id
           properties:
             id:
-              type: string
+              type: "string"
       responses:
         200:
           description: "User activated successfully"
@@ -735,22 +735,17 @@ paths:
         description: "User name"
         required: true
         schema:
-          type: object
+          type: "object"
           required:
           - username
           properties:
             username:
-              type: string
+              type: "string"
       responses:
         200:
           description: "User activated successfully"
           schema:
-            type: object
-            required:
-            - requestId
-            properties:
-              requestId:
-                type: string
+            $ref: "#/definitions/PasswordResetResponse"
   /users/password/reset:
     post:
       tags:
@@ -766,15 +761,15 @@ paths:
         description: "Reset request identifier and new password"
         required: true
         schema:
-          type: object
+          type: "object"
           required:
           - requestId
           - password
           properties:
             requestId:
-              type: string
+              type: "string"
             password:
-              type: string
+              type: "string"
       responses:
         200:
           description: "User activated successfully"
@@ -834,7 +829,7 @@ securityDefinitions:
 # ------------------------------------------------------------------------------
 definitions:
   FileHandle:
-    type: object
+    type: "object"
     description: "Handle for uploaded file"
     required:
     - id
@@ -843,38 +838,45 @@ definitions:
     - size
     properties:
       id:
-        type: string
+        type: "string"
       name:
-        type: string
+        type: "string"
       createdAt:
-        type: string
+        type: "string"
       size:
         type: number
   FileListing:
-    type: object
+    type: "object"
     description: "List of handles for uploaded files"
     required:
     - files
     properties:
       files:
-        type: array
+        type: "array"
         items:
           $ref: "#/definitions/FileHandle"
+  PasswordResetResponse:
+    type: "object"
+    required:
+    - requestId
+    properties:
+      requestId:
+        type: "string"
   RunArgument:
-    type: object
+    type: "object"
     description: "Argument for a new workflow run"
     required:
     - id
     - value
     properties:
       id:
-        type: string
+        type: "string"
       value:
-        type: string
+        type: "string"
       as:
-        type: string
+        type: "string"
   RunDescriptor:
-    type: object
+    type: "object"
     description: "Descriptor containing basic information for workflow run"
     required:
     - id
@@ -882,13 +884,13 @@ definitions:
     - createdAt
     properties:
       id:
-        type: string
+        type: "string"
       state:
-        type: string
+        type: "string"
       createdAt:
-        type: string
+        type: "string"
   RunHandle:
-    type: object
+    type: "object"
     description: "Handle containing all information for a workflow run"
     required:
     - id
@@ -897,77 +899,87 @@ definitions:
     - state
     properties:
       id:
-        type: string
+        type: "string"
       groupId:
-        type: string
+        type: "string"
       workflowId:
-        type: string
+        type: "string"
       parameters:
-        type: array
+        type: "array"
         items:
           $ref: '#/definitions/WorkflowParameter'
       arguments:
-        type: array
+        type: "array"
         items:
           $ref: "#/definitions/RunArgument"
       state:
-        type: string
+        type: "string"
       startedAt:
-        type: string
+        type: "string"
       finishedAt:
-        type: string
+        type: "string"
       messages:
-        type: array
+        type: "array"
         items:
-          type: string
+          type: "string"
       files:
-        type: array
+        type: "array"
         items:
-          type: object
+          type: "object"
           required:
-          - id
-          - name
+          - "id"
+          - "name"
           properties:
             id:
-              type: string
+              type: "string"
             name:
-              type: string
+              type: "string"
             title:
-              type: string
+              type: "string"
             caption:
-              type: string
+              type: "string"
             widget:
-              type: string
+              type: "string"
             format:
-              type: object
+              type: "object"
   RunListing:
-    type: object
+    type: "object"
     description: "Listing of run handles"
     required:
     - runs
     properties:
       runs:
-        type: array
+        type: "array"
         items:
           $ref: "#/definitions/RunDescriptor"
   ServiceDescriptor:
-    type: object
+    type: "object"
     description: "Descriptor containing basic service properties"
     required:
     - name
     - version
-    - validToken
+    - routes
     properties:
       name:
-        type: string
+        type: "string"
       version:
-        type: string
-      validToken:
-        type: boolean
+        type: "string"
+      routes:
+        type: "array"
+        items:
+          type: "object"
+          required:
+          - "id"
+          - "pattern"
+          properties:
+            id:
+              type: "string"
+            pattern:
+              type: "string"
       username:
-        type: string
+        type: "string"
   UserGroupHandle:
-    type: object
+    type: "object"
     description: "Handle for workflow user group"
     required:
     - id
@@ -977,177 +989,177 @@ definitions:
     - files
     properties:
       id:
-        type: string
+        type: "string"
       name:
-        type: string
+        type: "string"
       members:
-        type: array
+        type: "array"
         items:
-          type: object
+          type: "object"
           required:
           - id
           - username
           properties:
             id:
-              type: string
+              type: "string"
             username:
-              type: string
+              type: "string"
       parameters:
-        type: array
+        type: "array"
         items:
           $ref: '#/definitions/WorkflowParameter'
       files:
-        type: array
+        type: "array"
         items:
           $ref: "#/definitions/FileHandle"
   UserGroupListing:
-    type: object
+    type: "object"
     description: 'List of user group descriptors'
     required:
     - groups
     properties:
       groups:
-        type: array
+        type: "array"
         items:
-          type: object
+          type: "object"
           required:
           - id
           - name
           - workflow
           properties:
             id:
-              type: string
+              type: "string"
             name:
-              type: string
+              type: "string"
             workflow:
-              type: string
+              type: "string"
   UserCredentials:
-    type: object
+    type: "object"
     description: "User login credentials"
     required:
     - username
     - password
     properties:
       username:
-        type: string
+        type: "string"
       password:
-        type: string
+        type: "string"
   UserDescriptor:
-    type: object
+    type: "object"
     description: "Basic information about a registered user"
     required:
     - id
     - username
     properties:
       id:
-        type: string
+        type: "string"
       username:
-        type: string
+        type: "string"
   User:
-    type: object
+    type: "object"
     description: "Information about a registered user"
     required:
     - id
     - username
     properties:
       id:
-        type: string
+        type: "string"
       username:
-        type: string
+        type: "string"
       token:
-        type: string
+        type: "string"
   UserListing:
-    type: object
+    type: "object"
     description: "Identifier and name of a registered users"
     required:
     - users
     properties:
       users:
-        type: array
+        type: "array"
         items:
           $ref: "#/definitions/UserDescriptor"
   UserRegistration:
-    type: object
+    type: "object"
     description: "Information about a new user"
     required:
     - username
     - password
     properties:
       username:
-        type: string
+        type: "string"
       password:
-        type: string
+        type: "string"
       verify:
         type: boolean
   WorkflowDescriptor:
-    type: object
+    type: "object"
     required:
     - id
     - name
     properties:
       id:
-        type: string
+        type: "string"
       name:
-        type: string
+        type: "string"
       description:
-        type: string
+        type: "string"
       instructions:
-        type: string
+        type: "string"
   WorkflowHandle:
-    type: object
+    type: "object"
     required:
     - id
     - name
     - parameters
     properties:
       id:
-        type: string
+        type: "string"
       name:
-        type: string
+        type: "string"
       description:
-        type: string
+        type: "string"
       instructions:
-        type: string
+        type: "string"
       parameters:
-        type: array
+        type: "array"
         items:
           $ref: "#/definitions/WorkflowParameter"
       parameterGroups:
-        type: array
+        type: "array"
         items:
-          type: object
+          type: "object"
           required:
           - name
           - title
           - index
           properties:
             name:
-              type: string
+              type: "string"
             title:
-              type: string
+              type: "string"
             index:
               type: number
               format: int64
       postproc:
         $ref: "#/definitions/RunHandle"
   WorkflowLeaderboard:
-    type: object
+    type: "object"
     description: "Ordered list of run results"
     required:
     - ranking
     - schema
     properties:
       ranking:
-        type: array
+        type: "array"
         items:
-          type: object
+          type: "object"
           required:
           - run
           - group
           - results
           properties:
             run:
-              type: object
+              type: "object"
               required:
               - id
               - createdAt
@@ -1155,108 +1167,108 @@ definitions:
               - finishedAt
               properties:
                 id:
-                  type: string
+                  type: "string"
                 createdAt:
-                  type: string
+                  type: "string"
                 startedAt:
-                  type: string
+                  type: "string"
                 finishedAt:
-                  type: string
+                  type: "string"
             group:
-              type: object
+              type: "object"
               required:
               - id
               - name
               properties:
                 id:
-                  type: string
+                  type: "string"
                 name:
-                  type: string
+                  type: "string"
             results:
-              type: array
+              type: "array"
               items:
-                type: object
+                type: "object"
                 required:
-                - id
+                - name
                 - value
                 properties:
-                  id:
-                    type: string
+                  name:
+                    type: "string"
                   value:
                     type: integer
       postproc:
         $ref: "#/definitions/RunHandle"
       schema:
-        type: array
+        type: "array"
         items:
-          type: object
+          type: "object"
           required:
           - name
           - label
-          - type
+          - dtype
           properties:
             name:
-              type: string
+              type: "string"
             label:
-              type: string
-            type:
-              type: string
+              type: "string"
+            dtype:
+              type: "string"
       resources:
-        type: array
+        type: "array"
         items:
-          type: object
+          type: "object"
           required:
             - id
             - name
           properties:
             id:
-              type: string
+              type: "string"
             name:
-              type: string
+              type: "string"
             caption:
-              type: string
+              type: "string"
   WorkflowListing:
-    type: object
+    type: "object"
     required:
     - workflows
     properties:
       workflows:
-        type: array
+        type: "array"
         items:
           $ref: "#/definitions/WorkflowDescriptor"
   WorkflowParameter:
-    type: object
+    type: "object"
     required:
-    - name
-    - datatype
-    - index
-    - required
+    - "name"
+    - "dtype"
+    - "index"
+    - "isRequired"
     properties:
       name:
-        type: string
-      datatype:
-        type: string
+        type: "string"
+      dtype:
+        type: "string"
       index:
-        type: integer
-      required:
-        type: boolean
+        type: "integer"
+      isRequired:
+        type: "boolean"
       label:
-        type: string
+        type: "string"
       help:
-        type: string
+        type: "string"
       defaultValue:
-        type: string
+        type: "string"
       values:
-        type: array
+        type: "array"
         items:
-          type: object
+          type: "object"
           required:
           - value
           properties:
             name:
-              type: string
+              type: "string"
             value:
-              type: string
+              type: "string"
             isDefault:
               type: boolean
 externalDocs:

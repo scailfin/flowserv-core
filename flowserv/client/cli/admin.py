@@ -15,11 +15,11 @@ import click
 import os
 import sys
 
-from flowserv.client.cli.app import install_application, uninstall_application
+from flowserv.client.cli.app import cli_app
 from flowserv.client.cli.config import get_configuration
 from flowserv.client.cli.repository import list_repository
 from flowserv.client.cli.run import runscli
-from flowserv.client.cli.user import register_user
+from flowserv.client.cli.user import cli_user
 from flowserv.client.cli.workflow import run_workflow, workflowcli
 from flowserv.config.api import API_BASEDIR
 from flowserv.model.database import DB
@@ -69,8 +69,7 @@ def init(force=False):
 
 
 # App
-cli.add_command(install_application, name='install')
-cli.add_command(uninstall_application, name='uninstall')
+cli.add_command(cli_app)
 
 
 # Repository
@@ -82,7 +81,7 @@ cli.add_command(runscli)
 
 
 # Users
-cli.add_command(register_user, name='register')
+cli.add_command(cli_user)
 
 
 # Workflows

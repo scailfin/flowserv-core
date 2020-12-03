@@ -381,6 +381,7 @@ class WorkflowGroupManager(object):
         # Insert information into database and return handle for uploaded file.
         fileobj = UploadFile(
             file_id=file_id,
+            created_at=util.utc_now(),
             key=os.path.join(uploaddir, file_id),
             name=name,
             mime_type=mime_type,

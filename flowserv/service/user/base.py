@@ -6,33 +6,18 @@
 # flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
-"""Implementation of API methods that access and manipulate user resources as
-well as access tokens.
-"""
+"""Interface for API methods that interact with the user manager."""
+
+from abc import ABCMeta, abstractmethod
+from typing import Dict, Optional
 
 
-class UserService(object):
-    """Implement methods that handle user login and logout as well as
+class UserService(metaclass=ABCMeta):  # pragma: no cover
+    """Specification of methods that handle user login and logout as well as
     registration and activation of new users.
     """
-    def __init__(self, manager, auth, serializer):
-        """Initialize the user manager that maintains all registered users and
-        the resource serializer.
-
-        Parameters
-        ----------
-        manager: flowserv.model.user.UserManager
-            Manager for registered users
-        auth: flowserv.model.auth.Auth
-            Authentication manager.
-        serializer: flowserv.view.user.UserSerializer
-            Override the default serializer
-        """
-        self.manager = manager
-        self.auth = auth
-        self.serialize = serializer
-
-    def activate_user(self, user_id):
+    @abstractmethod
+    def activate_user(self, user_id: str) -> Dict:
         """Activate a new user with the given identifier.
 
         Parameters
@@ -43,30 +28,27 @@ class UserService(object):
         Returns
         -------
         dict
-
-        Raises
-        ------
-        flowserv.model.base.error.UnknownUserError
         """
-        return self.serialize.user(self.manager.activate_user(user_id))
+        raise NotImplementedError()
 
-    def list_users(self, query=None):
+    @abstractmethod
+    def list_users(self, query: Optional[str] = None) -> Dict:
         """Get a listing of registered users. The optional query string is used
         to filter users whose name starts with the given string.
 
         Parameters
         ----------
-        query: string, optional
+        query: string, default=None
             Prefix string to filter users based on their name.
 
         Returns
         -------
         dict
         """
-        users = self.manager.list_users(prefix=query)
-        return self.serialize.user_listing(users)
+        raise NotImplementedError()
 
-    def login_user(self, username, password):
+    @abstractmethod
+    def login_user(self, username: str, password: str) -> Dict:
         """Get handle for user with given credentials. Raises error if the user
         is unknown or if invalid credentials are provided.
 
@@ -80,14 +62,11 @@ class UserService(object):
         Returns
         -------
         dict
-
-        Raises
-        ------
-        flowserv.model.base.error.UnknownUserError
         """
-        return self.serialize.user(self.manager.login_user(username, password))
+        raise NotImplementedError()
 
-    def logout_user(self, api_key):
+    @abstractmethod
+    def logout_user(self, api_key: str) -> Dict:
         """Logout given user.
 
         Parameters
@@ -98,14 +77,13 @@ class UserService(object):
         Returns
         -------
         dict
-
-        Raises
-        ------
-        flowserv.error.UnauthenticatedAccessError
         """
-        return self.serialize.user(self.manager.logout_user(api_key))
+        raise NotImplementedError()
 
-    def register_user(self, username, password, verify=False):
+    @abstractmethod
+    def register_user(
+        self, username: str, password: str, verify: Optional[bool] = False
+    ) -> Dict:
         """Create a new user for the given username and password. Raises an
         error if a user with that name already exists or if the user name is
         ivalid (e.g., empty or too long).
@@ -118,26 +96,17 @@ class UserService(object):
             User email address that is used as the username
         password: string
             Password used to authenticate the user
-        verify: bool, optional
+        verify: bool, default=False
             Determines whether the created user is active or inactive
 
         Returns
         -------
         dict
-
-        Raises
-        ------
-        flowserv.error.ConstraintViolationError
-        flowserv.error.DuplicateUserError
         """
-        user = self.manager.register_user(
-            username=username,
-            password=password,
-            verify=verify
-        )
-        return self.serialize.user(user)
+        raise NotImplementedError()
 
-    def request_password_reset(self, username):
+    @abstractmethod
+    def request_password_reset(self, username: str) -> Dict:
         """Request to reset the password for the user with the given name. The
         result contains a unique request identifier for the user to send along
         with their new password.
@@ -151,10 +120,10 @@ class UserService(object):
         -------
         dict
         """
-        request_id = self.manager.request_password_reset(username)
-        return self.serialize.reset_request(request_id)
+        raise NotImplementedError()
 
-    def reset_password(self, request_id, password):
+    @abstractmethod
+    def reset_password(self, request_id: str, password: str) -> Dict:
         """Reset the password for the user that made the given password reset
         request. Raises an error if no such request exists or if the request
         has timed out.
@@ -171,19 +140,11 @@ class UserService(object):
         Returns
         -------
         dict
-
-        Raises
-        ------
-        flowserv.error.ConstraintViolationError
-        flowserv.error.UnknownRequestError
         """
-        user = self.manager.reset_password(
-            request_id=request_id,
-            password=password
-        )
-        return self.serialize.user(user)
+        raise NotImplementedError()
 
-    def whoami_user(self, api_key):
+    @abstractmethod
+    def whoami_user(self, api_key: str) -> Dict:
         """Get serialization of the given user.
 
         Parameters
@@ -195,4 +156,4 @@ class UserService(object):
         -------
         dict
         """
-        return self.serialize.user(self.auth.authenticate(api_key))
+        raise NotImplementedError()

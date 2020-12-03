@@ -124,7 +124,7 @@ class Array(Parameter):
             name=doc[pd.NAME],
             para=deserializer.from_dict(doc['para'], validate=validate),
             index=doc[pd.INDEX],
-            label=doc[pd.LABEL],
+            label=doc.get(pd.LABEL),
             help=doc.get(pd.HELP),
             default=doc.get(pd.DEFAULT),
             required=doc[pd.REQUIRED],
