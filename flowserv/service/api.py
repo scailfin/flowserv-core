@@ -13,7 +13,7 @@ managed by different components of the API.
 from flowserv.service.group import WorkflowGroupService
 from flowserv.service.files import UploadFileService
 from flowserv.service.run import RunService
-from flowserv.service.server import Service
+from flowserv.service.descriptor import ServiceDescriptor
 from flowserv.service.user import UserService
 from flowserv.service.workflow import WorkflowService
 
@@ -29,7 +29,7 @@ class API(object):
         - workflows()
     """
     def __init__(
-        self, service_descriptor: Service, workflow_service: WorkflowService,
+        self, service: ServiceDescriptor, workflow_service: WorkflowService,
         group_service: WorkflowService, upload_service: UploadFileService,
         run_service: RunService, user_service: UserService
     ):
@@ -37,7 +37,7 @@ class API(object):
 
         Parameters
         ----------
-        service_descriptor: flowserv.service.server.Service
+        service: flowserv.service.descriptor.ServiceDescriptor
             Service descriptor.
         workflow_service: flowserv.service.workflow.WorkflowService
             Manager for workflow resources.
@@ -51,7 +51,7 @@ class API(object):
             Manager for registered user resources.
         """
         self._workflows = workflow_service
-        self._service = service_descriptor
+        self._service = service
         self._groups = group_service
         self._uploads = upload_service
         self._runs = run_service
@@ -77,7 +77,7 @@ class API(object):
         """
         return self._runs
 
-    def server(self) -> Service:
+    def server(self) -> ServiceDescriptor:
         """Get API component for the service descriptor.
 
         Returns

@@ -24,7 +24,10 @@ class LocalUserService(UserService):
     """Implement methods that handle user login and logout as well as
     registration and activation of new users.
     """
-    def __init__(self, manager: UserManager, auth: Auth, serializer: UserSerializer):
+    def __init__(
+        self, manager: UserManager, auth: Auth,
+        serializer: Optional[UserSerializer] = None
+    ):
         """Initialize the user manager that maintains all registered users and
         the resource serializer.
 
@@ -34,12 +37,12 @@ class LocalUserService(UserService):
             Manager for registered users
         auth: flowserv.model.auth.Auth
             Authentication manager.
-        serializer: flowserv.view.user.UserSerializer
+        serializer: flowserv.view.user.UserSerializer, default=None
             Override the default serializer
         """
         self.manager = manager
         self.auth = auth
-        self.serialize = serializer
+        self.serialize = serializer if serializer is not None else UserSerializer()
 
     def activate_user(self, user_id: str) -> Dict:
         """Activate a new user with the given identifier.

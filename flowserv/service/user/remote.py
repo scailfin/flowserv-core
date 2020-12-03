@@ -18,26 +18,40 @@ import requests
 
 from flowserv.service.user.base import UserService
 from flowserv.service.remote import headers
-from flowserv.service.route import UrlFactory
-from flowserv.view.user import UserSerializer
+from flowserv.service.descriptor import ServiceDescriptor
 
 import flowserv.config.client as config
+import flowserv.service.descriptor as route
+import flowserv.view.user as default_labels
 
 
 class RemoteUserService(UserService):
     """HTTP client for a RESTful API to access flowserv API resources."""
-    def __init__(self, urls: UrlFactory, serializer: UserSerializer):
-        """Initialize the URL factory for RESTful API routes.
+    def __init__(self, descriptor: ServiceDescriptor, labels: Optional[Dict] = None):
+        """Initialize the Url route patterns from the service descriptor and
+        the dictionary of labels for elements in request bodies.
 
         Parameters
         ----------
-        urls: flowserv.service.route.UrlFactory
-            URL factory for access to API resources.
-        serializer: flowserv.view.user.UserSerializer
-            Override the default serializer
+        descriptor: flowserv.service.descriptor.ServiceDescriptor
+            Service descriptor containing the API route patterns.
+        labels: dict, default=None
+            Override the default labels for elements in request bodies.
         """
-        self.urls = urls
-        self.serializer = serializer
+        self.descriptor = descriptor
+        # Default labels for elements request bodies.
+        self.labels = {
+            'REQUEST_ID': default_labels.REQUEST_ID,
+            'USER_ID': default_labels.USER_ID,
+            'USER_NAME': default_labels.USER_NAME,
+            'USER_PASSWORD': 'password',
+            'USER_TOKEN': default_labels.USER_TOKEN,
+            'VERIFY_USER': 'verify'
+        }
+        if labels is not None:
+            self.labels.update(labels)
+        # Short cut to access urls from the descriptor.
+        self.urls = descriptor.urls
 
     def activate_user(self, user_id: str) -> Dict:
         """Activate a new user with the given identifier.
@@ -51,10 +65,10 @@ class RemoteUserService(UserService):
         -------
         dict
         """
-        data = {self.serializer.labels['USER_ID']: user_id}
-        return self.post(url=self.urls.activate_user(), data=data)
+        data = {self.labels['USER_ID']: user_id}
+        return self.post(url=self.urls(route.USERS_ACTIVATE), data=data)
 
-    def get(url: str) -> Dict:
+    def get(self, url: str) -> Dict:
         """Send GET request to given URL and return the JSON body.
 
         Parameters
@@ -83,7 +97,7 @@ class RemoteUserService(UserService):
         -------
         dict
         """
-        return self.get(url=self.urls.list_users())
+        return self.get(url=self.urls(route.USERS_LIST))
 
     def login_user(self, username: str, password: str) -> Dict:
         """Get handle for user with given credentials. Raises error if the user
@@ -101,13 +115,13 @@ class RemoteUserService(UserService):
         dict
         """
         data = {
-            self.serializer.labels['USER_NAME']: username,
-            self.serializer.labels['USER_PASSWORD']: password
+            self.labels['USER_NAME']: username,
+            self.labels['USER_PASSWORD']: password
         }
-        body = self.post(url=self.urls.login(), data=data)
+        body = self.post(url=self.urls(route.USERS_LOGIN), data=data)
         # Get the access tokrn from the response body and update the global
         # evironment variable.
-        token = body[self.serializer.labels['USER_TOKEN']]
+        token = body[self.labels['USER_TOKEN']]
         os.environ[config.FLOWSERV_ACCESS_TOKEN] = token
         return body
 
@@ -123,7 +137,7 @@ class RemoteUserService(UserService):
         -------
         dict
         """
-        return self.post(url=self.urls.logout())
+        return self.post(url=self.urls(route.USERS_LOGOUT))
 
     def post(self, url: str, data: Optional[Dict] = None) -> Dict:
         """Send POST request with given (optional) body to a URL. Returns the
@@ -167,11 +181,11 @@ class RemoteUserService(UserService):
         dict
         """
         data = {
-            self.serializer.labels['USER_NAME']: username,
-            self.serializer.labels['USER_PASSWORD']: password,
-            self.serializer.labels['VERIFY_USER']: verify
+            self.labels['USER_NAME']: username,
+            self.labels['USER_PASSWORD']: password,
+            self.labels['VERIFY_USER']: verify
         }
-        return self.post(url=self.urls.register_user(), data=data)
+        return self.post(url=self.urls(route.USERS_REGISTER), data=data)
 
     def request_password_reset(self, username: str) -> Dict:
         """Request to reset the password for the user with the given name. The
@@ -183,8 +197,8 @@ class RemoteUserService(UserService):
         username: string
             Unique user login name
         """
-        data = {self.serializer.labels['USER_NAME']: username}
-        return self.post(url=self.urls.request_password_reset(), data=data)
+        data = {self.labels['USER_NAME']: username}
+        return self.post(url=self.urls(route.USERS_PASSWORD_REQUEST), data=data)
 
     def reset_password(self, request_id: str, password: str) -> Dict:
         """Reset the password for the user that made the given password reset
@@ -205,10 +219,10 @@ class RemoteUserService(UserService):
         dict
         """
         data = {
-            self.serializer.labels['REQUEST_ID']: request_id,
-            self.serializer.labels['USER_PASSWORD']: password
+            self.labels['REQUEST_ID']: request_id,
+            self.labels['USER_PASSWORD']: password
         }
-        return self.post(url=self.urls.reset_password(), data=data)
+        return self.post(url=self.urls(route.USERS_PASSWORD_RESET), data=data)
 
     def whoami_user(self, api_key: str) -> Dict:
         """Get serialization of the given user.
@@ -222,4 +236,4 @@ class RemoteUserService(UserService):
         -------
         dict
         """
-        return self.get(url=self.urls.whoami())
+        return self.get(url=self.urls(route.USERS_WHOAMI))

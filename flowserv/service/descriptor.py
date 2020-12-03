@@ -10,7 +10,7 @@
 
 from typing import Dict, Optional
 
-from flowserv.view.server import ServiceSerializer
+from flowserv.view.descriptor import ServiceDescriptorSerializer
 
 import flowserv.config.api as config
 import flowserv.version as version
@@ -91,47 +91,49 @@ ROUTES = {
 }
 
 
-class Service(object):
+class ServiceDescriptor(object):
     """API component that provides the API sevice descriptor that contains the
-    basic information and URLs for the service.
+    basic information and supported route patterns for the service.
     """
     def __init__(
-        self, serializer: Optional[ServiceSerializer] = None,
-        routes: Optional[Dict] = None, username: Optional[str] = None
+        self, doc: Optional[Dict] = None, routes: Optional[Dict] = ROUTES,
+        serializer: Optional[ServiceDescriptorSerializer] = None
     ):
-        """Initialize the serializer for the service descriptor.  The optional
-        user name indicates whether a request for the service descriptor
-        contained a valid access token. Only if the user was authenticated
-        successfully a user name will be present.
+        """Initialize the serializer for the service descriptor.
 
         Parameters
         ----------
-        serializer: flowserv.view.server.ServiceSerializer, default=None
-            Service descriptor serializer.
+        doc: dict, default=None
+            Serialized service descriptor. The descriptor may for example be
+            retrieved from a remote API.
         routes: dict, default=None
-            Dictionary with Url patterns for supported API routes.
-        username: string, default=None
-            Name of the authenticated user.
-
-        Raises
-        ------
-        ValueError
+            Dictionary with Url patterns for supported API routes. This will
+            override patterns that may be defined in the given serialized
+            descriptor.
+        serializer: flowserv.view.descriptor.ServiceDescriptorSerializer, default=None
+            Service descriptor serializer and deserializer.
         """
-        self.serialize = serializer if serializer is not None else ServiceSerializer()
-        self.routes = routes if routes is not None else ROUTES
-        self.username = username
+        self.serialize = serializer if serializer is not None else ServiceDescriptorSerializer()
+        self.name = self.serialize.get_name(doc, config.API_NAME())
+        self.version = self.serialize.get_version(doc, version.__version__)
+        self.url = self.serialize.get_url(doc, config.API_URL())
+        self._routes = self.serialize.get_routes(doc, routes)
+        self.username = self.serialize.get_username(doc)
+        # Remove trailing '/' from the url
+        while self.url.endswith('/'):
+            self.url = self.url[:-1]
 
-    @property
-    def name(self) -> str:
-        """Each instance of the API should have a (unique) name to identify it.
+    def routes(self) -> Dict:
+        """Get dictionary of supported API routes. The returned dictionary maps
+        unique route identifiers their route Url pattern.
 
         Returns
         -------
-        string
+        dict
         """
-        return config.API_NAME()
+        return self._routes
 
-    def service_descriptor(self) -> Dict:
+    def to_dict(self) -> Dict:
         """Get serialization of descriptor containing the basic information
         about the API. If the user provided a valid access token then the user
         name will be set and included in the serialized object. If no user
@@ -145,16 +147,24 @@ class Service(object):
         return self.serialize.service_descriptor(
             name=self.name,
             version=self.version,
-            routes=self.routes,
+            url=self.url,
+            routes=self._routes,
             username=self.username
         )
 
-    @property
-    def version(self) -> str:
-        """Return the engine API version.
+    def urls(self, key: str, **kwargs) -> str:
+        """Get the full Url for the route with the given key.
+
+        Parameters
+        ----------
+        key: string
+            Url route pattern key.
+        kwargs: dict
+            Optional key word arguments to replace Url pattern variables.
 
         Returns
         -------
         string
         """
-        return version.__version__
+        url_suffix = self.routes().get(key).format(**kwargs)
+        return '{}/{}'.format(self.url, url_suffix)

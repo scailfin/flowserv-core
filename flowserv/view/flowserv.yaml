@@ -958,11 +958,14 @@ definitions:
     required:
     - name
     - version
+    - url
     - routes
     properties:
       name:
         type: "string"
       version:
+        type: "string"
+      url:
         type: "string"
       routes:
         type: "array"

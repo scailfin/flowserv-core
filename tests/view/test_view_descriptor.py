@@ -10,28 +10,25 @@
 
 import pytest
 
-from flowserv.view.server import ServiceSerializer
+from flowserv.view.descriptor import ServiceDescriptorSerializer
 from flowserv.view.validate import validator
-
-import flowserv.view.server as labels
 
 
 @pytest.mark.parametrize('username', ['alice', None])
 def test_service_descriptor_serialization(username):
     """Validate the serialization of the service descriptor."""
     schema = validator('ServiceDescriptor')
-    serializer = ServiceSerializer()
+    serializer = ServiceDescriptorSerializer()
     doc = serializer.service_descriptor(
         name='Test',
         version='0.0.0',
+        url='http://localhost:5000',
         routes={'home': '/'},
         username=username
     )
     schema.validate(doc)
-    assert doc[labels.SERVICE_NAME] == 'Test'
-    assert doc[labels.SERVICE_VERSION] == '0.0.0'
-    assert len(doc[labels.SERVICE_ROUTES]) == 1
-    if username is not None:
-        assert doc[labels.SERVICE_USER] == username
-    else:
-        assert labels.SERVICE_USER not in doc
+    assert serializer.get_name(doc, 'foo') == 'Test'
+    assert serializer.get_version(doc, 'foo') == '0.0.0'
+    assert serializer.get_url(doc, 'foo') == 'http://localhost:5000'
+    assert serializer.get_username(doc) == username
+    assert serializer.get_routes(doc, {'foo': 'bar'}) == {'home': '/', 'foo': 'bar'}
