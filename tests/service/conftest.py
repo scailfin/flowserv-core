@@ -25,7 +25,7 @@ import flowserv.util as util
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))
-TEMPLATE_DIR = os.path.join(DIR, './.files/benchmark/helloworld')
+TEMPLATE_DIR = os.path.join(DIR, '../.files/benchmark/helloworld')
 
 
 # -- Helper class and fixture for mocked requests -----------------------------
@@ -108,9 +108,11 @@ def remote_service():
 
 @pytest.fixture
 def hello_world():
-    """Factory pattern for Hello-World workflows."""
+    """Factory pattern for Hello-World workflows. Assumes that we are in a
+    local setting.
+    """
     def _hello_world(api, name=None, description=None, instructions=None):
-        return api.workflows().create_workflow(
+        return api.workflows().workflow_repo.create_workflow(
             name=name if name is not None else util.get_unique_identifier(),
             description=description,
             instructions=instructions,

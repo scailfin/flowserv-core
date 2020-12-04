@@ -23,8 +23,8 @@ def test_create_group_view(local_service, hello_world):
     # Create one user and one instance of the 'Hello World' workflow.
     with local_service() as api:
         user_1 = create_user(api)
-        r = hello_world(api, name='W1')
-        workflow_id = r['id']
+        wf = hello_world(api, name='W1')
+        workflow_id = wf.workflow_id
     # Create a new workflow group with single user ----------------------------
     with local_service() as api:
         r = api.groups().create_group(
@@ -45,8 +45,8 @@ def test_delete_group_view(local_service, hello_world):
     with local_service() as api:
         user_1 = create_user(api)
         user_2 = create_user(api)
-        r = hello_world(api, name='W1')
-        workflow_id = r['id']
+        wf = hello_world(api, name='W1')
+        workflow_id = wf.workflow_id
         r = api.groups().create_group(
             workflow_id=workflow_id,
             name='G1',
@@ -86,8 +86,8 @@ def test_get_group_view(local_service, hello_world):
     with local_service() as api:
         user_1 = create_user(api)
         user_2 = create_user(api)
-        r = hello_world(api, name='W1')
-        workflow_id = r['id']
+        wf = hello_world(api, name='W1')
+        workflow_id = wf.workflow_id
     # -- Create group with two members ----------------------------------------
     with local_service() as api:
         r = api.groups().create_group(
@@ -115,8 +115,8 @@ def test_list_groups_view(local_service, hello_world):
     with local_service() as api:
         user_1 = create_user(api)
         user_2 = create_user(api)
-        r = hello_world(api, name='W1')
-        workflow_id = r['id']
+        wf = hello_world(api, name='W1')
+        workflow_id = wf.workflow_id
         api.groups().create_group(
             workflow_id=workflow_id,
             name='G1',
@@ -148,8 +148,8 @@ def test_update_group_view(local_service, hello_world):
     # Create one group with minimal metadata for the 'Hello World' workflow.
     with local_service() as api:
         user_id = create_user(api)
-        r = hello_world(api, name='W1')
-        workflow_id = r['id']
+        wf = hello_world(api, name='W1')
+        workflow_id = wf.workflow_id
         r = api.groups().create_group(
             workflow_id=workflow_id,
             name='G1',
