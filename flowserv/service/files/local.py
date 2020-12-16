@@ -10,35 +10,45 @@
 delete, and upload files for workflow groups.
 """
 
-from flowserv.config.base import get_variable
-from flowserv.model.files.base import FileObject, FileStore
+from typing import Dict, IO, Optional
 
-import flowserv.config.files as config
+from flowserv.model.auth import Auth
+from flowserv.model.files.base import FileObject
+from flowserv.model.group import WorkflowGroupManager
+from flowserv.service.files.base import UploadFileService
+from flowserv.view.files import UploadFileSerializer
 import flowserv.error as err
 
 
-class UploadFileService(object):
+class LocalUploadFileService(UploadFileService):
     """API component that provides methods to access, delete and upload files
     for workflow user groups.
     """
-    def __init__(self, group_manager, auth, serializer):
+    def __init__(
+        self, group_manager: WorkflowGroupManager, auth: Auth,
+        user_id: Optional[str] = None,
+        serializer: Optional[UploadFileSerializer] = None
+    ):
         """Initialize the internal reference to the workflow group manager and
         to resource serializer.
 
         Parameters
         ----------
-        group_manager: flowserv.model.group..GroupManager
+        group_manager: flowserv.model.group.WorkflowGroupManager
             Manager for workflow groups
         auth: flowserv.model.auth.Auth
             Implementation of the authorization policy for the API
-        serializer: flowserv.view.files.UploadFileSerializer
+        user_id: string, default=None
+            Identifier of an authenticated user.
+        serializer: flowserv.view.files.UploadFileSerializer, default=None
             Resource serializer
         """
         self.group_manager = group_manager
         self.auth = auth
-        self.serialize = serializer
+        self.user_id = user_id
+        self.serialize = serializer if serializer is not None else UploadFileSerializer()
 
-    def delete_file(self, group_id, file_id, user_id):
+    def delete_file(self, group_id: str, file_id: str):
         """Delete file with given identifier that was previously uploaded.
 
         Raises errors if the file or the workflow group does not exist or if
@@ -50,8 +60,6 @@ class UploadFileService(object):
             Unique workflow group identifier
         file_id: string
             Unique file identifier
-        user_id: string
-            Unique user identifier
 
         Raises
         ------
@@ -60,12 +68,12 @@ class UploadFileService(object):
         """
         # Raise an error if the user does not have rights to delete files for
         # the workflow group or if the workflow group does not exist.
-        if not self.auth.is_group_member(group_id=group_id, user_id=user_id):
+        if not self.auth.is_group_member(group_id=group_id, user_id=self.user_id):
             raise err.UnauthorizedAccessError()
         # Delete the file using the workflow group handle
         self.group_manager.delete_file(group_id=group_id, file_id=file_id)
 
-    def get_uploaded_file(self, group_id, file_id, user_id=None):
+    def get_uploaded_file(self, group_id: str, file_id: str) -> IO:
         """Get handle for file with given identifier that was uploaded to the
         workflow group.
 
@@ -84,7 +92,7 @@ class UploadFileService(object):
 
         Returns
         -------
-        flowserv.model.files.base.DatabaseFile
+        io.BytesIO
 
         Raises
         ------
@@ -95,10 +103,10 @@ class UploadFileService(object):
         # Raise an error if the user does not have rights to access files for
         # the workflow group or if the workflow group does not exist (only if
         # the user identifier is given).
-        if user_id is not None:
+        if self.user_id is not None:
             is_member = self.auth.is_group_member(
                 group_id=group_id,
-                user_id=user_id
+                user_id=self.user_id
             )
             if not is_member:
                 raise err.UnauthorizedAccessError()
@@ -106,9 +114,9 @@ class UploadFileService(object):
         return self.group_manager.get_uploaded_file(
             group_id=group_id,
             file_id=file_id
-        )
+        ).open()
 
-    def list_uploaded_files(self, group_id, user_id):
+    def list_uploaded_files(self, group_id: str) -> Dict:
         """Get a listing of all files that have been uploaded for the given
         workflow group.
 
@@ -116,8 +124,6 @@ class UploadFileService(object):
         ----------
         group_id: string
             Unique workflow group identifier
-        user_id: string
-            unique user identifier
 
         Returns
         -------
@@ -130,16 +136,14 @@ class UploadFileService(object):
         """
         # Raise an error if the user does not have rights to access files for
         # the workflow group or if the workflow group does not exist.
-        if not self.auth.is_group_member(group_id=group_id, user_id=user_id):
+        if not self.auth.is_group_member(group_id=group_id, user_id=self.user_id):
             raise err.UnauthorizedAccessError()
         return self.serialize.file_listing(
             group_id=group_id,
             files=self.group_manager.list_uploaded_files(group_id)
         )
 
-    def upload_file(
-        self, group_id: str, file: FileObject, name: str, user_id: str
-    ):
+    def upload_file(self, group_id: str, file: FileObject, name: str) -> Dict:
         """Create a file for a given workflow group.
 
         Parameters
@@ -150,8 +154,6 @@ class UploadFileService(object):
             File object (e.g., uploaded via HTTP request)
         name: string
             Name of the file
-        user_id: string
-            Unique user identifier
 
         Returns
         -------
@@ -165,7 +167,7 @@ class UploadFileService(object):
         """
         # Raise an error if the user does not have rights to upload files for
         # the workflow group or if the workflow group does not exist.
-        if not self.auth.is_group_member(group_id=group_id, user_id=user_id):
+        if not self.auth.is_group_member(group_id=group_id, user_id=self.user_id):
             raise err.UnauthorizedAccessError()
         # Convert the uploaded FileStorage object into a bytes buffer before
         # passing it to the group manager. Return serialization of the handle
@@ -176,41 +178,3 @@ class UploadFileService(object):
             name=name
         )
         return self.serialize.file_handle(group_id=group_id, fh=fh)
-
-
-# -- Factory pattern for file stores ------------------------------------------
-
-def get_filestore(raise_error: bool = True) -> FileStore:
-    """Factory pattern to create file store instances for the service API. Uses
-    the environment variables FLOWSERV_FILESTORE_MODULE and
-    FLOWSERV_FILESTORE_CLASS to create an instance of the file store. If the
-    environment variables are not set the FileSystemStore is returned as the
-    default file store.
-
-    Parameters
-    ----------
-    raise_error: bool, default=True
-        Flag to indicate whether an error is raised if a value for a
-        configuration variable is missing or not.
-
-    Returns
-    -------
-    flowserv.model.files.base.FileStore
-    """
-    module_name = get_variable(name=config.FLOWSERV_FILESTORE_MODULE)
-    class_name = get_variable(name=config.FLOWSERV_FILESTORE_CLASS)
-    # If both environment variables are None return the default file store.
-    # Otherwise, import the specified module and return an instance of the
-    # controller class. An error is raised if only one of the two environment
-    # variables is set.
-    if module_name is None and class_name is None:
-        from flowserv.model.files.fs import FileSystemStore
-        return FileSystemStore()
-    elif module_name is not None and class_name is not None:
-        from importlib import import_module
-        module = import_module(module_name)
-        return getattr(module, class_name)()
-    elif module_name is None and raise_error:
-        raise err.MissingConfigurationError(config.FLOWSERV_FILESTORE_MODULE)
-    elif raise_error:
-        raise err.MissingConfigurationError(config.FLOWSERV_FILESTORE_CLASS)

@@ -13,7 +13,7 @@ import pytest
 
 from flowserv.model.auth import DefaultAuthPolicy
 from flowserv.model.files.s3 import BucketStore, FLOWSERV_S3BUCKET
-from flowserv.service.files import get_filestore
+from flowserv.service.files.base import get_filestore
 from flowserv.tests.files import DiskBucket
 
 import flowserv.config.files as config

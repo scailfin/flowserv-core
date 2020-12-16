@@ -8,7 +8,7 @@
 
 """Helper functions for the remote service client."""
 
-from typing import Dict, Optional
+from typing import Dict, IO, List, Optional
 
 import requests
 
@@ -29,6 +29,23 @@ def delete(url: str):
     """
     r = requests.delete(url, headers=headers())
     r.raise_for_status()
+
+
+def download_file(url: str) -> IO:
+    """Download a remote file.
+
+    Parameters
+    ----------
+    url: string
+        Request URL.
+
+    Returns
+    -------
+    io.BytesIO
+    """
+    r = requests.get(url, stream=True)
+    r.raise_for_status()
+    return r.raw
 
 
 def get(url: str) -> Dict:
@@ -58,7 +75,7 @@ def headers() -> Dict:
     return {HEADER_TOKEN: config.ACCESS_TOKEN()}
 
 
-def post(url: str, data: Optional[Dict] = None) -> Dict:
+def post(url: str, files: Optional[List] = None, data: Optional[Dict] = None) -> Dict:
     """Send POST request with given (optional) body to a URL. Returns the
     JSON body from the response.
 
@@ -73,6 +90,26 @@ def post(url: str, data: Optional[Dict] = None) -> Dict:
     -------
     dict
     """
-    r = requests.post(url, json=data, headers=headers())
+    r = requests.post(url, files=files, json=data, headers=headers())
+    r.raise_for_status()
+    return r.json()
+
+
+def put(url: str, data: Optional[Dict] = None) -> Dict:
+    """Send PUT request with given (optional) body to a URL. Returns the
+    JSON body from the response.
+
+    Parameters
+    ----------
+    url: string
+        Request URL.
+    data: dict, default=None
+        Optional request body.
+
+    Returns
+    -------
+    dict
+    """
+    r = requests.put(url, json=data, headers=headers())
     r.raise_for_status()
     return r.json()

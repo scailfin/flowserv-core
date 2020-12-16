@@ -20,82 +20,89 @@ import flowserv.error as err
 import flowserv.util as util
 
 
-def init_db(api, hello_world):
+def init_db(service, hello_world):
     """Initialize a new database with two users, one group and a successful
     run. Returns user identifier, group identifier and run identifier.
     """
-    user_1 = create_user(api)
-    user_2 = create_user(api)
-    workflow_id = hello_world(api)['id']
-    group_id = create_group(api, workflow_id=workflow_id, users=[user_1])
-    # Start the new run. Then set it into SUCESS state.
-    run_id, file_id = start_hello_world(api, group_id, user_1)
-    tmpdir = tempfile.mkdtemp()
-    write_results(
-        rundir=tmpdir,
-        files=[
-            ({'group': group_id, 'run': run_id}, None, 'results/data.json'),
-            ([group_id, run_id], 'txt/plain', 'values.txt')
-        ]
-    )
-    api.runs().update_run(
-        run_id=run_id,
-        state=api.engine.success(
-            run_id,
-            files=['results/data.json', 'values.txt']
-        ),
-        rundir=tmpdir
-    )
+    with service() as api:
+        user_1 = create_user(api)
+        user_2 = create_user(api)
+        workflow_id = hello_world(api).workflow_id
+    with service(user_id=user_1) as api:
+        group_id = create_group(api, workflow_id=workflow_id)
+        # Start the new run. Then set it into SUCESS state.
+        run_id, file_id = start_hello_world(api, group_id)
+        tmpdir = tempfile.mkdtemp()
+        write_results(
+            rundir=tmpdir,
+            files=[
+                ({'group': group_id, 'run': run_id}, None, 'results/data.json'),
+                ([group_id, run_id], 'txt/plain', 'values.txt')
+            ]
+        )
+        api.runs().update_run(
+            run_id=run_id,
+            state=api.runs().backend.success(
+                run_id,
+                files=['results/data.json', 'values.txt']
+            ),
+            rundir=tmpdir
+        )
     return user_1, user_2, group_id, run_id
 
 
-def test_access_run_result_files(service, hello_world):
+def test_access_run_result_files_local(local_service, hello_world):
     """Test accessing run result files."""
     # -- Setup ----------------------------------------------------------------
-    with service() as api:
-        user_1, user_2, group_id, run_id = init_db(api, hello_world)
+    user_1, user_2, group_id, run_id = init_db(local_service, hello_world)
     # -- Read result files ----------------------------------------------------
-    with service() as api:
+    with local_service(user_id=user_1) as api:
         # Map file names to file handles.
-        r = api.runs().get_run(run_id=run_id, user_id=user_1)
+        r = api.runs().get_run(run_id=run_id)
         files = dict()
         for fh in r['files']:
             files[fh['name']] = fh['id']
         # Read content of result files.
         fh = api.runs().get_result_file(
             run_id=run_id,
-            file_id=files['results/data.json'],
-            user_id=user_1
+            file_id=files['results/data.json']
         )
-        results = util.read_object(fh.open())
+        results = util.read_object(fh)
         assert results == {'group': group_id, 'run': run_id}
         fh = api.runs().get_result_file(
             run_id=run_id,
-            file_id=files['values.txt'],
-            user_id=user_1
+            file_id=files['values.txt']
         )
-        values = fh.open().read().decode('utf-8').strip()
+        values = fh.read().decode('utf-8').strip()
         assert values == '{}\n{}'.format(group_id, run_id)
     # -- Error when user 2 attempts to read file ------------------------------
-    with service() as api:
+    with local_service(user_id=user_2) as api:
         with pytest.raises(err.UnauthorizedAccessError):
             api.runs().get_result_file(
                 run_id=run_id,
-                file_id=files['results/data.json'],
-                user_id=user_2
+                file_id=files['results/data.json']
             )
 
 
-def test_result_archive(service, hello_world):
+def test_result_archive_local(local_service, hello_world):
     """Test getting an archive of run results."""
     # -- Setup ----------------------------------------------------------------
-    with service() as api:
-        user_1, user_2, group_id, run_id = init_db(api, hello_world)
+    user_1, user_2, group_id, run_id = init_db(local_service, hello_world)
     # -- Get result archive ---------------------------------------------------
-    with service() as api:
-        archive = api.runs().get_result_archive(run_id=run_id, user_id=user_1)
+    with local_service(user_id=user_1) as api:
+        archive = api.runs().get_result_archive(run_id=run_id)
         tar = tarfile.open(fileobj=archive, mode='r:gz')
         members = [t.name for t in tar.getmembers()]
         assert len(members) == 2
         assert 'results/data.json' in members
         assert 'values.txt' in members
+
+
+def test_result_archive_remote(remote_service, mock_response):
+    """Test downloading run result archive from the remote service."""
+    remote_service.runs().get_result_archive(run_id='0000')
+
+
+def test_result_file_remote(remote_service, mock_response):
+    """Test downloading a run result file from the remote service."""
+    remote_service.runs().get_result_file(run_id='0000', file_id='0001')

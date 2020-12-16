@@ -16,8 +16,10 @@ from flowserv.model.database import DB, TEST_URL
 from flowserv.model.files.fs import FileSystemStore
 from flowserv.service.api import API
 from flowserv.service.descriptor import ServiceDescriptor
+from flowserv.service.files.remote import RemoteUploadFileService
 from flowserv.service.group.remote import RemoteWorkflowGroupService
 from flowserv.service.local import service as localservice
+from flowserv.service.run.remote import RemoteRunService
 from flowserv.service.user.remote import RemoteUserService
 from flowserv.service.workflow.remote import RemoteWorkflowService
 from flowserv.view.user import USER_TOKEN
@@ -36,7 +38,7 @@ class MockResponse:
     """Mock response object for API requests. Adopted from the online documentation
     at: https://docs.pytest.org/en/stable/monkeypatch.html
     """
-    def __init__(self, url, json=None, headers=None):
+    def __init__(self, url, files=None, json=None, headers=None):
         """Keep track of the request Url, and the optional request body and
         headers.
         """
@@ -55,13 +57,15 @@ class MockResponse:
         """Never raise error for failed requests."""
         pass
 
+    @property
+    def raw(self):
+        """Raw response for file downloads."""
+        return None
+
 
 @pytest.fixture
 def mock_response(monkeypatch):
     """Requests.get() mocked to return {'mock_key':'mock_response'}."""
-
-    def mock_delete(*args, **kwargs):
-        return MockResponse(*args)
 
     def mock_get(*args, **kwargs):
         return MockResponse(*args)
@@ -69,9 +73,10 @@ def mock_response(monkeypatch):
     def mock_post(*args, **kwargs):
         return MockResponse(*args, **kwargs)
 
-    monkeypatch.setattr(requests, "delete", mock_delete)
+    monkeypatch.setattr(requests, "delete", mock_get)
     monkeypatch.setattr(requests, "get", mock_get)
     monkeypatch.setattr(requests, "post", mock_post)
+    monkeypatch.setattr(requests, "put", mock_post)
 
 
 @pytest.fixture
@@ -85,12 +90,13 @@ def database():
 @pytest.fixture
 def local_service(database, tmpdir):
     """Factory pattern for service API objects."""
-    def _api(engine=StateEngine(), auth=None):
+    def _api(engine=StateEngine(), auth=None, user_id=None):
         return localservice(
             db=database,
             engine=engine,
             fs=FileSystemStore(basedir=tmpdir),
-            auth=auth
+            auth=auth,
+            user_id=user_id
         )
 
     return _api
@@ -106,8 +112,8 @@ def remote_service():
         service=service,
         workflow_service=RemoteWorkflowService(descriptor=service),
         group_service=RemoteWorkflowGroupService(descriptor=service),
-        upload_service=None,
-        run_service=None,
+        upload_service=RemoteUploadFileService(descriptor=service),
+        run_service=RemoteRunService(descriptor=service),
         user_service=RemoteUserService(descriptor=service)
     )
 

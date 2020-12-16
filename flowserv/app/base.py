@@ -25,7 +25,7 @@ from flowserv.model.template.parameter import ParameterIndex
 from flowserv.model.workflow.manager import WorkflowManager
 from flowserv.service.auth import get_auth
 from flowserv.service.api import API
-from flowserv.service.files import get_filestore
+from flowserv.service.files.base import get_filestore
 from flowserv.service.run.argument import serialize_arg, serialize_fh
 from flowserv.service.postproc.util import copy_postproc_files
 

@@ -18,6 +18,8 @@ from flowserv.model.base import GroupHandle, RunHandle
 ARG_ID = 'id'
 ARG_VALUE = 'value'
 
+CANCEL_REASON = 'reason'
+
 FILE_ID = 'id'
 FILE_NAME = 'name'
 FILE_TITLE = 'title'

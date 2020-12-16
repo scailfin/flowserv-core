@@ -98,7 +98,7 @@ paths:
         type: "string"
       - in: "query"
         name: "orderBy"
-        description: "List of result column names to order by (can include optional sort order). FOrmat is columnName[:ASC|DESC],"
+        description: "List of result column names to order by (can include optional sort order). Format is columnName[:ASC|DESC],"
         required: false
         type: "string"
       - in: "query"
@@ -469,7 +469,7 @@ paths:
           description: "Unknown run"
       security:
         - api_key: []
-  /runs/{runId}/downloads/resources/{resourceId}:
+  /runs/{runId}/downloads/files/{fileId}:
     get:
       tags:
       - "run"
@@ -486,8 +486,8 @@ paths:
         required: true
         type: "string"
       - in: "path"
-        name: "resourceId"
-        description: "Unique resource identifier"
+        name: "fileId"
+        description: "Unique file identifier"
         required: true
         type: "string"
       responses:

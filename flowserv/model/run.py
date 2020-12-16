@@ -329,26 +329,6 @@ class RunManager(object):
             query = query.filter(RunHandle.state_type == state)
         return query.all()
 
-    def poll_runs(self, group_id, state=None):
-        """Get list of identifier for group runs that are currently in the
-        given state. By default, the active runs are returned.
-
-        Parameters
-        ----------
-        group_id: string, optional
-            Unique workflow group identifier
-        state: string, Optional
-                State identifier query
-
-        Returns
-        -------
-        list(flowserv.model.base.RunHandle)
-        """
-        if state is not None:
-            return self.list_runs(group_id=group_id, state=state)
-        else:
-            return self.list_runs(group_id=group_id, state=st.ACTIVE_STATES)
-
     def update_run(self, run_id, state, rundir=None):
         """Update the state of the given run. This method does check if the
         state transition is valid. Transitions are valid for active workflows,

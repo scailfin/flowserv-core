@@ -26,11 +26,10 @@ def test_create_group_view(local_service, hello_world):
         wf = hello_world(api, name='W1')
         workflow_id = wf.workflow_id
     # Create a new workflow group with single user ----------------------------
-    with local_service() as api:
+    with local_service(user_id=user_1) as api:
         r = api.groups().create_group(
             workflow_id=workflow_id,
-            name='G1',
-            user_id=user_1
+            name='G1'
         )
         serialize.validate_group_handle(r)
         assert len(r['parameters']) == 3
@@ -47,31 +46,30 @@ def test_delete_group_view(local_service, hello_world):
         user_2 = create_user(api)
         wf = hello_world(api, name='W1')
         workflow_id = wf.workflow_id
+    with local_service(user_id=user_1) as api:
         r = api.groups().create_group(
             workflow_id=workflow_id,
-            name='G1',
-            user_id=user_1
+            name='G1'
         )
         group_id = r['id']
         api.groups().create_group(
             workflow_id=workflow_id,
-            name='G2',
-            user_id=user_1
+            name='G2'
         )
     # -- User 2 cannot delete the first group ---------------------------------
-    with local_service() as api:
+    with local_service(user_id=user_2) as api:
         with pytest.raises(err.UnauthorizedAccessError):
-            api.groups().delete_group(group_id=group_id, user_id=user_2)
+            api.groups().delete_group(group_id=group_id)
     # -- Delete the first group -----------------------------------------------
-    with local_service() as api:
-        api.groups().delete_group(group_id=group_id, user_id=user_1)
+    with local_service(user_id=user_1) as api:
+        api.groups().delete_group(group_id=group_id)
         # After deleting one group the other group is still there.
         r = api.groups().list_groups(workflow_id=workflow_id)
         assert len(r['groups']) == 1
     # -- Error when deleting an unknown group ---------------------------------
-    with local_service() as api:
+    with local_service(user_id=user_1) as api:
         with pytest.raises(err.UnknownWorkflowGroupError):
-            api.groups().delete_group(group_id=group_id, user_id=user_1)
+            api.groups().delete_group(group_id=group_id)
 
 
 def test_get_group_view(local_service, hello_world):
@@ -89,11 +87,10 @@ def test_get_group_view(local_service, hello_world):
         wf = hello_world(api, name='W1')
         workflow_id = wf.workflow_id
     # -- Create group with two members ----------------------------------------
-    with local_service() as api:
+    with local_service(user_id=user_1) as api:
         r = api.groups().create_group(
             workflow_id=workflow_id,
             name='G2',
-            user_id=user_1,
             members=[user_2],
         )
         serialize.validate_group_handle(r)
@@ -117,15 +114,14 @@ def test_list_groups_view(local_service, hello_world):
         user_2 = create_user(api)
         wf = hello_world(api, name='W1')
         workflow_id = wf.workflow_id
+    with local_service(user_id=user_1) as api:
         api.groups().create_group(
             workflow_id=workflow_id,
-            name='G1',
-            user_id=user_1
+            name='G1'
         )
         api.groups().create_group(
             workflow_id=workflow_id,
             name='G2',
-            user_id=user_1,
             members=[user_1, user_2]
         )
     # -- Get group listing listing for workflow -------------------------------
@@ -134,10 +130,11 @@ def test_list_groups_view(local_service, hello_world):
         serialize.validate_group_listing(r)
         assert len(r['groups']) == 2
     # -- Get groups for user 1 and 2 separately -------------------------------
-    with local_service() as api:
-        r = api.groups().list_groups(user_id=user_1)
+    with local_service(user_id=user_1) as api:
+        r = api.groups().list_groups()
         assert len(r['groups']) == 2
-        r = api.groups().list_groups(user_id=user_2)
+    with local_service(user_id=user_2) as api:
+        r = api.groups().list_groups()
         assert len(r['groups']) == 1
 
 
@@ -150,17 +147,16 @@ def test_update_group_view(local_service, hello_world):
         user_id = create_user(api)
         wf = hello_world(api, name='W1')
         workflow_id = wf.workflow_id
+    with local_service(user_id=user_id) as api:
         r = api.groups().create_group(
             workflow_id=workflow_id,
-            name='G1',
-            user_id=user_id
+            name='G1'
         )
         group_id = r['id']
     # -- Update group name ----------------------------------------------------
-    with local_service() as api:
+    with local_service(user_id=user_id) as api:
         r = api.groups().update_group(
             group_id=group_id,
-            user_id=user_id,
             name='ABC'
         )
         assert r['name'] == 'ABC'

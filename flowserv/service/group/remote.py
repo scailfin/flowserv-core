@@ -13,9 +13,9 @@ user groups via a RESTful API.
 from typing import Dict, List, Optional
 
 from flowserv.model.parameter.base import Parameter
+from flowserv.service.descriptor import ServiceDescriptor
 from flowserv.service.group.base import WorkflowGroupService
 from flowserv.service.remote import delete, get, post
-from flowserv.service.descriptor import ServiceDescriptor
 
 import flowserv.service.descriptor as route
 import flowserv.view.group as default_labels
@@ -110,10 +110,10 @@ class RemoteWorkflowGroupService(WorkflowGroupService):
         return get(url=self.urls(route.GROUPS_GET, userGroupId=group_id))
 
     def list_groups(self, workflow_id: Optional[str] = None) -> Dict:
-        """Get a listing of all workflow groups. For the remote service the
-        result contains only those groups that the user is a member of. If the
-        workflow identifier is given as an additional filter, then the result
-        contains a user's groups for that workflow only.
+        """Get a listing of all workflow groups. The result contains only those
+        groups that the user is a member of. If the workflow identifier is given
+        as an additional filter, then the result contains a user's groups for
+        that workflow only.
 
         Parameters
         ----------

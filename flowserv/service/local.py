@@ -25,8 +25,10 @@ from flowserv.model.run import RunManager
 from flowserv.model.workflow.manager import WorkflowManager
 from flowserv.service.api import API
 from flowserv.service.descriptor import ServiceDescriptor
-from flowserv.service.files import get_filestore
+from flowserv.service.files.base import get_filestore
+from flowserv.service.files.local import LocalUploadFileService
 from flowserv.service.group.local import LocalWorkflowGroupService
+from flowserv.service.run.local import LocalRunService
 from flowserv.service.user.local import LocalUserService
 from flowserv.service.workflow.local import LocalWorkflowService
 
@@ -37,7 +39,8 @@ from flowserv.service.auth import get_auth
 @contextmanager
 def service(
     db: Optional[DB] = None, engine: Optional[WorkflowController] = None,
-    fs: Optional[FileStore] = None, auth: Optional[Auth] = None
+    fs: Optional[FileStore] = None, auth: Optional[Auth] = None,
+    user_id: Optional[str] = None
 ) -> API:
     """The local service function is a context manager for an open database
     connection that is used to instantiate the API service class. The context
@@ -55,6 +58,8 @@ def service(
         groups and workflow runs.
     auth: flowserv.model.user.auth.Auth, default=None
         Authentication and authorization policy
+    user_id: string, default=None
+        Optional identifier of a user that has been authenticated.
 
     Returns
     -------
@@ -76,28 +81,42 @@ def service(
     with db.session() as session:
         if auth is None:
             auth = get_auth(session)
+        user_manager = UserManager(session=session)
+        group_manager = WorkflowGroupManager(
+            session=session,
+            fs=fs,
+            users=user_manager
+        )
+        ranking_manager = RankingManager(session=session)
         run_manager = RunManager(session=session, fs=fs)
         workflow_repo = WorkflowManager(session=session, fs=fs)
-        user_manager = UserManager(session=session)
         yield API(
             service=ServiceDescriptor(),
             workflow_service=LocalWorkflowService(
                 workflow_repo=workflow_repo,
-                ranking_manager=RankingManager(session=session),
+                ranking_manager=ranking_manager,
                 run_manager=run_manager
             ),
             group_service=LocalWorkflowGroupService(
-                group_manager=WorkflowGroupManager(
-                    session=session,
-                    fs=fs,
-                    users=user_manager
-                ),
+                group_manager=group_manager,
                 workflow_repo=workflow_repo,
                 backend=engine,
-                auth=auth
+                auth=auth,
+                user_id=user_id
             ),
-            upload_service=None,
-            run_service=None,
+            upload_service=LocalUploadFileService(
+                group_manager=group_manager,
+                auth=auth,
+                user_id=user_id
+            ),
+            run_service=LocalRunService(
+                run_manager=run_manager,
+                group_manager=group_manager,
+                ranking_manager=ranking_manager,
+                backend=engine,
+                auth=auth,
+                user_id=user_id
+            ),
             user_service=LocalUserService(
                 manager=user_manager,
                 auth=auth

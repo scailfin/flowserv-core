@@ -71,7 +71,7 @@ def get_configuration() -> Dict:
     configuration['Database'] = dbconf
     # Configuration for the file store
     fsconf = dict()
-    from flowserv.service.files import get_filestore
+    from flowserv.service.files.base import get_filestore
     for key, val in get_filestore(raise_error=False).configuration():
         fsconf[key] = val
     configuration['File Store'] = fsconf

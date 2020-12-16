@@ -17,7 +17,7 @@ dynamically.
 import logging
 
 from flowserv.config.base import get_variable
-from flowserv.service.files import get_filestore
+from flowserv.service.files.base import get_filestore
 
 import flowserv.config.backend as config
 import flowserv.error as err

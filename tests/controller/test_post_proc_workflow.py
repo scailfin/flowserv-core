@@ -20,7 +20,7 @@ from flowserv.config.files import (
 )
 from flowserv.controller.serial.engine import SerialWorkflowEngine
 from flowserv.service.api import service
-from flowserv.service.files import get_filestore
+from flowserv.service.files.base import get_filestore
 from flowserv.service.run.argument import serialize_arg, serialize_fh
 from flowserv.tests.files import io_file
 from flowserv.tests.service import (

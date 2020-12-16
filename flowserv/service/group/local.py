@@ -29,7 +29,7 @@ class LocalWorkflowGroupService(WorkflowGroupService):
     """
     def __init__(
         self, group_manager: WorkflowGroupManager, workflow_repo: WorkflowManager,
-        backend: WorkflowController, auth: Auth,
+        backend: WorkflowController, auth: Auth, user_id: Optional[str] = None,
         serializer: Optional[WorkflowGroupSerializer] = None
     ):
         """Initialize the internal reference to the group manager, the workflow
@@ -44,7 +44,9 @@ class LocalWorkflowGroupService(WorkflowGroupService):
         backend: flowserv.controller.base.WorkflowController
             Workflow engine controller
         auth: flowserv.model.auth.Auth
-            Implementation of the authorization policy for the API
+            Implementation of the authorization policy for the API.
+        user_id: string, default=None
+            Identifier of an authenticated user.
         serializer: flowserv.view.group.WorkflowGroupSerializer
             Override the default serializer
         """
@@ -52,11 +54,11 @@ class LocalWorkflowGroupService(WorkflowGroupService):
         self.workflow_repo = workflow_repo
         self.backend = backend
         self.auth = auth
+        self.user_id = user_id
         self.serialize = serializer if serializer is not None else WorkflowGroupSerializer()
 
     def create_group(
-        self, workflow_id: str, name: str, user_id: str,
-        members: Optional[List[str]] = None,
+        self, workflow_id: str, name: str, members: Optional[List[str]] = None,
         parameters: Optional[List[Parameter]] = None
     ) -> Dict:
         """Create a new user group for a given workflow. Each group has a
@@ -72,8 +74,6 @@ class LocalWorkflowGroupService(WorkflowGroupService):
             Unique workflow identifier
         name: string
             Unique team name
-        user_id: string
-            unique identifier for the user that is the group owner
         members: list(string), default=None
             List of user identifier for group members
         parameters: list of flowserv.model.parameter.base.Parameter, default=None
@@ -94,14 +94,14 @@ class LocalWorkflowGroupService(WorkflowGroupService):
         group = self.group_manager.create_group(
             workflow_id=workflow_id,
             name=name,
-            user_id=user_id,
+            user_id=self.user_id,
             parameters=parameters if parameters is not None else template.parameters,
             workflow_spec=template.workflow_spec,
             members=members,
         )
         return self.serialize.group_handle(group)
 
-    def delete_group(self, group_id: str, user_id: str):
+    def delete_group(self, group_id: str):
         """Delete a given workflow group and all associated runs and uploaded
         files. If the user is not a member of the group an unauthorized access
         error is raised.
@@ -110,12 +110,10 @@ class LocalWorkflowGroupService(WorkflowGroupService):
         ----------
         group_id: string
             Unique workflow group identifier
-        user_id: string
-            Unique user identifier
         """
         # Raise an error if the user does not have rights to delete the
         # workflow group or if the workflow group does not exist.
-        if not self.auth.is_group_member(group_id=group_id, user_id=user_id):
+        if not self.auth.is_group_member(group_id=group_id, user_id=self.user_id):
             raise err.UnauthorizedAccessError()
         self.group_manager.delete_group(group_id)
 
@@ -134,20 +132,16 @@ class LocalWorkflowGroupService(WorkflowGroupService):
         group = self.group_manager.get_group(group_id)
         return self.serialize.group_handle(group)
 
-    def list_groups(
-        self, workflow_id: Optional[str] = None, user_id: Optional[str] = None
-    ) -> Dict:
-        """Get a listing of all workflow groups. If the user handle is given
-        the result contains only those groups that the user is a member of.
-        If the workflow identifier is given the result contains groups for that
-        workflow only.
+    def list_groups(self, workflow_id: Optional[str] = None) -> Dict:
+        """Get a listing of all workflow groups. The result contains only those
+        groups that the user is a member of. If the workflow identifier is given
+        as an additional filter, then the result contains a user's groups for
+        that workflow only.
 
         Parameters
         ----------
         workflow_id: string, optional
             Unique workflow identifier
-        user_id: string, optional
-            Unique user identifier
 
         Returns
         -------
@@ -155,12 +149,12 @@ class LocalWorkflowGroupService(WorkflowGroupService):
         """
         groups = self.group_manager.list_groups(
             workflow_id=workflow_id,
-            user_id=user_id
+            user_id=self.user_id
         )
         return self.serialize.group_listing(groups)
 
     def update_group(
-        self, group_id: str, user_id: str, name: Optional[str] = None,
+        self, group_id: str, name: Optional[str] = None,
         members: Optional[List[str]] = None
     ) -> Dict:
         """Update the name for the workflow group with the given identifier.
@@ -169,8 +163,6 @@ class LocalWorkflowGroupService(WorkflowGroupService):
         ----------
         group_id: string
             Unique workflow group identifier
-        user_id: string
-            Unique user identifier
         name: string, optional
             New workflow group name
         members: list(string), optional
@@ -182,7 +174,7 @@ class LocalWorkflowGroupService(WorkflowGroupService):
         """
         # Raise an error if the user does not have rights to update the
         # workflow group or if the workflow group does not exist.
-        if not self.auth.is_group_member(group_id=group_id, user_id=user_id):
+        if not self.auth.is_group_member(group_id=group_id, user_id=self.user_id):
             raise err.UnauthorizedAccessError()
         group = self.group_manager.update_group(
             group_id=group_id,

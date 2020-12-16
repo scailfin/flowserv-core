@@ -28,28 +28,29 @@ BENCHMARK_DIR = os.path.join(DIR, '../../.files/benchmark/helloworld')
 BENCHMARK_FILE = os.path.join(BENCHMARK_DIR, './benchmark-outputs.yaml')
 
 
-def test_run_workflow_with_outputs(service):
+def test_run_workflow_with_outputs(local_service):
     """Execute the 'Hello World' example using a benchmark specification that
     includes an explicit specification of output files.
     """
     # Start a new run for the workflow template.
     engine = SerialWorkflowEngine(is_async=False)
-    with service(engine=engine) as api:
-        engine.fs = api.fs
+    with local_service(engine=engine) as api:
+        engine.fs = api.workflows().workflow_repo.fs
         workflow_id = create_workflow(
             api,
             source=BENCHMARK_DIR,
             specfile=BENCHMARK_FILE
         )
         user_id = create_user(api)
-        group_id = create_group(api, workflow_id, [user_id])
+    with local_service(engine=engine, user_id=user_id) as api:
+        group_id = create_group(api, workflow_id)
         names = io_file(data=['Alice', 'Bob'], format='plain/text')
-        file_id = upload_file(api, group_id, user_id, names)
+        file_id = upload_file(api, group_id, names)
         args = [serialize_arg('names', serialize_fh(file_id, 'data/names.txt'))]
-        run_id = start_run(api, group_id, user_id, arguments=args)
+        run_id = start_run(api, group_id, arguments=args)
     # -- Validate the run handle ----------------------------------------------
-    with service(engine=engine) as api:
-        r = api.runs().get_run(run_id, user_id)
+    with local_service(engine=engine, user_id=user_id) as api:
+        r = api.runs().get_run(run_id)
         serialize.validate_run_handle(r, state=st.STATE_SUCCESS)
         # The run should have the greetings.txt file as a result.
         files = dict()
@@ -58,8 +59,7 @@ def test_run_workflow_with_outputs(service):
         assert len(files) == 1
         fh = api.runs().get_result_file(
             run_id=run_id,
-            file_id=files['results/greetings.txt'],
-            user_id=user_id
+            file_id=files['results/greetings.txt']
         )
-        value = fh.open().read().decode('utf-8').strip()
+        value = fh.read().decode('utf-8').strip()
         assert value == 'Hello Alice!\nHello Bob!'
