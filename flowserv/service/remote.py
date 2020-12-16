@@ -19,6 +19,18 @@ import flowserv.config.client as config
 HEADER_TOKEN = 'api_key'
 
 
+def delete(url: str):
+    """Send DELETE request to given URL.
+
+    Parameters
+    ----------
+    url: string
+        Request URL.
+    """
+    r = requests.delete(url, headers=headers())
+    r.raise_for_status()
+
+
 def get(url: str) -> Dict:
     """Send GET request to given URL and return the JSON body.
 

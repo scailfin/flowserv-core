@@ -13,6 +13,8 @@ to access, create, and manipulate workflow groups.
 from abc import ABCMeta, abstractmethod
 from typing import Dict, List, Optional
 
+from flowserv.model.parameter.base import Parameter
+
 
 class WorkflowGroupService(metaclass=ABCMeta):  # pragma: no cover
     """API component that provides methods to access and manipulate workflow
@@ -21,7 +23,8 @@ class WorkflowGroupService(metaclass=ABCMeta):  # pragma: no cover
     @abstractmethod
     def create_group(
         self, workflow_id: str, name: str, user_id: str,
-        members: Optional[List[str]] = None
+        members: Optional[List[str]] = None,
+        parameters: Optional[List[Parameter]] = None
     ) -> Dict:
         """Create a new user group for a given workflow. Each group has a
         a unique name for the workflow, a group owner, and a list of additional
@@ -40,6 +43,9 @@ class WorkflowGroupService(metaclass=ABCMeta):  # pragma: no cover
             unique identifier for the user that is the group owner
         members: list(string), default=None
             List of user identifier for group members
+        parameters: list of flowserv.model.parameter.base.Parameter, default=None
+            Optional list of parameter declarations that are used to modify the
+            template parameters for submissions of the created group.
 
         Returns
         -------

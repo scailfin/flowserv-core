@@ -15,6 +15,7 @@ from typing import Dict, List, Optional
 from flowserv.controller.base import WorkflowController
 from flowserv.model.auth import Auth
 from flowserv.model.group import WorkflowGroupManager
+from flowserv.model.parameter.base import Parameter
 from flowserv.model.workflow.manager import WorkflowManager
 from flowserv.service.group.base import WorkflowGroupService
 from flowserv.view.group import WorkflowGroupSerializer
@@ -55,7 +56,8 @@ class LocalWorkflowGroupService(WorkflowGroupService):
 
     def create_group(
         self, workflow_id: str, name: str, user_id: str,
-        members: Optional[List[str]] = None
+        members: Optional[List[str]] = None,
+        parameters: Optional[List[Parameter]] = None
     ) -> Dict:
         """Create a new user group for a given workflow. Each group has a
         a unique name for the workflow, a group owner, and a list of additional
@@ -74,6 +76,9 @@ class LocalWorkflowGroupService(WorkflowGroupService):
             unique identifier for the user that is the group owner
         members: list(string), default=None
             List of user identifier for group members
+        parameters: list of flowserv.model.parameter.base.Parameter, default=None
+            Optional list of parameter declarations that are used to modify the
+            template parameters for submissions of the created group.
 
         Returns
         -------
@@ -90,9 +95,9 @@ class LocalWorkflowGroupService(WorkflowGroupService):
             workflow_id=workflow_id,
             name=name,
             user_id=user_id,
-            parameters=template.parameters,
+            parameters=parameters if parameters is not None else template.parameters,
             workflow_spec=template.workflow_spec,
-            members=members
+            members=members,
         )
         return self.serialize.group_handle(group)
 

@@ -13,7 +13,6 @@ from flowserv.model.template.schema import SortColumn
 
 def test_get_ranking_remote(remote_service, mock_response):
     """Test getting leaderboard from remote service."""
-    # -- Register a new user that is automatically activated ------------------
     remote_service.workflows().get_ranking(workflow_id='0000')
     remote_service.workflows().get_ranking(
         workflow_id='0000',

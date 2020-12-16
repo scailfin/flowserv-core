@@ -16,6 +16,7 @@ from flowserv.model.database import DB, TEST_URL
 from flowserv.model.files.fs import FileSystemStore
 from flowserv.service.api import API
 from flowserv.service.descriptor import ServiceDescriptor
+from flowserv.service.group.remote import RemoteWorkflowGroupService
 from flowserv.service.local import service as localservice
 from flowserv.service.user.remote import RemoteUserService
 from flowserv.service.workflow.remote import RemoteWorkflowService
@@ -59,12 +60,16 @@ class MockResponse:
 def mock_response(monkeypatch):
     """Requests.get() mocked to return {'mock_key':'mock_response'}."""
 
+    def mock_delete(*args, **kwargs):
+        return MockResponse(*args)
+
     def mock_get(*args, **kwargs):
         return MockResponse(*args)
 
     def mock_post(*args, **kwargs):
         return MockResponse(*args, **kwargs)
 
+    monkeypatch.setattr(requests, "delete", mock_delete)
     monkeypatch.setattr(requests, "get", mock_get)
     monkeypatch.setattr(requests, "post", mock_post)
 
@@ -100,7 +105,7 @@ def remote_service():
     return API(
         service=service,
         workflow_service=RemoteWorkflowService(descriptor=service),
-        group_service=None,
+        group_service=RemoteWorkflowGroupService(descriptor=service),
         upload_service=None,
         run_service=None,
         user_service=RemoteUserService(descriptor=service)
