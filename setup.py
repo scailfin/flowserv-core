@@ -88,7 +88,7 @@ setup(
     install_requires=install_requires,
     entry_points={
         'console_scripts': [
-            'flowserv = flowserv.client.cli.admin:cli'
+            'flowserv = flowserv.client.cli.base:cli'
         ]
     },
     classifiers=[

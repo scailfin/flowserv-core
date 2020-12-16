@@ -18,6 +18,8 @@ import os
 """Environment variables for the command line interface."""
 # Access token for the command line interface
 FLOWSERV_ACCESS_TOKEN = 'FLOWSERV_ACCESS_TOKEN'
+# Define the type of client that the command line interface uses.
+FLOWSERV_CLIENT = 'FLOWSERV_CLIENT'
 # Identifier of the default benchmark
 ROB_BENCHMARK = 'ROB_BENCHMARK'
 # Identifier of the default submission
@@ -25,7 +27,7 @@ ROB_SUBMISSION = 'ROB_SUBMISSION'
 
 
 def ACCESS_TOKEN() -> str:
-    """Short cut to get the value of the access token from the environment.
+    """Shortcut to get the value of the access token from the environment.
     If the variable is not set an empty string is returned.
 
     Returns
@@ -40,7 +42,7 @@ def ACCESS_TOKEN() -> str:
 
 
 def BENCHMARK_ID(default: Optional[str] = None) -> str:
-    """Short cut to get the value for the default benchmark identifier from the
+    """Shortcut to get the value for the default benchmark identifier from the
     environment.
 
     Parameters
@@ -59,8 +61,19 @@ def BENCHMARK_ID(default: Optional[str] = None) -> str:
         return benchmark_id
 
 
+def CLIENT() -> str:
+    """Shortcut to get the client type identifier from the environment.
+    If the variable is not set, 'LOCAL' is returned as the default.
+
+    Returns
+    -------
+    string
+    """
+    return os.environ.get(FLOWSERV_CLIENT, 'LOCAL')
+
+
 def SUBMISSION_ID(default: Optional[str] = None) -> str:
-    """Short cut to get the value for the default submission identifier from the
+    """Shortcut to get the value for the default submission identifier from the
     environment.
 
     Parameters

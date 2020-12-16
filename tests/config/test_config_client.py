@@ -11,8 +11,8 @@
 import os
 
 from flowserv.config.client import (
-    ACCESS_TOKEN, BENCHMARK_ID, FLOWSERV_ACCESS_TOKEN, ROB_BENCHMARK,
-    ROB_SUBMISSION, SUBMISSION_ID
+    ACCESS_TOKEN, BENCHMARK_ID, FLOWSERV_ACCESS_TOKEN, FLOWSERV_CLIENT, CLIENT,
+    ROB_BENCHMARK, ROB_SUBMISSION, SUBMISSION_ID
 )
 
 
@@ -30,6 +30,14 @@ def test_benchmark_identifier():
     del os.environ[ROB_BENCHMARK]
     assert BENCHMARK_ID() is None
     assert BENCHMARK_ID(default='DBM000') == 'DBM000'
+
+
+def test_client():
+    """Test getting the client type identifier from the environment."""
+    os.environ[FLOWSERV_CLIENT] = 'REMOTE'
+    assert CLIENT() == 'REMOTE'
+    del os.environ[FLOWSERV_CLIENT]
+    assert CLIENT() == 'LOCAL'
 
 
 def test_submission_identifier():

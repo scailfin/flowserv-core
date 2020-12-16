@@ -20,9 +20,8 @@ from flowserv.config.api import (
     FLOWSERV_API_PATH, FLOWSERV_API_PORT, FLOWSERV_API_PROTOCOL
 )
 from flowserv.config.auth import FLOWSERV_AUTH_LOGINTTL, AUTH_LOGINTTL
-from flowserv.config.backend import (
-    FLOWSERV_BACKEND_CLASS, FLOWSERV_BACKEND_MODULE
-)
+from flowserv.config.backend import FLOWSERV_BACKEND_CLASS, FLOWSERV_BACKEND_MODULE
+from flowserv.config.client import FLOWSERV_ACCESS_TOKEN, ACCESS_TOKEN, FLOWSERV_CLIENT, CLIENT
 from flowserv.config.database import FLOWSERV_DB, DB_CONNECT
 
 import flowserv.error as err
@@ -39,6 +38,7 @@ def get_configuration() -> Dict:
 
     - Web Service API
     - Authentication
+    - Client
     - Database
     - File Store
     - Workflow Controller
@@ -60,7 +60,12 @@ def get_configuration() -> Dict:
     # Configuration for user authentication
     authconf = dict()
     authconf[FLOWSERV_AUTH_LOGINTTL] = AUTH_LOGINTTL()
+    authconf[FLOWSERV_ACCESS_TOKEN] = ACCESS_TOKEN()
     configuration['Authentication'] = authconf
+    # Client configuration.
+    clientconf = dict()
+    clientconf[FLOWSERV_CLIENT] = CLIENT()
+    configuration['Client'] = clientconf
     # Configuration for the underlying database
     dbconf = dict()
     try:

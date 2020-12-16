@@ -7,35 +7,22 @@
 # terms of the MIT License; see LICENSE file for more details.
 
 """Command line interface for the administrative tasks to configure the
-environment, intialize the underlying database, and to create and maintain
-workflows in the repository.
+environment, and the intialize the underlying database. These commands
+operate locally.
 """
 
 import click
 import os
 import sys
 
-from flowserv.client.cli.app import cli_app
 from flowserv.client.cli.config import get_configuration
-from flowserv.client.cli.repository import list_repository
-from flowserv.client.cli.run import runscli
-from flowserv.client.cli.user import cli_user
-from flowserv.client.cli.workflow import run_workflow, workflowcli
 from flowserv.config.api import API_BASEDIR
 from flowserv.model.database import DB
 
 import flowserv.error as err
 
 
-@click.group()
-def cli():
-    """Command line interface for administrative tasks to manage a flowServ
-    instance.
-    """
-    pass
-
-
-@cli.command(name='config')
+@click.command(name='config')
 def configuration():
     """Print configuration variables for flowServ."""
     comment = '\n#\n# {}\n#\n'
@@ -47,7 +34,7 @@ def configuration():
     click.echo()
 
 
-@cli.command()
+@click.command()
 @click.option(
     '-f', '--force',
     is_flag=True,
@@ -66,24 +53,3 @@ def init(force=False):
         click.echo(str(ex))
         sys.exit(-1)
     os.makedirs(API_BASEDIR(), exist_ok=True)
-
-
-# App
-cli.add_command(cli_app)
-
-
-# Repository
-cli.add_command(list_repository, name='repository')
-
-
-# Runs
-cli.add_command(runscli)
-
-
-# Users
-cli.add_command(cli_user)
-
-
-# Workflows
-cli.add_command(workflowcli)
-cli.add_command(run_workflow, name='run')
