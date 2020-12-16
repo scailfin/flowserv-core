@@ -14,7 +14,7 @@ import flowserv.error as err
 import flowserv.tests.serialize as serialize
 
 
-def test_authenticate_user_view(local_service):
+def test_authenticate_user_local(local_service):
     """Test login and logout via API."""
     # -- Register a new user that is automatically activated ------------------
     with local_service() as api:
@@ -39,7 +39,7 @@ def test_authenticate_user_view(local_service):
         serialize.validate_user_handle(doc=r, login=False)
 
 
-def test_list_users_view(local_service):
+def test_list_users_local(local_service):
     """Test user listings and queries."""
     # -- Setup ----------------------------------------------------------------
     #
@@ -65,7 +65,7 @@ def test_list_users_view(local_service):
         assert len(r['users']) == 1
 
 
-def test_register_user_view(local_service):
+def test_register_user_local(local_service):
     """Test new user registration via API."""
     # -- Register a new user without activating the user ----------------------
     with local_service() as api:
@@ -88,7 +88,7 @@ def test_register_user_view(local_service):
         serialize.validate_user_handle(doc=r, login=False)
 
 
-def test_reset_password_view(local_service):
+def test_reset_password_local(local_service):
     """Test requesting a reset and resetting the password for a user."""
     # -- Setup ----------------------------------------------------------------
     #

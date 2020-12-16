@@ -94,7 +94,6 @@
 * Rename run argument serialization helper functions.
 
 
-### 0.6.1 - 2020-11-20
+### 0.7.0 - 2020-??-??
 
 * Drop support for Python 3.6.
-* Rename run argument serialization helper functions.

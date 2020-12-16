@@ -18,6 +18,7 @@ from flowserv.service.api import API
 from flowserv.service.descriptor import ServiceDescriptor
 from flowserv.service.local import service as localservice
 from flowserv.service.user.remote import RemoteUserService
+from flowserv.service.workflow.remote import RemoteWorkflowService
 from flowserv.view.user import USER_TOKEN
 from flowserv.tests.controller import StateEngine
 
@@ -98,7 +99,7 @@ def remote_service():
     service = ServiceDescriptor(doc)
     return API(
         service=service,
-        workflow_service=None,
+        workflow_service=RemoteWorkflowService(descriptor=service),
         group_service=None,
         upload_service=None,
         run_service=None,

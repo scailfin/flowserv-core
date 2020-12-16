@@ -14,10 +14,9 @@ flowserv objects via a remote RESTful API.
 from typing import Dict, Optional
 
 import os
-import requests
 
 from flowserv.service.user.base import UserService
-from flowserv.service.remote import headers
+from flowserv.service.remote import get, post
 from flowserv.service.descriptor import ServiceDescriptor
 
 import flowserv.config.client as config
@@ -38,8 +37,7 @@ class RemoteUserService(UserService):
         labels: dict, default=None
             Override the default labels for elements in request bodies.
         """
-        self.descriptor = descriptor
-        # Default labels for elements request bodies.
+        # Default labels for elements in request bodies.
         self.labels = {
             'REQUEST_ID': default_labels.REQUEST_ID,
             'USER_ID': default_labels.USER_ID,
@@ -66,23 +64,7 @@ class RemoteUserService(UserService):
         dict
         """
         data = {self.labels['USER_ID']: user_id}
-        return self.post(url=self.urls(route.USERS_ACTIVATE), data=data)
-
-    def get(self, url: str) -> Dict:
-        """Send GET request to given URL and return the JSON body.
-
-        Parameters
-        ----------
-        url: string
-            Request URL.
-
-        Returns
-        -------
-        dict
-        """
-        r = requests.get(url, headers=headers())
-        r.raise_for_status()
-        return r.json()
+        return post(url=self.urls(route.USERS_ACTIVATE), data=data)
 
     def list_users(self, query: Optional[str] = None) -> Dict:
         """Get a listing of registered users. The optional query string is used
@@ -97,7 +79,7 @@ class RemoteUserService(UserService):
         -------
         dict
         """
-        return self.get(url=self.urls(route.USERS_LIST))
+        return get(url=self.urls(route.USERS_LIST))
 
     def login_user(self, username: str, password: str) -> Dict:
         """Get handle for user with given credentials. Raises error if the user
@@ -118,7 +100,7 @@ class RemoteUserService(UserService):
             self.labels['USER_NAME']: username,
             self.labels['USER_PASSWORD']: password
         }
-        body = self.post(url=self.urls(route.USERS_LOGIN), data=data)
+        body = post(url=self.urls(route.USERS_LOGIN), data=data)
         # Get the access tokrn from the response body and update the global
         # evironment variable.
         token = body[self.labels['USER_TOKEN']]
@@ -137,26 +119,7 @@ class RemoteUserService(UserService):
         -------
         dict
         """
-        return self.post(url=self.urls(route.USERS_LOGOUT))
-
-    def post(self, url: str, data: Optional[Dict] = None) -> Dict:
-        """Send POST request with given (optional) body to a URL. Returns the
-        JSON body from the response.
-
-        Parameters
-        ----------
-        url: string
-            Request URL.
-        data: dict, default=None
-            Optional request body.
-
-        Returns
-        -------
-        dict
-        """
-        r = requests.post(url, json=data, headers=headers())
-        r.raise_for_status()
-        return r.json()
+        return post(url=self.urls(route.USERS_LOGOUT))
 
     def register_user(
         self, username: str, password: str, verify: Optional[bool] = False
@@ -185,7 +148,7 @@ class RemoteUserService(UserService):
             self.labels['USER_PASSWORD']: password,
             self.labels['VERIFY_USER']: verify
         }
-        return self.post(url=self.urls(route.USERS_REGISTER), data=data)
+        return post(url=self.urls(route.USERS_REGISTER), data=data)
 
     def request_password_reset(self, username: str) -> Dict:
         """Request to reset the password for the user with the given name. The
@@ -198,7 +161,7 @@ class RemoteUserService(UserService):
             Unique user login name
         """
         data = {self.labels['USER_NAME']: username}
-        return self.post(url=self.urls(route.USERS_PASSWORD_REQUEST), data=data)
+        return post(url=self.urls(route.USERS_PASSWORD_REQUEST), data=data)
 
     def reset_password(self, request_id: str, password: str) -> Dict:
         """Reset the password for the user that made the given password reset
@@ -222,7 +185,7 @@ class RemoteUserService(UserService):
             self.labels['REQUEST_ID']: request_id,
             self.labels['USER_PASSWORD']: password
         }
-        return self.post(url=self.urls(route.USERS_PASSWORD_RESET), data=data)
+        return post(url=self.urls(route.USERS_PASSWORD_RESET), data=data)
 
     def whoami_user(self, api_key: str) -> Dict:
         """Get serialization of the given user.
@@ -236,4 +199,4 @@ class RemoteUserService(UserService):
         -------
         dict
         """
-        return self.get(url=self.urls(route.USERS_WHOAMI))
+        return get(url=self.urls(route.USERS_WHOAMI))

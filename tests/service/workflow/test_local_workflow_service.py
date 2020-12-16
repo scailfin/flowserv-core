@@ -11,12 +11,30 @@
 import flowserv.tests.serialize as serialize
 
 
-def test_get_workflow_view(local_service, hello_world):
+def test_delete_workflow_local(local_service, hello_world):
+    """Test deleting a workflow from the repository."""
+    # -- Setup ----------------------------------------------------------------
+    #
+    # Create two instances of the 'Hello World' workflow.
+    with local_service() as api:
+        workflow = hello_world(api, name='W1')
+        workflow_id = workflow.workflow_id
+        hello_world(api, name='W2')
+    # -- Delete the first workflow --------------------------------------------
+    with local_service() as api:
+        api.workflows().delete_workflow(workflow_id)
+        # After deletion one workflow is left.
+        r = api.workflows().list_workflows()
+        assert len(r['workflows']) == 1
+
+
+def test_get_workflow_local(local_service, hello_world):
     """Test serialization for created workflows."""
     # -- Create workflow with minimal metadata --------------------------------
     with local_service() as api:
-        wf = hello_world(api, name='W1')
-        r = api.workflows().get_workflow(wf.workflow_id)
+        workflow = hello_world(api, name='W1')
+        workflow_id = workflow.workflow_id
+        r = api.workflows().get_workflow(workflow_id)
         serialize.validate_workflow_handle(doc=r, has_optional=False)
         assert len(r['parameterGroups']) == 1
         serialize.validate_para_module(r['parameterGroups'][0])
@@ -25,7 +43,7 @@ def test_get_workflow_view(local_service, hello_world):
             serialize.validate_parameter(para)
 
 
-def test_list_workflows_view(local_service, hello_world):
+def test_list_workflows_local(local_service, hello_world):
     """Test serialization for workflow listings."""
     # -- Setup ----------------------------------------------------------------
     #
@@ -38,3 +56,27 @@ def test_list_workflows_view(local_service, hello_world):
         r = api.workflows().list_workflows()
         serialize.validate_workflow_listing(doc=r)
         assert len(r['workflows']) == 2
+
+
+def test_update_workflow_local(local_service, hello_world):
+    """Test updating workflow properties."""
+    # -- Setup ----------------------------------------------------------------
+    #
+    # Create one instances of the 'Hello World' workflow with minimal metadata.
+    with local_service() as api:
+        workflow = hello_world(api, name='W1')
+        workflow_id = workflow.workflow_id
+        r = api.workflows().get_workflow(workflow_id)
+        assert 'description' not in r
+        assert 'instructions' not in r
+    # -- Update workflow ------------------------------------------------------
+    with local_service() as api:
+        r = api.workflows().update_workflow(
+            workflow_id=workflow_id,
+            name='Hello World',
+            description='Simple Hello World Demo',
+            instructions='Just run it'
+        )
+        assert r['name'] == 'Hello World'
+        assert r['description'] == 'Simple Hello World Demo'
+        assert r['instructions'] == 'Just run it'

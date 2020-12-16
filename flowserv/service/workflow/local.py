@@ -6,8 +6,9 @@
 # flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
-"""The workflow API component provides methods to create and access workflows
-and workflow result rankings.
+"""Workflow API component for a service that is running locally. The local API
+provides additional methods to create, delete and update a workflow. These
+functions are not available via the remote service API.
 """
 
 from typing import Dict, List, Optional
@@ -22,7 +23,9 @@ from flowserv.view.workflow import WorkflowSerializer
 
 class LocalWorkflowService(WorkflowService):
     """API component that provides methods to access workflows and workflow
-    evaluation rankings (benchmark leader boards).
+    evaluation rankings (benchmark leader boards). The local API component extends
+    the base class with functionality to create, delete, and update workflow
+    templates.
     """
     def __init__(
         self, workflow_repo: WorkflowManager, ranking_manager: RankingManager,
@@ -48,6 +51,77 @@ class LocalWorkflowService(WorkflowService):
         self.run_manager = run_manager
         self.serialize = serializer if serializer is not None else WorkflowSerializer()
 
+    def create_workflow(
+        self, source: str, identifier: Optional[str] = None,
+        name: Optional[str] = None, description: Optional[str] = None,
+        instructions: Optional[str] = None, specfile: Optional[str] = None,
+        manifestfile: Optional[str] = None,
+        ignore_postproc: Optional[bool] = False
+    ) -> Dict:
+        """Create a new workflow in the repository. If the workflow template
+        includes a result schema the workflow is also registered with the
+        ranking manager.
+
+        Raises an error if the given workflow name is not unique.
+
+        Parameters
+        ----------
+        source: string
+            Path to local template, name or URL of the template in the
+            repository.
+        name: string
+            Unique workflow name
+        description: string, default=None
+            Optional short description for display in workflow listings
+        instructions: string, default=None
+            Text containing detailed instructions for running the workflow
+        specfile: string, default=None
+            Path to the workflow template specification file (absolute or
+            relative to the workflow directory)
+        manifestfile: string, default=None
+            Path to manifest file. If not given an attempt is made to read one
+            of the default manifest file names in the base directory.
+        ignore_postproc: bool, default=False
+            Ignore post-processing workflow specification if True.
+
+        Returns
+        -------
+        dict
+
+        Raises
+        ------
+        flowserv.error.ConstraintViolationError
+        flowserv.error.InvalidTemplateError
+        ValueError
+        """
+        # Create workflow in the repository to get the workflow handle.
+        workflow = self.workflow_repo.create_workflow(
+            source=source,
+            identifier=identifier,
+            name=name,
+            description=description,
+            instructions=instructions,
+            specfile=specfile,
+            manifestfile=manifestfile,
+            ignore_postproc=ignore_postproc
+        )
+        # Return serialization og the workflow handle
+        return self.serialize.workflow_handle(workflow)
+
+    def delete_workflow(self, workflow_id: str):
+        """Delete the workflow with the given identifier.
+
+        Parameters
+        ----------
+        workflow_id: string
+            Unique workflow identifier
+
+        Raises
+        ------
+        flowserv.error.UnknownWorkflowError
+        """
+        self.workflow_repo.delete_workflow(workflow_id)
+
     def get_ranking(
         self, workflow_id: str, order_by: Optional[List[SortColumn]] = None,
         include_all: Optional[bool] = False
@@ -58,10 +132,10 @@ class LocalWorkflowService(WorkflowService):
         ----------
         workflow_id: string
             Unique workflow identifier
-        order_by: list(flowserv.model.template.schema.SortColumn), optional
+        order_by: list(flowserv.model.template.schema.SortColumn), default=None
             Use the given attribute to sort run results. If not given, the
             schema default sort order is used
-        include_all: bool, optional
+        include_all: bool, default=False
             Include all entries (True) or at most one entry (False) per user
             group in the returned ranking
 
@@ -127,3 +201,44 @@ class LocalWorkflowService(WorkflowService):
         """
         workflows = self.workflow_repo.list_workflows()
         return self.serialize.workflow_listing(workflows)
+
+    def update_workflow(
+        self, workflow_id: str, name: Optional[str] = None,
+        description: Optional[str] = None, instructions: Optional[str] = None
+    ) -> Dict:
+        """Update name, description, and instructions for a given workflow.
+        Returns the serialized handle for the updated workflow.
+
+        Raises an error if the given workflow does not exist or if the name is
+        not unique.
+
+        Parameters
+        ----------
+        workflow_id: string
+            Unique workflow identifier
+        name: string, default=None
+            Unique workflow name
+        description: string, default=None
+            Optional short description for display in workflow listings
+        instructions: string, default=None
+            Text containing detailed instructions for workflow execution
+
+        Returns
+        -------
+        dict
+
+        Raises
+        ------
+        flowserv.error.ConstraintViolationError
+        flowserv.error.UnknownWorkflowError
+        """
+        workflow = self.workflow_repo.update_workflow(
+            workflow_id=workflow_id,
+            name=name,
+            description=description,
+            instructions=instructions
+        )
+        postproc = None
+        if workflow.postproc_run_id is not None:
+            postproc = self.run_manager.get_run(workflow.postproc_run_id)
+        return self.serialize.workflow_handle(workflow, postproc=postproc)

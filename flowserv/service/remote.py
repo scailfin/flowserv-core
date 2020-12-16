@@ -8,13 +8,32 @@
 
 """Helper functions for the remote service client."""
 
-from typing import Dict
+from typing import Dict, Optional
+
+import requests
 
 import flowserv.config.client as config
 
 
 """Name of the header element that contains the access token."""
 HEADER_TOKEN = 'api_key'
+
+
+def get(url: str) -> Dict:
+    """Send GET request to given URL and return the JSON body.
+
+    Parameters
+    ----------
+    url: string
+        Request URL.
+
+    Returns
+    -------
+    dict
+    """
+    r = requests.get(url, headers=headers())
+    r.raise_for_status()
+    return r.json()
 
 
 def headers() -> Dict:
@@ -25,3 +44,23 @@ def headers() -> Dict:
     dict
     """
     return {HEADER_TOKEN: config.ACCESS_TOKEN()}
+
+
+def post(url: str, data: Optional[Dict] = None) -> Dict:
+    """Send POST request with given (optional) body to a URL. Returns the
+    JSON body from the response.
+
+    Parameters
+    ----------
+    url: string
+        Request URL.
+    data: dict, default=None
+        Optional request body.
+
+    Returns
+    -------
+    dict
+    """
+    r = requests.post(url, json=data, headers=headers())
+    r.raise_for_status()
+    return r.json()

@@ -69,7 +69,7 @@ ROUTES = {
     GROUPS_LIST: 'groups',
     GROUPS_RUNS: 'groups/{userGroupId}/runs',
     GROUPS_UPDATE: 'groups/{userGroupId}',
-    LEADERBOARD_GET: 'workflows/{workflowId}/leaderboard',
+    LEADERBOARD_GET: 'workflows/{workflowId}/leaderboard?orderBy={orderBy}&includeAll={includeAll}',
     RUNS_CANCEL: 'runs/{runId}',
     RUNS_DELETE: 'runs/{runId}',
     RUNS_DOWNLOAD_ARCHIVE: 'runs/{runId}/downloads/archive',
