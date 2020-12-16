@@ -11,7 +11,6 @@
 import os
 import pytest
 
-from flowserv.model.auth import DefaultAuthPolicy
 from flowserv.model.files.s3 import BucketStore, FLOWSERV_S3BUCKET
 from flowserv.service.files.base import get_filestore
 from flowserv.tests.files import DiskBucket
@@ -20,14 +19,9 @@ import flowserv.config.files as config
 import flowserv.error as err
 
 
-def test_api_components(service):
+def test_api_components(local_service):
     """Test methods to access API components."""
-    with service() as api:
-        # The API uses the default authentication handler.
-        assert isinstance(api.auth, DefaultAuthPolicy)
-        # Error when authenticating unknown user.
-        with pytest.raises(err.UnauthenticatedAccessError):
-            api.authenticate('0000')
+    with local_service() as api:
         # Access the different managers to ensure that they are created
         # properly without raising errors.
         assert api.groups() is not None
