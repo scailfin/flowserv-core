@@ -241,9 +241,9 @@ def test_list_runs(fscls, database, tmpdir):
     # -- Test polling runs ----------------------------------------------------
     with database.session() as session:
         runs = RunManager(session=session, fs=fs)
-        assert len(runs.poll_runs(group_id)) == 1
-        assert len(runs.poll_runs(group_id, state=st.STATE_ERROR)) == 1
-        assert len(runs.poll_runs(group_id, state=st.STATE_SUCCESS)) == 0
+        assert len(runs.list_runs(group_id)) == 2
+        assert len(runs.list_runs(group_id, state=st.STATE_ERROR)) == 1
+        assert len(runs.list_runs(group_id, state=st.STATE_SUCCESS)) == 0
 
 
 @pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
