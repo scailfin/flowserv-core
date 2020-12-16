@@ -14,7 +14,7 @@ import time
 
 from flowserv.config.api import FLOWSERV_API_BASEDIR
 from flowserv.config.database import FLOWSERV_DB
-from flowserv.service.api import service
+from flowserv.service.local import service
 from flowserv.tests.remote import RemoteTestClient, RemoteTestController
 from flowserv.tests.service import (
     create_group, create_user, create_workflow, start_run
@@ -47,24 +47,25 @@ def test_cancel_remote_workflow(tmpdir):
     with service(engine=engine) as api:
         workflow_id = create_workflow(api, source=TEMPLATE_DIR)
         user_id = create_user(api)
-        group_id = create_group(api, workflow_id, [user_id])
-        run_id = start_run(api, group_id, user_id)
+    with service(engine=engine, user_id=user_id) as api:
+        group_id = create_group(api, workflow_id)
+        run_id = start_run(api, group_id)
     # Poll workflow state every second.
-    with service(engine=engine) as api:
-        run = api.runs().get_run(run_id=run_id, user_id=user_id)
+    with service(engine=engine, user_id=user_id) as api:
+        run = api.runs().get_run(run_id=run_id)
     while run['state'] == st.STATE_PENDING:
         time.sleep(1)
-        with service(engine=engine) as api:
-            run = api.runs().get_run(run_id=run_id, user_id=user_id)
+        with service(engine=engine, user_id=user_id) as api:
+            run = api.runs().get_run(run_id=run_id)
     serialize.validate_run_handle(run, state=st.STATE_RUNNING)
-    with service(engine=engine) as api:
-        api.runs().cancel_run(run_id=run_id, user_id=user_id, reason='test')
+    with service(engine=engine, user_id=user_id) as api:
+        api.runs().cancel_run(run_id=run_id, reason='test')
     # Sleep to ensure that the workflow monitor polls the state and makes an
     # attempt to update the run state. This should raise an error for the
     # monitor. The error is not propagated here or to the run.
     time.sleep(3)
-    with service(engine=engine) as api:
-        run = api.runs().get_run(run_id=run_id, user_id=user_id)
+    with service(engine=engine, user_id=user_id) as api:
+        run = api.runs().get_run(run_id=run_id)
     serialize.validate_run_handle(run, state=st.STATE_CANCELED)
     assert run['messages'][0] == 'test'
 
@@ -90,29 +91,30 @@ def test_run_remote_workflow(tmpdir, is_async):
     with service(engine=engine) as api:
         workflow_id = create_workflow(api, source=TEMPLATE_DIR)
         user_id = create_user(api)
-        group_id = create_group(api, workflow_id, [user_id])
-        run_id = start_run(api, group_id, user_id)
+    with service(engine=engine, user_id=user_id) as api:
+        group_id = create_group(api, workflow_id)
+        run_id = start_run(api, group_id)
     # Poll workflow state every second.
-    with service(engine=engine) as api:
-        run = api.runs().get_run(run_id=run_id, user_id=user_id)
+    with service(engine=engine, user_id=user_id) as api:
+        run = api.runs().get_run(run_id=run_id)
     count = 0
     while run['state'] in st.ACTIVE_STATES and count < 60:
         time.sleep(1)
         count += 1
-        with service(engine=engine) as api:
-            run = api.runs().get_run(run_id=run_id, user_id=user_id)
+        with service(engine=engine, user_id=user_id) as api:
+            run = api.runs().get_run(run_id=run_id)
     serialize.validate_run_handle(run, state=st.STATE_SUCCESS)
     files = dict()
     for obj in run['files']:
         files[obj['name']] = obj['id']
     f_id = files['results/data.txt']
-    fh = api.runs().get_result_file(
-        run_id=run_id,
-        file_id=f_id,
-        user_id=user_id
-    )
-    data = fh.open().read().decode('utf-8')
-    assert 'success' in data
+    with service(engine=engine, user_id=user_id) as api:
+        fh = api.runs().get_result_file(
+            run_id=run_id,
+            file_id=f_id
+        )
+        data = fh.read().decode('utf-8')
+        assert 'success' in data
 
 
 def test_run_remote_workflow_with_error(tmpdir):
@@ -135,14 +137,15 @@ def test_run_remote_workflow_with_error(tmpdir):
     with service(engine=engine) as api:
         workflow_id = create_workflow(api, source=TEMPLATE_DIR)
         user_id = create_user(api)
-        group_id = create_group(api, workflow_id, [user_id])
-        run_id = start_run(api, group_id, user_id)
+    with service(engine=engine, user_id=user_id) as api:
+        group_id = create_group(api, workflow_id)
+        run_id = start_run(api, group_id)
     # Poll workflow state every second.
-    with service(engine=engine) as api:
-        run = api.runs().get_run(run_id=run_id, user_id=user_id)
+    with service(engine=engine, user_id=user_id) as api:
+        run = api.runs().get_run(run_id=run_id)
     while run['state'] in st.ACTIVE_STATES:
         time.sleep(1)
-        with service(engine=engine) as api:
-            run = api.runs().get_run(run_id=run_id, user_id=user_id)
+        with service(engine=engine, user_id=user_id) as api:
+            run = api.runs().get_run(run_id=run_id)
     serialize.validate_run_handle(run, state=st.STATE_ERROR)
     assert run['messages'][0] == 'some error'

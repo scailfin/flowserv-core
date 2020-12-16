@@ -19,7 +19,7 @@ from flowserv.config.files import (
     FLOWSERV_FILESTORE_MODULE, FLOWSERV_FILESTORE_CLASS
 )
 from flowserv.controller.serial.engine import SerialWorkflowEngine
-from flowserv.service.api import service
+from flowserv.service.local import service
 from flowserv.service.files.base import get_filestore
 from flowserv.service.run.argument import serialize_arg, serialize_fh
 from flowserv.tests.files import io_file
@@ -84,16 +84,16 @@ def test_postproc_workflow(fsconfig, tmpdir):
     # Create four groups and run the workflow with a slightly different input
     # file
     for i in range(4):
-        with service(engine=engine) as api:
-            group_id = create_group(api, workflow_id, [user_id])
-            names = io_file(data=NAMES[:(i+1)], format='plain/text')
-            file_id = upload_file(api, group_id, user_id, names)
+        with service(engine=engine, user_id=user_id) as api:
+            group_id = create_group(api, workflow_id)
+            names = io_file(data=NAMES[:(i + 1)], format='plain/text')
+            file_id = upload_file(api, group_id, names)
             # Set the template argument values
             arguments = [
                 serialize_arg('names', serialize_fh(file_id)),
                 serialize_arg('greeting', 'Hi')
             ]
-            run_id = start_run(api, group_id, user_id, arguments=arguments)
+            run_id = start_run(api, group_id, arguments=arguments)
         # Poll workflow state every second.
         run = poll_run(service, engine, run_id, user_id)
         assert run['state'] == st.STATE_SUCCESS
@@ -123,13 +123,12 @@ def test_postproc_workflow(fsconfig, tmpdir):
         for fobj in wh['postproc']['files']:
             if fobj['name'] == 'results/compare.json':
                 file_id = fobj['id']
-        with service(engine=engine) as api:
+        with service(engine=engine, user_id=user_id) as api:
             fh = api.runs().get_result_file(
                 run_id=wh['postproc']['id'],
-                file_id=file_id,
-                user_id=None
+                file_id=file_id
             )
-        compare = util.read_object(fh.open())
+        compare = util.read_object(fh)
         assert len(compare) == (i + 1)
     # -- Clean-up environment variables ---------------------------------------
     del os.environ[FLOWSERV_DB]
@@ -165,19 +164,19 @@ def test_postproc_workflow_errors(tmpdir):
 
 def poll_run(service, engine, run_id, user_id):
     """Poll workflow run while in active state."""
-    with service(engine=engine) as api:
-        run = api.runs().get_run(run_id=run_id, user_id=user_id)
+    with service(engine=engine, user_id=user_id) as api:
+        run = api.runs().get_run(run_id=run_id)
     while run['state'] in st.ACTIVE_STATES:
         time.sleep(1)
-        with service(engine=engine) as api:
-            run = api.runs().get_run(run_id=run_id, user_id=user_id)
+        with service(engine=engine, user_id=user_id) as api:
+            run = api.runs().get_run(run_id=run_id)
     return run
 
 
 def run_erroneous_workflow(service, engine, specfile):
     """Execute the modified helloworld example."""
     with service(engine=engine) as api:
-        engine.fs = api.fs
+        engine.fs = api.workflows().workflow_repo.fs
         # Create workflow template, user, and the workflow group.
         workflow_id = create_workflow(
             api,
@@ -185,16 +184,17 @@ def run_erroneous_workflow(service, engine, specfile):
             specfile=specfile
         )
         user_id = create_user(api)
-        group_id = create_group(api, workflow_id, [user_id])
+    with service(engine=engine, user_id=user_id) as api:
+        group_id = create_group(api, workflow_id)
         # Upload the names file.
         names = io_file(data=NAMES, format='txt/plain')
-        file_id = upload_file(api, group_id, user_id, names)
+        file_id = upload_file(api, group_id, names)
         # Run the workflow.
         arguments = [
             serialize_arg('names', serialize_fh(file_id)),
             serialize_arg('greeting', 'Hi')
         ]
-        run_id = start_run(api, group_id, user_id, arguments=arguments)
+        run_id = start_run(api, group_id, arguments=arguments)
     # Poll workflow state every second.
     run = poll_run(service, engine, run_id, user_id)
     assert run['state'] == st.STATE_SUCCESS
