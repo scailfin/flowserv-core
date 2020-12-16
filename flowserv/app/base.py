@@ -16,15 +16,14 @@ from flowserv.app.result import RunResult
 from flowserv.controller.base import WorkflowController
 from flowserv.model.auth import open_access
 from flowserv.model.database import DB, SessionScope
-from flowserv.model.files.base import (
-    DatabaseFile, FileObject, FileStore, IOFile
-)
+from flowserv.model.files.base import DatabaseFile, FileObject, FileStore, IOFile
 from flowserv.model.files.fs import FSFile
 from flowserv.model.parameter.files import InputFile
 from flowserv.model.template.parameter import ParameterIndex
 from flowserv.model.workflow.manager import WorkflowManager
 from flowserv.service.auth import get_auth
 from flowserv.service.api import API
+from flowserv.service.local import create_api
 from flowserv.service.files.base import get_filestore
 from flowserv.service.run.argument import serialize_arg, serialize_fh
 from flowserv.service.postproc.util import copy_postproc_files
@@ -90,23 +89,26 @@ class App(object):
             self._parameters = workflow.parameters
             self._postproc_spec = workflow.postproc_spec
 
-    def _api(self, session: SessionScope) -> API:
+    def _api(self, session: SessionScope, user_id: Optional[str] = None) -> API:
         """Get an instance of the service API using a given database session.
 
         Parameters
         ----------
         session: flowserv.model.database.SessionScope
             Database session object.
+        user_id: string, default=None
+            Identifier for an authenticated user.
 
         Returns
         -------
         flowserv.service.api.API
         """
-        return API(
+        return create_api(
             session=session,
             engine=self._engine,
             auth=self._auth(session),
-            fs=self._fs
+            fs=self._fs,
+            user_id=user_id
         )
 
     def cancel_run(
@@ -134,8 +136,8 @@ class App(object):
         flowserv.error.InvalidRunStateError
         """
         with self._db.session() as session:
-            api = self._api(session=session)
-            api.runs().cancel_run(run_id=run_id, user_id=user_id)
+            api = self._api(session=session, user_id=user_id)
+            api.runs().cancel_run(run_id=run_id)
 
     def delete_run(self, run_id: str, user_id: Optional[str] = None):
         """Delete the run with the given identifier.
@@ -157,8 +159,8 @@ class App(object):
         flowserv.error.InvalidRunStateError
         """
         with self._db.session() as session:
-            api = self._api(session=session)
-            api.runs().delete_run(run_id=run_id, user_id=user_id)
+            api = self._api(session=session, user_id=user_id)
+            api.runs().delete_run(run_id=run_id)
 
     def description(self) -> str:
         """Get descriptive header for the application.
@@ -185,14 +187,12 @@ class App(object):
 
         Returns
         -------
-        flowserv.model.files.base.DatabaseFile
+        flowserv.model.files.base.IOFile
         """
         with self._db.session() as session:
-            api = self._api(session=session)
-            return api.runs().get_result_file(
-                run_id=run_id,
-                file_id=file_id,
-                user_id=user_id
+            api = self._api(session=session, user_id=user_id)
+            return IOFile(
+                api.runs().get_result_file(run_id=run_id, file_id=file_id)
             )
 
     def get_postproc_results(self):
@@ -269,9 +269,9 @@ class App(object):
         flowserv.error.UnknownRunError
         """
         with self._db.session() as session:
-            api = self._api(session=session)
+            api = self._api(session=session, user_id=user_id)
             return RunResult(
-                doc=api.runs().get_run(run_id=run_id, user_id=user_id),
+                doc=api.runs().get_run(run_id=run_id),
                 loader=self.get_file
             )
 
@@ -349,12 +349,11 @@ class App(object):
         flowserv.error.UnknownWorkflowGroupError
         """
         with self._db.session() as session:
-            api = self._api(session=session)
+            api = self._api(session=session, user_id=user_id)
             # Create a new group for the run.
             group_id = api.groups().create_group(
                 workflow_id=self._workflow_id,
-                name=util.get_unique_identifier(),
-                user_id=user_id
+                name=util.get_unique_identifier()
             )['id']
             # Upload any argument values as files that are either of type
             # StringIO or BytesIO.
@@ -389,8 +388,7 @@ class App(object):
                     fh = api.uploads().upload_file(
                         group_id=group_id,
                         file=upload_file,
-                        name=key,
-                        user_id=user_id
+                        name=key
                     )
                     val = serialize_fh(fh['id'], target=target)
                 else:
@@ -399,14 +397,13 @@ class App(object):
             # Execute the run and return the serialized run handle.
             run = api.runs().start_run(
                 group_id=group_id,
-                arguments=arglist,
-                user_id=user_id
+                arguments=arglist
             )
             rh = RunResult(doc=run, loader=self.get_file)
             # Wait for run to finish if active an poll interval is given.
             while poll_interval and rh.is_active():
                 time.sleep(poll_interval)
-                rh = self.poll_run(run_id=rh.run_id, user_id=user_id)
+                rh = self.poll_run(run_id=rh.run_id)
             pprun = self.get_postproc_results()
             if pprun is not None:
                 while poll_interval and pprun.is_active():

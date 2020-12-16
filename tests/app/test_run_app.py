@@ -122,7 +122,6 @@ def test_run_app_from_env(fsconfig, tmpdir):
     assert file_id is not None
     file_id = r.get_file_id(key='results/greetings.txt')
     f = app.get_file(run_id=r.run_id, file_id=file_id)
-    assert f.mime_type == 'text/plain'
     text = f.open().read().decode('utf-8').strip()
     assert text == 'Hi Alice!'
     assert r.get_file_id(key='unknown', raise_error=False) is None

@@ -17,7 +17,7 @@ from typing import Optional
 
 from flowserv.controller.base import WorkflowController
 from flowserv.model.auth import Auth
-from flowserv.model.database import DB
+from flowserv.model.database import DB, SessionScope
 from flowserv.model.files.base import FileStore
 from flowserv.model.group import WorkflowGroupManager
 from flowserv.model.ranking import RankingManager
@@ -79,46 +79,82 @@ def service(
     if fs is None:
         fs = get_filestore()
     with db.session() as session:
-        if auth is None:
-            auth = get_auth(session)
-        user_manager = UserManager(session=session)
-        group_manager = WorkflowGroupManager(
+        yield create_api(
             session=session,
+            engine=engine,
             fs=fs,
-            users=user_manager
+            auth=auth,
+            user_id=user_id
         )
-        ranking_manager = RankingManager(session=session)
-        run_manager = RunManager(session=session, fs=fs)
-        workflow_repo = WorkflowManager(session=session, fs=fs)
-        yield API(
-            service=ServiceDescriptor(),
-            workflow_service=LocalWorkflowService(
-                workflow_repo=workflow_repo,
-                ranking_manager=ranking_manager,
-                run_manager=run_manager
-            ),
-            group_service=LocalWorkflowGroupService(
-                group_manager=group_manager,
-                workflow_repo=workflow_repo,
-                backend=engine,
-                auth=auth,
-                user_id=user_id
-            ),
-            upload_service=LocalUploadFileService(
-                group_manager=group_manager,
-                auth=auth,
-                user_id=user_id
-            ),
-            run_service=LocalRunService(
-                run_manager=run_manager,
-                group_manager=group_manager,
-                ranking_manager=ranking_manager,
-                backend=engine,
-                auth=auth,
-                user_id=user_id
-            ),
-            user_service=LocalUserService(
-                manager=user_manager,
-                auth=auth
-            )
+
+
+# -- Helper Methods -----------------------------------------------------------
+
+def create_api(
+    session: SessionScope, engine: WorkflowController, fs: FileStore,
+    auth: Auth, user_id: str
+):
+    """Helper method to create an instance of the local service API.
+
+
+    Parameters
+    ----------
+    session: flowserv.model.database.SessionScope
+        Open database session.
+    engine: flowserv.controller.base.WorkflowController
+        Workflow controller used by the API for workflow execution.
+    fs: flowserv.model.files.base.FileStore
+        File store for accessing and maintaining files for workflows,
+        groups and workflow runs.
+    auth: flowserv.model.user.auth.Auth
+        Authentication and authorization policy.
+    user_id: string, default=None
+        Optional identifier of a user that has been authenticated.
+
+    Returns
+    -------
+    flowserv.service.api.API
+    """
+    if auth is None:
+        auth = get_auth(session)
+    user_manager = UserManager(session=session)
+    group_manager = WorkflowGroupManager(
+        session=session,
+        fs=fs,
+        users=user_manager
+    )
+    ranking_manager = RankingManager(session=session)
+    run_manager = RunManager(session=session, fs=fs)
+    workflow_repo = WorkflowManager(session=session, fs=fs)
+    return API(
+        service=ServiceDescriptor(),
+        workflow_service=LocalWorkflowService(
+            workflow_repo=workflow_repo,
+            ranking_manager=ranking_manager,
+            run_manager=run_manager
+        ),
+        group_service=LocalWorkflowGroupService(
+            group_manager=group_manager,
+            workflow_repo=workflow_repo,
+            backend=engine,
+            auth=auth,
+            user_id=user_id
+        ),
+        upload_service=LocalUploadFileService(
+            group_manager=group_manager,
+            auth=auth,
+            user_id=user_id
+        ),
+        run_service=LocalRunService(
+            run_manager=run_manager,
+            group_manager=group_manager,
+            ranking_manager=ranking_manager,
+            backend=engine,
+            auth=auth,
+            user_id=user_id
+        ),
+        user_service=LocalUserService(
+            manager=user_manager,
+            auth=auth
         )
+    )
