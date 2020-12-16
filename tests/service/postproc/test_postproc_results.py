@@ -9,6 +9,7 @@
 """Unit test for downloading results of a post-processing workflow."""
 
 import os
+import pytest
 import time
 
 from flowserv.controller.serial.engine import SerialWorkflowEngine
@@ -16,6 +17,7 @@ from flowserv.service.run.argument import serialize_fh
 from flowserv.tests.files import io_file
 from flowserv.tests.service import create_group, create_user
 
+import flowserv.error as err
 import flowserv.tests.serialize as serialize
 import flowserv.util as util
 
@@ -27,39 +29,45 @@ SPEC_FILE = os.path.join(DIR, 'postproc/benchmark.yaml')
 
 
 def create_run(api, workflow_id):
-    user_id = create_user(api)
-    group_id = create_group(api, workflow_id=workflow_id, users=[user_id])
+    group_id = create_group(api, workflow_id=workflow_id)
     file_id = api.uploads().upload_file(
         group_id=group_id,
         file=io_file(data=['Alice', 'Bob'], format='txt/plain'),
-        name='n.txt',
-        user_id=user_id
+        name='n.txt'
     )['id']
     api.runs().start_run(
         group_id=group_id,
-        arguments=[{'name': 'names', 'value': serialize_fh(file_id)}],
-        user_id=user_id
+        arguments=[{'name': 'names', 'value': serialize_fh(file_id)}]
     )
 
 
-def test_workflow_postproc_results(service):
+def test_workflow_postproc_results(local_service):
     """Test downloading results from a post-processing workflow."""
     # -- Setup ----------------------------------------------------------------
     #
     # Create instance of the 'Hello World' workflow.
     # run each.
-    with service() as api:
+    with local_service() as api:
         workflow_id = api.workflows().create_workflow(
             name='W1',
             source=TEMPLATE_DIR,
             specfile=SPEC_FILE
         )['id']
+    # -- Error when ntrying to download post-porcessing results for a workflow
+    # -- that did not run yet.
+    with local_service() as api:
+        with pytest.raises(err.UnknownFileError):
+            api.workflows().get_result_archive(workflow_id=workflow_id)
+        with pytest.raises(err.UnknownFileError):
+            api.workflows().get_result_file(workflow_id=workflow_id, file_id='UNKNOWN')
     # -- Create three groups and a successful run for each. Then read the
     # result files ------------------------------------------------------------
     for run_count in range(3):
         engine = SerialWorkflowEngine(is_async=False)
-        with service(engine=engine) as api:
-            engine.fs = api.fs
+        with local_service(engine=engine) as api:
+            engine.fs = api.workflows().workflow_repo.fs
+            user_id = create_user(api)
+        with local_service(engine=engine, user_id=user_id) as api:
             create_run(api, workflow_id)
             # Get the workflow handle. At this point, the post-processing run
             # may not have started. Wait until it starts. Add 'watch-dog'
@@ -84,5 +92,5 @@ def test_workflow_postproc_results(service):
                 workflow_id=workflow_id,
                 file_id=w['postproc']['files'][0]['id']
             )
-            results = util.read_object(fh.open())
+            results = util.read_object(fh)
             assert len(results) == run_count + 1

@@ -52,6 +52,8 @@ USERS_PASSWORD_RESET = 'users:pwd:reset'
 USERS_REGISTER = 'users:register'
 USERS_WHOAMI = 'users:whoami'
 
+WORKFLOWS_DOWNLOAD_ARCHIVE = 'workflows:download:archive'
+WORKFLOWS_DOWNLOAD_FILE = 'workflows:download:file'
 WORKFLOWS_GET = 'workflows:get'
 WORKFLOWS_GROUPS = 'workflows:groups'
 WORKFLOWS_LIST = 'workflows:list'
@@ -85,6 +87,8 @@ ROUTES = {
     USERS_PASSWORD_RESET: 'users/password/reset',
     USERS_REGISTER: 'users/register',
     USERS_WHOAMI: 'users/whoami',
+    WORKFLOWS_DOWNLOAD_ARCHIVE: 'workflows/{workflowId}/downloads/archive',
+    WORKFLOWS_DOWNLOAD_FILE: 'workflows/{workflowId}/downloads/files/{fileId}',
     WORKFLOWS_GET: 'workflows/{workflowId}',
     WORKFLOWS_GROUPS: 'workflows/{workflowId}/groups',
     WORKFLOWS_LIST: 'workflows'

@@ -77,7 +77,7 @@ def create_ranking(api, workflow_id, count):
         )
         api.runs().update_run(
             run_id=run_id,
-            state=api.engine.success(
+            state=api.runs().backend.success(
                 run_id,
                 files=['results/analytics.json']
             ),

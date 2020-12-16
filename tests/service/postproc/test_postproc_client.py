@@ -19,26 +19,27 @@ from flowserv.tests.service import create_ranking, create_user
 import flowserv.service.postproc.util as postproc
 
 
-def test_workflow_postproc_client(service, hello_world):
+def test_workflow_postproc_client(local_service, hello_world):
     """Test preparing and accessing post-processing results."""
     # -- Setup ----------------------------------------------------------------
     #
     # Create four groups for the 'Hello World' workflow with one successful
     # run each.
-    with service() as api:
+    with local_service() as api:
         user_1 = create_user(api)
-        workflow_id = hello_world(api)['id']
-        create_ranking(api, workflow_id, user_1, 4)
+        workflow_id = hello_world(api).workflow_id
+    with local_service(user_id=user_1) as api:
+        create_ranking(api, workflow_id, 4)
     # -- Get ranking in decreasing order of avg_count. ------------------------
-    with service() as api:
-        ranking = api.ranking_manager.get_ranking(
-            workflow=api.workflow_repository.get_workflow(workflow_id)
+    with local_service(user_id=user_1) as api:
+        ranking = api.workflows().ranking_manager.get_ranking(
+            workflow=api.workflows().workflow_repo.get_workflow(workflow_id)
         )
         # Prepare data for the post-processing workflow.
         rundir = postproc.prepare_postproc_data(
             input_files=['results/analytics.json'],
             ranking=ranking,
-            run_manager=api.run_manager
+            run_manager=api.runs().run_manager
         )
         # Test the post-processing client that accesses the prepared data.
         runs = Runs(rundir)
