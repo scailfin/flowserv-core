@@ -34,6 +34,10 @@ def test_create_group_view(local_service, hello_world):
         serialize.validate_group_handle(r)
         assert len(r['parameters']) == 3
         assert len(r['members']) == 1
+    # Error when attempting to create a user without being authenticated.
+    with local_service() as api:
+        with pytest.raises(err.UnauthorizedAccessError):
+            api.groups().create_group(workflow_id=workflow_id, name='G2')
 
 
 def test_delete_group_view(local_service, hello_world):

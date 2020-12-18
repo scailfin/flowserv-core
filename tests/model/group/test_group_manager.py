@@ -101,6 +101,16 @@ def test_create_group(fscls, database, tmpdir):
                 workflow_spec=dict(),
                 members=[user_id, 'not a user']
             )
+        # - Missing user
+        with pytest.raises(err.UnknownUserError):
+            manager.create_group(
+                workflow_id=workflow_id,
+                name='D',
+                user_id=None,
+                parameters=ParameterIndex(),
+                workflow_spec=dict(),
+                members=[user_id, 'not a user']
+            )
 
 
 @pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])

@@ -103,6 +103,9 @@ class WorkflowGroupManager(object):
         validate_identifier(identifier)
         # Ensure that the given name is valid and unique for the workflow
         constraint.validate_name(name)
+        # Ensure that the user identifier is not None.
+        if user_id is None:
+            raise err.UnknownUserError('none')
         group = self.session.query(GroupHandle)\
             .filter(GroupHandle.name == name)\
             .filter(GroupHandle.workflow_id == workflow_id)\

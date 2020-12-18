@@ -84,6 +84,9 @@ class LocalWorkflowGroupService(WorkflowGroupService):
         -------
         dict
         """
+        # Raise an error if the user is not authenticated.
+        if self.user_id is None:
+            raise err.UnauthorizedAccessError()
         # Get the handle for for the given workflow. This will raise an
         # exception if the workflow is unknown.
         workflow = self.workflow_repo.get_workflow(workflow_id)

@@ -14,7 +14,9 @@ import click
 
 from flowserv.client.cli.admin import configuration, init
 from flowserv.client.cli.app import cli_app
+from flowserv.client.cli.group import cli_group
 from flowserv.client.cli.repository import list_repository
+from flowserv.client.cli.uploads import cli_uploads
 from flowserv.client.cli.user import cli_user, login_user, logout_user, whoami_user
 from flowserv.client.cli.workflow import cli_workflow
 
@@ -39,6 +41,14 @@ cli.add_command(login_user, name='login')
 cli.add_command(logout_user, name='logout')
 cli.add_command(cli_user, name='users')
 cli.add_command(whoami_user, name='whoami')
+
+
+# -- User groups --------------------------------------------------------------
+cli.add_command(cli_group, 'groups')
+
+
+# -- Group files --------------------------------------------------------------
+cli.add_command(cli_uploads, 'uploads')
 
 
 # -- Workflow repository listing ----------------------------------------------
