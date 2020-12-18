@@ -35,17 +35,27 @@ from flowserv.service.workflow.local import LocalWorkflowService
 from flowserv.model.user import UserManager
 from flowserv.service.auth import get_auth
 
+import flowserv.error as err
+
 
 @contextmanager
 def service(
     db: Optional[DB] = None, engine: Optional[WorkflowController] = None,
     fs: Optional[FileStore] = None, auth: Optional[Auth] = None,
-    user_id: Optional[str] = None
+    user_id: Optional[str] = None, access_token: Optional[str] = None
 ) -> API:
     """The local service function is a context manager for an open database
     connection that is used to instantiate the API service class. The context
     manager ensures that the database connection is closed after an API request
     has been processed.
+
+    Provides the option to provide either the identifier for a registered user
+    or a valid access token that was issued when a user logged in. The user
+    identifier is used to authorize actions that are performed on the API. If
+    an access token is given the user identifier will be retrieved from the
+    database once the authentication component is instanciated. If both arguments
+    are given it is asserted that the given user identifier matches the user
+    that is associated with the access token.
 
     Parameters
     ----------
@@ -60,6 +70,8 @@ def service(
         Authentication and authorization policy
     user_id: string, default=None
         Optional identifier of a user that has been authenticated.
+    access_token: string, default=None
+        Optional access token for an authenticated user.
 
     Returns
     -------
@@ -84,7 +96,8 @@ def service(
             engine=engine,
             fs=fs,
             auth=auth,
-            user_id=user_id
+            user_id=user_id,
+            access_token=access_token
         )
 
 
@@ -92,7 +105,7 @@ def service(
 
 def create_api(
     session: SessionScope, engine: WorkflowController, fs: FileStore,
-    auth: Auth, user_id: str
+    auth: Auth, user_id: str, access_token: Optional[str] = None
 ):
     """Helper method to create an instance of the local service API.
 
@@ -108,15 +121,30 @@ def create_api(
         groups and workflow runs.
     auth: flowserv.model.user.auth.Auth
         Authentication and authorization policy.
-    user_id: string, default=None
+    user_id: string
         Optional identifier of a user that has been authenticated.
+    access_token: string, default=None
+        Optional access token for an authenticated user.
 
     Returns
     -------
     flowserv.service.api.API
     """
+    # Get the authorization component.
     if auth is None:
         auth = get_auth(session)
+    # If an access token is given we retrieve the user that is associated with
+    # the token. Authentication may raise an error. Here, we ignore that
+    # error since the token may be an outdated token that is stored in the
+    # environment.
+    if access_token is not None:
+        try:
+            user = auth.authenticate(access_token)
+            if user_id is not None and user.user_id != user_id:
+                raise ValueError('user identifier and token no match')
+            user_id = user.user_id
+        except err.UnauthenticatedAccessError:
+            pass
     user_manager = UserManager(session=session)
     group_manager = WorkflowGroupManager(
         session=session,

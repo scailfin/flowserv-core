@@ -90,13 +90,14 @@ def database():
 @pytest.fixture
 def local_service(database, tmpdir):
     """Factory pattern for service API objects."""
-    def _api(engine=StateEngine(), auth=None, user_id=None):
+    def _api(engine=StateEngine(), auth=None, user_id=None, access_token=None):
         return localservice(
             db=database,
             engine=engine,
             fs=FileSystemStore(basedir=tmpdir),
             auth=auth,
-            user_id=user_id
+            user_id=user_id,
+            access_token=access_token
         )
 
     return _api

@@ -22,7 +22,7 @@ from flowserv.model.database import DB
 import flowserv.error as err
 
 
-@click.command(name='config')
+@click.command()
 def configuration():
     """Print configuration variables for flowServ."""
     comment = '\n#\n# {}\n#\n'

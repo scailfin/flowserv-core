@@ -15,13 +15,7 @@ from flowserv.app.base import install_app, uninstall_app
 import flowserv.config.app as config
 
 
-@click.group(name='app')
-def cli_app():
-    """Install and uninstall applications."""
-    pass
-
-
-@click.command(name='install')
+@click.command()
 @click.option(
     '-k', '--key',
     required=False,
@@ -81,12 +75,20 @@ def install_application(
     click.echo('export {}={}'.format(config.FLOWSERV_APP, app_key))
 
 
-@click.command('uninstall')
+@click.command()
 @click.argument('appkey')
 def uninstall_application(appkey):
     """Uninstall workflow with the given key."""
     uninstall_app(app_key=appkey)
 
 
-cli_app.add_command(install_application)
-cli_app.add_command(uninstall_application)
+# -- Command group ------------------------------------------------------------
+
+@click.group()
+def cli_app():
+    """Install and uninstall applications."""
+    pass
+
+
+cli_app.add_command(install_application, name='install')
+cli_app.add_command(uninstall_application, name='uninstall')

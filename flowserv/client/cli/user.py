@@ -9,47 +9,32 @@
 """Command line interface to register a new user."""
 
 import click
-import sys
 
-from flowserv.client.base import client
+from flowserv.client.api import service
+from flowserv.model.parameter.base import PARA_STRING
+from flowserv.client.cli.table import ResultTable
 
-import flowserv.error as err
-
-
-@click.group(name='user')
-def cli_user():
-    """Manage registered users."""
-    pass
+import flowserv.config.client as config
+import flowserv.view.user as labels
 
 
 # -- List users ---------------------------------------------------------------
 
 @click.command(name='users')
-@click.pass_context
-def list(ctx):
+def list_users():
     """List all registered users."""
-    url = ctx.obj['URLS'].list_users()
-    headers = ctx.obj['HEADERS']
-    try:
-        r = requests.get(url, headers=headers)
-        r.raise_for_status()
-        body = r.json()
-        if ctx.obj['RAW']:
-            click.echo(json.dumps(body, indent=4))
-        else:
-            table = ResultTable(['Name', 'ID'], [PARA_STRING, PARA_STRING])
-            for user in body['users']:
-                table.add([user['username'], user['id']])
-            for line in table.format():
-                click.echo(line)
-    except (requests.ConnectionError, requests.HTTPError) as ex:
-        click.echo('{}'.format(ex))
+    with service() as api:
+        doc = api.users().list_users()
+    table = ResultTable(['Name', 'ID'], [PARA_STRING, PARA_STRING])
+    for user in doc[labels.USER_LIST]:
+        table.add([user[labels.USER_NAME], user[labels.USER_ID]])
+    for line in table.format():
+        click.echo(line)
 
 
 # -- Login --------------------------------------------------------------------
 
 @click.command()
-@click.pass_context
 @click.option(
     '-u', '--username',
     required=True,
@@ -63,84 +48,26 @@ def list(ctx):
     confirmation_prompt=False,
     help='User password'
 )
-def login(ctx, username, password):
+def login_user(username, password):
     """Login to to obtain access token."""
-    url = ctx.obj['URLS'].login()
-    headers = ctx.obj['HEADERS']
-    data = {'username': username, 'password': password}
-    try:
-        r = requests.post(url, json=data, headers=headers)
-        r.raise_for_status()
-        body = r.json()
-        if ctx.obj['RAW']:
-            click.echo(json.dumps(body, indent=4))
-        else:
-            token = body['token']
-            click.echo('export {}={}'.format(config.ROB_ACCESS_TOKEN, token))
-    except (requests.ConnectionError, requests.HTTPError) as ex:
-        click.echo('{}'.format(ex))
+    with service() as api:
+        doc = api.users().login_user(username=username, password=password)
+    # Get the access token from the response and print it to the console.
+    token = doc[labels.USER_TOKEN]
+    click.echo('export {}={}'.format(config.FLOWSERV_ACCESS_TOKEN, token))
 
 
 # -- Logout -------------------------------------------------------------------
 
 @click.command()
-@click.pass_context
-def logout(ctx):
+def logout_user():
     """Logout from current user session."""
-    # Get user info using the access token
-    url = ctx.obj['URLS'].logout()
-    headers = ctx.obj['HEADERS']
-    try:
-        r = requests.post(url, headers=headers)
-        r.raise_for_status()
-        body = r.json()
-        if ctx.obj['RAW']:
-            click.echo(json.dumps(body, indent=4))
-        else:
-            click.echo('See ya mate!')
-    except (requests.ConnectionError, requests.HTTPError) as ex:
-        click.echo('{}'.format(ex))
+    with service() as api:
+        api.users().logout_user(config.ACCESS_TOKEN())
+    click.echo('See ya mate!')
 
 
 # -- Register -----------------------------------------------------------------
-
-@click.command()
-@click.pass_context
-@click.option(
-    '-u', '--username',
-    required=True,
-    prompt=True,
-    help='User name'
-)
-@click.option(
-    '-p', '--password',
-    prompt=True,
-    hide_input=True,
-    confirmation_prompt=True,
-    help='User password'
-)
-def register(ctx, username, password):
-    """Register a new user."""
-    url = ctx.obj['URLS'].register_user()
-    headers = ctx.obj['HEADERS']
-    data = {
-        'username': username,
-        'password': password,
-        'verify': False
-    }
-    try:
-        r = requests.post(url, json=data, headers=headers)
-        r.raise_for_status()
-        body = r.json()
-        if ctx.obj['RAW']:
-            click.echo(json.dumps(body, indent=4))
-        else:
-            user_id = body['id']
-            user_name = body['username']
-            click.echo('Registered {} with ID {}.'.format(user_name, user_id))
-    except (requests.ConnectionError, requests.HTTPError) as ex:
-        click.echo('{}'.format(ex))
-
 
 @click.command()
 @click.option(
@@ -158,75 +85,33 @@ def register(ctx, username, password):
 )
 def register_user(username, password):
     """Register a new user."""
-    try:
-        with client() as api:
-            r = api.users().register_user(
-                username=username,
-                password=password,
-                verify=False
-            )
-    except err.DuplicateUserError as ex:
-        click.echo(str(ex))
-        sys.exit(-1)
-    click.echo("user '{}' created".format(username))
+    with service() as api:
+        doc = api.users().register_user(
+            username=username,
+            password=password,
+            verify=False
+        )
+    user_id = doc[labels.USER_ID]
+    click.echo('Registered {} with ID {}.'.format(username, user_id))
 
 
-# -- Reset Password -----------------------------------------------------------
-
-@click.command(name='pwd')
-@click.pass_context
-@click.option(
-    '-u', '--username',
-    required=True,
-    prompt=True,
-    help='User name'
-)
-@click.option(
-    '-p', '--password',
-    prompt=True,
-    hide_input=True,
-    confirmation_prompt=True,
-    help='New user password'
-)
-def reset_password(ctx, username, password):
-    """Reset user password."""
-    url = ctx.obj['URLS'].request_password_reset()
-    headers = ctx.obj['HEADERS']
-    data = {'username': username}
-    try:
-        r = requests.post(url, json=data, headers=headers)
-        r.raise_for_status()
-        body = r.json()
-        reqest_id = body['requestId']
-        url = ctx.obj['URLS'].reset_password()
-        data = {'requestId': reqest_id, 'password': password}
-        r = requests.post(url, json=data, headers=headers)
-        r.raise_for_status()
-        if ctx.obj['RAW']:
-            click.echo(json.dumps(body, indent=4))
-        else:
-            click.echo('Password reset.')
-    except (requests.ConnectionError, requests.HTTPError) as ex:
-        click.echo('{}'.format(ex))
-
-
-# -- Who am I -----------------------------------------------------------------
+# -- Logout -------------------------------------------------------------------
 
 @click.command()
-@click.pass_context
-def whoami(ctx):
+def whoami_user():
     """Print name of current user."""
-    # Get user info using the access token
-    try:
-        r = requests.get(ctx.obj['URLS'].whoami(), headers=ctx.obj['HEADERS'])
-        r.raise_for_status()
-        body = r.json()
-        if ctx.obj['RAW']:
-            click.echo(json.dumps(body, indent=4))
-        else:
-            click.echo('Logged in as {}.'.format(body['username']))
-    except (requests.ConnectionError, requests.HTTPError) as ex:
-        click.echo('{}'.format(ex))
+    with service() as api:
+        doc = api.users().whoami_user(config.ACCESS_TOKEN())
+    click.echo('Logged in as {}.'.format(doc[labels.USER_NAME]))
 
 
-cli_user.add_command(register_user)
+# -- Command group ------------------------------------------------------------
+
+@click.group()
+def cli_user():
+    """Manage registered users."""
+    pass
+
+
+cli_user.add_command(list_users, name='list')
+cli_user.add_command(register_user, name='register')

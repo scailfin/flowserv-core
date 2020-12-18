@@ -13,7 +13,10 @@ command group and the API context for all commands.
 import click
 
 from flowserv.client.cli.admin import configuration, init
+from flowserv.client.cli.app import cli_app
 from flowserv.client.cli.repository import list_repository
+from flowserv.client.cli.user import cli_user, login_user, logout_user, whoami_user
+from flowserv.client.cli.workflow import cli_workflow
 
 
 @click.group()
@@ -27,5 +30,20 @@ cli.add_command(configuration, name='config')
 cli.add_command(init, name='init')
 
 
+# -- Applications -------------------------------------------------------------
+cli.add_command(cli_app, name='app')
+
+
+# -- Users --------------------------------------------------------------------
+cli.add_command(login_user, name='login')
+cli.add_command(logout_user, name='logout')
+cli.add_command(cli_user, name='users')
+cli.add_command(whoami_user, name='whoami')
+
+
 # -- Workflow repository listing ----------------------------------------------
 cli.add_command(list_repository, name='repo')
+
+
+# -- Workflows ----------------------------------------------------------------
+cli.add_command(cli_workflow, name='workflows')

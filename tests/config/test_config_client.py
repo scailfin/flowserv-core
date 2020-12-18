@@ -21,6 +21,7 @@ def test_access_token():
     os.environ[FLOWSERV_ACCESS_TOKEN] = '0000'
     assert ACCESS_TOKEN() == '0000'
     del os.environ[FLOWSERV_ACCESS_TOKEN]
+    assert ACCESS_TOKEN() is None
 
 
 def test_benchmark_identifier():

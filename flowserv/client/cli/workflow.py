@@ -11,105 +11,110 @@ workflow templates in the repository.
 """
 
 import click
-import logging
-import os
 import sys
 
-from flowserv.app.base import App
-from flowserv.client.cli.parameter import read
-from flowserv.model.auth import open_access
-from flowserv.service.api import service
+from flowserv.client.api import service
 
+import flowserv.config.client as config
 import flowserv.error as err
+import flowserv.view.workflow as labels
 
 
-# -- List workflows -----------------------------------------------------------
+# -- Create workflow ----------------------------------------------------------
 
-@click.command(name='list')
-def list_workflows():
-    """List all workflows."""
-    count = 0
-    with service() as api:
-        for wf in api.workflows().list_workflows()['workflows']:
-            if count != 0:
-                click.echo()
-            count += 1
-            title = 'Benchmark {}'.format(count)
-            click.echo(title)
-            click.echo('-' * len(title))
-            click.echo()
-            click.echo('ID          : {}'.format(wf['id']))
-            click.echo('Name        : {}'.format(wf['name']))
-            click.echo('Description : {}'.format(wf.get('description')))
-            click.echo('Instructions: {}'.format(wf.get('instructions')))
-
-
-# -- Run Workflow -------------------------------------------------------------
-
+@click.command()
 @click.option(
-    '-o', '--output',
-    type=click.Path(exists=False, file_okay=False, readable=True),
+    '-n', '--name',
     required=False,
-    help='Directory for output files.'
+    help='Application title.'
 )
 @click.option(
-    '-v', '--verbose',
+    '-d', '--description',
+    required=False,
+    help='Application sub-title.'
+)
+@click.option(
+    '-i', '--instructions',
+    type=click.Path(exists=False),
+    required=False,
+    help='File containing detailed instructions.'
+)
+@click.option(
+    '-s', '--specfile',
+    type=click.Path(exists=True, dir_okay=False, readable=True),
+    required=False,
+    help='Optional path to workflow specification file.'
+)
+@click.option(
+    '-m', '--manifest',
+    type=click.Path(exists=True, dir_okay=False, readable=True),
+    required=False,
+    help='Optional path to workflow manifest file.'
+)
+@click.option(
+    '-g', '--ignore_postproc',
     is_flag=True,
     default=False,
     help='Print run logs'
 )
-@click.command(name='run')
+@click.argument('template')
+def create_workflow(
+    name, description, instructions, specfile, manifest, template,
+    ignore_postproc
+):
+    """Create a new workflow for a given template."""
+    with service() as api:
+        # The create_workflow() method is only supported by the local API. If
+        # an attempte is made to create a new workflow via a remote API an
+        # error will be raised.
+        doc = api.workflows().create_workflow(
+            source=template,
+            name=name,
+            description=description,
+            instructions=read_instructions(instructions),
+            specfile=specfile,
+            manifestfile=manifest,
+            ignore_postproc=ignore_postproc
+        )
+    workflow_id = doc[labels.WORKFLOW_ID]
+    click.echo('export {}={}'.format(config.ROB_BENCHMARK, workflow_id))
+
+
+# -- Delete Workflow ----------------------------------------------------------
+
+@click.command()
 @click.argument('identifier')
-def run_workflow(identifier, output=None, verbose=False):
-    """Run a workflow."""
-    # -- Logging --------------------------------------------------------------
-    if verbose:
-        root = logging.getLogger()
-        root.setLevel(logging.DEBUG)
-        handler = logging.StreamHandler(sys.stdout)
-        handler.setLevel(logging.DEBUG)
-        formatter = logging.Formatter('%(message)s')
-        handler.setFormatter(formatter)
-        root.addHandler(handler)
-    # -- Setup ----------------------------------------------------------------
-    app = App(key=identifier, auth=open_access)
-    # -- Read input parameter values ------------------------------------------
-    params = app.parameters().sorted()
-    click.echo('\nWorkflow inputs\n---------------')
-    args = read(params)
-    # -- Start workflow run ---------------------------------------------------
-    click.echo('\nStart Workflow\n--------------')
-    run = app.start_run(arguments=args, poll_interval=1)
-    click.echo('Run finished with {}'.format(run))
-    # -- Run results ----------------------------------------------------------
-    if run.is_error():
-        for msg in run.messages():
-            click.echo(msg)
-    else:
-        click.echo('\nRun files\n---------')
-        for _, key, _ in run.files():
-            click.echo(key)
-            if output:
-                out_file = os.path.join(output, key)
-                run.get_file(key).store(out_file)
-        postrun = app.get_postproc_results()
-        if postrun is not None:
-            click.echo('\nPost-Processing finished with {}'.format(postrun))
-            if postrun.is_error():
-                for msg in postrun.messages():
-                    click.echo(msg)
-            else:
-                click.echo('\nPost-Processing files\n---------------------')
-                for _, key, _ in postrun.files():
-                    click.echo(key)
-                    if output:
-                        out_file = os.path.join(output, key)
-                        postrun.get_file(key).store(out_file)
+def delete_workflow(identifier):
+    """Delete an existing workflow and all runs."""
+    with service() as api:
+        api.workflows().delete_workflow(workflow_id=identifier)
+    click.echo('workflow {} deleted.'.format(identifier))
+
+
+# -- List workflows -----------------------------------------------------------
+
+@click.command()
+def list_workflows():
+    """List all workflows."""
+    count = 0
+    with service() as api:
+        for wf in api.workflows().list_workflows()[labels.WORKFLOW_LIST]:
+            if count != 0:
+                click.echo()
+            count += 1
+            title = 'Workflow {}'.format(count)
+            click.echo(title)
+            click.echo('-' * len(title))
+            click.echo()
+            click.echo('ID          : {}'.format(wf[labels.WORKFLOW_ID]))
+            click.echo('Name        : {}'.format(wf[labels.WORKFLOW_NAME]))
+            click.echo('Description : {}'.format(wf.get(labels.WORKFLOW_DESCRIPTION)))
+            click.echo('Instructions: {}'.format(wf.get(labels.WORKFLOW_INSTRUCTIONS)))
 
 
 # -- Update workflow ----------------------------------------------------------
 
-@click.command(name='update')
+@click.command()
 @click.argument('identifier')
 @click.option(
     '-n', '--name',
@@ -152,13 +157,15 @@ def update_workflow(
 # -- Command Group ------------------------------------------------------------
 
 @click.group(name='workflows')
-def workflowcli():
+def cli_workflow():
     """Create, delete, and maintain workflow templates in the repository."""
     pass
 
 
-workflowcli.add_command(list_workflows)
-workflowcli.add_command(update_workflow)
+cli_workflow.add_command(create_workflow, name='create')
+cli_workflow.add_command(delete_workflow, name='delete')
+cli_workflow.add_command(list_workflows, name='list')
+cli_workflow.add_command(update_workflow, name='update')
 
 
 # -- Helper Methods -----------------------------------------------------------

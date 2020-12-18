@@ -34,11 +34,7 @@ def ACCESS_TOKEN() -> str:
     -------
     string
     """
-    token = os.environ.get(FLOWSERV_ACCESS_TOKEN)
-    if token is None:
-        return ''
-    else:
-        return token
+    return os.environ.get(FLOWSERV_ACCESS_TOKEN)
 
 
 def BENCHMARK_ID(default: Optional[str] = None) -> str:
