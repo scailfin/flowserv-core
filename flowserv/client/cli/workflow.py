@@ -11,12 +11,14 @@ workflow templates in the repository.
 """
 
 import click
-import sys
 
 from flowserv.client.api import service
+from flowserv.client.cli.table import ResultTable
+from flowserv.model.parameter.base import PARA_INT, PARA_STRING
 
 import flowserv.config.client as config
-import flowserv.error as err
+import flowserv.view.files as flbls
+import flowserv.view.run as rlbls
 import flowserv.view.workflow as labels
 
 
@@ -91,6 +93,73 @@ def delete_workflow(identifier):
     click.echo('workflow {} deleted.'.format(identifier))
 
 
+# -- Download result files ----------------------------------------------------
+
+@click.command()
+@click.option(
+    '-o', '--output',
+    type=click.Path(writable=True),
+    required=True,
+    help='Save as ...'
+)
+@click.option('-w', '--workflow', required=False, help='Workflow identifier')
+def download_result_archive(output, workflow):
+    """Download post-processing result archive."""
+    workflow_id = workflow if workflow is not None else config.BENCHMARK_ID()
+    if workflow_id is None:
+        raise click.UsageError('no workflow specified')
+    with service() as api:
+        buf = api.workflows().get_result_archive(workflow_id=workflow_id)
+        with open(output, 'wb') as local_file:
+            local_file.write(buf.read())
+
+
+@click.command()
+@click.option('-f', '--file', required=True, help='File identifier')
+@click.option(
+    '-o', '--output',
+    type=click.Path(writable=True),
+    required=True,
+    help='Save as ...'
+)
+@click.option('-w', '--workflow', required=False, help='Workflow identifier')
+def download_result_file(file, output, workflow):
+    """Download post-processing result file."""
+    workflow_id = workflow if workflow is not None else config.BENCHMARK_ID()
+    if workflow_id is None:
+        raise click.UsageError('no workflow specified')
+    with service() as api:
+        buf = api.workflows().get_result_file(workflow_id=workflow_id, file_id=file)
+        with open(output, 'wb') as local_file:
+            local_file.write(buf.read())
+
+
+# -- Get workflow -------------------------------------------------------------
+
+@click.command()
+@click.option('-w', '--workflow', required=False, help='Workflow identifier')
+def get_workflow(workflow):
+    """Update workflow properties."""
+    workflow_id = workflow if workflow is not None else config.BENCHMARK_ID()
+    if workflow_id is None:
+        raise click.UsageError('no workflow specified')
+    with service() as api:
+        doc = api.workflows().get_workflow(workflow_id=workflow_id)
+    click.echo('ID          : {}'.format(doc[labels.WORKFLOW_ID]))
+    click.echo('Name        : {}'.format(doc[labels.WORKFLOW_NAME]))
+    click.echo('Description : {}'.format(doc.get(labels.WORKFLOW_DESCRIPTION)))
+    click.echo('Instructions: {}'.format(doc.get(labels.WORKFLOW_INSTRUCTIONS)))
+    if labels.POSTPROC_RUN in doc:
+        postproc = doc[labels.POSTPROC_RUN]
+        click.echo('\nPost-processing\n---------------')
+        if rlbls.RUN_ERRORS in postproc:
+            for msg in postproc[rlbls.RUN_ERRORS]:
+                click.echo('{}'.format(msg))
+        elif rlbls.RUN_FILES in postproc:
+            for f in postproc[rlbls.RUN_FILES]:
+                click.echo('{} ({})'.format(f[flbls.FILE_ID], f[flbls.FILE_NAME]))
+
+
 # -- List workflows -----------------------------------------------------------
 
 @click.command()
@@ -98,18 +167,57 @@ def list_workflows():
     """List all workflows."""
     count = 0
     with service() as api:
-        for wf in api.workflows().list_workflows()[labels.WORKFLOW_LIST]:
-            if count != 0:
-                click.echo()
-            count += 1
-            title = 'Workflow {}'.format(count)
-            click.echo(title)
-            click.echo('-' * len(title))
+        doc = api.workflows().list_workflows()
+    for wf in doc[labels.WORKFLOW_LIST]:
+        if count != 0:
             click.echo()
-            click.echo('ID          : {}'.format(wf[labels.WORKFLOW_ID]))
-            click.echo('Name        : {}'.format(wf[labels.WORKFLOW_NAME]))
-            click.echo('Description : {}'.format(wf.get(labels.WORKFLOW_DESCRIPTION)))
-            click.echo('Instructions: {}'.format(wf.get(labels.WORKFLOW_INSTRUCTIONS)))
+        count += 1
+        title = 'Workflow {}'.format(count)
+        click.echo(title)
+        click.echo('-' * len(title))
+        click.echo()
+        click.echo('ID          : {}'.format(wf[labels.WORKFLOW_ID]))
+        click.echo('Name        : {}'.format(wf[labels.WORKFLOW_NAME]))
+        click.echo('Description : {}'.format(wf.get(labels.WORKFLOW_DESCRIPTION)))
+        click.echo('Instructions: {}'.format(wf.get(labels.WORKFLOW_INSTRUCTIONS)))
+
+
+# -- Result ranking -----------------------------------------------------------
+
+@click.command()
+@click.option(
+    '-a', '--all',
+    is_flag=True,
+    default=False,
+    help='Include all runs.'
+)
+@click.option('-w', '--workflow', required=False, help='Workflow identifier')
+def show_ranking(workflow, all):
+    """Show ranking for workflow results."""
+    workflow_id = workflow if workflow is not None else config.BENCHMARK_ID()
+    if workflow_id is None:
+        raise click.UsageError('no workflow specified')
+    with service() as api:
+        doc = api.workflows().get_ranking(workflow_id=workflow_id, include_all=all)
+    # Print ranking.
+    headline = ['Rank', 'Name']
+    types = [PARA_INT, PARA_STRING]
+    mapping = dict()
+    for col in doc[labels.WORKFLOW_SCHEMA]:
+        headline.append(col[labels.COLUMN_TITLE])
+        types.append(col[labels.COLUMN_TYPE])
+        mapping[col[labels.COLUMN_NAME]] = len(mapping)
+    table = ResultTable(headline=headline, types=types)
+    rank = 1
+    for run in doc[labels.RANKING]:
+        group = run[labels.WORKFLOW_GROUP][labels.GROUP_NAME]
+        row = [rank, group] + ([None] * (len(headline) - 2))
+        for r in run[labels.RUN_RESULTS]:
+            row[mapping[r[labels.COLUMN_NAME]] + 2] = r[labels.COLUMN_VALUE]
+        table.add(row)
+        rank += 1
+    for line in table.format():
+        click.echo(line)
 
 
 # -- Update workflow ----------------------------------------------------------
@@ -140,18 +248,14 @@ def update_workflow(
     if name is None and description is None and instructions is None:
         click.echo('nothing to update')
     else:
-        try:
-            with service() as api:
-                api.workflows().update_workflow(
-                    workflow_id=identifier,
-                    name=name,
-                    description=description,
-                    instructions=read_instructions(instructions)
-                )
-            click.echo('updated workflow {}'.format(identifier))
-        except (err.UnknownObjectError, err.ConstraintViolationError) as ex:
-            click.echo(str(ex))
-            sys.exit(-1)
+        with service() as api:
+            api.workflows().update_workflow(
+                workflow_id=identifier,
+                name=name,
+                description=description,
+                instructions=read_instructions(instructions)
+            )
+        click.echo('updated workflow {}'.format(identifier))
 
 
 # -- Command Group ------------------------------------------------------------
@@ -162,9 +266,21 @@ def cli_workflow():
     pass
 
 
+@click.group(name='download')
+def cli_workflow_download():
+    """Download post-processing results."""
+    pass
+
+
+cli_workflow_download.add_command(download_result_archive, name='archive')
+cli_workflow_download.add_command(download_result_file, name='file')
+
 cli_workflow.add_command(create_workflow, name='create')
 cli_workflow.add_command(delete_workflow, name='delete')
+cli_workflow.add_command(cli_workflow_download)
 cli_workflow.add_command(list_workflows, name='list')
+cli_workflow.add_command(show_ranking, name='ranking')
+cli_workflow.add_command(get_workflow, name='show')
 cli_workflow.add_command(update_workflow, name='update')
 
 

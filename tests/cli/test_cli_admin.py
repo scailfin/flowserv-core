@@ -12,7 +12,7 @@ import os
 
 from click.testing import CliRunner
 
-from flowserv.client.cli.admin import cli
+from flowserv.client.cli.base import cli
 from flowserv.config.api import FLOWSERV_API_BASEDIR
 from flowserv.config.database import FLOWSERV_DB
 from flowserv.model.database import TEST_URL
@@ -87,15 +87,15 @@ def test_init_without_force(tmpdir):
 def test_list_repository():
     """Test listing the contents of the global repository."""
     runner = CliRunner()
-    result = runner.invoke(cli, ['repository'])
+    result = runner.invoke(cli, ['repo'])
     assert result.exit_code == 0
 
 
 def test_register_user(flowserv_cli):
     """Test creating a new user."""
-    cmd = ['register', '-u', 'alice', '-p', 'mypwd']
+    cmd = ['users', 'register', '-u', 'alice', '-p', 'mypwd']
     result = flowserv_cli.invoke(cli, cmd)
     assert result.exit_code == 0
     # Registering the same user twice will raise an error.
     result = flowserv_cli.invoke(cli, cmd)
-    assert result.exit_code == -1
+    assert str(result.exception) == "duplicate user 'alice'"

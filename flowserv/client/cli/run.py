@@ -56,7 +56,7 @@ def delete_run(run):
 )
 @click.argument('run')
 def download_result_archive(output, run):
-    """Download a previously uploaded file."""
+    """Download archive of run result files."""
     with service() as api:
         buf = api.runs().get_result_archive(run_id=run)
         with open(output, 'wb') as local_file:
@@ -73,7 +73,7 @@ def download_result_archive(output, run):
 )
 @click.argument('run')
 def download_result_file(file, output, run):
-    """Download a previously uploaded file."""
+    """Download a run result file."""
     with service() as api:
         buf = api.runs().get_result_file(run_id=run, file_id=file)
         with open(output, 'wb') as local_file:

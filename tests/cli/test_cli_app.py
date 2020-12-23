@@ -10,7 +10,7 @@
 
 import os
 
-from flowserv.client.cli.admin import cli
+from flowserv.client.cli.base import cli
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))
@@ -22,11 +22,10 @@ def test_app_installation(flowserv_cli):
     command-line interface.
     """
     # Create app in a fresh database
-    cmd = ['install', '--key', 'mykey', TEMPLATE_DIR]
+    cmd = ['app', 'install', '--key', 'mykey', TEMPLATE_DIR]
     result = flowserv_cli.invoke(cli, cmd)
-    print(result.output)
+    assert result.output.strip() == 'export FLOWSERV_APP=mykey'
     assert result.exit_code == 0
-    assert 'export FLOWSERV_APP=mykey' in result.output
     app_key = result.output[result.output.rfind('=') + 1:].strip()
     # List apps
     cmd = ['workflows', 'list']
@@ -34,6 +33,6 @@ def test_app_installation(flowserv_cli):
     assert result.exit_code == 0
     assert app_key in result.output
     # Uninstall the app
-    cmd = ['uninstall', app_key]
+    cmd = ['app', 'uninstall', app_key]
     result = flowserv_cli.invoke(cli, cmd)
     assert result.exit_code == 0

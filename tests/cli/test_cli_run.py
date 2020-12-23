@@ -8,12 +8,12 @@
 
 """Unit tests for the run command-line interface."""
 
-from flowserv.client.cli.admin import cli
+from flowserv.client.cli.base import cli
 
 
 def test_delete_obsolete_runs(flowserv_cli):
     """Test deleting obsolete runs via the command-line interface."""
-    cmd = ['runs', 'delete', '-d', '2020']
+    cmd = ['cleanup', 'delete', '-d', '2020']
     result = flowserv_cli.invoke(cli, cmd)
     assert result.exit_code == 0
     assert '0 runs deleted.' in result.output
@@ -22,6 +22,6 @@ def test_delete_obsolete_runs(flowserv_cli):
 def test_list_obsolete_runs(flowserv_cli):
     """Test listing obsolete runs via the command-line interface."""
     # -- Test empty listing ---------------------------------------------------
-    cmd = ['runs', 'list', '--before', '2020']
+    cmd = ['cleanup', 'list', '--before', '2020']
     result = flowserv_cli.invoke(cli, cmd)
     assert result.exit_code == 0

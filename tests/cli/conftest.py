@@ -13,11 +13,11 @@ import pytest
 
 from click.testing import CliRunner
 
-from flowserv.client.cli.admin import cli
+from flowserv.client.api import service
+from flowserv.client.cli.base import cli
 from flowserv.config.api import FLOWSERV_API_BASEDIR
 from flowserv.config.database import FLOWSERV_DB
 from flowserv.config.backend import CLEAR_BACKEND
-from flowserv.service.api import service
 
 
 @pytest.fixture
@@ -36,7 +36,7 @@ def flowserv_cli(tmpdir):
     runner = CliRunner()
     runner.invoke(cli, ['init', '-f'])
     with service() as api:
-        api.engine.fs = api.fs
+        api.fs = api.workflows().workflow_repo.fs
     yield runner
     # Clear environment variables that were set for the test runner.
     del os.environ[FLOWSERV_API_BASEDIR]
