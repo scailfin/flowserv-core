@@ -9,8 +9,12 @@
 """Helper method to create a API generator based on the current configuration
 in the environment valriables.
 """
+
+import os
+
 from contextlib import contextmanager
 
+from flowserv.config.controller import FLOWSERV_ASYNC
 from flowserv.service.local import service as local_service
 
 import flowserv.config.client as config
@@ -20,5 +24,6 @@ import flowserv.config.client as config
 def service():
     """
     """
+    os.environ[FLOWSERV_ASYNC] = 'False'
     with local_service(access_token=config.ACCESS_TOKEN()) as api:
         yield api

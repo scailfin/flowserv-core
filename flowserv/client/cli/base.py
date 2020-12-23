@@ -14,8 +14,10 @@ import click
 
 from flowserv.client.cli.admin import configuration, init
 from flowserv.client.cli.app import cli_app
+from flowserv.client.cli.cleanup import cli_cleanup
 from flowserv.client.cli.group import cli_group
 from flowserv.client.cli.repository import list_repository
+from flowserv.client.cli.run import cli_run
 from flowserv.client.cli.uploads import cli_uploads
 from flowserv.client.cli.user import cli_user, login_user, logout_user, whoami_user
 from flowserv.client.cli.workflow import cli_workflow
@@ -27,9 +29,11 @@ def cli():
     pass
 
 
-# -- Administrative tasks (init and config) -----------------------------------
+# -- Administrative tasks (init, config, and cleanup) -------------------------
 cli.add_command(configuration, name='config')
 cli.add_command(init, name='init')
+
+cli.add_command(cli_cleanup, name='cleanup')
 
 
 # -- Applications -------------------------------------------------------------
@@ -48,7 +52,7 @@ cli.add_command(cli_group, 'groups')
 
 
 # -- Group files --------------------------------------------------------------
-cli.add_command(cli_uploads, 'uploads')
+cli.add_command(cli_uploads, 'files')
 
 
 # -- Workflow repository listing ----------------------------------------------
@@ -57,3 +61,7 @@ cli.add_command(list_repository, name='repo')
 
 # -- Workflows ----------------------------------------------------------------
 cli.add_command(cli_workflow, name='workflows')
+
+
+# -- Workflow Runs ------------------------------------------------------------
+cli.add_command(cli_run, name='runs')

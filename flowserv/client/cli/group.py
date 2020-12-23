@@ -71,16 +71,8 @@ def delete_group(group, force):
 # -- List user groups ---------------------------------------------------------
 
 @click.command()
-@click.option(
-    '-g', '--group',
-    required=False,
-    help='Group identifier'
-)
-def list_groups(group):
-    """List user groups (for a user)."""
-    group_id = group if group is not None else config.SUBMISSION_ID()
-    if group_id is None:
-        raise click.UsageError('no group identifier given')
+def list_groups():
+    """List user groups (for current user)."""
     with service() as api:
         doc = api.groups().list_groups()
     # Print listing of groups as output table.
