@@ -15,3 +15,11 @@ variables.
 """
 
 database = DB()
+
+
+def config_db():
+    """Update the global database variable based on the current settings in
+    the environment.
+    """
+    global database
+    database = DB()
