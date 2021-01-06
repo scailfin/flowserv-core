@@ -34,6 +34,6 @@ def RUNSDIR() -> str:
     """
     return get_variable(
         name=FLOWSERV_RUNSDIR,
-        default_value=os.path.join(API_BASEDIR(), DEFAULT_RUNSDIR),
+        default=os.path.join(API_BASEDIR(), DEFAULT_RUNSDIR),
         raise_error=False
     )

@@ -33,8 +33,11 @@ FLOWSERV_AUTH = 'FLOWSERV_AUTH'
 """Default values for environment variables."""
 DEFAULT_LOGINTTL = 24 * 60 * 60
 # Access policies
-DEFAULT_AUTH = 'DEFAULT'
-OPEN_ACCESS = 'OPEN'
+AUTH_DEFAULT = 'default'
+AUTH_OPEN = 'open'
+
+"""Default user."""
+DEFAULT_USER = '0' * 32
 
 
 # -- Public helper methods to access configuration values ---------------------
@@ -61,7 +64,7 @@ def AUTH_LOGINTTL(value: Optional[str] = None) -> str:
     # is returned.
     val = get_variable(
         name=FLOWSERV_AUTH_LOGINTTL,
-        default_value=DEFAULT_LOGINTTL,
+        default=DEFAULT_LOGINTTL,
         raise_error=False
     )
     try:
@@ -78,4 +81,4 @@ def AUTH_POLICY() -> str:
     -------
     string
     """
-    return os.environ.get(FLOWSERV_AUTH, DEFAULT_AUTH)
+    return os.environ.get(FLOWSERV_AUTH, AUTH_DEFAULT)

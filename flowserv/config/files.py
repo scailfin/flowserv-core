@@ -7,7 +7,7 @@
 # terms of the MIT License; see LICENSE file for more details.
 
 """This module defines environment variables that are used to configure the
-file store that is used to maintainf files for workflow templates, user group
+file store that is used to maintain files for workflow templates, user group
 uploads, and workflow runs. Different file store implementations may define
 additional environment variables for their configuration.
 """

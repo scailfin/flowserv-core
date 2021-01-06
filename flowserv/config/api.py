@@ -11,6 +11,10 @@ used to configure the API. In addition, the module provides methods to access
 the configuration values in the environment variables.
 """
 
+from pathlib import Path
+
+import os
+
 from flowserv.config.base import get_variable
 
 
@@ -61,9 +65,19 @@ def API_BASEDIR(value: str = None) -> str:
         return value
     return get_variable(
         name=FLOWSERV_API_BASEDIR,
-        default_value=DEFAULT_DIR,
+        default=API_DEFAULTDIR(),
         raise_error=False
     )
+
+
+def API_DEFAULTDIR() -> str:
+    """Path to the default flowserv folder in the user's HOME directory.
+
+    Returns
+    -------
+    string
+    """
+    return os.path.join(str(Path.home()), DEFAULT_DIR)
 
 
 def API_HOST() -> str:
@@ -77,7 +91,7 @@ def API_HOST() -> str:
     """
     return get_variable(
         name=FLOWSERV_API_HOST,
-        default_value=DEFAULT_HOST,
+        default=DEFAULT_HOST,
         raise_error=False
     )
 
@@ -93,7 +107,7 @@ def API_NAME() -> str:
     """
     return get_variable(
         name=FLOWSERV_API_NAME,
-        default_value=DEFAULT_NAME,
+        default=DEFAULT_NAME,
         raise_error=False
     )
 
@@ -109,7 +123,7 @@ def API_PATH() -> str:
     """
     return get_variable(
         name=FLOWSERV_API_PATH,
-        default_value=DEFAULT_PATH,
+        default=DEFAULT_PATH,
         raise_error=False
     )
 
@@ -132,7 +146,7 @@ def API_PORT() -> str:
     """
     val = get_variable(
         name=FLOWSERV_API_PORT,
-        default_value=DEFAULT_PORT,
+        default=DEFAULT_PORT,
         raise_error=False
     )
     return int(val)
@@ -153,7 +167,7 @@ def API_PROTOCOL() -> str:
     """
     return get_variable(
         name=FLOWSERV_API_PROTOCOL,
-        default_value=DEFAULT_PROTOCOL,
+        default=DEFAULT_PROTOCOL,
         raise_error=False
     )
 

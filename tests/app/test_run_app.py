@@ -14,7 +14,7 @@ import pytest
 from io import StringIO
 
 from flowserv.app.base import App, install_app
-from flowserv.config.auth import FLOWSERV_AUTH, OPEN_ACCESS
+from flowserv.config.auth import FLOWSERV_AUTH, AUTH_OPEN
 from flowserv.config.api import FLOWSERV_API_BASEDIR
 from flowserv.config.controller import FLOWSERV_ASYNC
 from flowserv.config.database import FLOWSERV_DB
@@ -94,7 +94,7 @@ def test_run_app_from_env(fsconfig, tmpdir):
     # -- Setup ----------------------------------------------------------------
     os.environ[FLOWSERV_DB] = 'sqlite:///{}/db/flowserv.db'.format(str(tmpdir))
     os.environ[FLOWSERV_API_BASEDIR] = str(tmpdir)
-    os.environ[FLOWSERV_AUTH] = OPEN_ACCESS
+    os.environ[FLOWSERV_AUTH] = AUTH_OPEN
     os.environ[FLOWSERV_ASYNC] = 'False'
     os.environ[FLOWSERV_FILESTORE_MODULE] = fsconfig[FLOWSERV_FILESTORE_MODULE]
     os.environ[FLOWSERV_FILESTORE_CLASS] = fsconfig[FLOWSERV_FILESTORE_CLASS]

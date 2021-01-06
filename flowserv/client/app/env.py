@@ -28,7 +28,7 @@ import flowserv.util as util
 class Flowserv(object):
     """Environment for installing an running workflow templates. This class
     provides additional functionality for installing flowserv components. It
-    is primarily intended for testing and/or  running flowserv in a notebook
+    is primarily intended for testing and/or running flowserv in a notebook
     environment.
 
     The test environment will keep all workflow files in a folder on the file

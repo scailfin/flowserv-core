@@ -18,11 +18,11 @@ import flowserv.config.auth as config
 def test_config_auth_policy():
     """Test getting authentication policy name from the configuration."""
     # Test with environment variable set.
-    os.environ[config.FLOWSERV_AUTH] = config.OPEN_ACCESS
-    assert config.AUTH_POLICY() == config.OPEN_ACCESS
+    os.environ[config.FLOWSERV_AUTH] = config.AUTH_OPEN
+    assert config.AUTH_POLICY() == config.AUTH_OPEN
     # Test default value.
     del os.environ[config.FLOWSERV_AUTH]
-    assert config.AUTH_POLICY() == config.DEFAULT_AUTH
+    assert config.AUTH_POLICY() == config.AUTH_DEFAULT
 
 
 def test_config_auth_ttl():

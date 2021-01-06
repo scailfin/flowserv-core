@@ -40,7 +40,7 @@ def POLL_INTERVAL(value=None):
         return float(
             get_variable(
                 name=FLOWSERV_POLL_INTERVAL,
-                default_value=DEFAULT_POLL_INTERVAL,
+                default=DEFAULT_POLL_INTERVAL,
                 raise_error=False
             )
         )

@@ -73,7 +73,7 @@ def WEBAPP(value: Optional[bool] = None) -> bool:
         return value
     value = get_variable(
         name=FLOWSERV_WEBAPP,
-        default_value=None,
+        default=None,
         raise_error=False
     )
     if value is None:

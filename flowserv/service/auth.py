@@ -27,6 +27,6 @@ def get_auth(session: SessionScope) -> Auth:
     -------
     flowserv.model.auth.Auth
     """
-    if config.AUTH_POLICY() == config.OPEN_ACCESS:
+    if config.AUTH_POLICY() == config.AUTH_OPEN:
         return OpenAccessAuth(session)
     return DefaultAuthPolicy(session)

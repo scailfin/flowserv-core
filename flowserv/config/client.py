@@ -12,7 +12,7 @@ the environment.
 
 from typing import Optional
 
-import os
+from flowserv.config.base import get_variable
 
 
 """Environment variables for the command line interface."""
@@ -20,6 +20,8 @@ import os
 FLOWSERV_ACCESS_TOKEN = 'FLOWSERV_ACCESS_TOKEN'
 # Define the type of client that the command line interface uses.
 FLOWSERV_CLIENT = 'FLOWSERV_CLIENT'
+LOCAL_CLIENT = 'local'
+REMOTE_CLIENT = 'remote'
 # Identifier of the default benchmark
 ROB_BENCHMARK = 'ROB_BENCHMARK'
 # Identifier of the default submission
@@ -34,7 +36,7 @@ def ACCESS_TOKEN() -> str:
     -------
     string
     """
-    return os.environ.get(FLOWSERV_ACCESS_TOKEN)
+    return get_variable(FLOWSERV_ACCESS_TOKEN)
 
 
 def BENCHMARK_ID(default: Optional[str] = None) -> str:
@@ -50,7 +52,7 @@ def BENCHMARK_ID(default: Optional[str] = None) -> str:
     -------
     string
     """
-    benchmark_id = os.environ.get(ROB_BENCHMARK)
+    benchmark_id = get_variable(ROB_BENCHMARK)
     if benchmark_id is None:
         return default
     else:
@@ -65,7 +67,7 @@ def CLIENT() -> str:
     -------
     string
     """
-    return os.environ.get(FLOWSERV_CLIENT, 'LOCAL')
+    return get_variable(FLOWSERV_CLIENT, default=LOCAL_CLIENT)
 
 
 def SUBMISSION_ID(default: Optional[str] = None) -> str:
@@ -81,7 +83,7 @@ def SUBMISSION_ID(default: Optional[str] = None) -> str:
     -------
     string
     """
-    submission_id = os.environ.get(ROB_SUBMISSION)
+    submission_id = get_variable(ROB_SUBMISSION)
     if submission_id is None:
         return default
     else:

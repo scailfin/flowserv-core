@@ -35,7 +35,7 @@ def ENGINE_ASYNC(value=None):
         return value
     flag = get_variable(
         name=FLOWSERV_ASYNC,
-        default_value=DEFAULT_ASYNC,
+        default=DEFAULT_ASYNC,
         raise_error=False
     )
     return True if flag.lower() == 'true' else False

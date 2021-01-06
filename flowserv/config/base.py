@@ -19,7 +19,7 @@ import flowserv.error as err
 FLOWSERV_TEST = 'FLOWSERV_TEST'
 
 
-def get_variable(name, default_value=None, raise_error=None):
+def get_variable(name, default=None, raise_error=None):
     """Get the value for the given  environment variable. Raises a
     MissingConfigurationError if the raise_error flag is True and the variable
     is not set. If the raise_error flag is False and the environment variables
@@ -29,7 +29,7 @@ def get_variable(name, default_value=None, raise_error=None):
     ----------
     name: string
         Environment variable name
-    default_value: string, optional
+    default: string, optional
         Default value if variable is not set and raise_error flag is False
     raise_error: bool
         Flag indicating whether an error is raised if the environment variable
@@ -48,5 +48,5 @@ def get_variable(name, default_value=None, raise_error=None):
         if raise_error:
             raise err.MissingConfigurationError(name)
         else:
-            value = default_value
-    return value
+            value = default
+    return value if value != '' else None

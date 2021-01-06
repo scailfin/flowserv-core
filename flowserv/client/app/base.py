@@ -12,7 +12,7 @@ import time
 from io import BytesIO, StringIO
 from typing import Callable, Dict, List, Optional
 
-from flowserv.app.result import RunResult
+from flowserv.client.result import RunResult
 from flowserv.controller.base import WorkflowController
 from flowserv.model.auth import open_access
 from flowserv.model.database import DB, SessionScope

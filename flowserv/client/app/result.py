@@ -22,6 +22,9 @@ class RunResult(object):
     """Wrapper around a serialized run result. This class also accepts a
     function that can be used to load any file that is included in the output
     of a successful workflow run.
+
+    The loader is a callback routine that provides a wrapper around a flowserv
+    service API which allows to access file resources.
     """
     def __init__(self, doc: Dict, loader: Callable):
         """Initialize the run information and the file loader function. The
