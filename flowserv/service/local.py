@@ -25,7 +25,7 @@ from flowserv.controller.base import WorkflowController
 from flowserv.model.auth import DefaultAuthPolicy, OpenAccessAuth
 from flowserv.model.base import RunHandle
 from flowserv.model.database import DB
-from flowserv.model.files import FileStore
+from flowserv.model.files.base import FileStore
 from flowserv.model.files.factory import FS
 from flowserv.model.group import WorkflowGroupManager
 from flowserv.model.ranking import RankingManager
