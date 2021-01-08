@@ -10,6 +10,10 @@
 
 from typing import Dict, Optional
 
+from flowserv.config import env, DEFAULT_NAME, FLOWSERV_API_NAME, API_URL
+
+import flowserv.version as version
+
 
 """Serialization labels."""
 ROUTE_ID = 'id'
@@ -24,29 +28,36 @@ SERVICE_VERSION = 'version'
 
 class ServiceDescriptorSerializer(object):
     """Default serializer for the service descriptor."""
-    def get_name(self, doc: Dict, default: str) -> str:
-        """Get the name value from the given document. Note that the document
-        may be None.
+    def from_config(self) -> Dict:
+        """Get serialized descriptor with basic information from values in the
+        environment variables.
+
+        Returns
+        -------
+        dict
+        """
+        config = env()
+        return {
+            SERVICE_NAME: config.get(FLOWSERV_API_NAME, DEFAULT_NAME),
+            SERVICE_URL: API_URL(config)
+        }
+
+    def get_name(self, doc: Dict) -> str:
+        """Get the name value from the given document.
 
         Parameters
         ----------
         doc: dict
             Serialization of a service descriptor.
-        default: string
-            Default value if not present in the diven dictionary.
 
         Returns
         -------
         string
         """
-        if doc is not None:
-            return doc.get(SERVICE_NAME, default)
-        return default
+        return doc.get(SERVICE_NAME)
 
     def get_routes(self, doc: Dict, routes: Dict) -> str:
-        """Get the user name from the given document. Note that the document may
-        be None. Returns None if the document is None or if the respective element
-        is not present.
+        """Get the user name from the given document.
 
         Parameters
         ----------
@@ -61,32 +72,25 @@ class ServiceDescriptorSerializer(object):
         -------
         string
         """
-        if doc is not None:
-            doc_routes = dict()
-            for obj in doc.get(SERVICE_ROUTES, list()):
-                doc_routes[obj[ROUTE_ID]] = obj[ROUTE_PATTERN]
-            doc_routes.update(routes)
-            return doc_routes
-        return routes
+        doc_routes = dict()
+        for obj in doc.get(SERVICE_ROUTES, list()):
+            doc_routes[obj[ROUTE_ID]] = obj[ROUTE_PATTERN]
+        doc_routes.update(routes)
+        return doc_routes
 
-    def get_url(self, doc: Dict, default: str) -> str:
-        """Get the base Url from the given document. Note that the document
-        may be None.
+    def get_url(self, doc: Dict) -> str:
+        """Get the base Url from the given document.
 
         Parameters
         ----------
         doc: dict
             Serialization of a service descriptor.
-        default: string
-            Default value if not present in the diven dictionary.
 
         Returns
         -------
         string
         """
-        if doc is not None:
-            return doc.get(SERVICE_URL, default)
-        return default
+        return doc.get(SERVICE_URL)
 
     def get_username(self, doc: Dict) -> str:
         """Get the user name from the given document. Note that the document may
@@ -102,28 +106,21 @@ class ServiceDescriptorSerializer(object):
         -------
         string
         """
-        if doc is not None:
-            return doc.get(SERVICE_USER)
-        return None
+        return doc.get(SERVICE_USER)
 
-    def get_version(self, doc: Dict, default: str) -> str:
-        """Get the version information from the given document. Note that the
-        document may be None.
+    def get_version(self, doc: Dict) -> str:
+        """Get the version information from the given document.
 
         Parameters
         ----------
         doc: dict
             Serialization of a service descriptor.
-        default: string
-            Default value if not present in the diven dictionary.
 
         Returns
         -------
         string
         """
-        if doc is not None:
-            return doc.get(SERVICE_VERSION, default)
-        return default
+        return doc.get(SERVICE_VERSION, version.__version__)
 
     def service_descriptor(
         self, name: str, version: str, url: str, routes: Dict,

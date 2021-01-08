@@ -10,6 +10,7 @@
 
 import pytest
 
+from flowserv.config import Config
 from flowserv.model.workflow.state import STATE_PENDING
 from flowserv.tests.service import create_group, create_user, start_hello_world
 
@@ -17,16 +18,17 @@ from flowserv.tests.service import create_group, create_user, start_hello_world
 import flowserv.error as err
 
 
-def test_cancel_runs_local(local_service, hello_world):
+def test_cancel_runs_local(local_service, hello_world, tmpdir):
     """Test canceling runs using a local service."""
     # -- Setup ----------------------------------------------------------------
     #
+    config = Config().basedir(tmpdir)
     # Start two runs for the same group of the 'Hello World' workflow.
-    with local_service() as api:
+    with local_service(config=config) as api:
         user_1 = create_user(api)
         user_2 = create_user(api)
         workflow_id = hello_world(api).workflow_id
-    with local_service(user_id=user_1) as api:
+    with local_service(config=config, user_id=user_1) as api:
         group_id = create_group(api, workflow_id=workflow_id)
         run_1, _ = start_hello_world(api, group_id)
         run_2, _ = start_hello_world(api, group_id)
@@ -34,22 +36,22 @@ def test_cancel_runs_local(local_service, hello_world):
         r = api.runs().list_runs(group_id=group_id)
         assert len(r['runs']) == 2
     # -- Ensure that user 2 cannot cancel run 2 -------------------------------
-    with local_service(user_id=user_2) as api:
+    with local_service(config=config, user_id=user_2) as api:
         with pytest.raises(err.UnauthorizedAccessError):
             api.runs().cancel_run(run_id=run_1)
-    with local_service(user_id=user_1) as api:
+    with local_service(config=config, user_id=user_1) as api:
         # There are still two active runs.
         r = api.runs().list_runs(group_id=group_id, state=STATE_PENDING)
         assert len(r['runs']) == 2
     # -- Cancel run 2 ---------------------------------------------------------
-    with local_service(user_id=user_1) as api:
+    with local_service(config=config, user_id=user_1) as api:
         api.runs().cancel_run(run_id=run_2)
         r = api.runs().list_runs(group_id=group_id, state=STATE_PENDING)
         runs = r['runs']
         assert len(runs) == 1
         assert run_1 in [r['id'] for r in runs]
     # -- Error when canceling an inactive run ---------------------------------
-    with local_service(user_id=user_1) as api:
+    with local_service(config=config, user_id=user_1) as api:
         with pytest.raises(err.InvalidRunStateError):
             api.runs().cancel_run(run_id=run_2)
 

@@ -10,46 +10,44 @@
 sessions as well as to create a fresh database.
 """
 
-import os
-
+from __future__ import annotations
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
+from typing import Optional
+
+import os
 
 from flowserv.model.base import Base
-
-import flowserv.config.database as config
 
 
 """Database connection Url for test purposes."""
 TEST_URL = 'sqlite:///:memory:'
 
 
+def TEST_DB(dirname: str, filename: Optional[str] = 'test.db'):
+    """Get connection Url for a databse file."""
+    return 'sqlite:///{}'.format(os.path.join(dirname, filename))
+
+
 class DB(object):
     """Wrapper to establish a database connection and create the database
     schema.
     """
-    def __init__(self, connect_url=None, web_app=None, echo=False):
-        """Initialize the database connection string. If no connect string is
-        given an attempt is made to access the value in the respective
-        environment variable. If the variable is not set an error is raised.
+    def __init__(
+        self, connect_url: str, web_app: Optional[bool] = False,
+        echo: Optional[bool] = False
+    ):
+        """Initialize the database object from the given configuration object.
 
         Parameters
         ----------
-        connect_url: string, default=None
-            Database connection string.
-        web_app: bool, default=None
+        connect_url: string
+            SQLAlchemy database connect Url string.
+        web_app: boolean, default=False
             Use scoped sessions for web applications if set to True.
         echo: bool, default=False
             Flag that controlls whether the created engine is verbose or not.
-
-        Raises
-        ------
-        flowserv.error.MissingConfigurationError
         """
-        # Ensure that the connection URL is set.
-        connect_url = config.DB_CONNECT(value=connect_url)
-        # Get web_app flag from configuration.
-        web_app = config.WEBAPP(value=web_app)
         # If the URL references a SQLite database ensure that the directory for
         # the database file exists (Issue #68).
         if connect_url.startswith('sqlite://'):
@@ -65,13 +63,14 @@ class DB(object):
         else:
             self._session = sessionmaker(bind=self._engine)
 
-    def init(self):
+    def init(self) -> DB:
         """Create all tables in the database model schema."""
         # Add import for modules that contain ORM definitions.
         import flowserv.model.base  # noqa: F401
         # Drop all tables first before creating them
         Base.metadata.drop_all(self._engine)
         Base.metadata.create_all(self._engine)
+        return self
 
     def session(self):
         """Create a new database session instance. The sessoin is wrapped by a

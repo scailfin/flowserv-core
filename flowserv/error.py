@@ -66,16 +66,16 @@ class MissingConfigurationError(FlowservError):
     """Error indicating that the value for a mandatory environment variable is
     not set.
     """
-    def __init__(self, var_name):
+    def __init__(self, name):
         """Initialize error message.
 
         Parameters
         ----------
-        var_name: string
-            Environment variable name
+        name: string
+            Environment variable name or name of the configured object
         """
         super(MissingConfigurationError, self).__init__(
-            message='variable \'{}\' not set'.format(var_name)
+            message="missing configuration for {}".format(name)
         )
 
 

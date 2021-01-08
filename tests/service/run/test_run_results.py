@@ -12,6 +12,7 @@ import pytest
 import tarfile
 import tempfile
 
+from flowserv.config import Config
 from flowserv.tests.service import (
     create_group, create_user, start_hello_world, write_results
 )
@@ -20,15 +21,15 @@ import flowserv.error as err
 import flowserv.util as util
 
 
-def init_db(service, hello_world):
+def init_db(service, config, hello_world):
     """Initialize a new database with two users, one group and a successful
     run. Returns user identifier, group identifier and run identifier.
     """
-    with service() as api:
+    with service(config=config) as api:
         user_1 = create_user(api)
         user_2 = create_user(api)
         workflow_id = hello_world(api).workflow_id
-    with service(user_id=user_1) as api:
+    with service(config=config, user_id=user_1) as api:
         group_id = create_group(api, workflow_id=workflow_id)
         # Start the new run. Then set it into SUCESS state.
         run_id, file_id = start_hello_world(api, group_id)
@@ -51,12 +52,13 @@ def init_db(service, hello_world):
     return user_1, user_2, group_id, run_id
 
 
-def test_access_run_result_files_local(local_service, hello_world):
+def test_access_run_result_files_local(local_service, hello_world, tmpdir):
     """Test accessing run result files."""
     # -- Setup ----------------------------------------------------------------
-    user_1, user_2, group_id, run_id = init_db(local_service, hello_world)
+    config = Config().basedir(tmpdir)
+    user_1, user_2, group_id, run_id = init_db(local_service, config, hello_world)
     # -- Read result files ----------------------------------------------------
-    with local_service(user_id=user_1) as api:
+    with local_service(config=config, user_id=user_1) as api:
         # Map file names to file handles.
         r = api.runs().get_run(run_id=run_id)
         files = dict()
@@ -76,7 +78,7 @@ def test_access_run_result_files_local(local_service, hello_world):
         values = fh.read().decode('utf-8').strip()
         assert values == '{}\n{}'.format(group_id, run_id)
     # -- Error when user 2 attempts to read file ------------------------------
-    with local_service(user_id=user_2) as api:
+    with local_service(config=config, user_id=user_2) as api:
         with pytest.raises(err.UnauthorizedAccessError):
             api.runs().get_result_file(
                 run_id=run_id,
@@ -84,12 +86,13 @@ def test_access_run_result_files_local(local_service, hello_world):
             )
 
 
-def test_result_archive_local(local_service, hello_world):
+def test_result_archive_local(local_service, hello_world, tmpdir):
     """Test getting an archive of run results."""
     # -- Setup ----------------------------------------------------------------
-    user_1, user_2, group_id, run_id = init_db(local_service, hello_world)
+    config = Config().basedir(tmpdir)
+    user_1, user_2, group_id, run_id = init_db(local_service, config, hello_world)
     # -- Get result archive ---------------------------------------------------
-    with local_service(user_id=user_1) as api:
+    with local_service(config=config, user_id=user_1) as api:
         archive = api.runs().get_result_archive(run_id=run_id)
         tar = tarfile.open(fileobj=archive, mode='r:gz')
         members = [t.name for t in tar.getmembers()]

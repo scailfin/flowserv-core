@@ -8,30 +8,34 @@
 
 """Unit tests for the local workflow service API."""
 
+from flowserv.config import Config
+
 import flowserv.tests.serialize as serialize
 
 
-def test_delete_workflow_local(local_service, hello_world):
+def test_delete_workflow_local(local_service, hello_world, tmpdir):
     """Test deleting a workflow from the repository."""
     # -- Setup ----------------------------------------------------------------
     #
+    config = Config().basedir(tmpdir)
     # Create two instances of the 'Hello World' workflow.
-    with local_service() as api:
+    with local_service(config=config) as api:
         workflow = hello_world(api, name='W1')
         workflow_id = workflow.workflow_id
         hello_world(api, name='W2')
     # -- Delete the first workflow --------------------------------------------
-    with local_service() as api:
+    with local_service(config=config) as api:
         api.workflows().delete_workflow(workflow_id)
         # After deletion one workflow is left.
         r = api.workflows().list_workflows()
         assert len(r['workflows']) == 1
 
 
-def test_get_workflow_local(local_service, hello_world):
+def test_get_workflow_local(local_service, hello_world, tmpdir):
     """Test serialization for created workflows."""
+    config = Config().basedir(tmpdir)
     # -- Create workflow with minimal metadata --------------------------------
-    with local_service() as api:
+    with local_service(config=config) as api:
         workflow = hello_world(api, name='W1')
         workflow_id = workflow.workflow_id
         r = api.workflows().get_workflow(workflow_id)
@@ -43,34 +47,36 @@ def test_get_workflow_local(local_service, hello_world):
             serialize.validate_parameter(para)
 
 
-def test_list_workflows_local(local_service, hello_world):
+def test_list_workflows_local(local_service, hello_world, tmpdir):
     """Test serialization for workflow listings."""
     # -- Setup ----------------------------------------------------------------
     #
+    config = Config().basedir(tmpdir)
     # Create two instances of the 'Hello World' workflow.
-    with local_service() as api:
+    with local_service(config=config) as api:
         hello_world(api, name='W1')
         hello_world(api, name='W2')
     # -- Workflow Listing -----------------------------------------------------
-    with local_service() as api:
+    with local_service(config=config) as api:
         r = api.workflows().list_workflows()
         serialize.validate_workflow_listing(doc=r)
         assert len(r['workflows']) == 2
 
 
-def test_update_workflow_local(local_service, hello_world):
+def test_update_workflow_local(local_service, hello_world, tmpdir):
     """Test updating workflow properties."""
     # -- Setup ----------------------------------------------------------------
     #
+    config = Config().basedir(tmpdir)
     # Create one instances of the 'Hello World' workflow with minimal metadata.
-    with local_service() as api:
+    with local_service(config=config) as api:
         workflow = hello_world(api, name='W1')
         workflow_id = workflow.workflow_id
         r = api.workflows().get_workflow(workflow_id)
         assert 'description' not in r
         assert 'instructions' not in r
     # -- Update workflow ------------------------------------------------------
-    with local_service() as api:
+    with local_service(config=config) as api:
         r = api.workflows().update_workflow(
             workflow_id=workflow_id,
             name='Hello World',

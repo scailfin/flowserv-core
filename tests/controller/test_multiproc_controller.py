@@ -13,17 +13,14 @@ import os
 import pytest
 import time
 
-from flowserv.config.api import FLOWSERV_API_BASEDIR
-from flowserv.config.database import FLOWSERV_DB
-from flowserv.config.files import (
-    FLOWSERV_FILESTORE_MODULE, FLOWSERV_FILESTORE_CLASS
-)
+from flowserv.config import Config, FLOWSERV_FILESTORE_CLASS, FLOWSERV_FILESTORE_MODULE
+from flowserv.model.database import TEST_DB
 from flowserv.controller.serial.engine import SerialWorkflowEngine
-from flowserv.service.local import service
 from flowserv.service.run.argument import serialize_arg, serialize_fh
 from flowserv.tests.files import io_file
 from flowserv.tests.service import (
-    create_group, create_user, create_workflow, start_run, upload_file
+    create_group, create_user, create_service, create_workflow, start_run,
+    upload_file
 )
 
 
@@ -39,20 +36,14 @@ def test_cancel_run_helloworld(tmpdir):
     """Test cancelling a helloworld run."""
     # -- Setup ----------------------------------------------------------------
     #
+    config = Config().basedir(tmpdir).database(TEST_DB(tmpdir)).run_async()
+    engine = SerialWorkflowEngine(config=config)
+    service = create_service(engine=engine, config=config)
     # Start a new run for the workflow template.
-    os.environ[FLOWSERV_DB] = 'sqlite:///{}/flowserv.db'.format(str(tmpdir))
-    os.environ[FLOWSERV_API_BASEDIR] = str(tmpdir)
-    os.environ[FLOWSERV_FILESTORE_MODULE] = 'flowserv.model.files.fs'
-    os.environ[FLOWSERV_FILESTORE_CLASS] = 'FileSystemStore'
-    from flowserv.service.database import database
-    database.__init__()
-    database.init()
-    engine = SerialWorkflowEngine(is_async=True)
-    with service(engine=engine) as api:
-        engine.fs = api.workflows().workflow_repo.fs
+    with service() as api:
         workflow_id = create_workflow(api, source=TEMPLATE_DIR)
         user_id = create_user(api)
-    with service(engine=engine, user_id=user_id) as api:
+    with service(user_id=user_id) as api:
         group_id = create_group(api, workflow_id)
         names = io_file(data=['Alice', 'Bob', 'Zoe'], format='plain/text')
         file_id = upload_file(api, group_id, names)
@@ -61,29 +52,24 @@ def test_cancel_run_helloworld(tmpdir):
             serialize_arg('sleeptime', 10),
             serialize_arg('greeting', 'Hi')
         ]
-        run_id = start_run(api, group_id, arguments=args)
+        run_id = start_run(api, group_id, arguments=args, service=service)
     # Poll run after sleeping for one second.
     time.sleep(1)
-    with service(engine=engine, user_id=user_id) as api:
+    with service(user_id=user_id) as api:
         run = api.runs().get_run(run_id=run_id)
     assert run['state'] in st.ACTIVE_STATES
     # -- Cancel the active run ------------------------------------------------
-    with service(engine=engine, user_id=user_id) as api:
+    with service(user_id=user_id) as api:
         run = api.runs().cancel_run(
             run_id=run_id,
             reason='done'
         )
         assert run['state'] == st.STATE_CANCELED
         assert run['messages'][0] == 'done'
-    with service(engine=engine, user_id=user_id) as api:
+    with service(user_id=user_id) as api:
         run = api.runs().get_run(run_id=run_id)
         assert run['state'] == st.STATE_CANCELED
         assert run['messages'][0] == 'done'
-    # -- Clean-up environment variables ---------------------------------------
-    del os.environ[FLOWSERV_DB]
-    del os.environ[FLOWSERV_API_BASEDIR]
-    del os.environ[FLOWSERV_FILESTORE_MODULE]
-    del os.environ[FLOWSERV_FILESTORE_CLASS]
 
 
 @pytest.mark.parametrize(
@@ -109,20 +95,15 @@ def test_run_helloworld_async(fsconfig, target, tmpdir):
     """Execute the helloworld example."""
     # -- Setup ----------------------------------------------------------------
     #
+    config = Config().basedir(tmpdir).database(TEST_DB(tmpdir)).run_async()
+    config.update(fsconfig)
+    engine = SerialWorkflowEngine(config=config)
+    service = create_service(engine=engine, config=config)
     # Start a new run for the workflow template.
-    os.environ[FLOWSERV_DB] = 'sqlite:///{}/flowserv.db'.format(str(tmpdir))
-    os.environ[FLOWSERV_API_BASEDIR] = str(tmpdir)
-    os.environ[FLOWSERV_FILESTORE_MODULE] = fsconfig[FLOWSERV_FILESTORE_MODULE]
-    os.environ[FLOWSERV_FILESTORE_CLASS] = fsconfig[FLOWSERV_FILESTORE_CLASS]
-    from flowserv.service.database import database
-    database.__init__()
-    database.init()
-    engine = SerialWorkflowEngine(is_async=True)
-    with service(engine=engine) as api:
-        engine.fs = api.workflows().workflow_repo.fs
+    with service() as api:
         workflow_id = create_workflow(api, source=TEMPLATE_DIR)
         user_id = create_user(api)
-    with service(engine=engine, user_id=user_id) as api:
+    with service(user_id=user_id) as api:
         group_id = create_group(api, workflow_id)
         names = io_file(data=['Alice', 'Bob', 'Zoe'], format='plain/text')
         file_id = upload_file(api, group_id, names)
@@ -131,13 +112,13 @@ def test_run_helloworld_async(fsconfig, target, tmpdir):
             serialize_arg('sleeptime', 1),
             serialize_arg('greeting', 'Hi')
         ]
-        run_id = start_run(api, group_id, arguments=args)
+        run_id = start_run(api, group_id, arguments=args, service=service)
     # Poll workflow state every second.
-    with service(engine=engine, user_id=user_id) as api:
+    with service(user_id=user_id) as api:
         run = api.runs().get_run(run_id=run_id)
     while run['state'] in st.ACTIVE_STATES:
         time.sleep(1)
-        with service(engine=engine, user_id=user_id) as api:
+        with service(user_id=user_id) as api:
             run = api.runs().get_run(run_id=run_id)
     assert run['state'] == st.STATE_SUCCESS
     files = dict()
@@ -156,8 +137,3 @@ def test_run_helloworld_async(fsconfig, target, tmpdir):
         file_id=files['results/analytics.json']
     )
     assert json.load(fh) is not None
-    # -- Clean-up environment variables ---------------------------------------
-    del os.environ[FLOWSERV_DB]
-    del os.environ[FLOWSERV_API_BASEDIR]
-    del os.environ[FLOWSERV_FILESTORE_MODULE]
-    del os.environ[FLOWSERV_FILESTORE_CLASS]

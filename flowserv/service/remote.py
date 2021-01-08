@@ -10,9 +10,9 @@
 
 from typing import Dict, IO, List, Optional
 
-import requests
+from flowserv.config import env, FLOWSERV_ACCESS_TOKEN
 
-import flowserv.config.client as config
+import requests
 
 
 """Name of the header element that contains the access token."""
@@ -72,7 +72,7 @@ def headers() -> Dict:
     -------
     dict
     """
-    return {HEADER_TOKEN: config.ACCESS_TOKEN()}
+    return {HEADER_TOKEN: env().get(FLOWSERV_ACCESS_TOKEN)}
 
 
 def post(url: str, files: Optional[List] = None, data: Optional[Dict] = None) -> Dict:

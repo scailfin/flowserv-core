@@ -14,10 +14,11 @@ database.
 import mimetypes
 import os
 
+from sqlalchemy.orm.session import Session
 from typing import Dict, List, Optional
 
 from flowserv.model.base import UploadFile, GroupHandle, WorkflowHandle
-from flowserv.model.files.base import DatabaseFile, FileObject
+from flowserv.model.files.base import DatabaseFile, FileObject, FileStore
 from flowserv.model.constraint import validate_identifier
 from flowserv.model.parameter.base import Parameter
 from flowserv.model.user import UserManager
@@ -33,7 +34,7 @@ class WorkflowGroupManager(object):
     workflow runs. The manager provides functionality to interact with the
     underlying database for creating and maintaining workflow groups.
     """
-    def __init__(self, session, fs, users=None):
+    def __init__(self, session: Session, fs: FileStore, users: Optional[UserManager] = None):
         """Initialize the connection to the underlying database and the file
         system helper to access group files.
 
@@ -43,12 +44,12 @@ class WorkflowGroupManager(object):
             Database session.
         fs: flowserv.model.files.FileStore
             File store for uploaded group files.
-        users: flowserv.model.user.UserManager
+        users: flowserv.model.user.UserManager, default=None
             Manager to access user objects.
         """
         self.session = session
         self.fs = fs
-        self.users = users if users else UserManager(session=session)
+        self.users = users if users is not None else UserManager(session=session)
 
     def create_group(
         self, workflow_id: str, name: str, parameters: List[Parameter],

@@ -8,16 +8,12 @@
 
 """Unit tests for the database manager."""
 
-import os
 import pytest
 
 from sqlalchemy.exc import IntegrityError
 
 from flowserv.model.base import User
 from flowserv.model.database import DB, TEST_URL
-
-import flowserv.config.database as config
-import flowserv.error as err
 
 
 @pytest.mark.parametrize(
@@ -30,16 +26,6 @@ def test_db_webapp(web_app, echo):
     """
     db = DB(connect_url=TEST_URL, web_app=web_app, echo=echo)
     db.init()
-
-
-def test_missing_connect_error():
-    """Error if connect URL is not given and environment variable is not
-    set.
-    """
-    if config.FLOWSERV_DB in os.environ:
-        del os.environ[config.FLOWSERV_DB]
-    with pytest.raises(err.MissingConfigurationError):
-        DB()
 
 
 def test_session_scope():

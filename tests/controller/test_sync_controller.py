@@ -8,13 +8,17 @@
 
 """Unit tests for the synchronous mode of the serial workflow controller."""
 
+from contextlib import contextmanager
+
+
 import os
 import pytest
 
+from flowserv.config import Config
 from flowserv.controller.serial.engine import SerialWorkflowEngine
 from flowserv.model.database import DB, TEST_URL
 from flowserv.model.files.fs import FileSystemStore
-from flowserv.service.local import service as localservice
+from flowserv.service.local import create_local_api
 from flowserv.service.run.argument import serialize_arg, serialize_fh
 from flowserv.tests.controller import StateEngine
 from flowserv.tests.files import io_file
@@ -44,16 +48,20 @@ def database():
 
 
 @pytest.fixture
-def service(database, tmpdir):
+def local_service(database):
     """Factory pattern for service API objects."""
-    def _api(engine=StateEngine(), auth=None, user_id=None):
-        return localservice(
-            db=database,
-            engine=engine,
-            fs=FileSystemStore(basedir=tmpdir),
-            auth=auth,
-            user_id=user_id
-        )
+    @contextmanager
+    def _api(config, engine=StateEngine(), auth=None, user_id=None, access_token=None):
+        with database.session() as session:
+            yield create_local_api(
+                session=session,
+                engine=engine,
+                fs=FileSystemStore(config=config),
+                config=config,
+                auth=auth,
+                user_id=user_id,
+                access_token=access_token
+            )
 
     return _api
 
@@ -65,21 +73,21 @@ def service(database, tmpdir):
         (TEMPLATE_WITH_INVALID_CMD, st.STATE_ERROR)
     ]
 )
-def test_run_helloworld_sync(service, specfile, state):
+def test_run_helloworld_sync(local_service, specfile, state, tmpdir):
     """Execute the helloworld example."""
     # -- Setup ----------------------------------------------------------------
     #
+    config = Config().basedir(tmpdir)
     # Start a new run for the workflow template.
-    engine = SerialWorkflowEngine(is_async=False)
-    with service(engine=engine) as api:
-        engine.fs = api.workflows().workflow_repo.fs
+    engine = SerialWorkflowEngine(config=config)
+    with local_service(config=config, engine=engine) as api:
         workflow_id = create_workflow(
             api,
             source=TEMPLATE_DIR,
             specfile=specfile
         )
         user_id = create_user(api)
-    with service(engine=engine, user_id=user_id) as api:
+    with local_service(config=config, engine=engine, user_id=user_id) as api:
         group_id = create_group(api, workflow_id)
         names = io_file(data=['Alice', 'Bob'], format='plain/text')
         file_id = upload_file(api, group_id, names)
@@ -89,7 +97,7 @@ def test_run_helloworld_sync(service, specfile, state):
         ]
         run_id = start_run(api, group_id, arguments=args)
     # -- Validate the run handle against the expected state -------------------
-    with service(engine=engine, user_id=user_id) as api:
+    with local_service(config=config, engine=engine, user_id=user_id) as api:
         r = api.runs().get_run(run_id)
         serialize.validate_run_handle(r, state=state)
         if state == st.STATE_SUCCESS:

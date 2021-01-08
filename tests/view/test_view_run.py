@@ -10,10 +10,10 @@
 
 import os
 
+from flowserv.config import Config
 from flowserv.model.files.fs import FileSystemStore
 from flowserv.model.group import WorkflowGroupManager
 from flowserv.model.run import RunManager
-
 from flowserv.view.run import RunSerializer
 from flowserv.view.validate import validator
 
@@ -24,8 +24,9 @@ import flowserv.view.run as labels
 
 def test_run_serialization(database, tmpdir):
     """Test serialization of run handles and run listings."""
+    config = Config().basedir(tmpdir)
     view = RunSerializer()
-    fs = FileSystemStore(tmpdir)
+    fs = FileSystemStore(config)
     # Setup temporary run folder.
     tmprundir = os.path.join(tmpdir, 'tmprun')
     tmpresultsdir = os.path.join(tmprundir, 'run', 'results')

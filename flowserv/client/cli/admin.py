@@ -13,10 +13,8 @@ operate locally.
 
 import click
 import os
-import sys
 
-from flowserv.client.cli.config import get_configuration
-from flowserv.config.api import API_BASEDIR
+from flowserv.config import env, FLOWSERV_API_BASEDIR
 from flowserv.model.database import DB
 
 import flowserv.error as err
@@ -25,12 +23,10 @@ import flowserv.error as err
 @click.command()
 def configuration():
     """Print configuration variables for flowServ."""
-    comment = '\n#\n# {}\n#\n'
     envvar = 'export {}={}'
-    for title, envs in get_configuration().items():
-        click.echo(comment.format(title))
-        for var, val in envs.items():
-            click.echo(envvar.format(var, val))
+    click.echo('Current environment configuration settings:\n')
+    for var, value in env().items():
+        click.echo(envvar.format(var, value))
     click.echo()
 
 
@@ -47,9 +43,9 @@ def init(force=False):
         click.echo('This will erase an existing database.')
         click.confirm('Continue?', default=True, abort=True)
     # Create a new instance of the database
-    try:
-        DB().init()
-    except err.MissingConfigurationError as ex:
-        click.echo(str(ex))
-        sys.exit(-1)
-    os.makedirs(API_BASEDIR(), exist_ok=True)
+    config = env()
+    basedir = config.get(FLOWSERV_API_BASEDIR)
+    if basedir is None:
+        raise err.MissingConfigurationError('base directory')
+    os.makedirs(basedir, exist_ok=True)
+    DB(config=config).init()

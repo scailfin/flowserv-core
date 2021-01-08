@@ -12,9 +12,6 @@ from typing import Dict, Optional
 
 from flowserv.view.descriptor import ServiceDescriptorSerializer
 
-import flowserv.config.api as config
-import flowserv.version as version
-
 
 """API routes."""
 
@@ -118,9 +115,10 @@ class ServiceDescriptor(object):
             Service descriptor serializer and deserializer.
         """
         self.serialize = serializer if serializer is not None else ServiceDescriptorSerializer()
-        self.name = self.serialize.get_name(doc, config.API_NAME())
-        self.version = self.serialize.get_version(doc, version.__version__)
-        self.url = self.serialize.get_url(doc, config.API_URL())
+        doc = doc if doc is not None else self.serialize.from_config()
+        self.name = self.serialize.get_name(doc)
+        self.version = self.serialize.get_version(doc)
+        self.url = self.serialize.get_url(doc)
         self._routes = self.serialize.get_routes(doc, routes)
         self.username = self.serialize.get_username(doc)
         # Remove trailing '/' from the url

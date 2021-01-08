@@ -58,17 +58,6 @@ class WorkflowController(metaclass=ABCMeta):  # pragma: no cover
         raise NotImplementedError()  # pragma: no cover
 
     @abstractmethod
-    def configuration(self):
-        """Get a list of tuples with the names of additional configuration
-        variables and their current values.
-
-        Returns
-        -------
-        list((string, string))
-        """
-        raise NotImplementedError()  # pragma: no cover
-
-    @abstractmethod
     def exec_workflow(self, run, template, arguments, service=None):
         """Initiate the execution of a given workflow template for a set of
         argument values. Returns the state of the workflow and the path to

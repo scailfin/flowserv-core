@@ -8,11 +8,17 @@
 
 """Helper methods to initialize the database state via the service API."""
 
+from contextlib import contextmanager
+from typing import Callable, Dict, Tuple, Union
+
 import os
 import tempfile
 
-from typing import Tuple, Union
-
+from flowserv.config import FLOWSERV_DB
+from flowserv.controller.base import WorkflowController
+from flowserv.model.database import DB
+from flowserv.model.files.factory import FS
+from flowserv.service.local import create_local_api
 from flowserv.service.run.argument import serialize_fh
 from flowserv.tests.files import io_file
 
@@ -87,6 +93,37 @@ def create_ranking(api, workflow_id, count):
     return groups
 
 
+def create_service(engine: WorkflowController, config: Dict) -> Callable:
+    """Create service API factory function.
+
+    Parameters
+    ----------
+    engine: flowserv.controller.base.WorkflowController
+        Workflow engine for the create API.
+    config: dict
+        Configuration parameters.
+        
+    Returns
+    -------
+    contextmanager
+    """
+    db = DB(config.get(FLOWSERV_DB)).init()
+    fs = FS(config)
+
+    @contextmanager
+    def _service(user_id=None):
+        with db.session() as session:
+            yield create_local_api(
+                session=session,
+                engine=engine,
+                fs=fs,
+                config=config,
+                user_id=user_id
+            )
+
+    return _service
+
+
 def create_workflow(api, source, specfile=None):
     """Start a new workflow for a given template."""
     return api.workflows().create_workflow(
@@ -148,7 +185,7 @@ def start_hello_world(api, group_id):
     return run_id, file_id
 
 
-def start_run(api, group_id, arguments=list()):
+def start_run(api, group_id, arguments=list(), service=None):
     """Start a new workflow run for a given group. Returns the identifier of
     the started run.
 
@@ -169,7 +206,8 @@ def start_run(api, group_id, arguments=list()):
     """
     return api.runs().start_run(
         group_id=group_id,
-        arguments=arguments
+        arguments=arguments,
+        service=service
     )['id']
 
 

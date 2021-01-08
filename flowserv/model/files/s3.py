@@ -14,21 +14,16 @@ import botocore
 import os
 
 from io import BytesIO
-from typing import IO, List, Set, Tuple, TypeVar
+from typing import Dict, IO, List, Set, Tuple, TypeVar
 
+from flowserv.config import FLOWSERV_API_BASEDIR, FLOWSERV_S3BUCKET
 from flowserv.model.files.base import FileStore, FileObject
 
-import flowserv.config.base as config
-import flowserv.config.files as fconfig
 import flowserv.error as err
 
 
 # Type variable for S3 bucket objects.
 B = TypeVar('B')
-
-
-"""Environment variable for unique bucket identifier."""
-FLOWSERV_S3BUCKET = 'FLOWSERV_S3BUCKET'
 
 
 class BucketFile(FileObject):
@@ -96,20 +91,23 @@ class BucketStore(FileStore):
     all files are maintained on the local file system under a given base
     directory.
     """
-    def __init__(self, bucket: B = None):
+    def __init__(self, config: Dict, bucket: B = None):
         """Initialize the storage bucket.
 
         Parameters
         ----------
+        config: dict
+            Configuration object that provides access to configuration
+            parameters in the environment.
         bucket: S3.Bucket
             Object that implements the delete, download, and upload methods of
             the S3.Bucket interface.
         """
         if bucket is None:
-            bucket_id = config.get_variable(FLOWSERV_S3BUCKET)
+            bucket_id = config.get(FLOWSERV_S3BUCKET)
             if bucket_id is None:
                 from flowserv.tests.files import DiskBucket
-                bucket = DiskBucket()
+                bucket = DiskBucket(basedir=config.get(FLOWSERV_API_BASEDIR))
             else:  # pragma: no cover
                 import boto3
                 bucket = boto3.resource('s3').Bucket(bucket_id)
@@ -118,20 +116,6 @@ class BucketStore(FileStore):
     def __repr__(self):
         """Get object representation ."""
         return "<BucketStore bucket={} />".format(self.bucket)
-
-    def configuration(self) -> List[Tuple[str, str]]:
-        """Get a list of tuples with the names of additional configuration
-        variables and their current values.
-
-        Returns
-        -------
-        list((string, string))
-        """
-        return [
-            (fconfig.FLOWSERV_FILESTORE_CLASS, 'BucketStore'),
-            (fconfig.FLOWSERV_FILESTORE_MODULE, 'flowserv.model.files.s3'),
-            (FLOWSERV_S3BUCKET, config.get_variable(FLOWSERV_S3BUCKET))
-        ]
 
     def copy_folder(self, key: str, dst: str):
         """Copy all files in the folder with the given key to a target folder

@@ -9,7 +9,6 @@
 """Unit tests for the user resources view."""
 
 from flowserv.model.user import UserManager
-
 from flowserv.view.user import UserSerializer
 from flowserv.view.validate import validator
 

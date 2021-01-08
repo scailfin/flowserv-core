@@ -15,9 +15,9 @@ import os
 from io import BytesIO
 from typing import Dict, IO, List, Optional, Union
 
+from flowserv.config import Config, FLOWSERV_API_BASEDIR
 from flowserv.model.files.base import FileObject, IOFile
 
-import flowserv.config.api as config
 import flowserv.util as util
 
 
@@ -55,9 +55,9 @@ class DiskBucket(object):
     BucketStore for test purposes. Persists all objects on disk. Uses the
     API_BASDIR if not storage directory is given.
     """
-    def __init__(self, basedir: str = None):
+    def __init__(self, basedir: str):
         """Initialize the internal object dictionary."""
-        self.basedir = basedir if basedir is not None else config.API_BASEDIR()
+        self.basedir = basedir
 
     def __repr__(self):
         """Get object representation ."""
@@ -113,10 +113,13 @@ class DiskBucket(object):
             f.write(file.read())
 
 
-def DiskStore(basedir):
+def DiskStore(config: Config):
     """Create an instance of the buckect store with a disk bucket."""
     from flowserv.model.files.s3 import BucketStore
-    return BucketStore(DiskBucket(basedir))
+    return BucketStore(
+        config=config,
+        bucket=DiskBucket(basedir=config.get(FLOWSERV_API_BASEDIR))
+    )
 
 
 class ObjectSummary(object):

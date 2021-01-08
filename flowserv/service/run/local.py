@@ -11,7 +11,7 @@ manipulate workflow runs and their results. The local run service accesses all
 resources directly via a the database model.
 """
 
-from typing import Dict, IO, List, Optional
+from typing import Callable, Dict, IO, List, Optional
 
 import logging
 import shutil
@@ -283,7 +283,10 @@ class LocalRunService(RunService):
             group_id=group_id
         )
 
-    def start_run(self, group_id: str, arguments: List[Dict]) -> Dict:
+    def start_run(
+        self, group_id: str, arguments: List[Dict],
+        service: Optional[Callable] = None
+    ) -> Dict:
         """Start a new workflow run for the given group. The user provided
         arguments are expected to be a list of (key,value)-pairs. The key value
         identifies the template parameter. The data type of the value depends
@@ -300,6 +303,8 @@ class LocalRunService(RunService):
             Unique workflow group identifier
         arguments: list(dict)
             List of user provided arguments for template parameters.
+        service: callable, default=None
+            Optional service factory (primarily for test purposes).
 
         Returns
         -------
@@ -367,7 +372,9 @@ class LocalRunService(RunService):
         )
         run_id = run.run_id
         # Execute the benchmark workflow for the given set of arguments.
-        from flowserv.service.local import service
+        if service is None:
+            from flowserv.service.local import service as factory
+            service = factory
         state, rundir = self.backend.exec_workflow(
             run=run,
             template=template,

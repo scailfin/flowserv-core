@@ -11,12 +11,11 @@
 import os
 import shutil
 
-from typing import IO, List, Optional, Tuple
+from typing import Dict, IO, List, Optional, Tuple
 
+from flowserv.config import FLOWSERV_API_BASEDIR
 from flowserv.model.files.base import FileStore, FileObject
 
-import flowserv.config.api as config
-import flowserv.config.files as fconfig
 import flowserv.error as err
 import flowserv.util as util
 
@@ -75,33 +74,23 @@ class FileSystemStore(FileStore):
     all files are maintained on the local file system under a given base
     directory.
     """
-    def __init__(self, basedir: str = None):
+    def __init__(self, config: Dict):
         """Initialize the base directory. The directory is created if it does
         not exist.
 
         Parameters
         ----------
-        basedir: string, default=None
-            Path to the base directory.
+        config: dict
+            Configuration object that provides access to configuration
+            parameters in the environment.
         """
-        self.basedir = basedir if basedir is not None else config.API_BASEDIR()
+        self.basedir = config.get(FLOWSERV_API_BASEDIR)
+        if self.basedir is None:
+            raise err.MissingConfigurationError('API base directory')
 
     def __repr__(self):
         """Get object representation ."""
         return "<FileSystemStore dir='{}' />".format(self.basedir)
-
-    def configuration(self) -> List[Tuple[str, str]]:
-        """Get a list of tuples with the names of additional configuration
-        variables and their current values.
-
-        Returns
-        -------
-        list((string, string))
-        """
-        return [
-            (fconfig.FLOWSERV_FILESTORE_CLASS, 'FileSystemStore'),
-            (fconfig.FLOWSERV_FILESTORE_MODULE, 'flowserv.model.files.fs')
-        ]
 
     def copy_folder(self, key: str, dst: str):
         """Copy all files in the folder with the given key to a target folder.

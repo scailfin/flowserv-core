@@ -12,6 +12,7 @@ specification.
 
 import os
 
+from flowserv.config import Config
 from flowserv.controller.serial.engine import SerialWorkflowEngine
 from flowserv.service.run.argument import serialize_arg, serialize_fh
 from flowserv.tests.files import io_file
@@ -28,28 +29,28 @@ BENCHMARK_DIR = os.path.join(DIR, '../../.files/benchmark/helloworld')
 BENCHMARK_FILE = os.path.join(BENCHMARK_DIR, './benchmark-outputs.yaml')
 
 
-def test_run_workflow_with_outputs(local_service):
+def test_run_workflow_with_outputs(local_service, tmpdir):
     """Execute the 'Hello World' example using a benchmark specification that
     includes an explicit specification of output files.
     """
     # Start a new run for the workflow template.
-    engine = SerialWorkflowEngine(is_async=False)
-    with local_service(engine=engine) as api:
-        engine.fs = api.workflows().workflow_repo.fs
+    config = Config().basedir(tmpdir).run_sync()
+    engine = SerialWorkflowEngine(config=config)
+    with local_service(config=config, engine=engine) as api:
         workflow_id = create_workflow(
             api,
             source=BENCHMARK_DIR,
             specfile=BENCHMARK_FILE
         )
         user_id = create_user(api)
-    with local_service(engine=engine, user_id=user_id) as api:
+    with local_service(config=config, engine=engine, user_id=user_id) as api:
         group_id = create_group(api, workflow_id)
         names = io_file(data=['Alice', 'Bob'], format='plain/text')
         file_id = upload_file(api, group_id, names)
         args = [serialize_arg('names', serialize_fh(file_id, 'data/names.txt'))]
         run_id = start_run(api, group_id, arguments=args)
     # -- Validate the run handle ----------------------------------------------
-    with local_service(engine=engine, user_id=user_id) as api:
+    with local_service(config=config, engine=engine, user_id=user_id) as api:
         r = api.runs().get_run(run_id)
         serialize.validate_run_handle(r, state=st.STATE_SUCCESS)
         # The run should have the greetings.txt file as a result.

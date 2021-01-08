@@ -234,17 +234,6 @@ class FileStore(metaclass=ABCMeta):
     relative paths). The key structure is implementation-dependent.
     """
     @abstractmethod
-    def configuration(self) -> List[Tuple[str, str]]:
-        """Get a list of tuples with the names of additional configuration
-        variables and their current values.
-
-        Returns
-        -------
-        list((string, string))
-        """
-        raise NotImplementedError()  # pragma: no cover
-
-    @abstractmethod
     def copy_folder(self, key: str, dst: str):
         """Copy all files in the folder with the given key to a target folder
         on the local file system. Ensures that the target folder exists.

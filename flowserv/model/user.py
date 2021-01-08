@@ -17,14 +17,15 @@ requests to the API. Each key has a fixed lifespan after which it becomes
 invalid. If a user logs out the API key is invalidated immediately.
 """
 
+from passlib.hash import pbkdf2_sha256
+from typing import Optional
+
 import datetime as dt
 import dateutil.parser
 
-from passlib.hash import pbkdf2_sha256
-
+from flowserv.config import DEFAULT_LOGINTTL
 from flowserv.model.base import APIKey, PasswordRequest, User
 
-import flowserv.config.auth as config
 import flowserv.error as err
 import flowserv.util as util
 
@@ -36,19 +37,19 @@ class UserManager(object):
     valid until a timeout period has passed. When the user logs out the API key
     is invalidated. API keys are stored in an underlying database.
     """
-    def __init__(self, session, token_timeout=None):
+    def __init__(self, session, token_timeout: Optional[int] = DEFAULT_LOGINTTL):
         """Initialize the database connection and the login timeout.
 
         Parameters
         ----------
         session: sqlalchemy.orm.session.Session
             Database session.
-        token_timeout: int
+        token_timeout: int, default=24h
             Specifies the period (in seconds) for which an API keys and request
             tokens are valid.
         """
         self.session = session
-        self.token_timeout = config.AUTH_LOGINTTL(value=token_timeout)
+        self.token_timeout = token_timeout
 
     def activate_user(self, user_id):
         """Activate the user with the given identifier. A user is active if the

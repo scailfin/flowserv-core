@@ -17,6 +17,6 @@ from flowserv.model.database import DB, TEST_URL
 @pytest.fixture
 def database():
     """Create a fresh instance of the database."""
-    db = DB(connect_url=TEST_URL, web_app=False)
+    db = DB(connect_url=TEST_URL)
     db.init()
     return db

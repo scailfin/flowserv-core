@@ -9,8 +9,11 @@
 """Unit tests updating the global database object variable."""
 
 import os
+import pytest
 
-from flowserv.config.database import FLOWSERV_DB
+from flowserv.config import Config, FLOWSERV_DB
+
+import flowserv.error as err
 
 
 def test_set_global_database(tmpdir):
@@ -27,12 +30,15 @@ def test_set_global_database(tmpdir):
     assert os.path.isfile(dbfile)
     # Change database configuration.
     dbfile = '{}/test2.db'.format(tmpdir)
-    os.environ[FLOWSERV_DB] = 'sqlite:///{}'.format(dbfile)
     assert not os.path.isfile(dbfile)
-    from flowserv.service.database import config_db
-    config_db()
+    from flowserv.service.database import init_db
+    init_db(Config().database('sqlite:///{}'.format(dbfile)))
     from flowserv.service.database import database
     assert database._engine.table_names() == []
     database.init()
     assert database._engine.table_names() != []
     assert os.path.isfile(dbfile)
+    # -- Error for missing database url configuration.
+    del os.environ[FLOWSERV_DB]
+    with pytest.raises(err.MissingConfigurationError):
+        init_db()

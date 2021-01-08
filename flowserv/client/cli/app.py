@@ -10,9 +10,9 @@
 
 import click
 
-from flowserv.app.base import install_app, uninstall_app
+from flowserv.client.app.base import install_app, uninstall_app
 
-import flowserv.config.app as config
+import flowserv.config as config
 
 
 @click.command()

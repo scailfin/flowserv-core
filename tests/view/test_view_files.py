@@ -8,9 +8,9 @@
 
 """Unit tests for the user resources view."""
 
+from flowserv.config import Config
 from flowserv.model.files.fs import FileSystemStore
 from flowserv.model.group import WorkflowGroupManager
-
 from flowserv.tests.files import io_file
 from flowserv.view.files import UploadFileSerializer
 from flowserv.view.validate import validator
@@ -21,10 +21,11 @@ import flowserv.view.files as labels
 
 def test_file_listing_serialization(database, tmpdir):
     """Test serialization of file handles."""
+    config = Config().basedir(tmpdir)
     view = UploadFileSerializer()
     filename = 'data.json'
     with database.session() as session:
-        manager = WorkflowGroupManager(session=session, fs=FileSystemStore(tmpdir))
+        manager = WorkflowGroupManager(session=session, fs=FileSystemStore(config))
         user_id = model.create_user(session, active=True)
         workflow_id = model.create_workflow(session)
         group_id = model.create_group(session, workflow_id, users=[user_id])

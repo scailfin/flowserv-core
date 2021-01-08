@@ -13,19 +13,20 @@ closed properly after every API request has been handled.
 """
 
 from contextlib import contextmanager
-from typing import Optional
+from typing import Optional, Dict
 
+from flowserv.config import env, FLOWSERV_AUTH, AUTH_OPEN, FLOWSERV_AUTH_LOGINTTL, DEFAULT_LOGINTTL
 from flowserv.controller.base import WorkflowController
-from flowserv.model.auth import Auth
+from flowserv.model.auth import Auth, DefaultAuthPolicy, OpenAccessAuth
 from flowserv.model.database import DB, SessionScope
 from flowserv.model.files.base import FileStore
+from flowserv.model.files.factory import FS
 from flowserv.model.group import WorkflowGroupManager
 from flowserv.model.ranking import RankingManager
 from flowserv.model.run import RunManager
 from flowserv.model.workflow.manager import WorkflowManager
 from flowserv.service.api import API
 from flowserv.service.descriptor import ServiceDescriptor
-from flowserv.service.files.base import get_filestore
 from flowserv.service.files.local import LocalUploadFileService
 from flowserv.service.group.local import LocalWorkflowGroupService
 from flowserv.service.run.local import LocalRunService
@@ -33,7 +34,6 @@ from flowserv.service.user.local import LocalUserService
 from flowserv.service.workflow.local import LocalWorkflowService
 
 from flowserv.model.user import UserManager
-from flowserv.service.auth import get_auth
 
 import flowserv.error as err
 
@@ -48,14 +48,6 @@ def service(
     connection that is used to instantiate the API service class. The context
     manager ensures that the database connection is closed after an API request
     has been processed.
-
-    Provides the option to provide either the identifier for a registered user
-    or a valid access token that was issued when a user logged in. The user
-    identifier is used to authorize actions that are performed on the API. If
-    an access token is given the user identifier will be retrieved from the
-    database once the authentication component is instanciated. If both arguments
-    are given it is asserted that the given user identifier matches the user
-    that is associated with the access token.
 
     Parameters
     ----------
@@ -77,7 +69,7 @@ def service(
     -------
     flowserv.service.api.API
     """
-    # Ensure that the database is not None.
+    config = env()
     if db is None:
         # Use the default database object if no database is given.
         from flowserv.service.database import database
@@ -89,12 +81,13 @@ def service(
         engine = backend
     # Initialize the file store.
     if fs is None:
-        fs = get_filestore()
+        fs = FS(config=config)
     with db.session() as session:
-        yield create_api(
+        yield create_local_api(
             session=session,
             engine=engine,
             fs=fs,
+            config=config,
             auth=auth,
             user_id=user_id,
             access_token=access_token
@@ -103,9 +96,10 @@ def service(
 
 # -- Helper Methods -----------------------------------------------------------
 
-def create_api(
+def create_local_api(
     session: SessionScope, engine: WorkflowController, fs: FileStore,
-    auth: Auth, user_id: str, access_token: Optional[str] = None
+    config: Dict, auth: Optional[Auth] = None, user_id: Optional[str] = None,
+    access_token: Optional[str] = None
 ):
     """Helper method to create an instance of the local service API.
 
@@ -119,9 +113,12 @@ def create_api(
     fs: flowserv.model.files.base.FileStore
         File store for accessing and maintaining files for workflows,
         groups and workflow runs.
-    auth: flowserv.model.user.auth.Auth
+    config: dict
+        Configuration object that provides access to configuration parameters
+        in the environment.
+    auth: flowserv.model.user.auth.Auth, default=None
         Authentication and authorization policy.
-    user_id: string
+    user_id: string, default=None
         Optional identifier of a user that has been authenticated.
     access_token: string, default=None
         Optional access token for an authenticated user.
@@ -132,7 +129,9 @@ def create_api(
     """
     # Get the authorization component.
     if auth is None:
-        auth = get_auth(session)
+        if config.get(FLOWSERV_AUTH) == AUTH_OPEN:
+            auth = OpenAccessAuth(session)
+        auth = DefaultAuthPolicy(session)
     # If an access token is given we retrieve the user that is associated with
     # the token. Authentication may raise an error. Here, we ignore that
     # error since the token may be an outdated token that is stored in the
@@ -145,7 +144,10 @@ def create_api(
             user_id = user.user_id
         except err.UnauthenticatedAccessError:
             pass
-    user_manager = UserManager(session=session)
+    user_manager = UserManager(
+        session=session,
+        token_timeout=config.get(FLOWSERV_AUTH_LOGINTTL, DEFAULT_LOGINTTL)
+    )
     group_manager = WorkflowGroupManager(
         session=session,
         fs=fs,

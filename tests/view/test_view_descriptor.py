@@ -27,8 +27,8 @@ def test_service_descriptor_serialization(username):
         username=username
     )
     schema.validate(doc)
-    assert serializer.get_name(doc, 'foo') == 'Test'
-    assert serializer.get_version(doc, 'foo') == '0.0.0'
-    assert serializer.get_url(doc, 'foo') == 'http://localhost:5000'
+    assert serializer.get_name(doc) == 'Test'
+    assert serializer.get_version(doc) == '0.0.0'
+    assert serializer.get_url(doc) == 'http://localhost:5000'
     assert serializer.get_username(doc) == username
     assert serializer.get_routes(doc, {'foo': 'bar'}) == {'home': '/', 'foo': 'bar'}

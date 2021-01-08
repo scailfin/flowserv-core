@@ -16,9 +16,8 @@ workflow engines only the RemoteClient class needs to be implements.
 import logging
 
 from flowserv.controller.base import WorkflowController
+from flowserv.controller.remote.client import RemoteClient
 
-import flowserv.config.controller as ctrl
-import flowserv.controller.remote.config as config
 import flowserv.controller.remote.monitor as monitor
 import flowserv.util as util
 
@@ -28,7 +27,7 @@ class RemoteWorkflowController(WorkflowController):
     arguments using an external workflow engine. Each workflow is monitored by
     a separate process that continuously polls the workflow state.
     """
-    def __init__(self, client, poll_interval=None, is_async=None):
+    def __init__(self, client: RemoteClient, poll_interval: float, is_async: bool):
         """Initialize the client that is used to interact with the remote
         workflow engine.
 
@@ -44,8 +43,8 @@ class RemoteWorkflowController(WorkflowController):
             asynchronous by default.
         """
         self.client = client
-        self.poll_interval = config.POLL_INTERVAL(value=poll_interval)
-        self.is_async = ctrl.ENGINE_ASYNC(value=is_async)
+        self.poll_interval = poll_interval
+        self.is_async = is_async
         # Dictionary of all running tasks. Maintains tuples containing the
         # multi-process pool object and the remote workflow identifier for
         # each run.
@@ -76,19 +75,6 @@ class RemoteWorkflowController(WorkflowController):
             # respective run will be updated by the workflow engine that
             # uses this controller for workflow execution
             del self.tasks[run_id]
-
-    def configuration(self):
-        """Get a list of tuples with the names of additional configuration
-        variables and their current values.
-
-        Returns
-        -------
-        list((string, string))
-        """
-        return [
-            (ctrl.FLOWSERV_ASYNC, str(self.is_async)),
-            (config.FLOWSERV_POLL_INTERVAL, str(self.poll_interval))
-        ]
 
     def exec_workflow(self, run, template, arguments, service=None):
         """Initiate the execution of a given workflow template for a set of

@@ -19,9 +19,10 @@ from flowserv.service.user.base import UserService
 from flowserv.service.remote import get, post
 from flowserv.service.descriptor import ServiceDescriptor
 
-import flowserv.config.client as config
 import flowserv.service.descriptor as route
 import flowserv.view.user as default_labels
+
+import flowserv.config as config
 
 
 class RemoteUserService(UserService):

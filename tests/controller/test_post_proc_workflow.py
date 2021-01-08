@@ -12,21 +12,15 @@ import os
 import pytest
 import time
 
-from flowserv.config.api import FLOWSERV_API_BASEDIR
-from flowserv.config.backend import CLEAR_BACKEND, DEFAULT_BACKEND
-from flowserv.config.database import FLOWSERV_DB
-from flowserv.config.files import (
-    FLOWSERV_FILESTORE_MODULE, FLOWSERV_FILESTORE_CLASS
-)
-from flowserv.controller.serial.engine import SerialWorkflowEngine
+from flowserv.model.database import TEST_DB
 from flowserv.service.local import service
-from flowserv.service.files.base import get_filestore
 from flowserv.service.run.argument import serialize_arg, serialize_fh
 from flowserv.tests.files import io_file
 from flowserv.tests.service import (
     create_group, create_user, create_workflow, start_run, upload_file
 )
 
+import flowserv.config as config
 import flowserv.util as util
 import flowserv.model.workflow.state as st
 import flowserv.tests.serialize as serialize
@@ -47,34 +41,31 @@ NAMES = ['Alice', 'Bob', 'Gabriel', 'William']
 @pytest.mark.parametrize(
     'fsconfig',
     [{
-        FLOWSERV_FILESTORE_MODULE: 'flowserv.model.files.fs',
-        FLOWSERV_FILESTORE_CLASS: 'FileSystemStore'
+        config.FLOWSERV_FILESTORE_MODULE: 'flowserv.model.files.fs',
+        config.FLOWSERV_FILESTORE_CLASS: 'FileSystemStore'
     }, {
-        FLOWSERV_FILESTORE_MODULE: 'flowserv.model.files.s3',
-        FLOWSERV_FILESTORE_CLASS: 'BucketStore'
+        config.FLOWSERV_FILESTORE_MODULE: 'flowserv.model.files.s3',
+        config.FLOWSERV_FILESTORE_CLASS: 'BucketStore'
     }]
 )
 def test_postproc_workflow(fsconfig, tmpdir):
     """Execute the modified helloworld example."""
     # -- Setup ----------------------------------------------------------------
     #
+    os.environ[config.FLOWSERV_API_BASEDIR] = str(tmpdir)
+    os.environ[config.FLOWSERV_DB] = TEST_DB(tmpdir)
+    os.environ[config.FLOWSERV_FILESTORE_MODULE] = fsconfig[config.FLOWSERV_FILESTORE_MODULE]
+    os.environ[config.FLOWSERV_FILESTORE_CLASS] = fsconfig[config.FLOWSERV_FILESTORE_CLASS]
+    os.environ[config.FLOWSERV_ASYNC] = 'True'
+    from flowserv.service.database import init_db
+    init_db().init()
+    from flowserv.service.backend import init_backend
+    init_backend()
     # Start a new run for the workflow template.
-    os.environ[FLOWSERV_DB] = 'sqlite:///{}/flowserv.db'.format(str(tmpdir))
-    os.environ[FLOWSERV_API_BASEDIR] = str(tmpdir)
-    os.environ[FLOWSERV_FILESTORE_MODULE] = fsconfig[FLOWSERV_FILESTORE_MODULE]
-    os.environ[FLOWSERV_FILESTORE_CLASS] = fsconfig[FLOWSERV_FILESTORE_CLASS]
-    DEFAULT_BACKEND()
-    from flowserv.service.database import database
-    database.__init__()
-    database.init()
-    engine = SerialWorkflowEngine(is_async=True)
-    with service(engine=engine) as api:
-        engine.fs = get_filestore()
+    with service() as api:
         # Need to set the file store in the backend to the new instance as
         # well. Otherwise, the post processing workflow may attempt to use
         # the backend which was initialized prior with a different file store.
-        from flowserv.service.backend import backend
-        backend.fs = engine.fs
         workflow_id = create_workflow(
             api,
             source=TEMPLATE_DIR,
@@ -84,7 +75,7 @@ def test_postproc_workflow(fsconfig, tmpdir):
     # Create four groups and run the workflow with a slightly different input
     # file
     for i in range(4):
-        with service(engine=engine, user_id=user_id) as api:
+        with service(user_id=user_id) as api:
             group_id = create_group(api, workflow_id)
             names = io_file(data=NAMES[:(i + 1)], format='plain/text')
             file_id = upload_file(api, group_id, names)
@@ -95,14 +86,14 @@ def test_postproc_workflow(fsconfig, tmpdir):
             ]
             run_id = start_run(api, group_id, arguments=arguments)
         # Poll workflow state every second.
-        run = poll_run(service, engine, run_id, user_id)
+        run = poll_run(run_id, user_id)
         assert run['state'] == st.STATE_SUCCESS
-        with service(engine=engine) as api:
+        with service() as api:
             wh = api.workflows().get_workflow(workflow_id=workflow_id)
         attmpts = 0
         while 'postproc' not in wh:
             time.sleep(1)
-            with service(engine=engine) as api:
+            with service() as api:
                 wh = api.workflows().get_workflow(workflow_id=workflow_id)
             attmpts += 1
             if attmpts > 60:
@@ -112,71 +103,68 @@ def test_postproc_workflow(fsconfig, tmpdir):
         attmpts = 0
         while wh['postproc']['state'] in st.ACTIVE_STATES:
             time.sleep(1)
-            with service(engine=engine) as api:
+            with service() as api:
                 wh = api.workflows().get_workflow(workflow_id=workflow_id)
             attmpts += 1
             if attmpts > 60:
                 break
         serialize.validate_workflow_handle(wh)
-        if 'messages' in wh['postproc']:
-            print(wh['postproc']['messages'])
         for fobj in wh['postproc']['files']:
             if fobj['name'] == 'results/compare.json':
                 file_id = fobj['id']
-        with service(engine=engine, user_id=user_id) as api:
+        with service(user_id=user_id) as api:
             fh = api.runs().get_result_file(
                 run_id=wh['postproc']['id'],
                 file_id=file_id
             )
         compare = util.read_object(fh)
         assert len(compare) == (i + 1)
-    # -- Clean-up environment variables ---------------------------------------
-    del os.environ[FLOWSERV_DB]
-    del os.environ[FLOWSERV_API_BASEDIR]
-    del os.environ[FLOWSERV_FILESTORE_MODULE]
-    del os.environ[FLOWSERV_FILESTORE_CLASS]
-    CLEAR_BACKEND()
+    # -- Clean up
+    del os.environ[config.FLOWSERV_API_BASEDIR]
+    del os.environ[config.FLOWSERV_DB]
+    del os.environ[config.FLOWSERV_FILESTORE_MODULE]
+    del os.environ[config.FLOWSERV_FILESTORE_CLASS]
+    del os.environ[config.FLOWSERV_ASYNC]
 
 
 def test_postproc_workflow_errors(tmpdir):
     """Execute the modified helloworld example."""
     # -- Setup ----------------------------------------------------------------
     #
+    os.environ[config.FLOWSERV_API_BASEDIR] = str(tmpdir)
+    os.environ[config.FLOWSERV_DB] = TEST_DB(tmpdir)
+    os.environ[config.FLOWSERV_ASYNC] = 'True'
+    from flowserv.service.database import init_db
+    init_db().init()
+    from flowserv.service.backend import init_backend
+    init_backend()
     # Start a new run for the workflow template.
-    os.environ[FLOWSERV_DB] = 'sqlite:///{}/flowserv.db'.format(str(tmpdir))
-    os.environ[FLOWSERV_API_BASEDIR] = str(tmpdir)
-    DEFAULT_BACKEND()
-    from flowserv.service.database import database
-    database.__init__()
-    database.init()
-    engine = SerialWorkflowEngine(is_async=True)
     # Error during data preparation
-    run_erroneous_workflow(service, engine, SPEC_FILE_ERR_1)
+    run_erroneous_workflow(SPEC_FILE_ERR_1)
     # Erroneous specification
-    run_erroneous_workflow(service, engine, SPEC_FILE_ERR_2)
-    # Clean-up environment variables
-    del os.environ[FLOWSERV_DB]
-    del os.environ[FLOWSERV_API_BASEDIR]
-    CLEAR_BACKEND()
+    run_erroneous_workflow(SPEC_FILE_ERR_2)
+    # -- Clean up
+    del os.environ[config.FLOWSERV_API_BASEDIR]
+    del os.environ[config.FLOWSERV_DB]
+    del os.environ[config.FLOWSERV_ASYNC]
 
 
 # -- Helper functions ---------------------------------------------------------
 
-def poll_run(service, engine, run_id, user_id):
+def poll_run(run_id, user_id):
     """Poll workflow run while in active state."""
-    with service(engine=engine, user_id=user_id) as api:
+    with service(user_id=user_id) as api:
         run = api.runs().get_run(run_id=run_id)
     while run['state'] in st.ACTIVE_STATES:
         time.sleep(1)
-        with service(engine=engine, user_id=user_id) as api:
+        with service(user_id=user_id) as api:
             run = api.runs().get_run(run_id=run_id)
     return run
 
 
-def run_erroneous_workflow(service, engine, specfile):
+def run_erroneous_workflow(specfile):
     """Execute the modified helloworld example."""
-    with service(engine=engine) as api:
-        engine.fs = api.workflows().workflow_repo.fs
+    with service() as api:
         # Create workflow template, user, and the workflow group.
         workflow_id = create_workflow(
             api,
@@ -184,7 +172,7 @@ def run_erroneous_workflow(service, engine, specfile):
             specfile=specfile
         )
         user_id = create_user(api)
-    with service(engine=engine, user_id=user_id) as api:
+    with service(user_id=user_id) as api:
         group_id = create_group(api, workflow_id)
         # Upload the names file.
         names = io_file(data=NAMES, format='txt/plain')
@@ -196,14 +184,14 @@ def run_erroneous_workflow(service, engine, specfile):
         ]
         run_id = start_run(api, group_id, arguments=arguments)
     # Poll workflow state every second.
-    run = poll_run(service, engine, run_id, user_id)
+    run = poll_run(run_id, user_id)
     assert run['state'] == st.STATE_SUCCESS
-    with service(engine=engine) as api:
+    with service() as api:
         wh = api.workflows().get_workflow(workflow_id=workflow_id)
     attmpts = 0
     while 'postproc' not in wh:
         time.sleep(1)
-        with service(engine=engine) as api:
+        with service() as api:
             wh = api.workflows().get_workflow(workflow_id=workflow_id)
         attmpts += 1
         if attmpts > 60:
@@ -213,7 +201,7 @@ def run_erroneous_workflow(service, engine, specfile):
     attmpts = 0
     while wh['postproc']['state'] in st.ACTIVE_STATES:
         time.sleep(1)
-        with service(engine=engine) as api:
+        with service() as api:
             wh = api.workflows().get_workflow(workflow_id=workflow_id)
         attmpts += 1
         if attmpts > 60:

@@ -10,51 +10,40 @@
 the workflow controller.
 """
 
-import os
 import pytest
 
+from flowserv.config import Config, FLOWSERV_BACKEND_CLASS, FLOWSERV_BACKEND_MODULE
+from flowserv.controller.serial.docker import DockerWorkflowEngine
 from flowserv.controller.serial.engine import SerialWorkflowEngine
-from flowserv.tests.controller import StateEngine
+from flowserv.service.backend import init_backend
 
-import flowserv.config.backend as config
 import flowserv.error as err
-import flowserv.service.backend as service
 
 
 def test_get_default_backend():
     """Test method to get the default workflow controller."""
-    # Clear environment variable if set
-    if config.FLOWSERV_BACKEND_CLASS in os.environ:
-        del os.environ[config.FLOWSERV_BACKEND_CLASS]
-    if config.FLOWSERV_BACKEND_MODULE in os.environ:
-        del os.environ[config.FLOWSERV_BACKEND_MODULE]
-    controller = service.init_backend()
+    controller = init_backend(config=Config().basedir('/dev/null'))
     assert isinstance(controller, SerialWorkflowEngine)
 
 
-def test_get_state_engine():
-    """Test method to get an instance of the test engine using the
-    environment variables."""
-    # Set environment variables
-    os.environ[config.FLOWSERV_BACKEND_MODULE] = 'flowserv.tests.controller'
-    os.environ[config.FLOWSERV_BACKEND_CLASS] = 'StateEngine'
-    controller = service.init_backend()
-    assert isinstance(controller, StateEngine)
+def test_get_docker_backend():
+    """Test method to instantiate the docker workflow controller."""
+    controller = init_backend(config=Config().basedir('/dev/null').docker_engine())
+    assert isinstance(controller, DockerWorkflowEngine)
 
 
 def test_invalid_config():
-    """Test error cases where only one of the two environment variables
-    is set.
-    """
-    # Clear environment variable 'FLOWSERV_BACKEND_CLASS' if set
-    if config.FLOWSERV_BACKEND_CLASS in os.environ:
-        del os.environ[config.FLOWSERV_BACKEND_CLASS]
-    os.environ[config.FLOWSERV_BACKEND_MODULE] = 'module'
+    """Test error case for invlid configuration."""
+    # Missing base directory
     with pytest.raises(err.MissingConfigurationError):
-        service.init_backend()
-    del os.environ[config.FLOWSERV_BACKEND_MODULE]
-    os.environ[config.FLOWSERV_BACKEND_CLASS] = 'class'
+        init_backend(config=Config().multiprocess_engine())
+    # Missing value for variable 'FLOWSERV_BACKEND_CLASS'
+    config = Config().basedir('/dev/null').multiprocess_engine()
+    del config[FLOWSERV_BACKEND_CLASS]
     with pytest.raises(err.MissingConfigurationError):
-        service.init_backend()
-    assert service.init_backend(raise_error=False) is None
-    del os.environ[config.FLOWSERV_BACKEND_CLASS]
+        init_backend(config=config)
+    # Missing value for variable 'FLOWSERV_BACKEND_MODULE'
+    config = Config().basedir('/dev/null').multiprocess_engine()
+    del config[FLOWSERV_BACKEND_MODULE]
+    with pytest.raises(err.MissingConfigurationError):
+        init_backend(config=config)

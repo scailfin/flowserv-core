@@ -8,6 +8,8 @@
 
 """Pytest fixtures for unit tests."""
 
+from contextlib import contextmanager
+
 import os
 import pytest
 import requests
@@ -18,7 +20,7 @@ from flowserv.service.api import API
 from flowserv.service.descriptor import ServiceDescriptor
 from flowserv.service.files.remote import RemoteUploadFileService
 from flowserv.service.group.remote import RemoteWorkflowGroupService
-from flowserv.service.local import service as localservice
+from flowserv.service.local import create_local_api
 from flowserv.service.run.remote import RemoteRunService
 from flowserv.service.user.remote import RemoteUserService
 from flowserv.service.workflow.remote import RemoteWorkflowService
@@ -79,6 +81,8 @@ def mock_response(monkeypatch):
     monkeypatch.setattr(requests, "put", mock_post)
 
 
+# -- Service API --------------------------------------------------------------
+
 @pytest.fixture
 def database():
     """Create a fresh instance of the database."""
@@ -88,17 +92,20 @@ def database():
 
 
 @pytest.fixture
-def local_service(database, tmpdir):
+def local_service(database):
     """Factory pattern for service API objects."""
-    def _api(engine=StateEngine(), auth=None, user_id=None, access_token=None):
-        return localservice(
-            db=database,
-            engine=engine,
-            fs=FileSystemStore(basedir=tmpdir),
-            auth=auth,
-            user_id=user_id,
-            access_token=access_token
-        )
+    @contextmanager
+    def _api(config, engine=StateEngine(), auth=None, user_id=None, access_token=None):
+        with database.session() as session:
+            yield create_local_api(
+                session=session,
+                engine=engine,
+                fs=FileSystemStore(config=config),
+                config=config,
+                auth=auth,
+                user_id=user_id,
+                access_token=access_token
+            )
 
     return _api
 
