@@ -19,10 +19,9 @@ import flowserv.error as err
 import flowserv.view.user as labels
 
 
-def test_api_components(local_service, tmpdir):
+def test_api_components(local_service):
     """Test methods to access API components."""
-    config = Config().basedir(tmpdir)
-    with local_service(config=config) as api:
+    with local_service() as api:
         # Access the different managers to ensure that they are created
         # properly without raising errors.
         assert api.groups() is not None
@@ -33,24 +32,19 @@ def test_api_components(local_service, tmpdir):
         assert api.workflows() is not None
 
 
-def test_authenticate_user(local_service, tmpdir):
+def test_authenticate_user(local_service):
     """Test authenticating a user via the access token when initializing the API."""
-    config = Config().basedir(tmpdir)
-    with local_service(config=config) as api:
+    with local_service() as api:
         api.users().register_user(username='alice', password='abc', verify=False)
         doc = api.users().login_user(username='alice', password='abc')
         user_id = doc[labels.USER_ID]
         access_token = doc[labels.USER_TOKEN]
-    with local_service(config=config) as api:
-        assert api.runs().user_id is None
-    with local_service(config=config, access_token=access_token) as api:
+    local_service.set_access_token(token=access_token)
+    with local_service() as api:
         assert api.runs().user_id == user_id
-    # Error when providing an invalid combination of user_id and access_token.
-    with pytest.raises(ValueError):
-        with local_service(config=config, user_id='UNKNOWN', access_token=access_token) as api:
-            pass
     # Ensure that no error is raised if an invalid access token is given.
-    with local_service(config=config, access_token='UNKNOWN') as api:
+    local_service.set_access_token(token='UNKNOWN')
+    with local_service() as api:
         assert api.runs().user_id is None
 
 
@@ -59,22 +53,22 @@ def test_initialize_filestore_from_env(tmpdir):
     envirnment variables.
     """
     # -- Setup ----------------------------------------------------------------
-    config = Config().basedir(tmpdir)
-    config[FLOWSERV_FILESTORE_MODULE] = 'flowserv.model.files.s3'
-    config[FLOWSERV_FILESTORE_CLASS] = 'BucketStore'
+    env = Config().basedir(tmpdir)
+    env[FLOWSERV_FILESTORE_MODULE] = 'flowserv.model.files.s3'
+    env[FLOWSERV_FILESTORE_CLASS] = 'BucketStore'
     # -- Create bucket store instance -----------------------------------------
-    fs = FS(config=config)
+    fs = FS(env=env)
     assert isinstance(fs, BucketStore)
     assert isinstance(fs.bucket, DiskBucket)
     # -- Error cases ----------------------------------------------------------
-    del config[FLOWSERV_FILESTORE_MODULE]
+    del env[FLOWSERV_FILESTORE_MODULE]
     with pytest.raises(err.MissingConfigurationError):
-        FS(config=config)
-    config[FLOWSERV_FILESTORE_MODULE] = 'flowserv.model.files.s3'
-    del config[FLOWSERV_FILESTORE_CLASS]
+        FS(env=env)
+    env[FLOWSERV_FILESTORE_MODULE] = 'flowserv.model.files.s3'
+    del env[FLOWSERV_FILESTORE_CLASS]
     with pytest.raises(err.MissingConfigurationError):
-        FS(config=config)
+        FS(env=env)
     # -- Default file store ---------------------------------------------------
-    assert FS(config=Config().basedir(tmpdir)) is not None
+    assert FS(env=Config().basedir(tmpdir)) is not None
     with pytest.raises(err.MissingConfigurationError):
-        FS(config=Config())
+        FS(env=Config())

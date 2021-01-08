@@ -12,7 +12,6 @@ import os
 import pytest
 import tempfile
 
-from flowserv.config import Config
 from flowserv.service.run.argument import is_fh
 from flowserv.tests.service import (
     create_group, create_user, start_hello_world, write_results
@@ -23,19 +22,18 @@ import flowserv.model.workflow.state as st
 import flowserv.tests.serialize as serialize
 
 
-def test_create_run_local(local_service, hello_world, tmpdir):
+def test_create_run_local(local_service, hello_world):
     """Test life cycle for successful run using the local service."""
     # -- Setup ----------------------------------------------------------------
     #
-    config = Config().basedir(tmpdir)
     # Start a new run for a group of the 'Hello World' workflow and set it into
     # success state.
     tmpdir = tempfile.mkdtemp()
-    with local_service(config=config) as api:
+    with local_service() as api:
         user_1 = create_user(api)
         user_2 = create_user(api)
         workflow_id = hello_world(api).workflow_id
-    with local_service(config=config, user_id=user_1) as api:
+    with local_service(user_id=user_1) as api:
         group_id = create_group(api, workflow_id=workflow_id, users=[user_1])
         run_id, file_id = start_hello_world(api, group_id)
         result = {'group': group_id, 'run': run_id}
@@ -56,12 +54,12 @@ def test_create_run_local(local_service, hello_world, tmpdir):
         )
     assert not os.path.exists(tmpdir)
     # -- Validate run handle --------------------------------------------------
-    with local_service(config=config, user_id=user_1) as api:
+    with local_service(user_id=user_1) as api:
         r = api.runs().get_run(run_id=run_id)
         serialize.validate_run_handle(r, st.STATE_SUCCESS)
         assert is_fh(r['arguments'][0]['value'])
     # -- Error when non-member attempts to access run -------------------------
-    with local_service(config=config, user_id=user_2) as api:
+    with local_service(user_id=user_2) as api:
         with pytest.raises(err.UnauthorizedAccessError):
             api.runs().get_run(run_id=run_id)
 

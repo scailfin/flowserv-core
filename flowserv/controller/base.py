@@ -27,6 +27,11 @@ providing access to these files.
 """
 
 from abc import ABCMeta, abstractmethod
+from typing import Dict, Tuple
+
+from flowserv.model.base import RunHandle
+from flowserv.model.template.base import WorkflowTemplate
+from flowserv.model.workflow.state import WorkflowState
 
 
 # -- Controller Interface -----------------------------------------------------
@@ -43,7 +48,7 @@ class WorkflowController(metaclass=ABCMeta):  # pragma: no cover
     workflow engine.
     """
     @abstractmethod
-    def cancel_run(self, run_id):
+    def cancel_run(self, run_id: str):
         """Request to cancel execution of the given run.
 
         Parameters
@@ -58,7 +63,9 @@ class WorkflowController(metaclass=ABCMeta):  # pragma: no cover
         raise NotImplementedError()  # pragma: no cover
 
     @abstractmethod
-    def exec_workflow(self, run, template, arguments, service=None):
+    def exec_workflow(
+        self, run: RunHandle, template: WorkflowTemplate, arguments: Dict
+    ) -> Tuple[WorkflowState, str]:
         """Initiate the execution of a given workflow template for a set of
         argument values. Returns the state of the workflow and the path to
         the directory that contains run result files for successful runs.
@@ -77,7 +84,7 @@ class WorkflowController(metaclass=ABCMeta):  # pragma: no cover
             the parameter declarations.
         arguments: dict
             Dictionary of argument values for parameters in the template.
-        service: contextlib,contextmanager, default=None
+        service: contextlib,contextmanager
             Context manager to create an instance of the service API. The
             context manager is only used when executing workflows
             asynchronously.

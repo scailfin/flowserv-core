@@ -74,17 +74,17 @@ class FileSystemStore(FileStore):
     all files are maintained on the local file system under a given base
     directory.
     """
-    def __init__(self, config: Dict):
+    def __init__(self, env: Dict):
         """Initialize the base directory. The directory is created if it does
         not exist.
 
         Parameters
         ----------
-        config: dict
+        env: dict
             Configuration object that provides access to configuration
             parameters in the environment.
         """
-        self.basedir = config.get(FLOWSERV_API_BASEDIR)
+        self.basedir = env.get(FLOWSERV_API_BASEDIR)
         if self.basedir is None:
             raise err.MissingConfigurationError('API base directory')
 

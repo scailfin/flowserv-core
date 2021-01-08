@@ -26,6 +26,7 @@ import dateutil.parser
 from flowserv.config import DEFAULT_LOGINTTL
 from flowserv.model.base import APIKey, PasswordRequest, User
 
+import flowserv.config as config
 import flowserv.error as err
 import flowserv.util as util
 
@@ -113,8 +114,9 @@ class UserManager(object):
         flowserv.error.UnauthenticatedAccessError
         """
         # Construct search query based on whether the query argument is given
-        # or not
-        query = self.session.query(User).filter(User.active == True)  # noqa: E501, E712
+        # or not. Ignore the default user in the listing.
+        query = self.session.query(User).filter(User.active == True)  # noqa: E712
+        query = query.filter(User.user_id != config.DEFAULT_USER)
         if prefix is not None:
             query = query.filter(User.name.like('{}%'.format(prefix)))
         query = query.order_by(User.name)

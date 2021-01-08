@@ -15,7 +15,7 @@ import os
 from io import BytesIO
 from typing import Dict, IO, List, Optional, Union
 
-from flowserv.config import Config, FLOWSERV_API_BASEDIR
+from flowserv.config import FLOWSERV_API_BASEDIR
 from flowserv.model.files.base import FileObject, IOFile
 
 import flowserv.util as util
@@ -113,12 +113,12 @@ class DiskBucket(object):
             f.write(file.read())
 
 
-def DiskStore(config: Config):
+def DiskStore(env: Dict):
     """Create an instance of the buckect store with a disk bucket."""
     from flowserv.model.files.s3 import BucketStore
     return BucketStore(
-        config=config,
-        bucket=DiskBucket(basedir=config.get(FLOWSERV_API_BASEDIR))
+        env=env,
+        bucket=DiskBucket(basedir=env.get(FLOWSERV_API_BASEDIR))
     )
 
 

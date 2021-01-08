@@ -42,14 +42,13 @@ def create_run(api, workflow_id):
     )
 
 
-def test_workflow_postproc_results(local_service, tmpdir):
+def test_workflow_postproc_results(local_service):
     """Test downloading results from a post-processing workflow."""
     # -- Setup ----------------------------------------------------------------
     #
     # Create instance of the 'Hello World' workflow.
-    config = Config().basedir(tmpdir).run_sync()
-    engine = SerialWorkflowEngine(config=config)
-    with local_service(config=config, engine=engine) as api:
+    engine = SerialWorkflowEngine()
+    with local_service(engine=engine) as api:
         workflow_id = api.workflows().create_workflow(
             name='W1',
             source=TEMPLATE_DIR,
@@ -57,7 +56,7 @@ def test_workflow_postproc_results(local_service, tmpdir):
         )['id']
     # -- Error when ntrying to download post-porcessing results for a workflow
     # -- that did not run yet.
-    with local_service(config=config, engine=engine) as api:
+    with local_service(engine=engine) as api:
         with pytest.raises(err.UnknownFileError):
             api.workflows().get_result_archive(workflow_id=workflow_id)
         with pytest.raises(err.UnknownFileError):
@@ -65,9 +64,9 @@ def test_workflow_postproc_results(local_service, tmpdir):
     # -- Create three groups and a successful run for each. Then read the
     # result files ------------------------------------------------------------
     for run_count in range(3):
-        with local_service(config=config, engine=engine) as api:
+        with local_service(engine=engine) as api:
             user_id = create_user(api)
-        with local_service(config=config, engine=engine, user_id=user_id) as api:
+        with local_service(engine=engine, user_id=user_id) as api:
             create_run(api, workflow_id)
             # Get the workflow handle. At this point, the post-processing run
             # may not have started. Wait until it starts. Add 'watch-dog'

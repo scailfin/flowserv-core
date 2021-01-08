@@ -48,21 +48,38 @@ DEFAULT_PORT = 5000
 DEFAULT_PROTOCOL = 'http'
 
 
-def API_URL(config: Dict) -> str:
-    """Get the base URL for the API from the respective environment variables
-    'FLOWSERV_API_HOST', 'FLOWSERV_API_PATH', and 'FLOWSERV_API_PORT' in the
-    given configuration dictionary.
+def API_DEFAULTDIR() -> str:
+    """The default API base directory is a subfolder in the users HOME
+    directory.
 
     Returns
     -------
     string
     """
-    protocol = config.get(FLOWSERV_API_PROTOCOL, DEFAULT_PROTOCOL)
-    host = config.get(FLOWSERV_API_HOST, DEFAULT_HOST)
-    port = to_int(config.get(FLOWSERV_API_PORT, DEFAULT_PORT))
+    return os.path.join(str(Path.home()), DEFAULT_DIR)
+
+
+def API_URL(env: Dict) -> str:
+    """Get the base URL for the API from the respective environment variables
+    'FLOWSERV_API_HOST', 'FLOWSERV_API_PATH', and 'FLOWSERV_API_PORT' in the
+    given configuration dictionary.
+
+    Parameters
+    ----------
+    env: dict
+        Configuration object that provides access to configuration
+        parameters in the environment.
+
+    Returns
+    -------
+    string
+    """
+    protocol = env.get(FLOWSERV_API_PROTOCOL, DEFAULT_PROTOCOL)
+    host = env.get(FLOWSERV_API_HOST, DEFAULT_HOST)
+    port = to_int(env.get(FLOWSERV_API_PORT, DEFAULT_PORT))
     if port != 80:
         host = '{}:{}'.format(host, port)
-    path = config.get(FLOWSERV_API_PATH, DEFAULT_PATH)
+    path = env.get(FLOWSERV_API_PATH, DEFAULT_PATH)
     if not path.startswith('/'):
         path = '/' + path
     return '{}://{}{}'.format(protocol, host, path)
@@ -88,7 +105,7 @@ AUTH_DEFAULT = 'default'
 AUTH_OPEN = 'open'
 
 """Default user."""
-DEFAULT_USER = '0' * 32
+DEFAULT_USER = '0' * 8
 
 
 # -- Backend ------------------------------------------------------------------
@@ -329,7 +346,7 @@ value case function.
 """
 
 ENV = [
-    (FLOWSERV_API_BASEDIR, os.path.join(str(Path.home()), DEFAULT_DIR), None),
+    (FLOWSERV_API_BASEDIR, API_DEFAULTDIR(), None),
     (FLOWSERV_API_HOST, DEFAULT_HOST, None),
     (FLOWSERV_API_NAME, DEFAULT_NAME, None),
     (FLOWSERV_API_PATH, DEFAULT_PATH, None),

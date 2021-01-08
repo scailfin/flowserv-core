@@ -8,25 +8,24 @@
 
 """Pytest fixtures for unit tests."""
 
-from contextlib import contextmanager
-
 import os
 import pytest
 import requests
 
+from flowserv.config import Config
 from flowserv.model.database import DB, TEST_URL
-from flowserv.model.files.fs import FileSystemStore
 from flowserv.service.api import API
 from flowserv.service.descriptor import ServiceDescriptor
 from flowserv.service.files.remote import RemoteUploadFileService
 from flowserv.service.group.remote import RemoteWorkflowGroupService
-from flowserv.service.local import create_local_api
+from flowserv.service.local import LocalAPIFactory
 from flowserv.service.run.remote import RemoteRunService
 from flowserv.service.user.remote import RemoteUserService
 from flowserv.service.workflow.remote import RemoteWorkflowService
 from flowserv.view.user import USER_TOKEN
 from flowserv.tests.controller import StateEngine
 
+import flowserv.config as config
 import flowserv.util as util
 
 
@@ -92,28 +91,16 @@ def database():
 
 
 @pytest.fixture
-def local_service(database):
-    """Factory pattern for service API objects."""
-    @contextmanager
-    def _api(config, engine=StateEngine(), auth=None, user_id=None, access_token=None):
-        with database.session() as session:
-            yield create_local_api(
-                session=session,
-                engine=engine,
-                fs=FileSystemStore(config=config),
-                config=config,
-                auth=auth,
-                user_id=user_id,
-                access_token=access_token
-            )
-
-    return _api
+def local_service(database, tmpdir):
+    """Create a local API factory for test purposes."""
+    env = Config().basedir(tmpdir).auth()
+    return LocalAPIFactory(env=env, db=database, engine=StateEngine())
 
 
 @pytest.fixture
 def remote_service():
     """Get a test instance for the remote service API."""
-    doc = ServiceDescriptor().to_dict()
+    doc = ServiceDescriptor.from_config(env=config.env()).to_dict()
     doc['url'] = 'test'
     service = ServiceDescriptor(doc)
     return API(

@@ -26,7 +26,7 @@ def test_create_group(fscls, database, tmpdir):
     # -- Setup ----------------------------------------------------------------
     #
     # Create a database with a single workflow.
-    fs = fscls(config=Config().basedir(tmpdir))
+    fs = fscls(env=Config().basedir(tmpdir))
     with database.session() as session:
         user_id = model.create_user(session, active=True)
         workflow_id = model.create_workflow(session)
@@ -120,7 +120,7 @@ def test_delete_group(fscls, database, tmpdir):
     # -- Setup ----------------------------------------------------------------
     #
     # Create a database with two groups for a single workflow.
-    fs = fscls(config=Config().basedir(tmpdir))
+    fs = fscls(env=Config().basedir(tmpdir))
     with database.session() as session:
         user_id = model.create_user(session, active=True)
         wf_id = model.create_workflow(session)
@@ -158,7 +158,7 @@ def test_list_groups(fscls, database, tmpdir):
     # Create a database with three groups for a two workflow. Group 1 has
     # user 1 as only member, group 2 has user 2 and 3 as member, group 3 has
     # user 1 and 3 as members.
-    fs = fscls(config=Config().basedir(tmpdir))
+    fs = fscls(env=Config().basedir(tmpdir))
     with database.session() as session:
         user_1 = model.create_user(session, active=True)
         user_2 = model.create_user(session, active=True)
@@ -201,7 +201,7 @@ def test_update_groups(fscls, database, tmpdir):
     #
     # Create a database with two groups for one workflow. Group 1 has user 1 as
     # only member, group 2 has user 2 and 3 as member.
-    fs = fscls(config=Config().basedir(tmpdir))
+    fs = fscls(env=Config().basedir(tmpdir))
     with database.session() as session:
         user_1 = model.create_user(session, active=True)
         user_2 = model.create_user(session, active=True)

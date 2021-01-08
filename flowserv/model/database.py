@@ -19,6 +19,9 @@ import os
 
 from flowserv.model.base import Base
 
+import flowserv.config as config
+import flowserv.util as util
+
 
 """Database connection Url for test purposes."""
 TEST_URL = 'sqlite:///:memory:'
@@ -64,12 +67,27 @@ class DB(object):
             self._session = sessionmaker(bind=self._engine)
 
     def init(self) -> DB:
-        """Create all tables in the database model schema."""
+        """Create all tables in the database model schema. This will also
+        register the default user. The password for the user is a random UUID
+        since the default user is not expected to login (but be used only in
+        open access policies).
+        """
         # Add import for modules that contain ORM definitions.
         import flowserv.model.base  # noqa: F401
         # Drop all tables first before creating them
         Base.metadata.drop_all(self._engine)
         Base.metadata.create_all(self._engine)
+        # Create the default user.
+        with self.session() as session:
+            from passlib.hash import pbkdf2_sha256
+            from flowserv.model.base import User
+            user = User(
+                user_id=config.DEFAULT_USER,
+                name=config.DEFAULT_USER,
+                secret=pbkdf2_sha256.hash(util.get_unique_identifier()),
+                active=True
+            )
+            session.add(user)
         return self
 
     def session(self):
@@ -123,3 +141,11 @@ class SessionScope(object):
                 self.session.rollback()
             finally:
                 self.session.close()
+
+    def close(self):
+        """Close the session."""
+        self.__exit__(None, None, None)
+
+    def open(self):
+        """Get a reference to the database session object."""
+        return self.__enter__()

@@ -91,12 +91,12 @@ class BucketStore(FileStore):
     all files are maintained on the local file system under a given base
     directory.
     """
-    def __init__(self, config: Dict, bucket: B = None):
+    def __init__(self, env: Dict, bucket: B = None):
         """Initialize the storage bucket.
 
         Parameters
         ----------
-        config: dict
+        env: dict
             Configuration object that provides access to configuration
             parameters in the environment.
         bucket: S3.Bucket
@@ -104,10 +104,10 @@ class BucketStore(FileStore):
             the S3.Bucket interface.
         """
         if bucket is None:
-            bucket_id = config.get(FLOWSERV_S3BUCKET)
+            bucket_id = env.get(FLOWSERV_S3BUCKET)
             if bucket_id is None:
                 from flowserv.tests.files import DiskBucket
-                bucket = DiskBucket(basedir=config.get(FLOWSERV_API_BASEDIR))
+                bucket = DiskBucket(basedir=env.get(FLOWSERV_API_BASEDIR))
             else:  # pragma: no cover
                 import boto3
                 bucket = boto3.resource('s3').Bucket(bucket_id)

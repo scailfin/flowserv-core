@@ -106,7 +106,7 @@ def test_empty_ranking(fscls, database, tmpdir):
     """The rankings for workflows without completed runs are empty."""
     # -- Setup ----------------------------------------------------------------
     workflows = init(database, tmpdir)
-    fs = fscls(config=Config().basedir(tmpdir))
+    fs = fscls(env=Config().basedir(tmpdir))
     # -- Test empty listing with no successful runs ---------------------------
     with database.session() as session:
         wfrepo = WorkflowManager(session=session, fs=fs)
@@ -126,7 +126,7 @@ def test_multi_success_runs(fscls, database, tmpdir):
     # three active runs. Then set all runs for the first workflow into success
     # state. Increase a counter for the avg_len value as we update runs.
     workflows = init(database, tmpdir)
-    fs = fscls(config=Config().basedir(tmpdir))
+    fs = fscls(env=Config().basedir(tmpdir))
     workflow_id, groups = workflows[0]
     count = 0
     asc_order = list()

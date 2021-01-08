@@ -10,6 +10,10 @@
 managed by different components of the API.
 """
 
+from abc import ABCMeta, abstractmethod
+from typing import Optional
+
+from flowserv.controller.base import WorkflowController
 from flowserv.service.group import WorkflowGroupService
 from flowserv.service.files import UploadFileService
 from flowserv.service.run import RunService
@@ -114,3 +118,24 @@ class API(object):
         flowserv.service.workflow.WorkflowService
         """
         return self._workflows
+
+
+class APIFactory(WorkflowController, metaclass=ABCMeta):
+    """Factory pattern for creating API instances. Extends the workflow controller
+    with a __call__ method that returns a context manager for creating new
+    instances of either a local or remote service API.
+
+    The API factory maintains the access token for a user to be able to
+    authenticate the user when the API is instantiated.
+    """
+    @abstractmethod
+    def set_access_token(self, token: Optional[str] = None):
+        """Set the user access token. Set the value to None if the user is
+        logged out.
+
+        Parameters
+        ----------
+        token: string, default=None
+            User access token that was returned when the user logged in.
+        """
+        raise NotImplementedError()  # pragma: no cover

@@ -11,6 +11,7 @@
 from flowserv.service.descriptor import ServiceDescriptor, SERVICE_DESCRIPTOR
 from flowserv.view.validate import validator
 
+import flowserv.config as config
 import flowserv.service.descriptor as route
 
 
@@ -18,7 +19,7 @@ def test_service_descriptor():
     """Test the service descriptor object."""
     schema = validator('ServiceDescriptor')
     # Local service descriptor (no arguments).
-    service = ServiceDescriptor()
+    service = ServiceDescriptor.from_config(env=config.env())
     schema.validate(service.to_dict())
     assert service.routes().get(SERVICE_DESCRIPTOR) is not None
     assert service.routes().get('foo') is None
@@ -32,7 +33,8 @@ def test_service_descriptor():
 
 def test_service_descriptor_urls():
     """Test getting Urls from the service descriptor."""
-    doc = ServiceDescriptor().to_dict()
+    service = ServiceDescriptor.from_config(env=config.env())
+    doc = service.to_dict()
     doc['url'] = 'http://localhost//'
     service = ServiceDescriptor(doc=doc)
     assert service.urls(route.USERS_ACTIVATE) == 'http://localhost/users/activate'

@@ -49,7 +49,7 @@ TEMPLATE = dict({'A': 1})
 def test_create_workflow(fscls, identifier, database, tmpdir):
     """Test creating workflows with different levels of detail."""
     # -- Setup ----------------------------------------------------------------
-    fs = fscls(config=Config().basedir(tmpdir))
+    fs = fscls(env=Config().basedir(tmpdir))
     # -- Add workflow with minimal information --------------------------------
     with database.session() as session:
         manager = WorkflowManager(session=session, fs=fs)
@@ -89,7 +89,7 @@ def test_create_workflow(fscls, identifier, database, tmpdir):
 def test_create_workflow_with_alt_spec(fscls, database, tmpdir):
     """Test creating workflows with alternative specification files."""
     # -- Setup ----------------------------------------------------------------
-    fs = fscls(config=Config().basedir(tmpdir))
+    fs = fscls(env=Config().basedir(tmpdir))
     # -- Template without schema ----------------------------------------------
     with database.session() as session:
         manager = WorkflowManager(session=session, fs=fs)
@@ -127,7 +127,7 @@ def test_create_workflow_with_alt_spec(fscls, database, tmpdir):
 def test_create_workflow_with_error(fscls, database, tmpdir):
     """Error cases when creating a workflow."""
     # -- Setup ----------------------------------------------------------------
-    fs = fscls(config=Config().basedir(tmpdir))
+    fs = fscls(env=Config().basedir(tmpdir))
     # -- Invalid name ---------------------------------------------------------
     with database.session() as session:
         manager = WorkflowManager(session=session, fs=fs)
@@ -148,7 +148,7 @@ def test_create_workflow_with_error(fscls, database, tmpdir):
 @pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
 def test_create_workflow_with_alt_manifest(fscls, database, tmpdir):
     """Test creating 'Hello World' workflow with a different manifest file."""
-    fs = fscls(config=Config().basedir(tmpdir))
+    fs = fscls(env=Config().basedir(tmpdir))
     with database.session() as session:
         manager = WorkflowManager(session=session, fs=fs)
         wf = manager.create_workflow(
@@ -171,7 +171,7 @@ def test_delete_workflow(fscls, database, tmpdir):
     # -- Setup ----------------------------------------------------------------
     #
     # Create two workflows.
-    fs = fscls(config=Config().basedir(tmpdir))
+    fs = fscls(env=Config().basedir(tmpdir))
     with database.session() as session:
         manager = WorkflowManager(session=session, fs=fs)
         wf = manager.create_workflow(name='A', source=BENCHMARK_DIR)
@@ -199,7 +199,7 @@ def test_get_workflow(fscls, database, tmpdir):
     # -- Setup ----------------------------------------------------------------
     #
     # Create two workflows.
-    fs = fscls(config=Config().basedir(tmpdir))
+    fs = fscls(env=Config().basedir(tmpdir))
     with database.session() as session:
         manager = WorkflowManager(session=session, fs=fs)
         wf = manager.create_workflow(name='A', source=BENCHMARK_DIR)
@@ -234,7 +234,7 @@ def test_list_workflow(database, tmpdir):
     # -- Setup ----------------------------------------------------------------
     #
     # Create two workflows.
-    fs = FileSystemStore(config=Config().basedir(tmpdir))
+    fs = FileSystemStore(env=Config().basedir(tmpdir))
     with database.session() as session:
         manager = WorkflowManager(session=session, fs=fs)
         manager.create_workflow(source=BENCHMARK_DIR)
@@ -252,7 +252,7 @@ def test_update_workflow_description(database, tmpdir):
     # -- Setup ----------------------------------------------------------------
     #
     # Create one workflow without description and instructions.
-    fs = FileSystemStore(config=Config().basedir(tmpdir))
+    fs = FileSystemStore(env=Config().basedir(tmpdir))
     with database.session() as session:
         manager = WorkflowManager(session=session, fs=fs)
         # Initialize the repository
@@ -295,7 +295,7 @@ def test_update_workflow_name(database, tmpdir):
     #
     # Create two workflow templates. Workflow 1 does not have a description
     # and instructions while workflow 2 has.
-    fs = FileSystemStore(config=Config().basedir(tmpdir))
+    fs = FileSystemStore(env=Config().basedir(tmpdir))
     with database.session() as session:
         manager = WorkflowManager(session=session, fs=fs)
         # Initialize the repository
@@ -333,7 +333,7 @@ def test_workflow_name(database, tmpdir):
     # -- Setup ----------------------------------------------------------------
     # Initialize the repository. Create two workflows, one with name 'Workflow'
     # and the other with name 'Workflow (2)'
-    fs = FileSystemStore(config=Config().basedir(tmpdir))
+    fs = FileSystemStore(env=Config().basedir(tmpdir))
     with database.session() as session:
         manager = WorkflowManager(session=session, fs=fs)
         manager.create_workflow(name='Workflow', source=BENCHMARK_DIR)

@@ -29,7 +29,7 @@ def test_delete_file(fscls, database, tmpdir):
     # for each group.
     file = io_file(data={'A': 1})
     fn = 'data.json'
-    fs = fscls(config=Config().basedir(tmpdir))
+    fs = fscls(env=Config().basedir(tmpdir))
     with database.session() as session:
         user_1 = model.create_user(session, active=True)
         workflow_id = model.create_workflow(session)
@@ -69,7 +69,7 @@ def test_get_file(fscls, database, tmpdir):
     f1 = io_file(data=data_1)
     f2 = io_file(data=data_2)
     fn = 'data.json'
-    fs = fscls(config=Config().basedir(tmpdir))
+    fs = fscls(env=Config().basedir(tmpdir))
     with database.session() as session:
         user_1 = model.create_user(session, active=True)
         workflow_id = model.create_workflow(session)
@@ -107,7 +107,7 @@ def test_list_files(fscls, database, tmpdir):
     # has one uploaded file and the second group has one file.
     file = io_file(data={'A': 1})
     fn = 'data.json'
-    fs = fscls(config=Config().basedir(tmpdir))
+    fs = fscls(env=Config().basedir(tmpdir))
     with database.session() as session:
         user_1 = model.create_user(session, active=True)
         workflow_id = model.create_workflow(session)
@@ -133,7 +133,7 @@ def test_upload_file(fscls, database, tmpdir):
     #
     # Create a database with two groups for a single workflow. Upload one file
     # for each group.
-    fs = fscls(config=Config().basedir(tmpdir))
+    fs = fscls(env=Config().basedir(tmpdir))
     with database.session() as session:
         user_1 = model.create_user(session, active=True)
         workflow_id = model.create_workflow(session)

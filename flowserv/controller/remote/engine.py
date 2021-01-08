@@ -13,10 +13,13 @@ stop, and monitpring using an (abstract) client class. For different types of
 workflow engines only the RemoteClient class needs to be implements.
 """
 
+from typing import Optional
+
 import logging
 
 from flowserv.controller.base import WorkflowController
 from flowserv.controller.remote.client import RemoteClient
+from flowserv.service.api import APIFactory
 
 import flowserv.controller.remote.monitor as monitor
 import flowserv.util as util
@@ -27,7 +30,10 @@ class RemoteWorkflowController(WorkflowController):
     arguments using an external workflow engine. Each workflow is monitored by
     a separate process that continuously polls the workflow state.
     """
-    def __init__(self, client: RemoteClient, poll_interval: float, is_async: bool):
+    def __init__(
+        self, client: RemoteClient, poll_interval: float, is_async: bool,
+        service: Optional[APIFactory] = None
+    ):
         """Initialize the client that is used to interact with the remote
         workflow engine.
 
@@ -41,10 +47,14 @@ class RemoteWorkflowController(WorkflowController):
         is_async: bool, optional
             Flag that determines whether workflows execution is synchronous or
             asynchronous by default.
+        service: flowserv.service.api.APIFactory, default=None
+            API factory for service callbach during asynchronous workflow
+            execution.
         """
         self.client = client
         self.poll_interval = poll_interval
         self.is_async = is_async
+        self.service = service
         # Dictionary of all running tasks. Maintains tuples containing the
         # multi-process pool object and the remote workflow identifier for
         # each run.
@@ -76,7 +86,7 @@ class RemoteWorkflowController(WorkflowController):
             # uses this controller for workflow execution
             del self.tasks[run_id]
 
-    def exec_workflow(self, run, template, arguments, service=None):
+    def exec_workflow(self, run, template, arguments):
         """Initiate the execution of a given workflow template for a set of
         argument values. This will start a new process that executes a serial
         workflow asynchronously. Returns the state of the workflow after the
@@ -97,8 +107,6 @@ class RemoteWorkflowController(WorkflowController):
             the parameter declarations.
         arguments: dict
             Dictionary of argument values for parameters in the template.
-        service: contextlib,contextmanager, default=None
-            Context manager to create an instance of the service API.
 
         Returns
         -------
@@ -113,7 +121,7 @@ class RemoteWorkflowController(WorkflowController):
             raise RuntimeError("invalid run state '{}'".format(run.state()))
         try:
             # Raise an error if the service manager is not given.
-            if service is None:
+            if self.service is None:
                 raise ValueError('service manager not given')
             # Create a workflow on the remote engine. This will also upload all
             # necessary files to the remote engine. Workflow execution may not
@@ -138,7 +146,7 @@ class RemoteWorkflowController(WorkflowController):
                     output_files=wf.output_files(),
                     client=self.client,
                     poll_interval=self.poll_interval,
-                    service=service,
+                    service=self.service,
                     tasks=self.tasks
                 ).start()
                 return wf.state, None

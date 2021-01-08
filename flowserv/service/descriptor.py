@@ -8,6 +8,7 @@
 
 """API component that provides information about the service iteself."""
 
+from __future__ import annotations
 from typing import Dict, Optional
 
 from flowserv.view.descriptor import ServiceDescriptorSerializer
@@ -115,7 +116,7 @@ class ServiceDescriptor(object):
             Service descriptor serializer and deserializer.
         """
         self.serialize = serializer if serializer is not None else ServiceDescriptorSerializer()
-        doc = doc if doc is not None else self.serialize.from_config()
+        doc = doc
         self.name = self.serialize.get_name(doc)
         self.version = self.serialize.get_version(doc)
         self.url = self.serialize.get_url(doc)
@@ -124,6 +125,24 @@ class ServiceDescriptor(object):
         # Remove trailing '/' from the url
         while self.url.endswith('/'):
             self.url = self.url[:-1]
+
+    @staticmethod
+    def from_config(env: Dict) -> ServiceDescriptor:
+        """Get descriptor with basic information from values in the given
+        configuration settings.
+
+        Parameters
+        ----------
+        env: dict, default=None
+            Dictionary that provides access to configuration parameter values.
+
+        Returns
+        -------
+        flowserv.service.descriptor.ServiceDescriptor
+        """
+        serializer = ServiceDescriptorSerializer()
+        doc = serializer.from_config(env=env)
+        return ServiceDescriptor(doc=doc, serializer=serializer)
 
     def routes(self) -> Dict:
         """Get dictionary of supported API routes. The returned dictionary maps

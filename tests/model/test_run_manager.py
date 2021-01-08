@@ -87,7 +87,7 @@ def success_run(database, fs, basedir):
 def test_cancel_run(fscls, database, tmpdir):
     """Test setting run state to canceled."""
     # -- Setup ----------------------------------------------------------------
-    fs = fscls(config=Config().basedir(tmpdir))
+    fs = fscls(env=Config().basedir(tmpdir))
     with database.session() as session:
         user_id = model.create_user(session, active=True)
         workflow_id = model.create_workflow(session)
@@ -117,7 +117,7 @@ def test_cancel_run(fscls, database, tmpdir):
 def test_create_run_errors(fscls, database, tmpdir):
     """Test error cases for create_run parameter combinations."""
     # -- Setup ----------------------------------------------------------------
-    fs = fscls(config=Config().basedir(tmpdir))
+    fs = fscls(env=Config().basedir(tmpdir))
     with database.session() as session:
         user_id = model.create_user(session, active=True)
         workflow_id = model.create_workflow(session)
@@ -141,7 +141,7 @@ def test_create_run_errors(fscls, database, tmpdir):
 def test_delete_run(fscls, database, tmpdir):
     """Test deleting a run."""
     # -- Setup ----------------------------------------------------------------
-    fs = fscls(config=Config().basedir(tmpdir))
+    fs = fscls(env=Config().basedir(tmpdir))
     _, _, run_id = success_run(database, fs, tmpdir)
     # -- Test delete run ------------------------------------------------------
     with database.session() as session:
@@ -159,7 +159,7 @@ def test_delete_run(fscls, database, tmpdir):
 def test_error_run(fscls, database, tmpdir):
     """Test setting run state to error."""
     # -- Setup ----------------------------------------------------------------
-    fs = fscls(config=Config().basedir(tmpdir))
+    fs = fscls(env=Config().basedir(tmpdir))
     messages = ['There', 'were', 'many errors']
     _, _, run_id = error_run(database, fs, messages)
     with database.session() as session:
@@ -179,7 +179,7 @@ def test_error_run(fscls, database, tmpdir):
 def test_invalid_state_transitions(fscls, database, tmpdir):
     """Test error cases for invalid state transitions."""
     # -- Setup ----------------------------------------------------------------
-    fs = fscls(config=Config().basedir(tmpdir))
+    fs = fscls(env=Config().basedir(tmpdir))
     with database.session() as session:
         user_id = model.create_user(session, active=True)
         workflow_id = model.create_workflow(session)
@@ -215,7 +215,7 @@ def test_list_runs(fscls, database, tmpdir):
     # -- Setup ----------------------------------------------------------------
     #
     # Create two runs: one in running state and one in error state.
-    fs = fscls(config=Config().basedir(tmpdir))
+    fs = fscls(env=Config().basedir(tmpdir))
     with database.session() as session:
         user_id = model.create_user(session, active=True)
         workflow_id = model.create_workflow(session)
@@ -251,7 +251,7 @@ def test_list_runs(fscls, database, tmpdir):
 def test_obsolete_runs(fscls, database, tmpdir):
     """Test deleting runs that were created before a given date."""
     # -- Setup ----------------------------------------------------------------
-    fs = fscls(config=Config().basedir(tmpdir))
+    fs = fscls(env=Config().basedir(tmpdir))
     # Create two runs (one SUCCESS and one ERROR) before a timestamp t1
     _, _, run_1 = success_run(database, fs, tmpdir)
     _, _, run_2 = error_run(database, fs, ['There were errors'])
@@ -282,7 +282,7 @@ def test_obsolete_runs(fscls, database, tmpdir):
 def test_run_parameters(fscls, database, tmpdir):
     """Test creating run with template arguments."""
     # -- Setup ----------------------------------------------------------------
-    fs = fscls(config=Config().basedir(tmpdir))
+    fs = fscls(env=Config().basedir(tmpdir))
     with database.session() as session:
         user_id = model.create_user(session, active=True)
         workflow_id = model.create_workflow(session)
@@ -310,7 +310,7 @@ def test_run_parameters(fscls, database, tmpdir):
 def test_success_run(fscls, database, tmpdir):
     """Test life cycle for a successful run."""
     # -- Setup ----------------------------------------------------------------
-    fs = fscls(config=Config().basedir(tmpdir))
+    fs = fscls(env=Config().basedir(tmpdir))
     workflow_id, _, run_id = success_run(database, fs, tmpdir)
     rundir = fs.run_basedir(workflow_id=workflow_id, run_id=run_id)
     with database.session() as session:

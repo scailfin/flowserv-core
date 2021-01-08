@@ -10,7 +10,7 @@
 
 from typing import Dict, Optional
 
-from flowserv.config import env, DEFAULT_NAME, FLOWSERV_API_NAME, API_URL
+from flowserv.config import DEFAULT_NAME, FLOWSERV_API_NAME, API_URL
 
 import flowserv.version as version
 
@@ -28,18 +28,22 @@ SERVICE_VERSION = 'version'
 
 class ServiceDescriptorSerializer(object):
     """Default serializer for the service descriptor."""
-    def from_config(self) -> Dict:
+    def from_config(self, env: Dict) -> Dict:
         """Get serialized descriptor with basic information from values in the
-        environment variables.
+        given configuration settings.
+
+        Parameters
+        ----------
+        env: dict, default=None
+            Dictionary that provides access to configuration parameter values.
 
         Returns
         -------
         dict
         """
-        config = env()
         return {
-            SERVICE_NAME: config.get(FLOWSERV_API_NAME, DEFAULT_NAME),
-            SERVICE_URL: API_URL(config)
+            SERVICE_NAME: env.get(FLOWSERV_API_NAME, DEFAULT_NAME),
+            SERVICE_URL: API_URL(env)
         }
 
     def get_name(self, doc: Dict) -> str:

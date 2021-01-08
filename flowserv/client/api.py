@@ -25,20 +25,6 @@ import flowserv.config as config
 
 # -- API factory pattern for client applications ------------------------------
 
-class APIFactory(metaclass=ABCMeta):
-    """Interface for API factories. Defines a single method that is used to
-    create a new instance of a local or remote service API.
-    """
-    @abstractmethod
-    def api(self) -> Callable:
-        """Create a context manager that yields a new instance of the service
-        API.
-
-        Returns
-        -------
-        contextmanager
-        """
-        raise NotImplementedError()
 
 
 class LocalAPIFactory(APIFactory):

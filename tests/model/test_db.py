@@ -34,21 +34,22 @@ def test_session_scope():
     db.init()
     with db.session() as session:
         session.add(User(user_id='U', name='U', secret='U', active=True))
-    # Query all users. Expects one object in the resulting list.
+    # Query all users. Expects two objects in the resulting list (te created
+    # user and the default user).
     with db.session() as session:
-        assert len(session.query(User).all()) == 1
+        assert len(session.query(User).all()) == 2
     # Error when adding user with duplicate key.
     with pytest.raises(IntegrityError):
         with db.session() as session:
             session.add(User(user_id='U', name='U', secret='U', active=True))
     # Query all users. Still expects one object in the resulting list.
     with db.session() as session:
-        assert len(session.query(User).all()) == 1
+        assert len(session.query(User).all()) == 2
     # Raise an exception within the session scope.
     with pytest.raises(ValueError):
         with db.session() as session:
             session.add(User(user_id='W', name='W', secret='W', active=True))
             raise ValueError('some error')
-    # Query all users. Still expects one object in the resulting list.
+    # Query all users. Still expects two object in the resulting list.
     with db.session() as session:
-        assert len(session.query(User).all()) == 1
+        assert len(session.query(User).all()) == 2

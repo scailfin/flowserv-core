@@ -82,9 +82,9 @@ def create_files(basedir):
 def create_store(store_id, basedir):
     """Create an instance of the file store with the given identifier."""
     if store_id == 'BUCKET':
-        return BucketStore(config=Config(), bucket=DiskBucket(basedir=basedir))
+        return BucketStore(env=Config(), bucket=DiskBucket(basedir=basedir))
     else:
-        return FileSystemStore(config=Config().basedir(basedir))
+        return FileSystemStore(env=Config().basedir(basedir))
 
 
 @pytest.mark.parametrize('store_id', ['FILE_SYSTEM', 'BUCKET'])
