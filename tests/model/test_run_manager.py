@@ -19,6 +19,7 @@ from flowserv.model.group import WorkflowGroupManager
 from flowserv.model.run import RunManager
 from flowserv.model.workflow.manager import WorkflowManager
 from flowserv.tests.files import DiskStore
+from flowserv.tests.model import success_run
 
 import flowserv.error as err
 import flowserv.util as util
@@ -45,41 +46,6 @@ def error_run(database, fs, messages):
         runs.update_run(run_id=run_id, state=state)
         messages = ['There', 'were', 'many errors']
         runs.update_run(run_id=run_id, state=state.error(messages))
-    return workflow_id, group_id, run_id
-
-
-def success_run(database, fs, basedir):
-    """Create a successful run with two result files:
-
-        - A.json
-        - run/results/B.json
-
-    Returns the identifier of the created workflow, group, and run.
-    """
-    # Setup temporary run folder.
-    tmprundir = os.path.join(basedir, 'tmprun')
-    tmpresultsdir = os.path.join(tmprundir, 'run', 'results')
-    os.makedirs(tmprundir)
-    os.makedirs(tmpresultsdir)
-    f1 = os.path.join(tmprundir, 'A.json')
-    util.write_object(f1, {'A': 1})
-    f2 = os.path.join(tmpresultsdir, 'B.json')
-    util.write_object(f2, {'B': 1})
-    with database.session() as session:
-        user_id = model.create_user(session, active=True)
-        workflow_id = model.create_workflow(session)
-        group_id = model.create_group(session, workflow_id, users=[user_id])
-        groups = WorkflowGroupManager(session=session, fs=fs)
-        runs = RunManager(session=session, fs=fs)
-        run = runs.create_run(group=groups.get_group(group_id))
-        run_id = run.run_id
-        state = run.state()
-        runs.update_run(
-            run_id,
-            state.start().success(files=['A.json', 'run/results/B.json']),
-            rundir=tmprundir
-        )
-    assert not os.path.exists(tmprundir)
     return workflow_id, group_id, run_id
 
 
@@ -142,7 +108,7 @@ def test_delete_run(fscls, database, tmpdir):
     """Test deleting a run."""
     # -- Setup ----------------------------------------------------------------
     fs = fscls(env=Config().basedir(tmpdir))
-    _, _, run_id = success_run(database, fs, tmpdir)
+    _, _, run_id, _ = success_run(database, fs, tmpdir)
     # -- Test delete run ------------------------------------------------------
     with database.session() as session:
         runs = RunManager(session=session, fs=fs)
@@ -253,12 +219,12 @@ def test_obsolete_runs(fscls, database, tmpdir):
     # -- Setup ----------------------------------------------------------------
     fs = fscls(env=Config().basedir(tmpdir))
     # Create two runs (one SUCCESS and one ERROR) before a timestamp t1
-    _, _, run_1 = success_run(database, fs, tmpdir)
+    _, _, run_1, _ = success_run(database, fs, tmpdir)
     _, _, run_2 = error_run(database, fs, ['There were errors'])
     time.sleep(1)
     t1 = util.utc_now()
     # Create another SUCCESS run after timestamp t1
-    _, _, run_3 = success_run(database, fs, tmpdir)
+    _, _, run_3, _ = success_run(database, fs, tmpdir)
     # -- Test delete run with state filter ------------------------------------
     with database.session() as session:
         runs = RunManager(session=session, fs=fs)
@@ -311,7 +277,7 @@ def test_success_run(fscls, database, tmpdir):
     """Test life cycle for a successful run."""
     # -- Setup ----------------------------------------------------------------
     fs = fscls(env=Config().basedir(tmpdir))
-    workflow_id, _, run_id = success_run(database, fs, tmpdir)
+    workflow_id, _, run_id, _ = success_run(database, fs, tmpdir)
     rundir = fs.run_basedir(workflow_id=workflow_id, run_id=run_id)
     with database.session() as session:
         runs = RunManager(session=session, fs=fs)

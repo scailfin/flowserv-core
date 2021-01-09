@@ -10,55 +10,25 @@
 
 import pytest
 import tarfile
-import tempfile
 
 from flowserv.config import Config
-from flowserv.tests.service import (
-    create_group, create_user, start_hello_world, write_results
-)
+from flowserv.model.files.factory import FS
+from flowserv.tests.model import create_user, success_run
+from flowserv.service.local import LocalAPIFactory
 
 import flowserv.error as err
 import flowserv.util as util
 
 
-def init_db(service, config, hello_world):
-    """Initialize a new database with two users, one group and a successful
-    run. Returns user identifier, group identifier and run identifier.
-    """
-    with service(config=config) as api:
-        user_1 = create_user(api)
-        user_2 = create_user(api)
-        workflow_id = hello_world(api).workflow_id
-    with service(config=config, user_id=user_1) as api:
-        group_id = create_group(api, workflow_id=workflow_id)
-        # Start the new run. Then set it into SUCESS state.
-        run_id, file_id = start_hello_world(api, group_id)
-        tmpdir = tempfile.mkdtemp()
-        write_results(
-            rundir=tmpdir,
-            files=[
-                ({'group': group_id, 'run': run_id}, None, 'results/data.json'),
-                ([group_id, run_id], 'txt/plain', 'values.txt')
-            ]
-        )
-        api.runs().update_run(
-            run_id=run_id,
-            state=api.runs().backend.success(
-                run_id,
-                files=['results/data.json', 'values.txt']
-            ),
-            rundir=tmpdir
-        )
-    return user_1, user_2, group_id, run_id
-
-
-def test_access_run_result_files_local(local_service, hello_world, tmpdir):
+def test_access_run_result_files_local(database, tmpdir):
     """Test accessing run result files."""
     # -- Setup ----------------------------------------------------------------
-    config = Config().basedir(tmpdir)
-    user_1, user_2, group_id, run_id = init_db(local_service, config, hello_world)
+    env = Config().basedir(tmpdir).auth()
+    fs = FS(env=env)
+    workflow_id, group_id, run_id, user_id = success_run(database, fs, tmpdir)
+    local_service = LocalAPIFactory(env=env, db=database)
     # -- Read result files ----------------------------------------------------
-    with local_service(config=config, user_id=user_1) as api:
+    with local_service(user_id=user_id) as api:
         # Map file names to file handles.
         r = api.runs().get_run(run_id=run_id)
         files = dict()
@@ -67,38 +37,44 @@ def test_access_run_result_files_local(local_service, hello_world, tmpdir):
         # Read content of result files.
         fh = api.runs().get_result_file(
             run_id=run_id,
-            file_id=files['results/data.json']
+            file_id=files['run/results/B.json']
         )
         results = util.read_object(fh)
-        assert results == {'group': group_id, 'run': run_id}
-        fh = api.runs().get_result_file(
-            run_id=run_id,
-            file_id=files['values.txt']
-        )
-        values = fh.read().decode('utf-8').strip()
-        assert values == '{}\n{}'.format(group_id, run_id)
+        assert results == {'B': 1}
     # -- Error when user 2 attempts to read file ------------------------------
-    with local_service(config=config, user_id=user_2) as api:
+    with database.session() as session:
+        user_2 = create_user(session, active=True)
+    with local_service(user_id=user_2) as api:
         with pytest.raises(err.UnauthorizedAccessError):
             api.runs().get_result_file(
                 run_id=run_id,
-                file_id=files['results/data.json']
+                file_id=files['run/results/B.json']
             )
+    # -- With an open access policy user 2 can read the data file -------------
+    env = Config().basedir(tmpdir).open_access()
+    local_service = LocalAPIFactory(env=env, db=database)
+    with local_service(user_id=user_2) as api:
+        api.runs().get_result_file(
+            run_id=run_id,
+            file_id=files['run/results/B.json']
+        )
 
 
-def test_result_archive_local(local_service, hello_world, tmpdir):
+def test_result_archive_local(database, tmpdir):
     """Test getting an archive of run results."""
     # -- Setup ----------------------------------------------------------------
-    config = Config().basedir(tmpdir)
-    user_1, user_2, group_id, run_id = init_db(local_service, config, hello_world)
+    env = Config().basedir(tmpdir).auth()
+    fs = FS(env=env)
+    workflow_id, group_id, run_id, user_id = success_run(database, fs, tmpdir)
+    local_service = LocalAPIFactory(env=env, db=database)
     # -- Get result archive ---------------------------------------------------
-    with local_service(config=config, user_id=user_1) as api:
+    with local_service(user_id=user_id) as api:
         archive = api.runs().get_result_archive(run_id=run_id)
         tar = tarfile.open(fileobj=archive, mode='r:gz')
         members = [t.name for t in tar.getmembers()]
         assert len(members) == 2
-        assert 'results/data.json' in members
-        assert 'values.txt' in members
+        assert 'A.json' in members
+        assert 'run/results/B.json' in members
 
 
 def test_result_archive_remote(remote_service, mock_response):

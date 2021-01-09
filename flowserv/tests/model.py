@@ -9,8 +9,15 @@
 """Helper method for creating database objects."""
 
 from passlib.hash import pbkdf2_sha256
+from typing import Tuple
+
+import os
 
 from flowserv.model.base import GroupHandle, RunHandle, User, WorkflowHandle
+from flowserv.model.database import DB
+from flowserv.model.files.base import FileStore
+from flowserv.model.group import WorkflowGroupManager
+from flowserv.model.run import RunManager
 from flowserv.model.template.parameter import ParameterIndex
 
 import flowserv.model.workflow.state as st
@@ -131,3 +138,38 @@ def create_workflow(session, workflow_spec=dict(), result_schema=None):
     )
     session.add(workflow)
     return workflow_id
+
+
+def success_run(database: DB, fs: FileStore, basedir: str) -> Tuple[str, str, str, str]:
+    """Create a successful run with two result files:
+
+        - A.json
+        - run/results/B.json
+
+    Returns the identifier of the created workflow, group, run, and user.
+    """
+    # Setup temporary run folder.
+    tmprundir = os.path.join(basedir, 'tmprun')
+    tmpresultsdir = os.path.join(tmprundir, 'run', 'results')
+    os.makedirs(tmprundir)
+    os.makedirs(tmpresultsdir)
+    f1 = os.path.join(tmprundir, 'A.json')
+    util.write_object(f1, {'A': 1})
+    f2 = os.path.join(tmpresultsdir, 'B.json')
+    util.write_object(f2, {'B': 1})
+    with database.session() as session:
+        user_id = create_user(session, active=True)
+        workflow_id = create_workflow(session)
+        group_id = create_group(session, workflow_id, users=[user_id])
+        groups = WorkflowGroupManager(session=session, fs=fs)
+        runs = RunManager(session=session, fs=fs)
+        run = runs.create_run(group=groups.get_group(group_id))
+        run_id = run.run_id
+        state = run.state()
+        runs.update_run(
+            run_id,
+            state.start().success(files=['A.json', 'run/results/B.json']),
+            rundir=tmprundir
+        )
+    assert not os.path.exists(tmprundir)
+    return workflow_id, group_id, run_id, user_id

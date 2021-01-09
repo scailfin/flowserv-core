@@ -19,6 +19,7 @@ install_requires = [
     'gitpython',
     'passlib',
     'python-dateutil',
+    'jsonschema',
     'pyyaml>=5.1',
     'requests',
     'SQLAlchemy>=1.3.18',

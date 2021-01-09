@@ -13,12 +13,11 @@ import pytest
 import time
 
 from flowserv.config import Config
-from flowserv.model.database import TEST_DB
 from flowserv.tests.remote import RemoteTestClient, RemoteTestController
 from flowserv.tests.service import (
-    create_group, create_service, create_user, create_workflow, start_run
+    create_group, create_user, create_workflow, start_run
 )
-
+from flowserv.service.local import LocalAPIFactory
 import flowserv.model.workflow.state as st
 import flowserv.tests.serialize as serialize
 
@@ -32,20 +31,21 @@ def test_cancel_remote_workflow(tmpdir):
     """Cancel the execution of a remote workflow."""
     # -- Setup ----------------------------------------------------------------
     #
-    config = Config().basedir(tmpdir).database(TEST_DB(tmpdir))
+    env = Config().basedir(tmpdir)
     engine = RemoteTestController(
         client=RemoteTestClient(runcount=100),
         poll_interval=1,
         is_async=True
     )
-    service = create_service(engine=engine, config=config)
+    service = LocalAPIFactory(env=env, engine=engine)
+    engine.service = service
     # -- Start a new run for the workflow template.
     with service() as api:
         workflow_id = create_workflow(api, source=TEMPLATE_DIR)
         user_id = create_user(api)
     with service(user_id=user_id) as api:
         group_id = create_group(api, workflow_id)
-        run_id = start_run(api, group_id, service=service)
+        run_id = start_run(api, group_id)
     # -- Poll workflow state every second.
     with service(user_id=user_id) as api:
         run = api.runs().get_run(run_id=run_id)
@@ -73,20 +73,21 @@ def test_run_remote_workflow(tmpdir, is_async):
     """
     # -- Setup ----------------------------------------------------------------
     #
-    config = Config().basedir(tmpdir).database(TEST_DB(tmpdir))
+    env = Config().basedir(tmpdir)
     engine = RemoteTestController(
         client=RemoteTestClient(runcount=3, data=['success']),
         poll_interval=1,
         is_async=is_async
     )
-    service = create_service(engine=engine, config=config)
+    service = LocalAPIFactory(env=env, engine=engine)
+    engine.service = service
     # Start a new run for the workflow template.
     with service() as api:
         workflow_id = create_workflow(api, source=TEMPLATE_DIR)
         user_id = create_user(api)
     with service(user_id=user_id) as api:
         group_id = create_group(api, workflow_id)
-        run_id = start_run(api, group_id, service=service)
+        run_id = start_run(api, group_id)
     # Poll workflow state every second.
     with service(user_id=user_id) as api:
         run = api.runs().get_run(run_id=run_id)
@@ -117,19 +118,20 @@ def test_run_remote_workflow_with_error(tmpdir):
     # -- Setup ----------------------------------------------------------------
     #
     # Start a new run for the workflow template.
-    config = Config().basedir(tmpdir).database(TEST_DB(tmpdir))
+    env = Config().basedir(tmpdir)
     engine = RemoteTestController(
         client=RemoteTestClient(runcount=3, error='some error'),
         poll_interval=1,
         is_async=True
     )
-    service = create_service(engine=engine, config=config)
+    service = LocalAPIFactory(env=env, engine=engine)
+    engine.service = service
     with service() as api:
         workflow_id = create_workflow(api, source=TEMPLATE_DIR)
         user_id = create_user(api)
     with service(user_id=user_id) as api:
         group_id = create_group(api, workflow_id)
-        run_id = start_run(api, group_id, service=service)
+        run_id = start_run(api, group_id)
     # Poll workflow state every second.
     with service(user_id=user_id) as api:
         run = api.runs().get_run(run_id=run_id)
