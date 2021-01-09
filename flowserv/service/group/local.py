@@ -59,7 +59,7 @@ class LocalWorkflowGroupService(WorkflowGroupService):
 
     def create_group(
         self, workflow_id: str, name: str, members: Optional[List[str]] = None,
-        parameters: Optional[List[Parameter]] = None
+        parameters: Optional[List[Parameter]] = None, identifier: Optional[str] = None
     ) -> Dict:
         """Create a new user group for a given workflow. Each group has a
         a unique name for the workflow, a group owner, and a list of additional
@@ -79,6 +79,8 @@ class LocalWorkflowGroupService(WorkflowGroupService):
         parameters: list of flowserv.model.parameter.base.Parameter, default=None
             Optional list of parameter declarations that are used to modify the
             template parameters for submissions of the created group.
+        identifier: string, default=None
+            Optional user-provided group identifier.
 
         Returns
         -------
@@ -101,6 +103,7 @@ class LocalWorkflowGroupService(WorkflowGroupService):
             parameters=parameters if parameters is not None else template.parameters,
             workflow_spec=template.workflow_spec,
             members=members,
+            identifier=identifier
         )
         return self.serialize.group_handle(group)
 

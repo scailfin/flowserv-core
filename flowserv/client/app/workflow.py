@@ -13,12 +13,12 @@ import time
 from io import BytesIO, StringIO
 from typing import Dict, List, Optional
 
-from flowserv.client.api import APIFactory
 from flowserv.client.app.result import RunResult
 from flowserv.model.files.base import DatabaseFile, FileObject, IOFile
 from flowserv.model.files.fs import FSFile
 from flowserv.model.parameter.files import InputFile
 from flowserv.model.template.parameter import ParameterIndex
+from flowserv.service.api import APIFactory
 from flowserv.service.run.argument import serialize_arg, serialize_fh
 
 import flowserv.error as err
@@ -285,3 +285,30 @@ class Workflow(object):
                     time.sleep(poll_interval)
                     pprun = self.get_postproc_results()
             return rh
+
+
+# -- Helper functions ---------------------------------------------------------
+
+def open_app(identifier: str, env: Optional[Dict] = None) -> Workflow:
+    """Get an instance of the flowserv application workflow for a given
+    identifier.
+
+    Parameters
+    ----------
+    identifier: string, default=None
+        Unique application identifier.
+    env: dict, default=None
+        Optional configuration settings. If not given the settings from the
+        environment variables will be used.
+
+    Returns
+    -------
+    flowserv.app.base.App
+    """
+    # Ensure that the configuration settings are given.
+    env = env if env is not None else config.env()
+    return Workflow(
+        workflow_id=identifier,
+        group_id=identifier,
+        service=ClientAPI(env)
+    )

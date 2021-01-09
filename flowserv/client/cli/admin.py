@@ -12,9 +12,8 @@ operate locally.
 """
 
 import click
-import os
 
-from flowserv.config import env, FLOWSERV_API_BASEDIR
+from flowserv.config import env, FLOWSERV_DB
 from flowserv.model.database import DB
 
 import flowserv.error as err
@@ -24,7 +23,7 @@ import flowserv.error as err
 def configuration():
     """Print configuration variables for flowServ."""
     envvar = 'export {}={}'
-    click.echo('Current environment configuration settings:\n')
+    click.echo('Configuration settings:\n')
     for var, value in env().items():
         click.echo(envvar.format(var, value))
     click.echo()
@@ -42,10 +41,10 @@ def init(force=False):
     if not force:
         click.echo('This will erase an existing database.')
         click.confirm('Continue?', default=True, abort=True)
-    # Create a new instance of the database
+    # Create a new instance of the database. Raise errors if the database URL
+    # is not set.
     config = env()
-    basedir = config.get(FLOWSERV_API_BASEDIR)
-    if basedir is None:
-        raise err.MissingConfigurationError('base directory')
-    os.makedirs(basedir, exist_ok=True)
-    DB(config=config).init()
+    connect_url = config.get(FLOWSERV_DB)
+    if connect_url is None:
+        raise err.MissingConfigurationError('database Url')
+    DB(connect_url=connect_url).init()

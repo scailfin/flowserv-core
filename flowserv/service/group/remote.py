@@ -38,6 +38,7 @@ class RemoteWorkflowGroupService(WorkflowGroupService):
         """
         # Default labels for elements in request bodies.
         self.labels = {
+            'GROUP_ID': default_labels.GROUP_ID,
             'GROUP_NAME': default_labels.GROUP_NAME,
             'GROUP_MEMBERS': default_labels.GROUP_MEMBERS,
             'GROUP_PARAMETERS': default_labels.GROUP_PARAMETERS
@@ -49,7 +50,7 @@ class RemoteWorkflowGroupService(WorkflowGroupService):
 
     def create_group(
         self, workflow_id: str, name: str, members: Optional[List[str]] = None,
-        parameters: Optional[List[Parameter]] = None
+        parameters: Optional[List[Parameter]] = None, identifier: Optional[str] = None
     ) -> Dict:
         """Create a new user group for a given workflow. Each group has a
         a unique name for the workflow, and an optional list of additional
@@ -70,6 +71,8 @@ class RemoteWorkflowGroupService(WorkflowGroupService):
         parameters: list of flowserv.model.parameter.base.Parameter, default=None
             Optional list of parameter declarations that are used to modify the
             template parameters for submissions of the created group.
+        identifier: string, default=None
+            Optional user-provided group identifier.
 
         Returns
         -------
@@ -81,6 +84,8 @@ class RemoteWorkflowGroupService(WorkflowGroupService):
             data[self.labels['GROUP_MEMBERS']] = members
         if parameters is not None:
             data[self.labels['GROUP_PARAMETERS']] = [p.to_dict() for p in parameters]
+        if identifier is not None:
+            data[self.labels['GROUP_ID']] = identifier
         return post(url=self.urls(route.GROUPS_CREATE, workflowId=workflow_id), data=data)
 
     def delete_group(self, group_id: str):

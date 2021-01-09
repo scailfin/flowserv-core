@@ -16,7 +16,6 @@ from flowserv.client.cli.table import ResultTable
 from flowserv.model.files.fs import FSFile
 from flowserv.model.parameter.base import PARA_INT, PARA_STRING
 
-import flowserv.config.client as config
 import flowserv.view.files as labels
 
 

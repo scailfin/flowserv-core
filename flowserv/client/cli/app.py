@@ -10,9 +10,10 @@
 
 import click
 
-from flowserv.client.app.base import install_app, uninstall_app
+from flowserv.client.api import service
 
 import flowserv.config as config
+import flowserv.view.workflow as labels
 
 
 @click.command()
@@ -62,16 +63,24 @@ def install_application(
 ):
     """Install workflow from local folder or repository."""
     # Install the application from the given workflow template.
-    app_key = install_app(
-        source=template,
-        identifier=key,
-        name=name,
-        description=description,
-        instructions=instructions,
-        specfile=specfile,
-        manifestfile=manifest,
-        ignore_postproc=ignore_postproc
-    )
+    # Create a new workflow for the application from the specified template.
+    with service(user_id=config.DEFAULT_USER) as api:
+        doc = api.workflows().create_workflow(
+            source=template,
+            identifier=key,
+            name=name,
+            description=description,
+            instructions=instructions,
+            specfile=specfile,
+            manifestfile=manifest,
+            ignore_postproc=ignore_postproc
+        )
+        workflow_id = doc[labels.WORKFLOW_ID]
+        api.groups().create_group(
+            workflow_id=workflow_id,
+            name=workflow_id,
+            identifier=workflow_id
+        )
     click.echo('export {}={}'.format(config.FLOWSERV_APP, app_key))
 
 
@@ -79,7 +88,9 @@ def install_application(
 @click.argument('appkey')
 def uninstall_application(appkey):
     """Uninstall workflow with the given key."""
-    uninstall_app(app_key=appkey)
+    # Delete workflow and all related files.
+    with service() as api:
+        api.workflows.delete_workflow(workflow_id=appkey)
 
 
 # -- Command group ------------------------------------------------------------
