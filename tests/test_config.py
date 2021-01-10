@@ -11,6 +11,7 @@
 import os
 import pytest
 
+import flowserv.error as err
 import flowserv.config as config
 
 
@@ -24,6 +25,7 @@ import flowserv.config as config
         (config.FLOWSERV_API_PORT, '8888', 8888),
         (config.FLOWSERV_API_PORT, 'ABC', None),
         (config.FLOWSERV_API_PROTOCOL, 'PROTOCOL', 'PROTOCOL'),
+        (config.FLOWSERV_APP, 'APP', 'APP'),
         (config.FLOWSERV_AUTH_LOGINTTL, '1234', 1234),
         (config.FLOWSERV_AUTH, 'AUTH', 'AUTH'),
         (config.FLOWSERV_BACKEND_CLASS, 'CLASS', 'CLASS'),
@@ -81,6 +83,11 @@ def test_config_setter():
     assert not conf[config.FLOWSERV_ASYNC]
     conf = conf.run_async()
     assert conf[config.FLOWSERV_ASYNC]
+    # S3 bucket
+    conf = conf.s3('mybucket')
+    assert conf[config.FLOWSERV_FILESTORE_MODULE] == 'flowserv.model.files.s3'
+    assert conf[config.FLOWSERV_FILESTORE_CLASS] == 'BucketStore'
+    assert conf[config.FLOWSERV_S3BUCKET] == 'mybucket'
     # Token timeout
     conf = conf.token_timeout(100)
     assert conf[config.FLOWSERV_AUTH_LOGINTTL] == 100
@@ -105,3 +112,30 @@ def test_config_url():
         'app-path/v1'
     )
     assert config.API_URL(conf) == api_url
+
+
+def test_env_app_identifier():
+    """Test getting the workflow identifier and sbmission identifier from the
+    environment.
+    """
+    os.environ[config.FLOWSERV_APP] = '0000'
+    assert config.APP() == '0000'
+    assert config.SUBMISSION_ID() == '0000'
+    os.environ[config.ROB_SUBMISSION] = '000A'
+    assert config.APP() == '0000'
+    assert config.SUBMISSION_ID() == '000A'
+    del os.environ[config.FLOWSERV_APP]
+    del os.environ[config.ROB_SUBMISSION]
+    with pytest.raises(err.MissingConfigurationError):
+        config.APP()
+    with pytest.raises(err.MissingConfigurationError):
+        config.SUBMISSION_ID()
+
+
+def test_env_access_token():
+    """Test getting the access token from the environment."""
+    os.environ[config.FLOWSERV_ACCESS_TOKEN] = '0001'
+    assert config.ACCESS_TOKEN() == '0001'
+    del os.environ[config.FLOWSERV_ACCESS_TOKEN]
+    with pytest.raises(err.MissingConfigurationError):
+        config.ACCESS_TOKEN()

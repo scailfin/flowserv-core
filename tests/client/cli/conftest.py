@@ -13,11 +13,10 @@ import pytest
 
 from click.testing import CliRunner
 
-from flowserv.client.api import service
 from flowserv.client.cli.base import cli
-from flowserv.config.api import FLOWSERV_API_BASEDIR
-from flowserv.config.database import FLOWSERV_DB
-from flowserv.config.backend import CLEAR_BACKEND
+from flowserv.model.database import TEST_DB
+
+import flowserv.config as config
 
 
 @pytest.fixture
@@ -27,17 +26,12 @@ def flowserv_cli(tmpdir):
     """
     basedir = os.path.abspath(str(tmpdir))
     runner = CliRunner()
-    os.environ[FLOWSERV_API_BASEDIR] = basedir
-    os.environ[FLOWSERV_DB] = 'sqlite:///{}/flowserv.db'.format(basedir)
+    os.environ[config.FLOWSERV_API_BASEDIR] = basedir
+    os.environ[config.FLOWSERV_DB] = TEST_DB(basedir)
     # Make sure to reset the database.
-    from flowserv.service.database import database
-    database.__init__()
-    CLEAR_BACKEND()
     runner = CliRunner()
     runner.invoke(cli, ['init', '-f'])
-    with service() as api:
-        api.fs = api.workflows().workflow_repo.fs
     yield runner
     # Clear environment variables that were set for the test runner.
-    del os.environ[FLOWSERV_API_BASEDIR]
-    del os.environ[FLOWSERV_DB]
+    del os.environ[config.FLOWSERV_API_BASEDIR]
+    del os.environ[config.FLOWSERV_DB]

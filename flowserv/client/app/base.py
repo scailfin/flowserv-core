@@ -8,21 +8,20 @@
 
 """Helper methods for test runs of workflow templates."""
 
+from typing import Dict, List, Optional, Tuple
+
 import os
 import shutil
 import tempfile
 
-from typing import List, Optional, Tuple
 
-from flowserv.app.base import App, install_app, open_app, uninstall_app
-from flowserv.controller.serial.docker import DockerWorkflowEngine
-from flowserv.controller.serial.engine import SerialWorkflowEngine
-from flowserv.model.auth import open_access
-from flowserv.model.database import DB
-from flowserv.model.files.fs import FileSystemStore
+from flowserv.client.api import ClientAPI
+from flowserv.client.app.workflow import Workflow
 from flowserv.model.workflow.repository import WorkflowRepository
 
+import flowserv.config as config
 import flowserv.util as util
+import flowserv.view.workflow as labels
 
 
 class Flowserv(object):
@@ -39,47 +38,60 @@ class Flowserv(object):
     Python environment or using the Docker engine.
     """
     def __init__(
-        self,
-        basedir: Optional[str] = None,
-        clear: Optional[bool] = False,
-        use_docker: Optional[bool] = False,
-        run_async: Optional[bool] = False
+        self, env: Optional[Dict] = None, basedir: Optional[str] = None,
+        database: Optional[str] = None, open_access: Optional[bool] = None,
+        run_async: Optional[bool] = None, docker: Optional[bool] = None,
+        s3bucket: Optional[str] = None, clear: Optional[bool] = False,
+        user_id: Optional[str] = None
     ):
-        """Initialize the components of the test environment.
+        """Initialize the components of the test environment. Provides the option
+        to alter the default settings of environment variables.
 
         Parameters
         ----------
+        env: dict, default=None
+            Dictionary with configuration parameter values.
         basedir: string, default=None
-            Base directory for all workflow files. If no directory is given a
-            temporary directory will be created.
+            Base directory for all workflow files. If no directory is given or
+            specified in the environment a temporary directory will be created.
+        open_access: bool, default=None
+            Use an open access policy if set to True.
+        run_async: bool, default=False
+            Run workflows in asynchronous mode.
+        docker: bool, default=False
+            Use Docker workflow engine.
+        s3bucket: string, default=None
+            Use the S3 bucket with the given identifier to store all workflow
+            files.
         clear: bool, default=False
             Remove all existing files and folders in the base directory if the
             clear flag is True.
-        use_docker: bool, default=False
-            Use Docker workflow engine.
-        run_async: bool, default=False
-            Run workflows in asynchronous mode.
+        user_id: string, default=None
+            Identifier for an authenticated default user.
         """
-        # Set the base directory and ensure that it exists.
+        # Get the base configuration settings from the environment if not given.
+        self.env = env if env is not None else config.env()
+        # Set the base directory and ensure that it exists. Create a temporary
+        # directory if no base directory is specified.
+        basedir = self.env.get(config.FLOWSERV_API_BASEDIR, basedir)
         self.basedir = basedir if basedir is not None else tempfile.mkdtemp()
         os.makedirs(self.basedir, exist_ok=True)
         # Remove all existing files and folders in the base directory if the
         # clear flag is True.
         if clear:
             util.cleardir(self.basedir)
-        # Create a fresh database in the base directory.
-        url = 'sqlite:///{}/flowserv.db'.format(os.path.abspath(self.basedir))
-        self.db = DB(connect_url=url)
-        self.db.init()
-        # All files are stored on the file system in the base directory.
-        self.fs = FileSystemStore(basedir=self.basedir)
-        # Use an open access policy to avoid authentication errors.
-        self.auth = open_access
-        # Use a serial workflow engine. Either Docker or multi-process.
-        if use_docker:
-            self.engine = DockerWorkflowEngine(fs=self.fs, is_async=run_async)
-        else:
-            self.engine = SerialWorkflowEngine(fs=self.fs, is_async=run_async)
+        self.user_id = user_id
+        if user_id is None and open_access:
+            self.user_id = config.DEFAULT_USER
+        self.service = ClientAPI(
+            env=self.env,
+            basedir=self.basedir,
+            database=database,
+            open_access=open_access,
+            run_async=run_async,
+            docker=docker,
+            s3bucket=s3bucket
+        )
 
     def erase(self):
         """Delete the base folder for the test environment that contains all
@@ -96,11 +108,12 @@ class Flowserv(object):
         specfile: Optional[str] = None,
         manifestfile: Optional[str] = None,
         ignore_postproc: Optional[bool] = False,
+        as_app: Optional[bool] = True
 
-    ) -> App:
+    ) -> str:
         """Create a new workflow in the environment that is defined by the
-        template referenced by the source parameter. Returns the application
-        object for the created workflow.
+        template referenced by the source parameter. Returns the identifier
+        of the created workflow.
 
         Parameters
         ----------
@@ -124,26 +137,54 @@ class Flowserv(object):
             of the default manifest file names in the base directory.
         ignore_postproc: bool, default=False
             Ignore post-processing workflow specification if True.
+        as_app: bool, default=True
+            Install the workflow as an application. Applications have a single
+            group associated with the installed workflow (with same identifier
+            as the workflow) and the default user as the only user associated
+            with that group.
 
         Returns
         -------
-        flowserv.app.base.App
+        string
         """
-        workflow_id = install_app(
-            source=source,
-            identifier=identifier,
-            name=name,
-            description=description,
-            instructions=instructions,
-            specfile=specfile,
-            manifestfile=manifestfile,
-            ignore_postproc=ignore_postproc,
-            db=self.db,
-            fs=self.fs
-        )
-        return self.open(workflow_id)
+        with self.service(user_id=self.user_id) as api:
+            doc = api.workflows().create_workflow(
+                source=source,
+                identifier=identifier,
+                name=name,
+                description=description,
+                instructions=instructions,
+                specfile=specfile,
+                manifestfile=manifestfile,
+                ignore_postproc=ignore_postproc
+            )
+            workflow_id = doc[labels.WORKFLOW_ID]
+            if as_app:
+                api.groups().create_group(
+                    workflow_id=workflow_id,
+                    name=workflow_id,
+                    identifier=workflow_id
+                )
+        return workflow_id
 
-    def open(self, identifier: str) -> App:
+    def load(self, workflow_id: str, group_id: str) -> Workflow:
+        """Get the handle for a workflow with a given identifier.
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+        flowserv.client.app.workflow.Workflow
+        """
+        return Workflow(
+            workflow_id=workflow_id,
+            group_id=group_id,
+            service=self.service,
+            user_id=self.user_id
+        )
+
+    def open(self, identifier: str) -> Workflow:
         """Get an instance of the floserv app for the workflow with the given
         identifier.
 
@@ -154,15 +195,9 @@ class Flowserv(object):
 
         Returns
         -------
-        flowserv.app.base.App
+        flowserv.client.app.workflow.Workflow
         """
-        return open_app(
-            identifier=identifier,
-            db=self.db,
-            engine=self.engine,
-            fs=self.fs,
-            auth=self.auth
-        )
+        return self.load(workflow_id=identifier, group_id=identifier)
 
     def repository(self) -> List[Tuple[str, str]]:
         """Get list of tuples containing the identifier and description for
@@ -183,4 +218,5 @@ class Flowserv(object):
         identifier: string
             Unique workflow identifier.
         """
-        uninstall_app(app_key=identifier, db=self.db, fs=self.fs)
+        with self.service() as api:
+            api.workflows().delete_workflow(workflow_id=identifier)

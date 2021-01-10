@@ -17,6 +17,7 @@ from flowserv.model.parameter.base import PARA_STRING
 from flowserv.model.template.parameter import ParameterIndex
 from flowserv.service.run.argument import deserialize_fh, serialize_arg
 
+import flowserv.config as config
 import flowserv.view.files as flbls
 import flowserv.view.group as glbls
 import flowserv.view.run as labels

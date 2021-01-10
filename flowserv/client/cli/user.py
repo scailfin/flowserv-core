@@ -14,6 +14,7 @@ from flowserv.client.api import service
 from flowserv.model.parameter.base import PARA_STRING
 from flowserv.client.cli.table import ResultTable
 
+import flowserv.config as config
 import flowserv.view.user as labels
 
 

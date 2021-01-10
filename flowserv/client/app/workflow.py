@@ -32,7 +32,10 @@ class Workflow(object):
     provides functionality to execute and monitor workflow runs via the service
     API.
     """
-    def __init__(self, workflow_id: str, group_id: str, service: APIFactory):
+    def __init__(
+        self, workflow_id: str, group_id: str, service: APIFactory,
+        user_id: Optional[str] = None
+    ):
         """Initialize the required identifier and the API factory.
 
         Reads all metadata for the given workflow during intialization and
@@ -46,14 +49,17 @@ class Workflow(object):
             Unique workflow group identifier.
         service: flowserv.client.api.APIFactory
             Factory to create instances of the service API.
+        user_id: string, default=None
+            Identifier for an authenticated default user.
         """
-        self._workflow_id = workflow_id
-        self._group_id = group_id
-        self._service = service
+        self.workflow_id = workflow_id
+        self.group_id = group_id
+        self.service = service
+        self.user_id = user_id
         # Get application properties from the database.
-        with self._service.api() as api:
-            wf = api.workflows().get_workflow(self._workflow_id)
-            grp = api.groups().get_group(group_id=self._group_id)
+        with self.service(user_id=self.user_id) as api:
+            wf = api.workflows().get_workflow(self.workflow_id)
+            grp = api.groups().get_group(group_id=self.group_id)
         self._name = wf.get(wflbls.WORKFLOW_NAME)
         self._description = wf.get(wflbls.WORKFLOW_DESCRIPTION)
         self._instructions = wf.get(wflbls.WORKFLOW_INSTRUCTIONS)
@@ -78,7 +84,7 @@ class Workflow(object):
         flowserv.error.UnknownRunError
         flowserv.error.InvalidRunStateError
         """
-        with self._service.api() as api:
+        with self.service(user_id=self.user_id) as api:
             api.runs().cancel_run(run_id=run_id)
 
     def delete_run(self, run_id: str):
@@ -98,7 +104,7 @@ class Workflow(object):
         flowserv.error.UnknownRunError
         flowserv.error.InvalidRunStateError
         """
-        with self._service.api() as api:
+        with self.service(user_id=self.user_id) as api:
             api.runs().delete_run(run_id=run_id)
 
     def description(self) -> str:
@@ -124,7 +130,7 @@ class Workflow(object):
         -------
         flowserv.model.files.base.IOFile
         """
-        with self._service.api() as api:
+        with self.service(user_id=self.user_id) as api:
             return IOFile(
                 api.runs().get_result_file(run_id=run_id, file_id=file_id)
             )
@@ -137,8 +143,8 @@ class Workflow(object):
         -------
         flowserv.app.result.RunResult
         """
-        with self._service.api() as api:
-            doc = api.workflows().get_workflow(workflow_id=self._workflow_id)
+        with self.service(user_id=self.user_id) as api:
+            doc = api.workflows().get_workflow(workflow_id=self.workflow_id)
             if wflbls.POSTPROC_RUN in doc:
                 return RunResult(doc=doc[wflbls.POSTPROC_RUN], loader=self.get_file)
 
@@ -150,7 +156,7 @@ class Workflow(object):
         -------
         string
         """
-        return self._workflow_id
+        return self.workflow_id
 
     def instructions(self) -> str:
         """Get instructions text for the application.
@@ -199,7 +205,7 @@ class Workflow(object):
         flowserv.error.UnauthorizedAccessError
         flowserv.error.UnknownRunError
         """
-        with self._service.api() as api:
+        with self.service(user_id=self.user_id) as api:
             return RunResult(
                 doc=api.runs().get_run(run_id=run_id),
                 loader=self.get_file
@@ -229,7 +235,7 @@ class Workflow(object):
         flowserv.error.UnknownParameterError
         flowserv.error.UnknownWorkflowGroupError
         """
-        with self._service.api() as api:
+        with self.service(user_id=self.user_id) as api:
             # Upload any argument values as files that are either of type
             # StringIO or BytesIO.
             arglist = list()
@@ -261,7 +267,7 @@ class Workflow(object):
                         msg = 'invalid argument {} for {}'.format(key, val)
                         raise err.InvalidArgumentError(msg)
                     fh = api.uploads().upload_file(
-                        group_id=self._group_id,
+                        group_id=self.group_id,
                         file=upload_file,
                         name=key
                     )
@@ -271,7 +277,7 @@ class Workflow(object):
                 arglist.append(serialize_arg(key, val))
             # Execute the run and return the serialized run handle.
             run = api.runs().start_run(
-                group_id=self._group_id,
+                group_id=self.group_id,
                 arguments=arglist
             )
             rh = RunResult(doc=run, loader=self.get_file)
@@ -285,30 +291,3 @@ class Workflow(object):
                     time.sleep(poll_interval)
                     pprun = self.get_postproc_results()
             return rh
-
-
-# -- Helper functions ---------------------------------------------------------
-
-def open_app(identifier: str, env: Optional[Dict] = None) -> Workflow:
-    """Get an instance of the flowserv application workflow for a given
-    identifier.
-
-    Parameters
-    ----------
-    identifier: string, default=None
-        Unique application identifier.
-    env: dict, default=None
-        Optional configuration settings. If not given the settings from the
-        environment variables will be used.
-
-    Returns
-    -------
-    flowserv.app.base.App
-    """
-    # Ensure that the configuration settings are given.
-    env = env if env is not None else config.env()
-    return Workflow(
-        workflow_id=identifier,
-        group_id=identifier,
-        service=ClientAPI(env)
-    )

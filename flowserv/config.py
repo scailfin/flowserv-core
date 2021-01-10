@@ -18,6 +18,9 @@ from typing import Any, Dict
 
 import os
 
+import flowserv.error as err
+
+
 # --
 # -- Environment variables and default values
 # --
@@ -85,6 +88,39 @@ def API_URL(env: Dict) -> str:
     return '{}://{}{}'.format(protocol, host, path)
 
 
+# -- Application --------------------------------------------------------------
+
+"""Names of environment variables that configure the application."""
+FLOWSERV_APP = 'FLOWSERV_APP'
+# Identifier of the default submission
+ROB_SUBMISSION = 'ROB_SUBMISSION'
+
+
+def APP() -> str:
+    """Get the value for the FLOWSERV_APP variable from the environment. Raises
+    a missing configuration error if the value is not set.
+
+    Returns
+    -------
+    string
+    """
+    app_key = os.environ.get(FLOWSERV_APP)
+    if not app_key:
+        raise err.MissingConfigurationError('workflow identifier')
+    return app_key
+
+
+def SUBMISSION_ID() -> str:
+    """Get the submission identifier. If the variable ROB_SUBMISSION is not set
+    the application identifier is returned.
+
+    Returns
+    -------
+    string
+    """
+    return os.environ.get(ROB_SUBMISSION, APP())
+
+
 # -- Auth ---------------------------------------------------------------------
 
 """Names of environment variables that are used to configure the authentication
@@ -106,6 +142,20 @@ AUTH_OPEN = 'open'
 
 """Default user."""
 DEFAULT_USER = '0' * 8
+
+
+def ACCESS_TOKEN() -> str:
+    """Get the value for the FLOWSERV_ACCESS_TOKEN variable from the
+    environment. Raises a missing configuration error if the value is not set.
+
+    Returns
+    -------
+    string
+    """
+    access_token = os.environ.get(FLOWSERV_ACCESS_TOKEN)
+    if not access_token:
+        raise err.MissingConfigurationError('access token')
+    return access_token
 
 
 # -- Backend ------------------------------------------------------------------
@@ -137,10 +187,6 @@ DEFAULT_POLL_INTERVAL = 2
 FLOWSERV_CLIENT = 'FLOWSERV_CLIENT'
 LOCAL_CLIENT = 'local'
 REMOTE_CLIENT = 'remote'
-# Identifier of the default benchmark
-ROB_BENCHMARK = 'ROB_BENCHMARK'
-# Identifier of the default submission
-ROB_SUBMISSION = 'ROB_SUBMISSION'
 
 
 # -- Database -----------------------------------------------------------------
@@ -183,7 +229,7 @@ class Config(dict):
 
         Returns
         -------
-        flowserv.client.config.Config
+        flowserv.config.Config
         """
         self[FLOWSERV_AUTH] = AUTH_DEFAULT
         return self
@@ -198,7 +244,7 @@ class Config(dict):
 
         Returns
         -------
-        flowserv.client.config.Config
+        flowserv.config.Config
         """
         self[FLOWSERV_API_BASEDIR] = os.path.abspath(path)
         return self
@@ -213,7 +259,7 @@ class Config(dict):
 
         Returns
         -------
-        flowserv.client.config.Config
+        flowserv.config.Config
         """
         self[FLOWSERV_DB] = url
         return self
@@ -224,7 +270,7 @@ class Config(dict):
 
         Returns
         -------
-        flowserv.client.config.Config
+        flowserv.config.Config
         """
         self[FLOWSERV_BACKEND_MODULE] = 'flowserv.controller.serial.docker'
         self[FLOWSERV_BACKEND_CLASS] = 'DockerWorkflowEngine'
@@ -236,7 +282,7 @@ class Config(dict):
 
         Returns
         -------
-        flowserv.client.config.Config
+        flowserv.config.Config
         """
         self[FLOWSERV_BACKEND_MODULE] = 'flowserv.controller.serial.engine'
         self[FLOWSERV_BACKEND_CLASS] = 'SerialWorkflowEngine'
@@ -247,7 +293,7 @@ class Config(dict):
 
         Returns
         -------
-        flowserv.client.config.Config
+        flowserv.config.Config
         """
         self[FLOWSERV_AUTH] = AUTH_OPEN
         return self
@@ -257,7 +303,7 @@ class Config(dict):
 
         Returns
         -------
-        flowserv.client.config.Config
+        flowserv.config.Config
         """
         self[FLOWSERV_ASYNC] = True
         return self
@@ -267,9 +313,26 @@ class Config(dict):
 
         Returns
         -------
-        flowserv.client.config.Config
+        flowserv.config.Config
         """
         self[FLOWSERV_ASYNC] = False
+        return self
+
+    def s3(self, bucket: str) -> Config:
+        """Use an S3 bucket to store workflow files.
+
+        Parameters
+        ----------
+        bucket: string
+            S3 bucket identifier
+
+        Returns
+        -------
+        flowserv.config.Config
+        """
+        self[FLOWSERV_FILESTORE_CLASS] = 'BucketStore'
+        self[FLOWSERV_FILESTORE_MODULE] = 'flowserv.model.files.s3'
+        self[FLOWSERV_S3BUCKET] = bucket
         return self
 
     def token_timeout(self, timeout: int) -> Config:
@@ -277,7 +340,7 @@ class Config(dict):
 
         Returns
         -------
-        flowserv.client.config.Config
+        flowserv.config.Config
         """
         self[FLOWSERV_AUTH_LOGINTTL] = timeout
         return self
@@ -352,6 +415,7 @@ ENV = [
     (FLOWSERV_API_PATH, DEFAULT_PATH, None),
     (FLOWSERV_API_PORT, DEFAULT_PORT, to_int),
     (FLOWSERV_API_PROTOCOL, DEFAULT_PROTOCOL, None),
+    (FLOWSERV_APP, None, None),
     (FLOWSERV_AUTH_LOGINTTL, DEFAULT_LOGINTTL, to_int),
     (FLOWSERV_AUTH, AUTH_DEFAULT, None),
     (FLOWSERV_BACKEND_CLASS, None, None),

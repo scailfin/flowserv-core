@@ -13,8 +13,7 @@ import pytest
 
 from io import BytesIO, StringIO
 
-from flowserv.app.env import Flowserv
-from flowserv.controller.serial.docker import DockerWorkflowEngine
+from flowserv.client.app.base import Flowserv
 from flowserv.model.files.base import FlaskFile
 from flowserv.model.files.fs import FSFile
 from flowserv.model.parameter.files import InputFile
@@ -25,20 +24,8 @@ import flowserv.model.workflow.state as st
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))
-TEMPLATE_DIR = os.path.join(DIR, '../.files/benchmark/helloworld')
+TEMPLATE_DIR = os.path.join(DIR, '../../.files/benchmark/helloworld')
 BENCHMARK_FILE = os.path.join(TEMPLATE_DIR, 'benchmark-with-outputs.yaml')
-
-
-def test_create_env_for_docker(tmpdir):
-    """Create test environment with a Docker engine."""
-    db = Flowserv(basedir=tmpdir, use_docker=True)
-    assert isinstance(db.engine, DockerWorkflowEngine)
-
-
-def test_env_list_repository(tmpdir):
-    """Test listing repository content from the flowserv environment."""
-    db = Flowserv(basedir=tmpdir)
-    assert db.repository() is not None
 
 
 @pytest.mark.parametrize(
@@ -50,9 +37,16 @@ def test_env_list_repository(tmpdir):
 )
 def test_run_helloworld_in_env(source, specfile, filekey, tmpdir):
     """Run the hello world workflow in the test environment."""
-    db = Flowserv(basedir=os.path.join(tmpdir, 'flowserv'), clear=True)
+    basedir = os.path.join(tmpdir, 'flowserv')
+    db = Flowserv(basedir=basedir, open_access=True, clear=True)
     # -- Install and run the workflow -----------------------------------------
-    wf = db.install(source=source, specfile=specfile, ignore_postproc=True)
+    app_id = db.install(
+        source=source,
+        specfile=specfile,
+        ignore_postproc=True,
+        as_app=True
+    )
+    wf = db.open(app_id)
     run = wf.start_run({
         'names': StringIO('Alice\nBob\nClaire'),
         'greeting': 'Hey',
@@ -95,7 +89,7 @@ def test_run_helloworld_in_env(source, specfile, filekey, tmpdir):
     # -- Uninstall workflow ---------------------------------------------------
     db.uninstall(wf.identifier)
     # Running the workflow again will raise an error.
-    with pytest.raises(err.UnknownWorkflowError):
+    with pytest.raises(err.UnknownWorkflowGroupError):
         run = wf.start_run({'names': StringIO('Alice')})
     # Erase the workflow folser.
     db.erase()
@@ -106,7 +100,8 @@ def test_run_helloworld_with_diff_inputs(tmpdir):
     """Run the hello world workflow in the test environment with different
     types of input files.
     """
-    db = Flowserv(basedir=os.path.join(tmpdir, 'flowserv'), clear=True)
+    basedir = os.path.join(tmpdir, 'flowserv')
+    db = Flowserv(basedir=basedir, open_access=True, clear=True)
     files = list()
     files.append(BytesIO(b'Alice\nBob\nClaire'))
     filename = os.path.join(tmpdir, 'names.txt')
@@ -117,7 +112,8 @@ def test_run_helloworld_with_diff_inputs(tmpdir):
     files.append(InputFile(FSFile(filename), 'output.txt'))
     files.append(FlaskFile(FileStorage(FSFile(filename))))
     # -- Install and run the workflow -----------------------------------------
-    wf = db.install(source=TEMPLATE_DIR, ignore_postproc=True)
+    app_id = db.install(source=TEMPLATE_DIR, ignore_postproc=True, as_app=True)
+    wf = db.open(app_id)
     for file in files:
         run = wf.start_run({
             'names': file,
@@ -145,9 +141,14 @@ def test_run_helloworld_with_postproc(tmpdir):
     """Run the hello world workflow in the test environment including the
     post-processing workflow.
     """
-    db = Flowserv(basedir=os.path.join(tmpdir, 'flowserv'))
+    db = Flowserv(basedir=os.path.join(tmpdir, 'flowserv'), open_access=True)
     # -- Install and run the workflow -----------------------------------------
-    wf = db.install(source='helloworld', ignore_postproc=False)
+    app_id = db.install(
+        source='helloworld',
+        ignore_postproc=False,
+        as_app=True
+    )
+    wf = db.open(app_id)
     run = wf.start_run({
         'names': StringIO('Alice\nBob\nClaire'),
         'greeting': 'Hey',
@@ -163,11 +164,4 @@ def test_run_helloworld_with_postproc(tmpdir):
     postproc = wf.get_postproc_results()
     f = postproc.get_file('results/ngrams.csv')
     text = f.open().read().decode('utf-8')
-    assert 'BOB,1' in text
-    assert 'ELL,3' in text
-    assert 'HEY,3' in text
-    assert 'ZOE,1' in text
-    # -- Post-processing results ----------------------------------------------
-    postdir = os.path.join(tmpdir, 'pp')
-    wf.prepare_postproc_data(runs=[run], outputdir=postdir)
-    assert len(os.listdir(postdir)) == 2
+    assert text is not None

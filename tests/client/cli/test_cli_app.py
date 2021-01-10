@@ -14,7 +14,7 @@ from flowserv.client.cli.base import cli
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))
-TEMPLATE_DIR = os.path.join(DIR, '../.files/benchmark/helloworld')
+TEMPLATE_DIR = os.path.join(DIR, '../../.files/benchmark/helloworld')
 
 
 def test_app_installation(flowserv_cli):

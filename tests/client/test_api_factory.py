@@ -11,25 +11,16 @@
 import os
 import pytest
 
-from flowserv.client.api import api_factory
-from flowserv.config.api import FLOWSERV_API_BASEDIR
-from flowserv.config.client import FLOWSERV_CLIENT, LOCAL_CLIENT
+from flowserv.client.api import ClientAPI
+
+import flowserv.config as config
 
 
 def test_invalid_factory_type():
     """Test error when attempting to create API factory for an invalid client
     type.
     """
+    os.environ[config.FLOWSERV_CLIENT] = 'UNKNOWN'
     with pytest.raises(ValueError):
-        api_factory({FLOWSERV_CLIENT: 'UNKNOWN'})
-
-
-def test_local_api_factory(tmpdir):
-    """Test creating an instance of the local service API factory."""
-    service = api_factory({
-        FLOWSERV_CLIENT: LOCAL_CLIENT,
-        FLOWSERV_API_BASEDIR: os.path.abspath(tmpdir)
-    })
-    with service.api() as api:
-        doc = api.workflows().list_workflows()
-    assert doc is not None
+        ClientAPI()
+    del os.environ[config.FLOWSERV_CLIENT]

@@ -10,10 +10,9 @@
 
 import click
 
-from flowserv.client.api import service
+from flowserv.client.app.base import Flowserv
 
 import flowserv.config as config
-import flowserv.view.workflow as labels
 
 
 @click.command()
@@ -64,33 +63,34 @@ def install_application(
     """Install workflow from local folder or repository."""
     # Install the application from the given workflow template.
     # Create a new workflow for the application from the specified template.
-    with service(user_id=config.DEFAULT_USER) as api:
-        doc = api.workflows().create_workflow(
-            source=template,
-            identifier=key,
-            name=name,
-            description=description,
-            instructions=instructions,
-            specfile=specfile,
-            manifestfile=manifest,
-            ignore_postproc=ignore_postproc
-        )
-        workflow_id = doc[labels.WORKFLOW_ID]
-        api.groups().create_group(
-            workflow_id=workflow_id,
-            name=workflow_id,
-            identifier=workflow_id
-        )
+    app_key = Flowserv(open_access=True).install(
+        source=template,
+        identifier=key,
+        name=name,
+        description=description,
+        instructions=instructions,
+        specfile=specfile,
+        manifestfile=manifest,
+        ignore_postproc=ignore_postproc,
+        as_app=True
+    )
     click.echo('export {}={}'.format(config.FLOWSERV_APP, app_key))
 
 
 @click.command()
+@click.option(
+    '-f', '--force',
+    is_flag=True,
+    default=False,
+    help='Create database without confirmation'
+)
 @click.argument('appkey')
-def uninstall_application(appkey):
+def uninstall_application(force, appkey):
     """Uninstall workflow with the given key."""
-    # Delete workflow and all related files.
-    with service() as api:
-        api.workflows.delete_workflow(workflow_id=appkey)
+    if not force:
+        click.echo('This will erase all workflow files and run results.')
+        click.confirm('Continue?', default=True, abort=True)
+    Flowserv(open_access=True).uninstall(identifier=appkey)
 
 
 # -- Command group ------------------------------------------------------------

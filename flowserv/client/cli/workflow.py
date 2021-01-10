@@ -16,6 +16,7 @@ from flowserv.client.api import service
 from flowserv.client.cli.table import ResultTable
 from flowserv.model.parameter.base import PARA_INT, PARA_STRING
 
+import flowserv.config as config
 import flowserv.view.files as flbls
 import flowserv.view.run as rlbls
 import flowserv.view.workflow as labels
@@ -78,7 +79,7 @@ def create_workflow(
             ignore_postproc=ignore_postproc
         )
     workflow_id = doc[labels.WORKFLOW_ID]
-    click.echo('export {}={}'.format(config.ROB_BENCHMARK, workflow_id))
+    click.echo('export {}={}'.format(config.FLOWSERV_APP, workflow_id))
 
 
 # -- Delete Workflow ----------------------------------------------------------
@@ -104,7 +105,7 @@ def delete_workflow(identifier):
 @click.option('-w', '--workflow', required=False, help='Workflow identifier')
 def download_result_archive(output, workflow):
     """Download post-processing result archive."""
-    workflow_id = workflow if workflow is not None else config.BENCHMARK_ID()
+    workflow_id = workflow if workflow is not None else config.APP()
     if workflow_id is None:
         raise click.UsageError('no workflow specified')
     with service() as api:
@@ -124,7 +125,7 @@ def download_result_archive(output, workflow):
 @click.option('-w', '--workflow', required=False, help='Workflow identifier')
 def download_result_file(file, output, workflow):
     """Download post-processing result file."""
-    workflow_id = workflow if workflow is not None else config.BENCHMARK_ID()
+    workflow_id = workflow if workflow is not None else config.APP()
     if workflow_id is None:
         raise click.UsageError('no workflow specified')
     with service() as api:
@@ -139,7 +140,7 @@ def download_result_file(file, output, workflow):
 @click.option('-w', '--workflow', required=False, help='Workflow identifier')
 def get_workflow(workflow):
     """Update workflow properties."""
-    workflow_id = workflow if workflow is not None else config.BENCHMARK_ID()
+    workflow_id = workflow if workflow is not None else config.APP()
     if workflow_id is None:
         raise click.UsageError('no workflow specified')
     with service() as api:
@@ -193,7 +194,7 @@ def list_workflows():
 @click.option('-w', '--workflow', required=False, help='Workflow identifier')
 def show_ranking(workflow, all):
     """Show ranking for workflow results."""
-    workflow_id = workflow if workflow is not None else config.BENCHMARK_ID()
+    workflow_id = workflow if workflow is not None else config.APP()
     if workflow_id is None:
         raise click.UsageError('no workflow specified')
     with service() as api:
