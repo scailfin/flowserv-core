@@ -159,17 +159,14 @@ class WorkflowSerializer(object):
                 },
                 RUN_RESULTS: results
             })
-        # Add schema information for the leaderboard. Need to account for
-        # workflow templates that do not have a schema defined. In this case
-        # the list of columns is empty.
+        # Add schema information for the leaderboard.
         schema = list()
-        if workflow.result_schema is not None:
-            for c in workflow.result_schema.columns:
-                schema.append({
-                    COLUMN_NAME: c.column_id,
-                    COLUMN_TITLE: c.name,
-                    COLUMN_TYPE: c.dtype
-                })
+        for c in workflow.result_schema.columns:
+            schema.append({
+                COLUMN_NAME: c.column_id,
+                COLUMN_TITLE: c.name,
+                COLUMN_TYPE: c.dtype
+            })
         obj = {
             WORKFLOW_SCHEMA: schema,
             RANKING: entries

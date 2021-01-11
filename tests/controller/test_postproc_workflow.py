@@ -107,6 +107,9 @@ def test_postproc_workflow(fsconfig, tmpdir):
             if attmpts > 60:
                 break
         serialize.validate_workflow_handle(wh)
+        with service() as api:
+            ranking = api.workflows().get_ranking(workflow_id=workflow_id)
+        serialize.validate_ranking(ranking)
         for fobj in wh['postproc']['files']:
             if fobj['name'] == 'results/compare.json':
                 file_id = fobj['id']

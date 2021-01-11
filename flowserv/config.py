@@ -14,7 +14,7 @@ variables and to customize the configuration settings.
 
 from __future__ import annotations
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import os
 
@@ -223,6 +223,17 @@ class Config(dict):
     setters return a reference to the configuration object itself to allows
     chanining the setter calls.
     """
+    def __init__(self, defaults: Optional[Dict] = None):
+        """Initialize the dictionary.
+
+        Parameters
+        ----------
+        defaults: dict, default=None
+            Dictionary with default settings.
+        """
+        if defaults is not None:
+            super(Config, self).__init__(**defaults)
+
     def auth(self) -> Config:
         """Set the authentication method to the default value that requires
         authentication.

@@ -56,6 +56,13 @@ def test_config_env(var, value, result):
     del os.environ[var]
 
 
+def test_config_init():
+    """Test initializing the config dictionary."""
+    env = config.Config({'A': 1, 'B': 2})
+    assert env['A'] == 1
+    assert env['B'] == 2
+
+
 def test_config_setter():
     """Test setter methods for configuration parameters."""
     conf = config.Config()

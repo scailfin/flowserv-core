@@ -10,9 +10,10 @@
 managed by different components of the API.
 """
 
-from abc import ABCMeta, abstractmethod
-from typing import Optional
+from abc import ABCMeta
+from typing import Dict, Optional
 
+from flowserv.config import Config
 from flowserv.controller.base import WorkflowController
 from flowserv.service.group import WorkflowGroupService
 from flowserv.service.files import UploadFileService
@@ -20,6 +21,9 @@ from flowserv.service.run import RunService
 from flowserv.service.descriptor import ServiceDescriptor
 from flowserv.service.user import UserService
 from flowserv.service.workflow import WorkflowService
+
+import flowserv.config as config
+import flowserv.view.user as userlabels
 
 
 class API(object):
@@ -120,22 +124,35 @@ class API(object):
         return self._workflows
 
 
-class APIFactory(WorkflowController, metaclass=ABCMeta):
+class APIFactory(WorkflowController, Config, metaclass=ABCMeta):
     """Factory pattern for creating API instances. Extends the workflow controller
     with a __call__ method that returns a context manager for creating new
     instances of either a local or remote service API.
-
-    The API factory maintains the access token for a user to be able to
-    authenticate the user when the API is instantiated.
     """
-    @abstractmethod
-    def set_access_token(self, token: Optional[str] = None):
-        """Set the user access token. Set the value to None if the user is
-        logged out.
+    def __init__(self, defaults: Optional[Dict] = None):
+        """Initialize the default configuration settings.
 
         Parameters
         ----------
-        token: string, default=None
-            User access token that was returned when the user logged in.
+        defaults: dict, default=None
+            Dictionary with default settings.
         """
-        raise NotImplementedError()  # pragma: no cover
+        if defaults is not None:
+            super(APIFactory, self).__init__(defaults)
+        else:
+            super(APIFactory, self).__init__()
+
+    def login(self, username: str, password: str):
+        """Authenticate the user using the given credentials. Updates the
+        internal configuration with the returned access token.
+        """
+        with self() as api:
+            doc = api.users().login_user(username=username, password=password)
+        self[config.FLOWSERV_ACCESS_TOKEN] = doc[userlabels.USER_TOKEN]
+
+    def logout(self):
+        """Delete an access token from the internal configuration."""
+        if config.FLOWSERV_ACCESS_TOKEN in self:
+            with self() as api:
+                api.users().logout_user(self[config.FLOWSERV_ACCESS_TOKEN])
+            del self[config.FLOWSERV_ACCESS_TOKEN]

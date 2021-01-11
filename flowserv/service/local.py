@@ -83,21 +83,21 @@ class LocalAPIFactory(APIFactory):
         # Use the current environment settings if the configuration dictionary
         # is not given.
         env = env if env is not None else config.env()
-        self._env = env
+        super(LocalAPIFactory, self).__init__(env)
         # Ensure that the base directory is set and exists.
-        env[BASEDIR] = env.get(BASEDIR, config.API_DEFAULTDIR())
-        os.makedirs(env[BASEDIR], exist_ok=True)
+        self[BASEDIR] = self.get(BASEDIR, config.API_DEFAULTDIR())
+        os.makedirs(self[BASEDIR], exist_ok=True)
         # Initialize that database.
-        self._db = db if db is not None else init_db(env)
+        self._db = db if db is not None else init_db(self)
         # Initialize the workflow engine.
-        self._engine = engine if engine is not None else init_backend(env, self)
+        self._engine = engine if engine is not None else init_backend(self, self)
         # Initialize the file store.
-        self._fs = FS(env)
+        self._fs = FS(self)
         # Ensure that the authentication policy identifier is set.
-        env[AUTH] = env.get(AUTH, config.AUTH_OPEN)
+        self[AUTH] = self.get(AUTH, config.AUTH_OPEN)
         # Authenticated default user. The initial value depends on the
         # authentication policy.
-        self._user_id = config.DEFAULT_USER if env[AUTH] == config.AUTH_OPEN else None
+        self._user_id = config.DEFAULT_USER if self[AUTH] == config.AUTH_OPEN else None
 
     def __call__(self, user_id: Optional[str] = None):
         """Get an instance of the context manager that creates the local service
@@ -115,7 +115,7 @@ class LocalAPIFactory(APIFactory):
         flowserv.service.local.SessionManager
         """
         return SessionManager(
-            env=self._env,
+            env=self,
             db=self._db,
             engine=self._engine,
             fs=self._fs,
@@ -171,23 +171,6 @@ class LocalAPIFactory(APIFactory):
             template=template,
             arguments=arguments
         )
-
-    def set_access_token(self, token: Optional[str] = None):
-        """Set the user access token. Set the value to None if the user is
-        logged out.
-
-        Parameters
-        ----------
-        token: string, default=None
-            User access token that was returned when the user logged in.
-        """
-        # Delete the access token from the configuration if the given token
-        # is empty.
-        if not token:
-            if ACCESS_TOKEN in self._env:
-                del self._env[ACCESS_TOKEN]
-        else:
-            self._env[ACCESS_TOKEN] = token
 
 
 class SessionManager(object):

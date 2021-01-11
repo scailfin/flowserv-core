@@ -39,14 +39,14 @@ class LocalWorkflowService(WorkflowService):
         Parameters
         ----------
         workflow_repo: flowserv.model.workflow.manager.WorkflowManager
-            Repository to access registered workflows
+            Repository to access registered workflows.
         ranking_manager: flowserv.model.ranking.RankingManager
-            Manager for workflow evaluation rankings
+            Manager for workflow evaluation rankings.
         run_manager: flowserv.model.run.RunManager
             Manager for workflow runs. The run manager is used to access
             prost-processing runs.
         serializer: flowserv.view.workflow.WorkflowSerializer, default=None
-            Override the default serializer
+            Override the default serializer.
         """
         self.workflow_repo = workflow_repo
         self.ranking_manager = ranking_manager
@@ -74,12 +74,12 @@ class LocalWorkflowService(WorkflowService):
         name: string
             Unique workflow name
         description: string, default=None
-            Optional short description for display in workflow listings
+            Optional short description for display in workflow listings.
         instructions: string, default=None
-            Text containing detailed instructions for running the workflow
+            Text containing detailed instructions for running the workflow.
         specfile: string, default=None
             Path to the workflow template specification file (absolute or
-            relative to the workflow directory)
+            relative to the workflow directory).
         manifestfile: string, default=None
             Path to manifest file. If not given an attempt is made to read one
             of the default manifest file names in the base directory.
@@ -116,7 +116,7 @@ class LocalWorkflowService(WorkflowService):
         Parameters
         ----------
         workflow_id: string
-            Unique workflow identifier
+            Unique workflow identifier.
 
         Raises
         ------
@@ -129,17 +129,18 @@ class LocalWorkflowService(WorkflowService):
         include_all: Optional[bool] = False
     ) -> Dict:
         """Get serialization of the evaluation ranking for the given workflow.
+        Returns None if the workflow does not have a result schema.
 
         Parameters
         ----------
         workflow_id: string
-            Unique workflow identifier
+            Unique workflow identifier.
         order_by: list(flowserv.model.template.schema.SortColumn), default=None
             Use the given attribute to sort run results. If not given, the
-            schema default sort order is used
+            schema default sort order is used.
         include_all: bool, default=False
             Include all entries (True) or at most one entry (False) per user
-            group in the returned ranking
+            group in the returned ranking.
 
         Returns
         -------
@@ -151,16 +152,16 @@ class LocalWorkflowService(WorkflowService):
         """
         # Get the workflow handle to ensure that the workflow exists
         workflow = self.workflow_repo.get_workflow(workflow_id)
-        # Only ifthe workflow has a defined result schema we get theranking of
+        # Return None if the workflow has no result schema defined.
+        if workflow.result_schema is None:
+            return None
+        # Only if the workflow has a defined result schema we get theranking of
         # run results. Otherwise, the ranking is empty.
-        if workflow.result_schema is not None:
-            ranking = self.ranking_manager.get_ranking(
-                workflow=workflow,
-                order_by=order_by,
-                include_all=include_all
-            )
-        else:
-            ranking = list()
+        ranking = self.ranking_manager.get_ranking(
+            workflow=workflow,
+            order_by=order_by,
+            include_all=include_all
+        )
         postproc = None
         if workflow.postproc_run_id is not None:
             postproc = self.run_manager.get_run(workflow.postproc_run_id)
@@ -179,7 +180,7 @@ class LocalWorkflowService(WorkflowService):
         Parameters
         ----------
         workflow_id: string
-            Unique workflow identifier
+            Unique workflow identifier.
 
         Returns
         -------
@@ -206,9 +207,9 @@ class LocalWorkflowService(WorkflowService):
         Parameters
         ----------
         workflow_id: string
-            Unique workflow identifier
+            Unique workflow identifier.
         file_id: string
-            Unique resource file identifier
+            Unique resource file identifier.
 
         Returns
         -------
@@ -238,7 +239,7 @@ class LocalWorkflowService(WorkflowService):
         Parameters
         ----------
         workflow_id: string
-            Unique workflow identifier
+            Unique workflow identifier.
 
         Returns
         -------
@@ -279,13 +280,13 @@ class LocalWorkflowService(WorkflowService):
         Parameters
         ----------
         workflow_id: string
-            Unique workflow identifier
+            Unique workflow identifier.
         name: string, default=None
-            Unique workflow name
+            Unique workflow name.
         description: string, default=None
-            Optional short description for display in workflow listings
+            Optional short description for display in workflow listings.
         instructions: string, default=None
-            Text containing detailed instructions for workflow execution
+            Text containing detailed instructions for workflow execution.
 
         Returns
         -------
