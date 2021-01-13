@@ -29,14 +29,18 @@ import flowserv.view.files as labels
     help='Group identifier'
 )
 @click.option('-f', '--file', required=True, help='File identifier')
-def delete_file(group, file):
+@click.option(
+    '--force',
+    is_flag=True,
+    default=False,
+    help='Delete file without confirmation'
+)
+def delete_file(group, file, force):
     """Delete a previously uploaded file."""
     group_id = group if group is not None else config.SUBMISSION_ID()
-    if group_id is None:
-        raise click.UsageError('no group identifier given')
-    msg = 'Do you really want to delete file {}'
-    if not click.confirm(msg.format(file)):
-        return
+    if not force:  # pragma: no cover
+        msg = 'Do you really want to delete file {}'
+        click.confirm(msg, default=True, abort=True)
     with service() as api:
         api.uploads().delete_file(group_id=group_id, file_id=file)
     click.echo("File '{}' deleted.".format(file))
@@ -60,8 +64,6 @@ def delete_file(group, file):
 def download_file(group, file, output):
     """Download a previously uploaded file."""
     group_id = group if group is not None else config.SUBMISSION_ID()
-    if group_id is None:
-        raise click.UsageError('no group identifier given')
     with service() as api:
         buf = api.uploads().get_uploaded_file(group_id=group_id, file_id=file)
         with open(output, 'wb') as local_file:
@@ -79,8 +81,6 @@ def download_file(group, file, output):
 def list_files(group):
     """List uploaded files for a submission."""
     group_id = group if group is not None else config.SUBMISSION_ID()
-    if group_id is None:
-        raise click.UsageError('no group identifier given')
     with service() as api:
         doc = api.uploads().list_uploaded_files(group_id)
     table = ResultTable(
@@ -115,8 +115,6 @@ def list_files(group):
 def upload_file(group, input):
     """Upload a file for a submission."""
     group_id = group if group is not None else config.SUBMISSION_ID()
-    if group_id is None:
-        raise click.UsageError('no group identifier given')
     filename = os.path.basename(input)
     with service() as api:
         doc = api.uploads().upload_file(

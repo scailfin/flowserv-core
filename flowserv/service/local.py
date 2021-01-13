@@ -90,7 +90,7 @@ class LocalAPIFactory(APIFactory):
         # Initialize that database.
         self._db = db if db is not None else init_db(self)
         # Initialize the workflow engine.
-        self._engine = engine if engine is not None else init_backend(self, self)
+        self._engine = engine if engine is not None else init_backend(self)
         # Initialize the file store.
         self._fs = FS(self)
         # Ensure that the authentication policy identifier is set.
@@ -282,7 +282,7 @@ class SessionManager(object):
 
 # -- Helper functions ---------------------------------------------------------
 
-def init_backend(env: Dict, api: APIFactory) -> WorkflowController:
+def init_backend(api: APIFactory) -> WorkflowController:
     """Create an instance of the workflow engine based on the given configuration
     settings. The workflow engine receives a reference to the API factory for
     callback operations that modify the global database state.
@@ -301,8 +301,8 @@ def init_backend(env: Dict, api: APIFactory) -> WorkflowController:
     """
     # Create a new instance of the file store based on the configuration in the
     # respective environment variables.
-    module_name = env.get(config.FLOWSERV_BACKEND_MODULE)
-    class_name = env.get(config.FLOWSERV_BACKEND_CLASS)
+    module_name = api.get(config.FLOWSERV_BACKEND_MODULE)
+    class_name = api.get(config.FLOWSERV_BACKEND_CLASS)
     # If both environment variables are None return the default controller.
     # Otherwise, import the specified module and return an instance of the
     # controller class. An error is raised if only one of the two environment
@@ -311,12 +311,12 @@ def init_backend(env: Dict, api: APIFactory) -> WorkflowController:
         engine = 'flowserv.controller.serial.engine.SerialWorkflowEngine'
         logging.info('API backend {}'.format(engine))
         from flowserv.controller.serial.engine import SerialWorkflowEngine
-        return SerialWorkflowEngine(env=env, service=api)
+        return SerialWorkflowEngine(service=api)
     elif module_name is not None and class_name is not None:
         logging.info('API backend {}.{}'.format(module_name, class_name))
         from importlib import import_module
         module = import_module(module_name)
-        return getattr(module, class_name)(env=env, service=api)
+        return getattr(module, class_name)(service=api)
     raise err.MissingConfigurationError('workflow backend')
 
 

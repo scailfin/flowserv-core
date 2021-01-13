@@ -121,13 +121,3 @@ def format_row(row, column_size, types):
             width=column_size[i]
         )
     return line
-
-
-def save_file(response, filename):
-    """Write the file contents in the response to the specified path. This code
-    is based on:
-    https://www.techcoil.com/blog/how-to-download-a-file-via-http-post-and-http-get-with-python-3-requests-library/
-    """
-    with open(filename, 'wb') as local_file:
-        for chunk in response.iter_content(chunk_size=128):
-            local_file.write(chunk)

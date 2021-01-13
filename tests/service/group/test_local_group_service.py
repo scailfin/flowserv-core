@@ -16,7 +16,8 @@ import flowserv.error as err
 import flowserv.tests.serialize as serialize
 
 
-def test_create_group_view(local_service, hello_world):
+@pytest.mark.parametrize('group_id', [None, 'G001'])
+def test_create_group_view(group_id, local_service, hello_world):
     """Test serialization for created workflows."""
     # -- Setup ----------------------------------------------------------------
     #
@@ -29,7 +30,8 @@ def test_create_group_view(local_service, hello_world):
     with local_service(user_id=user_1) as api:
         r = api.groups().create_group(
             workflow_id=workflow_id,
-            name='G1'
+            name='G1',
+            identifier=group_id
         )
         serialize.validate_group_handle(r)
         assert len(r['parameters']) == 3

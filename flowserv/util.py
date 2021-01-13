@@ -75,7 +75,11 @@ def cleardir(directory: str):
     directory: string
         Path to directory that is being created.
     """
+    # If the directory does not exist there is nothing that needs to be cleared.
+    if not os.path.isdir(directory):
+        return
     for filename in os.listdir(directory):
+        # Distinguish between files and subfolders.
         file = os.path.join(directory, filename)
         if os.path.isfile(file) or os.path.islink(file):
             os.unlink(file)

@@ -10,7 +10,6 @@
 
 from typing import Dict, List, Optional, Tuple
 
-import os
 import shutil
 import tempfile
 
@@ -72,10 +71,12 @@ class Flowserv(object):
         # Get the base configuration settings from the environment if not given.
         self.env = env if env is not None else config.env()
         # Set the base directory and ensure that it exists. Create a temporary
-        # directory if no base directory is specified.
-        basedir = self.env.get(config.FLOWSERV_API_BASEDIR, basedir)
+        # directory if no base directory is specified. If a base directory was
+        # specified by the user it will override the settings from the global
+        # environment.
+        basedir = basedir if basedir is not None else self.env.get(config.FLOWSERV_API_BASEDIR)
         self.basedir = basedir if basedir is not None else tempfile.mkdtemp()
-        os.makedirs(self.basedir, exist_ok=True)
+        self.env[config.FLOWSERV_API_BASEDIR] = self.basedir
         # Remove all existing files and folders in the base directory if the
         # clear flag is True.
         if clear:

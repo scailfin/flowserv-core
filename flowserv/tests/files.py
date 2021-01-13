@@ -40,12 +40,9 @@ class FileStorage(object):
         """Get the size of the wrapped file."""
         return self.file.size()
 
-    def save(self, filename: Union[str, IO]):
+    def save(self, filename: str):
         """Write file to disk or to a given IO buffer."""
-        if isinstance(filename, str):
-            self.file.store(filename)
-        else:
-            filename.write(self.file.open().read())
+        self.file.store(filename)
 
 
 # -- S3 Buckets ---------------------------------------------------------------

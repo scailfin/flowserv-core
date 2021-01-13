@@ -13,10 +13,20 @@ processing workflow.
 
 import os
 
+from flowserv.service.postproc.base import RUNS_FILE
 from flowserv.service.postproc.client import Runs
 from flowserv.tests.service import create_ranking, create_user
 
 import flowserv.service.postproc.util as postproc
+import flowserv.util as util
+
+
+def test_empty_run_set(tmpdir):
+    """Test initializing a client for an empty run set."""
+    filename = os.path.join(tmpdir, RUNS_FILE)
+    util.write_object(filename=filename, obj=[])
+    runs = Runs(tmpdir)
+    assert runs.get_run('0000') is None
 
 
 def test_workflow_postproc_client(local_service, hello_world):

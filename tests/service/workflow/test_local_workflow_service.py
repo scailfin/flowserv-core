@@ -35,7 +35,7 @@ def test_get_workflow_local(local_service, hello_world):
         workflow = hello_world(api, name='W1')
         workflow_id = workflow.workflow_id
         r = api.workflows().get_workflow(workflow_id)
-        serialize.validate_workflow_handle(doc=r, has_optional=False)
+        serialize.validate_workflow_handle(doc=r)
         assert len(r['parameterGroups']) == 1
         serialize.validate_para_module(r['parameterGroups'][0])
         assert len(r['parameters']) == 3

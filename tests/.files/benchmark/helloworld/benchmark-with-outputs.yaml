@@ -52,8 +52,8 @@ outputs:
       caption: 'Greetings for all persons.'
       format:
           type: 'plaintext'
+      widget: 'TextView'
     - source: 'results/analytics.json'
-      title: 'Score'
       format:
           type: 'json'
 results:

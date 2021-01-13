@@ -10,7 +10,7 @@
 local Docker daemon to execute workflow steps.
 """
 
-from typing import Dict, Optional
+from typing import Optional
 
 import logging
 import os
@@ -29,20 +29,16 @@ class DockerWorkflowEngine(SerialWorkflowEngine):
     the engine extends the multi-process controller for asynchronous execution.
     Workflow runs are executed by the docker_run() function.
     """
-    def __init__(self, env: Dict, service: Optional[APIFactory] = None):
+    def __init__(self, service: Optional[APIFactory] = None):
         """Initialize the super class using the docker_run execution function.
 
         Parameters
         ----------
-        env: dict
-            Configuration dictionary that provides access to configuration
-            parameters from the environment.
         service: flowserv.service.api.APIFactory, default=None
             API factory for service callbach during asynchronous workflow
             execution.
         """
         super(DockerWorkflowEngine, self).__init__(
-            env=env,
             service=service,
             exec_func=docker_run
         )

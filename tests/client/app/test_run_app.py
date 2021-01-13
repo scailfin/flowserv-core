@@ -72,11 +72,8 @@ def test_run_helloworld_in_env(source, specfile, filekey, tmpdir):
     for _, key, obj in run.files():
         file_handles[key] = obj
     assert file_handles[filekey]['name'] == filekey
-    assert file_handles[filekey]['title'] == 'Saying Hello to ...'
-    assert file_handles[filekey]['caption'] == 'Greetings for all persons.'
     assert file_handles[filekey]['format'] == {'type': 'plaintext'}
     assert file_handles['results/analytics.json']['name'] == 'results/analytics.json'  # noqa: E501
-    assert file_handles['results/analytics.json']['title'] == 'Score'
     assert 'caption' not in file_handles['results/analytics.json']
     assert file_handles['results/analytics.json']['format'] == {'type': 'json'}
     # -- Cancelling a finished run raises an error ----------------------------

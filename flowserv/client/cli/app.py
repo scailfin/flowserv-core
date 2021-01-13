@@ -82,12 +82,12 @@ def install_application(
     '-f', '--force',
     is_flag=True,
     default=False,
-    help='Create database without confirmation'
+    help='Delete application without confirmation'
 )
 @click.argument('appkey')
 def uninstall_application(force, appkey):
     """Uninstall workflow with the given key."""
-    if not force:
+    if not force:  # pragma: no cover
         click.echo('This will erase all workflow files and run results.')
         click.confirm('Continue?', default=True, abort=True)
     Flowserv(open_access=True).uninstall(identifier=appkey)

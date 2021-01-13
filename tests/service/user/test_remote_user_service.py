@@ -8,13 +8,25 @@
 
 """Unit test for the remote user service API."""
 
-from flowserv.view.user import USER_TOKEN
+from flowserv.service.descriptor import ServiceDescriptor
+from flowserv.service.user.remote import RemoteUserService
+from flowserv.view.user import USER_ID, USER_TOKEN
 
 
 def test_activate_user_remote(remote_service, mock_response):
     """Test registering a user at the remote server."""
     # -- Register a new user that is automatically activated ------------------
     remote_service.users().activate_user(user_id='0000')
+
+
+def test_custom_user_labels():
+    """Test initializing the remote user service with custom labels."""
+    user_service = RemoteUserService(
+        descriptor=ServiceDescriptor.from_config(env=dict()),
+        labels={'USER_TOKEN': 'MY_TOKEN'}
+    )
+    assert user_service.labels['USER_ID'] == USER_ID
+    assert user_service.labels['USER_TOKEN'] == 'MY_TOKEN'
 
 
 def test_list_user_remote(remote_service, mock_response):

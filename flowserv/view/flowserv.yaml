@@ -213,6 +213,8 @@ paths:
             required:
             - name
             properties:
+              id:
+                type: "string"
               name:
                 type: "string"
               members:

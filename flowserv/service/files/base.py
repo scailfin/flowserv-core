@@ -39,7 +39,7 @@ class UploadFileService(metaclass=ABCMeta):
         flowserv.error.UnauthorizedAccessError
         flowserv.error.UnknownFileError
         """
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
     @abstractmethod
     def get_uploaded_file(self, group_id: str, file_id: str) -> IO:
@@ -66,7 +66,7 @@ class UploadFileService(metaclass=ABCMeta):
         flowserv.error.UnknownFileError
         flowserv.error.UnknownWorkflowGroupError
         """
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
     @abstractmethod
     def list_uploaded_files(self, group_id: str) -> Dict:
@@ -87,7 +87,7 @@ class UploadFileService(metaclass=ABCMeta):
         flowserv.error.UnauthorizedAccessError
         flowserv.error.UnknownWorkflowGroupError
         """
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
     @abstractmethod
     def upload_file(self, group_id: str, file: FileObject, name: str) -> Dict:
@@ -112,4 +112,4 @@ class UploadFileService(metaclass=ABCMeta):
         flowserv.error.UnauthorizedAccessError
         flowserv.error.UnknownWorkflowGroupError
         """
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover

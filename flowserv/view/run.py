@@ -43,20 +43,6 @@ RUN_WORKFLOW = 'workflowId'
 
 class RunSerializer(object):
     """Serializer for workflow runs."""
-    def runid_listing(self, runs: List[str]) -> Dict:
-        """Get serialization for a list of run identifier.
-
-        Parameters
-        ----------
-        runs: list(string)
-            List of run identifier
-
-        Returns
-        -------
-        dict
-        """
-        return {RUN_LIST: runs}
-
     def run_descriptor(self, run: RunHandle) -> Dict:
         """Get serialization for a run descriptor. The descriptor contains the
         run identifier, state, timestampls, and the base list of HATEOAS

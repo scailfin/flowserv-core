@@ -28,8 +28,6 @@ import flowserv.view.group as labels
 def create_group(workflow, name, members):
     """Create a new user group."""
     workflow_id = workflow if workflow is not None else config.BENCHMARK_ID()
-    if workflow_id is None:
-        raise click.UsageError('no workflow specified')
     with service() as api:
         doc = api.groups().create_group(
             workflow_id=workflow_id,
@@ -52,17 +50,14 @@ def create_group(workflow, name, members):
     '-f', '--force',
     is_flag=True,
     default=False,
-    help='Create database without confirmation'
+    help='Delete group without confirmation'
 )
 def delete_group(group, force):
     """Delete an existing user group."""
     group_id = group if group is not None else config.SUBMISSION_ID()
-    if group_id is None:
-        raise click.UsageError('no group identifier given')
-    if not force:
+    if not force:  # pragma: no cover
         msg = 'Do you really want to delete the group {}'.format(group_id)
-        if not click.confirm(msg):
-            return
+        click.confirm(msg, default=True, abort=True)
     with service() as api:
         api.groups().delete_group(group_id)
     click.echo("Submission '{}' deleted.".format(group_id))
@@ -94,8 +89,6 @@ def list_groups():
 def show_group(group):
     """Show user group information."""
     group_id = group if group is not None else config.SUBMISSION_ID()
-    if group_id is None:
-        raise click.UsageError('no group identifier given')
     with service() as api:
         doc = api.groups().get_group(group_id)
     print_group(doc)
@@ -112,13 +105,10 @@ def show_group(group):
 @click.option('-n', '--name', required=False, help='Group name')
 @click.option('-m', '--members', required=False, help='Group members')
 def update_group(group, name, members):
-    """Create a new submission."""
+    """Update user group."""
     if name is None and members is None:
-        click.echo('nothing to update')
-        return
+        raise click.UsageError('nothing to update')
     group_id = group if group is not None else config.SUBMISSION_ID()
-    if group_id is None:
-        raise click.UsageError('no group identifier given')
     with service() as api:
         doc = api.groups().update_group(
             group_id=group_id,

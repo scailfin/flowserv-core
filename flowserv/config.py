@@ -110,6 +110,9 @@ def APP() -> str:
     return app_key
 
 
+BENCHMARK_ID = APP
+
+
 def SUBMISSION_ID() -> str:
     """Get the submission identifier. If the variable ROB_SUBMISSION is not set
     the application identifier is returned.
@@ -431,7 +434,7 @@ ENV = [
     (FLOWSERV_AUTH, AUTH_DEFAULT, None),
     (FLOWSERV_BACKEND_CLASS, None, None),
     (FLOWSERV_BACKEND_MODULE, None, None),
-    (FLOWSERV_RUNSDIR, DEFAULT_RUNSDIR, None),
+    (FLOWSERV_RUNSDIR, None, None),
     (FLOWSERV_POLL_INTERVAL, DEFAULT_POLL_INTERVAL, to_float),
     (FLOWSERV_ACCESS_TOKEN, None, None),
     (FLOWSERV_CLIENT, LOCAL_CLIENT, None),

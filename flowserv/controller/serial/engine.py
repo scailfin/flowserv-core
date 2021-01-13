@@ -17,7 +17,7 @@ environment variable FLOWSERV_RUNSDIR.
 
 from functools import partial
 from multiprocessing import Lock, Pool
-from typing import Callable, Dict, Optional
+from typing import Callable, Optional
 
 import logging
 import os
@@ -40,7 +40,7 @@ class SerialWorkflowEngine(WorkflowController):
     individual workflow steps can be executed in a separate process on request.
     """
     def __init__(
-        self, env: Dict, service: APIFactory, exec_func: Optional[Callable] = None
+        self, service: APIFactory, exec_func: Optional[Callable] = None
     ):
         """Initialize the function that is used to execute individual workflow
         steps. The run workflow function in this module executes all steps
@@ -53,27 +53,24 @@ class SerialWorkflowEngine(WorkflowController):
 
         Parameters
         ----------
-        env: dict
-            Configuration dictionary that provides access to configuration
-            parameters from the environment.
         service: flowserv.service.api.APIFactory, default=None
             API factory for service callbach during asynchronous workflow
             execution.
         exec_func: callable, default=None
             Function that is used to execute the workflow commands
         """
-        self.fs = FS(env=env)
+        self.fs = FS(env=service)
         self.service = service
         self.exec_func = exec_func if exec_func is not None else run_workflow
         # The is_async flag controlls the default setting for asynchronous
         # execution. If the flag is False all workflow steps will be executed
         # in a sequentiall (blocking) manner.
-        self.is_async = env.get(FLOWSERV_ASYNC)
+        self.is_async = service.get(FLOWSERV_ASYNC)
         # Directory for temporary run files.
-        basedir = env.get(FLOWSERV_API_BASEDIR)
+        basedir = service.get(FLOWSERV_API_BASEDIR)
         if basedir is None:
             raise err.MissingConfigurationError('API base directory')
-        self.runsdir = env.get(FLOWSERV_RUNSDIR, os.path.join(basedir, DEFAULT_RUNSDIR))
+        self.runsdir = service.get(FLOWSERV_RUNSDIR, os.path.join(basedir, DEFAULT_RUNSDIR))
         # Dictionary of all running tasks
         self.tasks = dict()
         # Lock to manage asynchronous access to the task dictionary

@@ -33,6 +33,6 @@ def test_app_installation(flowserv_cli):
     assert result.exit_code == 0
     assert app_key in result.output
     # Uninstall the app
-    cmd = ['app', 'uninstall', app_key]
+    cmd = ['app', 'uninstall', app_key, '-f']
     result = flowserv_cli.invoke(cli, cmd)
     assert result.exit_code == 0
