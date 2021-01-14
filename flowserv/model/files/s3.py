@@ -16,7 +16,7 @@ import os
 from io import BytesIO
 from typing import Dict, IO, List, Set, Tuple, TypeVar
 
-from flowserv.config import FLOWSERV_API_BASEDIR, FLOWSERV_S3BUCKET
+from flowserv.config import FLOWSERV_BASEDIR, FLOWSERV_S3BUCKET
 from flowserv.model.files.base import FileStore, IOHandle
 
 import flowserv.error as err
@@ -107,7 +107,7 @@ class BucketStore(FileStore):
             bucket_id = env.get(FLOWSERV_S3BUCKET)
             if bucket_id is None:
                 from flowserv.tests.files import DiskBucket
-                bucket = DiskBucket(basedir=env.get(FLOWSERV_API_BASEDIR))
+                bucket = DiskBucket(basedir=env.get(FLOWSERV_BASEDIR))
             else:  # pragma: no cover
                 import boto3
                 bucket = boto3.resource('s3').Bucket(bucket_id)

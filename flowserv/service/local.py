@@ -50,7 +50,7 @@ import flowserv.error as err
 """Define short cuts for environment variable names."""
 ACCESS_TOKEN = config.FLOWSERV_ACCESS_TOKEN
 AUTH = config.FLOWSERV_AUTH
-BASEDIR = config.FLOWSERV_API_BASEDIR
+BASEDIR = config.FLOWSERV_BASEDIR
 DATABASE = config.FLOWSERV_DB
 WEBAPP = config.FLOWSERV_WEBAPP
 
@@ -333,16 +333,16 @@ def init_db(env: Dict) -> DB:
     -------
     flowserv.model.database.DB
     """
-    # Get the web app flag. Use False as the default if the value is not set.
+    # Get the web app flag. Use True as the default if the value is not set.
     if WEBAPP not in env:
-        env[WEBAPP] = False
+        env[WEBAPP] = True
     web_app = env[WEBAPP]
     # Ensure that the databse connection Url is specified in the configuration.
     url = env.get(DATABASE)
     if url is None:
         # Use a SQLite database in the dabase directory as default.
         # This database needs to be initialized if it does not exist.
-        dbfile = '{}/flowserv.db'.format(env[config.FLOWSERV_API_BASEDIR])
+        dbfile = '{}/flowserv.db'.format(env[config.FLOWSERV_BASEDIR])
         url = 'sqlite:///{}'.format(dbfile)
         env[DATABASE] = url
         # Maintain a reference to the local database instance for use

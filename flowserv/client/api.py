@@ -13,6 +13,7 @@ in the environment valriables.
 from contextlib import contextmanager
 from typing import Dict, Optional
 
+from flowserv.config import Config
 from flowserv.service.api import API, APIFactory
 from flowserv.service.local import LocalAPIFactory
 
@@ -60,6 +61,8 @@ def ClientAPI(
     """
     # Get the base configuration settings from the environment if not given.
     env = env if env is not None else config.env()
+    if not isinstance(env, Config):
+        env = Config(env)
     # Update configuration based on the given optional arguments.
     if basedir is not None:
         env.basedir(basedir)

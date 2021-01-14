@@ -71,8 +71,7 @@ def install_application(
         instructions=instructions,
         specfile=specfile,
         manifestfile=manifest,
-        ignore_postproc=ignore_postproc,
-        as_app=True
+        ignore_postproc=ignore_postproc
     )
     click.echo('export {}={}'.format(config.FLOWSERV_APP, app_key))
 

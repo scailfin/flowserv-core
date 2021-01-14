@@ -29,7 +29,7 @@ import flowserv.error as err
 
 """Names of environment variables that are used to configure the API."""
 # Base directory to store uploaded files and submission results
-FLOWSERV_API_BASEDIR = 'FLOWSERV_API_DIR'
+FLOWSERV_BASEDIR = 'FLOWSERV_API_DIR'
 # Host name for API server
 FLOWSERV_API_HOST = 'FLOWSERV_API_HOST'
 # Name of the API instance
@@ -260,7 +260,7 @@ class Config(dict):
         -------
         flowserv.config.Config
         """
-        self[FLOWSERV_API_BASEDIR] = os.path.abspath(path)
+        self[FLOWSERV_BASEDIR] = os.path.abspath(path)
         return self
 
     def database(self, url: str) -> Config:
@@ -359,6 +359,16 @@ class Config(dict):
         self[FLOWSERV_AUTH_LOGINTTL] = timeout
         return self
 
+    def webapp(self) -> Config:
+        """Set the web app flag to True.
+
+        Returns
+        -------
+        flowserv.config.Config
+        """
+        self[FLOWSERV_WEBAPP] = True
+        return self
+
 
 # -- Initialize configuration from environment variables ----------------------
 
@@ -423,7 +433,7 @@ value case function.
 """
 
 ENV = [
-    (FLOWSERV_API_BASEDIR, API_DEFAULTDIR(), None),
+    (FLOWSERV_BASEDIR, API_DEFAULTDIR(), None),
     (FLOWSERV_API_HOST, DEFAULT_HOST, None),
     (FLOWSERV_API_NAME, DEFAULT_NAME, None),
     (FLOWSERV_API_PATH, DEFAULT_PATH, None),

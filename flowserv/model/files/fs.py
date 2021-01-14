@@ -13,7 +13,7 @@ import shutil
 
 from typing import Dict, IO, List, Optional, Tuple
 
-from flowserv.config import FLOWSERV_API_BASEDIR
+from flowserv.config import FLOWSERV_BASEDIR
 from flowserv.model.files.base import FileStore, IOHandle
 
 import flowserv.error as err
@@ -84,7 +84,7 @@ class FileSystemStore(FileStore):
             Configuration object that provides access to configuration
             parameters in the environment.
         """
-        self.basedir = env.get(FLOWSERV_API_BASEDIR)
+        self.basedir = env.get(FLOWSERV_BASEDIR)
         if self.basedir is None:
             raise err.MissingConfigurationError('API base directory')
 

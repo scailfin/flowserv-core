@@ -18,7 +18,7 @@ import flowserv.config as config
 @pytest.mark.parametrize(
     'var,value,result',
     [
-        (config.FLOWSERV_API_BASEDIR, 'DIR', 'DIR'),
+        (config.FLOWSERV_BASEDIR, 'DIR', 'DIR'),
         (config.FLOWSERV_API_HOST, 'HOST', 'HOST'),
         (config.FLOWSERV_API_NAME, 'NAME', 'NAME'),
         (config.FLOWSERV_API_PATH, 'PATH', 'PATH'),
@@ -71,7 +71,7 @@ def test_config_setter():
     assert conf[config.FLOWSERV_AUTH] == config.AUTH_DEFAULT
     # base directory
     conf = conf.basedir('/dev/null')
-    assert conf[config.FLOWSERV_API_BASEDIR] == '/dev/null'
+    assert conf[config.FLOWSERV_BASEDIR] == '/dev/null'
     # Database
     conf.database('mysql')
     assert conf[config.FLOWSERV_DB] == 'mysql'
@@ -98,6 +98,9 @@ def test_config_setter():
     # Token timeout
     conf = conf.token_timeout(100)
     assert conf[config.FLOWSERV_AUTH_LOGINTTL] == 100
+    # Webapp
+    conf = conf.webapp()
+    assert conf[config.FLOWSERV_WEBAPP]
 
 
 def test_config_url():

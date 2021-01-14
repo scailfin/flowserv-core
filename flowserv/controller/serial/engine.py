@@ -23,7 +23,7 @@ import logging
 import os
 import subprocess
 
-from flowserv.config import FLOWSERV_ASYNC, FLOWSERV_API_BASEDIR, FLOWSERV_RUNSDIR, DEFAULT_RUNSDIR
+from flowserv.config import FLOWSERV_ASYNC, FLOWSERV_BASEDIR, FLOWSERV_RUNSDIR, DEFAULT_RUNSDIR
 from flowserv.controller.base import WorkflowController
 from flowserv.model.files.factory import FS
 from flowserv.model.workflow.serial import SerialWorkflow
@@ -67,7 +67,7 @@ class SerialWorkflowEngine(WorkflowController):
         # in a sequentiall (blocking) manner.
         self.is_async = service.get(FLOWSERV_ASYNC)
         # Directory for temporary run files.
-        basedir = service.get(FLOWSERV_API_BASEDIR)
+        basedir = service.get(FLOWSERV_BASEDIR)
         if basedir is None:
             raise err.MissingConfigurationError('API base directory')
         self.runsdir = service.get(FLOWSERV_RUNSDIR, os.path.join(basedir, DEFAULT_RUNSDIR))

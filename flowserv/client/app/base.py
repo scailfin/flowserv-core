@@ -8,7 +8,7 @@
 
 """Helper methods for test runs of workflow templates."""
 
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, Optional
 
 import shutil
 import tempfile
@@ -16,7 +16,6 @@ import tempfile
 
 from flowserv.client.api import ClientAPI
 from flowserv.client.app.workflow import Workflow
-from flowserv.model.workflow.repository import WorkflowRepository
 
 import flowserv.config as config
 import flowserv.util as util
@@ -24,17 +23,10 @@ import flowserv.view.workflow as labels
 
 
 class Flowserv(object):
-    """Environment for installing an running workflow templates. This class
-    provides additional functionality for installing flowserv components. It
-    is primarily intended for testing and/or running flowserv in a notebook
-    environment.
-
-    The test environment will keep all workflow files in a folder on the file
-    system. The environment uses SQLite as the database backend.
-
-    The enviroment uses a serial workflow engine only at this point. The use
-    can choose between running all workflows as separate processes in the local
-    Python environment or using the Docker engine.
+    """Client environment for interacting with a flowserv instance. This class
+    provides additional functionality for installing flowserv applications. It
+    is primarily intended running flowserv in programming environments, e.g.,
+    Jupyter Notebooks.
     """
     def __init__(
         self, env: Optional[Dict] = None, basedir: Optional[str] = None,
@@ -43,8 +35,9 @@ class Flowserv(object):
         s3bucket: Optional[str] = None, clear: Optional[bool] = False,
         user_id: Optional[str] = None
     ):
-        """Initialize the components of the test environment. Provides the option
-        to alter the default settings of environment variables.
+        """Initialize the client API factory. Provides the option to alter the
+        default settings of environment variables and for using custom instance
+        of the database and workflow engine.
 
         Parameters
         ----------
@@ -74,9 +67,9 @@ class Flowserv(object):
         # directory if no base directory is specified. If a base directory was
         # specified by the user it will override the settings from the global
         # environment.
-        basedir = basedir if basedir is not None else self.env.get(config.FLOWSERV_API_BASEDIR)
+        basedir = basedir if basedir is not None else self.env.get(config.FLOWSERV_BASEDIR)
         self.basedir = basedir if basedir is not None else tempfile.mkdtemp()
-        self.env[config.FLOWSERV_API_BASEDIR] = self.basedir
+        self.env[config.FLOWSERV_BASEDIR] = self.basedir
         # Remove all existing files and folders in the base directory if the
         # clear flag is True.
         if clear:
@@ -108,13 +101,14 @@ class Flowserv(object):
         instructions: Optional[str] = None,
         specfile: Optional[str] = None,
         manifestfile: Optional[str] = None,
-        ignore_postproc: Optional[bool] = False,
-        as_app: Optional[bool] = True
+        ignore_postproc: Optional[bool] = False
 
     ) -> str:
         """Create a new workflow in the environment that is defined by the
         template referenced by the source parameter. Returns the identifier
         of the created workflow.
+
+        Will create a group with the same identifier as the workflow.
 
         Parameters
         ----------
@@ -138,11 +132,6 @@ class Flowserv(object):
             of the default manifest file names in the base directory.
         ignore_postproc: bool, default=False
             Ignore post-processing workflow specification if True.
-        as_app: bool, default=True
-            Install the workflow as an application. Applications have a single
-            group associated with the installed workflow (with same identifier
-            as the workflow) and the default user as the only user associated
-            with that group.
 
         Returns
         -------
@@ -160,12 +149,11 @@ class Flowserv(object):
                 ignore_postproc=ignore_postproc
             )
             workflow_id = doc[labels.WORKFLOW_ID]
-            if as_app:
-                api.groups().create_group(
-                    workflow_id=workflow_id,
-                    name=workflow_id,
-                    identifier=workflow_id
-                )
+            api.groups().create_group(
+                workflow_id=workflow_id,
+                name=workflow_id,
+                identifier=workflow_id
+            )
         return workflow_id
 
     def load(self, workflow_id: str, group_id: str) -> Workflow:
@@ -200,16 +188,6 @@ class Flowserv(object):
         """
         return self.load(workflow_id=identifier, group_id=identifier)
 
-    def repository(self) -> List[Tuple[str, str]]:
-        """Get list of tuples containing the identifier and description for
-        each registered workflow template in the global repository.
-
-        Returns
-        -------
-        list
-        """
-        return [(tid, desc) for tid, desc, _ in WorkflowRepository().list()]
-
     def uninstall(self, identifier: str):
         """Remove the workflow with the given identifier. This will also remove
         all run files for that workflow.
@@ -221,3 +199,28 @@ class Flowserv(object):
         """
         with self.service() as api:
             api.workflows().delete_workflow(workflow_id=identifier)
+
+
+# -- Helper Functions ---------------------------------------------------------
+
+def open_app(env: Optional[Dict] = None, identifier: Optional[str] = None) -> Workflow:
+    """Shortcut to open an instance for a workflow application from the
+    environment configuration settings.
+
+    Parameters
+    ----------
+    env: dict, default=None
+        Dictionary with configuration parameters to use instaed of the values
+        in the global environment.
+    identifier: string, default=None
+        Identifier of the workflow application.
+
+    Returns
+    -------
+    flowserv.client.app.workflow.Workflow
+    """
+    # Get the base configuration settings from the environment if not given.
+    env = env if env is not None else config.env()
+    # Return an instance of the specified application workflow. Get the
+    # application identifier from the app if not given.
+    return Flowserv(env=env).open(identifier=env.get(config.FLOWSERV_APP, identifier))

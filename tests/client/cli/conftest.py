@@ -26,7 +26,7 @@ def flowserv_cli(tmpdir):
     """
     basedir = os.path.abspath(str(tmpdir))
     runner = CliRunner()
-    os.environ[config.FLOWSERV_API_BASEDIR] = basedir
+    os.environ[config.FLOWSERV_BASEDIR] = basedir
     os.environ[config.FLOWSERV_DB] = TEST_DB(basedir)
     os.environ[config.FLOWSERV_AUTH] = config.AUTH_OPEN
     # Make sure to reset the database.
@@ -34,6 +34,6 @@ def flowserv_cli(tmpdir):
     runner.invoke(cli, ['init', '-f'])
     yield runner
     # Clear environment variables that were set for the test runner.
-    del os.environ[config.FLOWSERV_API_BASEDIR]
+    del os.environ[config.FLOWSERV_BASEDIR]
     del os.environ[config.FLOWSERV_DB]
     del os.environ[config.FLOWSERV_AUTH]

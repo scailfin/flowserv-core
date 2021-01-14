@@ -15,7 +15,7 @@ import os
 from io import BytesIO
 from typing import Dict, IO, List, Optional, Union
 
-from flowserv.config import FLOWSERV_API_BASEDIR
+from flowserv.config import FLOWSERV_BASEDIR
 from flowserv.model.files.base import IOHandle, IOBuffer
 
 import flowserv.util as util
@@ -115,7 +115,7 @@ def DiskStore(env: Dict):
     from flowserv.model.files.s3 import BucketStore
     return BucketStore(
         env=env,
-        bucket=DiskBucket(basedir=env.get(FLOWSERV_API_BASEDIR))
+        bucket=DiskBucket(basedir=env.get(FLOWSERV_BASEDIR))
     )
 
 

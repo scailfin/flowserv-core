@@ -95,7 +95,7 @@ def register_user(username, password):
     click.echo('Registered {} with ID {}.'.format(username, user_id))
 
 
-# -- Logout -------------------------------------------------------------------
+# -- Who am I -----------------------------------------------------------------
 
 @click.command()
 def whoami_user():

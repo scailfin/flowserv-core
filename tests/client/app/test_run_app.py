@@ -6,7 +6,7 @@
 # flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
-"""Unit tests for the flowServ test environment."""
+"""Unit tests for the flowserv application client."""
 
 import os
 import pytest
@@ -43,8 +43,7 @@ def test_run_helloworld_in_env(source, specfile, filekey, tmpdir):
     app_id = db.install(
         source=source,
         specfile=specfile,
-        ignore_postproc=True,
-        as_app=True
+        ignore_postproc=True
     )
     wf = db.open(app_id)
     run = wf.start_run({
@@ -109,7 +108,7 @@ def test_run_helloworld_with_diff_inputs(tmpdir):
     files.append(InputFile(FSFile(filename), 'output.txt'))
     files.append(FlaskFile(FileStorage(FSFile(filename))))
     # -- Install and run the workflow -----------------------------------------
-    app_id = db.install(source=TEMPLATE_DIR, ignore_postproc=True, as_app=True)
+    app_id = db.install(source=TEMPLATE_DIR, ignore_postproc=True)
     wf = db.open(app_id)
     for file in files:
         run = wf.start_run({
@@ -140,11 +139,7 @@ def test_run_helloworld_with_postproc(tmpdir):
     """
     db = Flowserv(basedir=os.path.join(tmpdir, 'flowserv'), open_access=True)
     # -- Install and run the workflow -----------------------------------------
-    app_id = db.install(
-        source='helloworld',
-        ignore_postproc=False,
-        as_app=True
-    )
+    app_id = db.install(source='helloworld', ignore_postproc=False)
     wf = db.open(app_id)
     run = wf.start_run({
         'names': StringIO('Alice\nBob\nClaire'),
