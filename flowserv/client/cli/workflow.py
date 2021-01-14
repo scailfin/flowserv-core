@@ -109,7 +109,7 @@ def download_result_archive(output, workflow):
     if workflow_id is None:
         raise click.UsageError('no workflow specified')
     with service() as api:
-        buf = api.workflows().get_result_archive(workflow_id=workflow_id)
+        buf = api.workflows().get_result_archive(workflow_id=workflow_id).open()
         with open(output, 'wb') as local_file:
             local_file.write(buf.read())
 
@@ -129,9 +129,10 @@ def download_result_file(file, output, workflow):
     if workflow_id is None:
         raise click.UsageError('no workflow specified')
     with service() as api:
-        buf = api.workflows().get_result_file(workflow_id=workflow_id, file_id=file)
-        with open(output, 'wb') as local_file:
-            local_file.write(buf.read())
+        fh = api.workflows().get_result_file(workflow_id=workflow_id, file_id=file)
+    buf = fh.open()
+    with open(output, 'wb') as local_file:
+        local_file.write(buf.read())
 
 
 # -- Get workflow -------------------------------------------------------------

@@ -118,7 +118,7 @@ def test_run_helloworld_async(async_service, fsconfig, target):
         run_id=run_id,
         file_id=files['results/greetings.txt']
     )
-    greetings = fh.read().decode('utf-8').strip()
+    greetings = fh.open().read().decode('utf-8').strip()
     assert 'Hi Alice' in greetings
     assert 'Hi Bob' in greetings
     assert 'Hi Zoe' in greetings
@@ -126,4 +126,4 @@ def test_run_helloworld_async(async_service, fsconfig, target):
         run_id=run_id,
         file_id=files['results/analytics.json']
     )
-    assert json.load(fh) is not None
+    assert json.load(fh.open()) is not None

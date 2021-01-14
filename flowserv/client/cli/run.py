@@ -58,7 +58,7 @@ def delete_run(run):
 def download_result_archive(output, run):
     """Download archive of run result files."""
     with service() as api:
-        buf = api.runs().get_result_archive(run_id=run)
+        buf = api.runs().get_result_archive(run_id=run).open()
         with open(output, 'wb') as local_file:
             local_file.write(buf.read())
 
@@ -75,7 +75,7 @@ def download_result_archive(output, run):
 def download_result_file(file, output, run):
     """Download a run result file."""
     with service() as api:
-        buf = api.runs().get_result_file(run_id=run, file_id=file)
+        buf = api.runs().get_result_file(run_id=run, file_id=file).open()
         with open(output, 'wb') as local_file:
             local_file.write(buf.read())
 

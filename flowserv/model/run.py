@@ -10,7 +10,7 @@
 about workflow runs in an underlying database.
 """
 
-from typing import IO, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
 import io
 import mimetypes
@@ -19,7 +19,7 @@ import shutil
 import tarfile
 
 from flowserv.model.base import RunFile, RunObject, RunMessage, WorkflowRankingRun
-from flowserv.model.files.base import FileHandle
+from flowserv.model.files.base import FileHandle, IOBuffer
 from flowserv.model.files.fs import walk
 from flowserv.model.template.schema import ResultSchema
 from flowserv.model.workflow.state import WorkflowState
@@ -190,7 +190,7 @@ class RunManager(object):
             raise err.UnknownRunError(run_id)
         return run
 
-    def get_runarchive(self, run_id: str) -> IO:
+    def get_runarchive(self, run_id: str) -> FileHandle:
         """Get tar archive containing all result files for a given workflow
         run. Raises UnknownRunError if the run is not in SUCCESS state.
 
@@ -201,7 +201,7 @@ class RunManager(object):
 
         Returns
         -------
-        io.BytesIO
+        flowserv.model.files.base.FileHandle
 
         Raises
         ------
@@ -224,7 +224,14 @@ class RunManager(object):
             tar_handle.addfile(tarinfo=info, fileobj=file)
         tar_handle.close()
         io_buffer.seek(0)
-        return io_buffer
+        # Create file handle for the archive. The file name includes the run
+        # identifier. The mime type is 'application/gzip' based on
+        # https://superuser.com/questions/901962.
+        return FileHandle(
+            name='run.{}.tar.gz'.format(run_id),
+            mime_type='application/gzip',
+            fileobj=IOBuffer(io_buffer)
+        )
 
     def get_runfile(
         self, run_id: str, file_id: str = None, key: str = None

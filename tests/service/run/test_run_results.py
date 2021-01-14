@@ -39,7 +39,7 @@ def test_access_run_result_files_local(database, tmpdir):
             run_id=run_id,
             file_id=files['run/results/B.json']
         )
-        results = util.read_object(fh)
+        results = util.read_object(fh.open())
         assert results == {'B': 1}
     # -- Error when user 2 attempts to read file ------------------------------
     with database.session() as session:
@@ -70,7 +70,7 @@ def test_result_archive_local(database, tmpdir):
     # -- Get result archive ---------------------------------------------------
     with local_service(user_id=user_id) as api:
         archive = api.runs().get_result_archive(run_id=run_id)
-        tar = tarfile.open(fileobj=archive, mode='r:gz')
+        tar = tarfile.open(fileobj=archive.open(), mode='r:gz')
         members = [t.name for t in tar.getmembers()]
         assert len(members) == 2
         assert 'A.json' in members

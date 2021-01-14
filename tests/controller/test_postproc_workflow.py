@@ -118,11 +118,13 @@ def test_postproc_workflow(fsconfig, tmpdir):
                 workflow_id=workflow_id,
                 file_id=file_id
             )
-        compare = util.read_object(fh)
+        compare = util.read_object(fh.open())
         assert len(compare) == (i + 1)
     # Access the post-processing result files.
     with service() as api:
-        api.workflows().get_result_archive(workflow_id=workflow_id)
+        fh = api.workflows().get_result_archive(workflow_id=workflow_id)
+    assert fh.name.startswith('run')
+    assert fh.mime_type == 'application/gzip'
 
 
 def test_postproc_workflow_errors(tmpdir):

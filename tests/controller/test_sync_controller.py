@@ -72,5 +72,5 @@ def test_run_helloworld_sync(sync_service, specfile, state):
                 run_id=run_id,
                 file_id=files['results/greetings.txt']
             )
-            value = fh.read().decode('utf-8').strip()
+            value = fh.open().read().decode('utf-8').strip()
             assert value == 'Hello Alice!\nHello Bob!'

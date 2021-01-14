@@ -128,12 +128,10 @@ class Workflow(object):
 
         Returns
         -------
-        flowserv.model.files.base.IOBuffer
+        flowserv.model.files.base.FileHandle
         """
         with self.service(user_id=self.user_id) as api:
-            return IOBuffer(
-                api.runs().get_result_file(run_id=run_id, file_id=file_id)
-            )
+            return api.runs().get_result_file(run_id=run_id, file_id=file_id)
 
     def get_postproc_results(self):
         """Get results of a post-processing run. The result is None if no

@@ -107,8 +107,8 @@ def test_run_remote_workflow(tmpdir, is_async):
             run_id=run_id,
             file_id=f_id
         )
-        data = fh.read().decode('utf-8')
-        assert 'success' in data
+    data = fh.open().read().decode('utf-8')
+    assert 'success' in data
 
 
 def test_run_remote_workflow_with_error(tmpdir):
