@@ -12,7 +12,7 @@ and querying analytics results for individual workflows.
 
 from dateutil.parser import isoparse
 
-from flowserv.model.base import GroupHandle, RunHandle
+from flowserv.model.base import GroupObject, RunObject
 
 import flowserv.model.workflow.state as st
 
@@ -101,7 +101,7 @@ class RankingManager(object):
 
         Parameters
         ----------
-        workflow: flowserv.model.base.WorkflowHandle
+        workflow: flowserv.model.base.WorkflowObject
             Handle for workflow.
         order_by: list(flowserv.model.template.schema.SortColumn), optional
             Use the given attribute to sort run results. If not given, the
@@ -114,11 +114,11 @@ class RankingManager(object):
         list(flowserv.model.ranking.RunResult)
         """
         # Get results for all successful runs of the workflow.
-        rs = self.session.query(GroupHandle, RunHandle)\
-            .filter(GroupHandle.group_id == RunHandle.group_id)\
-            .filter(GroupHandle.workflow_id == workflow.workflow_id)\
-            .filter(RunHandle.state_type == st.STATE_SUCCESS)\
-            .filter(RunHandle.result != None)\
+        rs = self.session.query(GroupObject, RunObject)\
+            .filter(GroupObject.group_id == RunObject.group_id)\
+            .filter(GroupObject.workflow_id == workflow.workflow_id)\
+            .filter(RunObject.state_type == st.STATE_SUCCESS)\
+            .filter(RunObject.result != None)\
             .all()  # noqa: E711
         entries = list()
         for group, run in rs:

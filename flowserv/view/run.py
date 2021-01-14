@@ -10,7 +10,7 @@
 
 from typing import Dict, List, Optional
 
-from flowserv.model.base import GroupHandle, RunHandle
+from flowserv.model.base import GroupObject, RunObject
 
 
 """Serialization labels."""
@@ -43,14 +43,14 @@ RUN_WORKFLOW = 'workflowId'
 
 class RunSerializer(object):
     """Serializer for workflow runs."""
-    def run_descriptor(self, run: RunHandle) -> Dict:
+    def run_descriptor(self, run: RunObject) -> Dict:
         """Get serialization for a run descriptor. The descriptor contains the
         run identifier, state, timestampls, and the base list of HATEOAS
         references.
 
         Parameters
         ----------
-        run: flowserv.model.base.RunHandle
+        run: flowserv.model.base.RunObject
             Run decriptor
 
         Returns
@@ -63,7 +63,7 @@ class RunSerializer(object):
             RUN_CREATED: run.created_at
         }
 
-    def run_handle(self, run: RunHandle, group: Optional[GroupHandle] = None) -> Dict:
+    def run_handle(self, run: RunObject, group: Optional[GroupObject] = None) -> Dict:
         """Get serialization for a run handle. The run handle extends the run
         descriptor with the run arguments, the parameter declaration taken from
         the workflow group handle (since it may differ from the parameter list
@@ -72,9 +72,9 @@ class RunSerializer(object):
 
         Parameters
         ----------
-        run: flowserv.model.base.RunHandle
+        run: flowserv.model.base.RunObject
             Workflow run handle
-        group: flowserv.model.base.GroupHandle, default=None
+        group: flowserv.model.base.GroupObject, default=None
             Workflow group handle. Missing for post-processing workflows
 
         Returns
@@ -123,12 +123,12 @@ class RunSerializer(object):
             doc[RUN_FILES] = files
         return doc
 
-    def run_listing(self, runs: List[RunHandle], group_id: str) -> Dict:
+    def run_listing(self, runs: List[RunObject], group_id: str) -> Dict:
         """Get serialization for a list of run handles.
 
         Parameters
         ----------
-        runs: list(flowserv.model.base.RunHandle)
+        runs: list(flowserv.model.base.RunObject)
             List of run handles
         group_id: string
             Unique workflow group identifier

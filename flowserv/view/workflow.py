@@ -10,7 +10,7 @@
 
 from typing import Dict, List, Optional
 
-from flowserv.model.base import RunHandle, WorkflowHandle
+from flowserv.model.base import RunObject, WorkflowObject
 from flowserv.model.ranking import RunResult
 from flowserv.view.run import RunSerializer
 
@@ -60,13 +60,13 @@ class WorkflowSerializer(object):
         """
         self.runs = runs if runs is not None else RunSerializer()
 
-    def workflow_descriptor(self, workflow: WorkflowHandle) -> Dict:
+    def workflow_descriptor(self, workflow: WorkflowObject) -> Dict:
         """Get dictionary serialization containing the descriptor of a
         workflow resource.
 
         Parameters
         ----------
-        workflow: flowserv.model.base.WorkflowHandle
+        workflow: flowserv.model.base.WorkflowObject
             Workflow descriptor.
 
         Returns
@@ -84,16 +84,16 @@ class WorkflowSerializer(object):
         return obj
 
     def workflow_handle(
-        self, workflow: WorkflowHandle, postproc: Optional[RunHandle] = None
+        self, workflow: WorkflowObject, postproc: Optional[RunObject] = None
     ) -> Dict:
         """Get dictionary serialization containing the handle of a workflow
         resource.
 
         Parameters
         ----------
-        workflow: flowserv.model.base.WorkflowHandle
+        workflow: flowserv.model.base.WorkflowObject
             Workflow handle
-        postproc: flowserv.model.base.RunHandle
+        postproc: flowserv.model.base.RunObject
             Handle for workflow post-porcessing run.
 
         Returns
@@ -119,18 +119,18 @@ class WorkflowSerializer(object):
         return obj
 
     def workflow_leaderboard(
-        self, workflow: WorkflowHandle, ranking: List[RunResult],
-        postproc: Optional[RunHandle] = None
+        self, workflow: WorkflowObject, ranking: List[RunResult],
+        postproc: Optional[RunObject] = None
     ) -> Dict:
         """Get dictionary serialization for a workflow evaluation leaderboard.
 
         Parameters
         ----------
-        workflow: flowserv.model.base.WorkflowHandle
+        workflow: flowserv.model.base.WorkflowObject
             Workflow handle
         leaderboard: flowserv.model.ranking.ResultRanking
             List of entries in the workflow evaluation leaderboard
-        postproc: flowserv.model.base.RunHandle
+        postproc: flowserv.model.base.RunObject
             Handle for workflow post-porcessing run.
 
         Returns
@@ -178,12 +178,12 @@ class WorkflowSerializer(object):
             )
         return obj
 
-    def workflow_listing(self, workflows: List[WorkflowHandle]) -> Dict:
+    def workflow_listing(self, workflows: List[WorkflowObject]) -> Dict:
         """Get dictionary serialization of a workflow listing.
 
         Parameters
         ----------
-        workflows: list(flowserv.model.base.WorkflowHandle)
+        workflows: list(flowserv.model.base.WorkflowObject)
             List of workflow descriptors
 
         Returns

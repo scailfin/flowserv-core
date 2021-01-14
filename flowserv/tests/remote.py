@@ -12,7 +12,7 @@ import os
 
 from flowserv.controller.remote.client import RemoteClient
 from flowserv.controller.remote.engine import RemoteWorkflowController
-from flowserv.model.workflow.remote import RemoteWorkflowHandle
+from flowserv.model.workflow.remote import RemoteWorkflowObject
 from flowserv.model.workflow.serial import SerialWorkflow
 from flowserv.model.workflow.state import StatePending
 
@@ -59,7 +59,7 @@ class RemoteTestClient(RemoteClient):
 
         Parameters
         ----------
-        run: flowserv.model.base.RunHandle
+        run: flowserv.model.base.RunObject
             Handle for the run that is being executed.
         template: flowserv.model.template.base.WorkflowTemplate
             Workflow template containing the parameterized specification and
@@ -69,13 +69,13 @@ class RemoteTestClient(RemoteClient):
 
         Returns
         -------
-        flowserv.model.workflow.remote.RemoteWorkflowHandle
+        flowserv.model.workflow.remote.RemoteWorkflowObject
         """
         # Create a serial workfow to have a workflow handle.
         wf = SerialWorkflow(template, arguments, sourcedir=None)
         self.state = StatePending()
         self._pollcount = 0
-        return RemoteWorkflowHandle(
+        return RemoteWorkflowObject(
             workflow_id=run.run_id,
             state=self.state,
             output_files=wf.output_files()

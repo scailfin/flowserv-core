@@ -18,7 +18,7 @@ import shutil
 
 from flowserv.controller.base import WorkflowController
 from flowserv.model.auth import Auth
-from flowserv.model.base import WorkflowHandle
+from flowserv.model.base import WorkflowObject
 from flowserv.model.files.fs import FSFile
 from flowserv.model.group import WorkflowGroupManager
 from flowserv.model.parameter.files import InputFile
@@ -443,7 +443,7 @@ class LocalRunService(RunService):
 # -- Helper functions ---------------------------------------------------------
 
 def run_postproc_workflow(
-    postproc_spec: Dict, workflow: WorkflowHandle, ranking: List, runs: List,
+    postproc_spec: Dict, workflow: WorkflowObject, ranking: List, runs: List,
     run_manager: RunManager, backend: WorkflowController
 ):
     """Run post-processing workflow for a workflow template."""

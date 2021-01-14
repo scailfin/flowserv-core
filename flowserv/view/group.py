@@ -10,7 +10,7 @@
 
 from typing import Dict, List, Optional
 
-from flowserv.model.base import GroupHandle
+from flowserv.model.base import GroupObject
 from flowserv.view.files import UploadFileSerializer
 
 
@@ -38,14 +38,14 @@ class WorkflowGroupSerializer(object):
         """
         self.files = files if files is not None else UploadFileSerializer()
 
-    def group_descriptor(self, group: GroupHandle) -> Dict:
+    def group_descriptor(self, group: GroupObject) -> Dict:
         """Get serialization for a workflow group descriptor. The descriptor
         contains the group identifier, name, and the base list of HATEOAS
         references.
 
         Parameters
         ----------
-        group: flowserv.model.base.GroupHandle
+        group: flowserv.model.base.GroupObject
             Workflow group handle
 
         Returns
@@ -58,12 +58,12 @@ class WorkflowGroupSerializer(object):
             WORKFLOW_ID: group.workflow_id
         }
 
-    def group_handle(self, group: GroupHandle) -> Dict:
+    def group_handle(self, group: GroupObject) -> Dict:
         """Get serialization for a workflow group handle.
 
         Parameters
         ----------
-        group: flowserv.model.base.GroupHandle
+        group: flowserv.model.base.GroupObject
             Workflow group handle
 
         Returns
@@ -93,12 +93,12 @@ class WorkflowGroupSerializer(object):
 
         return doc
 
-    def group_listing(self, groups: List[GroupHandle]) -> Dict:
+    def group_listing(self, groups: List[GroupObject]) -> Dict:
         """Get serialization of a workflow group descriptor list.
 
         Parameters
         ----------
-        groups: list(flowserv.model.base.GroupHandle)
+        groups: list(flowserv.model.base.GroupObject)
             List of descriptors for workflow groups
 
         Returns

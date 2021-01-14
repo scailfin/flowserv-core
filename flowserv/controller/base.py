@@ -29,7 +29,7 @@ providing access to these files.
 from abc import ABCMeta, abstractmethod
 from typing import Dict, Tuple
 
-from flowserv.model.base import RunHandle
+from flowserv.model.base import RunObject
 from flowserv.model.template.base import WorkflowTemplate
 from flowserv.model.workflow.state import WorkflowState
 
@@ -64,7 +64,7 @@ class WorkflowController(metaclass=ABCMeta):  # pragma: no cover
 
     @abstractmethod
     def exec_workflow(
-        self, run: RunHandle, template: WorkflowTemplate, arguments: Dict
+        self, run: RunObject, template: WorkflowTemplate, arguments: Dict
     ) -> Tuple[WorkflowState, str]:
         """Initiate the execution of a given workflow template for a set of
         argument values. Returns the state of the workflow and the path to
@@ -77,7 +77,7 @@ class WorkflowController(metaclass=ABCMeta):  # pragma: no cover
 
         Parameters
         ----------
-        run: flowserv.model.base.RunHandle
+        run: flowserv.model.base.RunObject
             Handle for the run that is being executed.
         template: flowserv.model.template.base.WorkflowTemplate
             Workflow template containing the parameterized specification and

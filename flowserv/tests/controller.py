@@ -12,7 +12,7 @@ modules.
 
 from typing import List, Optional, Tuple
 
-from flowserv.model.base import RunHandle
+from flowserv.model.base import RunObject
 from flowserv.model.files.base import FileStore
 from flowserv.model.parameter.numeric import PARA_FLOAT, PARA_INT
 from flowserv.model.parameter.string import PARA_STRING
@@ -97,7 +97,7 @@ class StateEngine(WorkflowController):
         return state
 
     def exec_workflow(
-        self, run: RunHandle, template: WorkflowTemplate, arguments: dict,
+        self, run: RunObject, template: WorkflowTemplate, arguments: dict,
         service=None
     ) -> Tuple[WorkflowState, str]:
         """Fake execute method that returns the workflow state that the was
@@ -105,7 +105,7 @@ class StateEngine(WorkflowController):
 
         Parameters
         ----------
-        run: flowserv.model.base.RunHandle
+        run: flowserv.model.base.RunObject
             Handle for the run that is being executed.
         template: flowserv.model.template.base.WorkflowTemplate
             Workflow template containing the parameterized specification and

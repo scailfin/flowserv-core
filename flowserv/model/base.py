@@ -133,7 +133,7 @@ class WorkflowOutputs(TypeDecorator):
 
 # -- Files --------------------------------------------------------------------
 
-class FileHandle(Base):
+class FileObject(Base):
     """The file handle base class provides additional methods to access a file
     and its properties."""
 
@@ -194,7 +194,7 @@ class User(Base):
         cascade='all, delete, delete-orphan'
     )
     groups = relationship(
-        'GroupHandle',
+        'GroupObject',
         secondary=group_member,
         back_populates='members'
     )
@@ -274,12 +274,12 @@ class WorkflowRankingRun(Base):
 
     # -- Relationships --------------------------------------------------------
     workflow = relationship(
-        'WorkflowHandle',
+        'WorkflowObject',
         back_populates='postproc_ranking'
     )
 
 
-class WorkflowHandle(Base):
+class WorkflowObject(Base):
     """Each workflow has a unique name, an optional short descriptor and long
     instruction text. The five main components of the template are (i) the
     workflow specification, (ii) the list of parameter declarations, (iii) an
@@ -318,7 +318,7 @@ class WorkflowHandle(Base):
 
     # -- Relationships --------------------------------------------------------
     groups = relationship(
-        'GroupHandle',
+        'GroupObject',
         back_populates='workflow',
         cascade='all, delete, delete-orphan'
     )
@@ -328,7 +328,7 @@ class WorkflowHandle(Base):
         cascade='all, delete, delete-orphan'
     )
     runs = relationship(
-        'RunHandle',
+        'RunObject',
         back_populates='workflow',
         cascade='all, delete, delete-orphan'
     )
@@ -400,7 +400,7 @@ parameter declarations.
 """
 
 
-class GroupHandle(Base):
+class GroupObject(Base):
     """A workflow group associates a set of users with a workflow template. It
     allows to define a group-specific set of parameters for the template.
     """
@@ -431,7 +431,7 @@ class GroupHandle(Base):
     )
     owner = relationship('User', uselist=False)
     runs = relationship(
-        'RunHandle',
+        'RunObject',
         back_populates='group',
         cascade='all, delete, delete-orphan'
     )
@@ -440,10 +440,10 @@ class GroupHandle(Base):
         back_populates='group',
         cascade='all, delete, delete-orphan'
     )
-    workflow = relationship('WorkflowHandle', back_populates='groups')
+    workflow = relationship('WorkflowObject', back_populates='groups')
 
 
-class UploadFile(FileHandle):
+class UploadFile(FileObject):
     """Uploaded files are assigned to individual workflow groups. Each file is
     assigned a unique identifier.
     """
@@ -453,7 +453,7 @@ class UploadFile(FileHandle):
     group_id = Column(String(32), ForeignKey('workflow_group.group_id'))
 
     # -- Relationships --------------------------------------------------------
-    group = relationship('GroupHandle', back_populates='uploads')
+    group = relationship('GroupObject', back_populates='uploads')
 
 
 # Workflow Run ----------------------------------------------------------------
@@ -463,7 +463,7 @@ workflow parameters, and timestamps.
 """
 
 
-class RunHandle(Base):
+class RunObject(Base):
     """ Workflow runs may be triggered by workflow group members or they
     represent post-processing workflows. In the latter case the group
     identifier is None.
@@ -493,9 +493,9 @@ class RunHandle(Base):
 
     # -- Relationships --------------------------------------------------------
     files = relationship('RunFile', cascade='all, delete, delete-orphan')
-    group = relationship('GroupHandle', back_populates='runs')
+    group = relationship('GroupObject', back_populates='runs')
     log = relationship('RunMessage', cascade='all, delete, delete-orphan')
-    workflow = relationship('WorkflowHandle', back_populates='runs')
+    workflow = relationship('WorkflowObject', back_populates='runs')
 
     def get_file(self, by_id=None, by_key=None):
         """Get handle for identified file. A file can either be identified by
@@ -655,7 +655,7 @@ class RunHandle(Base):
             )
 
 
-class RunFile(FileHandle):
+class RunFile(FileObject):
     """File resources that are created by successful workflow runs."""
     # -- Schema ---------------------------------------------------------------
     __tablename__ = 'run_file'
@@ -668,7 +668,7 @@ class RunFile(FileHandle):
     UniqueConstraint('run_id', 'name')
 
     # Relationships -----------------------------------------------------------
-    run = relationship('RunHandle', back_populates='files')
+    run = relationship('RunObject', back_populates='files')
 
 
 class RunMessage(Base):
@@ -687,7 +687,7 @@ class RunMessage(Base):
     message = Column(Text, nullable=False)
 
     # Relationships -----------------------------------------------------------
-    run = relationship('RunHandle', back_populates='log')
+    run = relationship('RunObject', back_populates='log')
 
 
 # -- Helper classes and functions ---------------------------------------------

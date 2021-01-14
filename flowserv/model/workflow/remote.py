@@ -12,7 +12,7 @@ ru, as well as the last reported workflow state.
 """
 
 
-class RemoteWorkflowHandle(object):
+class RemoteWorkflowObject(object):
     """Base class for remote workflow handles. Remote workflows may have an
     identifier that differs from the run identifier that is managed by
     flowServ. The remote identifier is maintained by the handle, together with

@@ -13,7 +13,7 @@ from typing import Tuple
 
 import os
 
-from flowserv.model.base import GroupHandle, RunHandle, User, WorkflowHandle
+from flowserv.model.base import GroupObject, RunObject, User, WorkflowObject
 from flowserv.model.database import DB
 from flowserv.model.files.base import FileStore
 from flowserv.model.group import WorkflowGroupManager
@@ -43,7 +43,7 @@ def create_group(session, workflow_id, users):
     string
     """
     group_id = util.get_unique_identifier()
-    group = GroupHandle(
+    group = GroupObject(
         group_id=group_id,
         workflow_id=workflow_id,
         name=group_id,
@@ -76,7 +76,7 @@ def create_run(session, workflow_id, group_id):
     string
     """
     run_id = util.get_unique_identifier()
-    run = RunHandle(
+    run = RunObject(
         run_id=run_id,
         workflow_id=workflow_id,
         group_id=group_id,
@@ -130,7 +130,7 @@ def create_workflow(session, workflow_spec=dict(), result_schema=None):
     string
     """
     workflow_id = util.get_unique_identifier()
-    workflow = WorkflowHandle(
+    workflow = WorkflowObject(
         workflow_id=workflow_id,
         name=workflow_id,
         workflow_spec=workflow_spec,

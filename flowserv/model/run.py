@@ -18,7 +18,7 @@ import os
 import shutil
 import tarfile
 
-from flowserv.model.base import RunFile, RunHandle, RunMessage, WorkflowRankingRun
+from flowserv.model.base import RunFile, RunObject, RunMessage, WorkflowRankingRun
 from flowserv.model.files.base import DatabaseFile
 from flowserv.model.files.fs import walk
 from flowserv.model.template.schema import ResultSchema
@@ -58,9 +58,9 @@ class RunManager(object):
 
         Parameters
         ----------
-        workflow: flowserv.model.base.WorkflowHandle, default=None
+        workflow: flowserv.model.base.WorkflowObject, default=None
             Workflow handle if this is a post-processing run.
-        group: flowserv.model.base.GroupHandle
+        group: flowserv.model.base.GroupObject
             Group handle if this is a group sumbission run.
         arguments: list
             List of argument values for parameters in the template.
@@ -70,7 +70,7 @@ class RunManager(object):
 
         Returns
         -------
-        flowserv.model.base.RunHandle
+        flowserv.model.base.RunObject
 
         Raises
         ------
@@ -94,7 +94,7 @@ class RunManager(object):
             workflow_id = workflow.workflow_id
             group_id = None
         # Return handle for the created run.
-        run = RunHandle(
+        run = RunObject(
             run_id=run_id,
             workflow_id=workflow_id,
             group_id=group_id,
@@ -163,7 +163,7 @@ class RunManager(object):
             count += 1
         return count
 
-    def get_run(self, run_id: str) -> RunHandle:
+    def get_run(self, run_id: str) -> RunObject:
         """Get handle for the given run from the underlying database. Raises an
         error if the run does not exist.
 
@@ -174,7 +174,7 @@ class RunManager(object):
 
         Returns
         -------
-        flowserv.model.base.RunHandle
+        flowserv.model.base.RunObject
 
         Raises
         ------
@@ -183,8 +183,8 @@ class RunManager(object):
         # Fetch run information from the database. Raises an error if the run
         # is unknown..
         run = self.session\
-            .query(RunHandle)\
-            .filter(RunHandle.run_id == run_id)\
+            .query(RunObject)\
+            .filter(RunObject.run_id == run_id)\
             .one_or_none()
         if run is None:
             raise err.UnknownRunError(run_id)
@@ -284,23 +284,23 @@ class RunManager(object):
 
         Returns
         -------
-        list(flowserv.model.base.RunHandle)
+        list(flowserv.model.base.RunObject)
         """
         # Generate query that returns the handles of all runs. If the state
         # conditions are given, we add further filters.
         query = self.session\
-            .query(RunHandle)\
-            .filter(RunHandle.group_id == group_id)
+            .query(RunObject)\
+            .filter(RunObject.group_id == group_id)
         if state is not None:
             if isinstance(state, list):
-                query = query.filter(RunHandle.state_type.in_(state))
+                query = query.filter(RunObject.state_type.in_(state))
             else:
-                query = query.filter(RunHandle.state_type == state)
+                query = query.filter(RunObject.state_type == state)
         return query.all()
 
     def list_obsolete_runs(
         self, date: str, state: Optional[str] = None
-    ) -> List[RunHandle]:
+    ) -> List[RunObject]:
         """List all workflow runs that were created before the given date.
         The optional state parameter allows to further restrict the list of
         returned runs to those that were created before the given date and
@@ -315,19 +315,19 @@ class RunManager(object):
 
         Returns
         -------
-        list(flowserv.model.base.RunHandle)
+        list(flowserv.model.base.RunObject)
         """
         # Get handles for all runs before the given date. Ensure to exclude
         # runs that are part of a current workflow ranking result.
         query = self.session\
-            .query(RunHandle)\
-            .filter(RunHandle.created_at < date)\
-            .filter(RunHandle.run_id.notin_(
+            .query(RunObject)\
+            .filter(RunObject.created_at < date)\
+            .filter(RunObject.run_id.notin_(
                 self.session.query(WorkflowRankingRun.run_id)
             ))
         # Add filter for run state if given.
         if state is not None:
-            query = query.filter(RunHandle.state_type == state)
+            query = query.filter(RunObject.state_type == state)
         return query.all()
 
     def update_run(self, run_id: str, state: WorkflowState, rundir: Optional[str] = None):
@@ -352,7 +352,7 @@ class RunManager(object):
 
         Returns
         -------
-        flowserv.model.base.RunHandle
+        flowserv.model.base.RunObject
 
         Raises
         ------
@@ -435,7 +435,7 @@ def delete_run_dir(rundir: str):
         pass
 
 
-def get_run_files(run: RunHandle, state: WorkflowState, rundir: str) -> Tuple[List[RunFile], List[str]]:
+def get_run_files(run: RunObject, state: WorkflowState, rundir: str) -> Tuple[List[RunFile], List[str]]:
     """Create list of output files for a successful run. The list of files
     depends on whether files are specified in the workflow specification or not.
     If files are specified only those files are included in the returned lists.
@@ -443,7 +443,7 @@ def get_run_files(run: RunHandle, state: WorkflowState, rundir: str) -> Tuple[Li
 
     Parameters
     ----------
-    run: flowserv.model.base.RunHandle
+    run: flowserv.model.base.RunObject
         Handle for a workflow run.
     state: flowserv.model.workflow.state.WorkflowState
         SUCCESS state for the workflow run.
@@ -452,7 +452,7 @@ def get_run_files(run: RunHandle, state: WorkflowState, rundir: str) -> Tuple[Li
 
     Returns
     -------
-    list of RunHandle, list of string
+    list of RunObject, list of string
     """
     filekeys = None
     outputs = run.outputs()
@@ -490,13 +490,13 @@ def get_run_files(run: RunHandle, state: WorkflowState, rundir: str) -> Tuple[Li
     return runfiles, storefiles
 
 
-def read_run_results(run: RunHandle, schema: ResultSchema, rundir: str):
+def read_run_results(run: RunObject, schema: ResultSchema, rundir: str):
     """Read the run results from the result file that is specified in the workflow
     result schema. If the file is not found we currently do not raise an error.
 
     Parameters
     ----------
-    run: flowserv.model.base.RunHandle
+    run: flowserv.model.base.RunObject
         Handle for a workflow run.
     schema: flowserv.model.template.schema.ResultSchema
         Workflow result schema specification that contains the reference to the

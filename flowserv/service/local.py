@@ -23,7 +23,7 @@ import os
 
 from flowserv.controller.base import WorkflowController
 from flowserv.model.auth import DefaultAuthPolicy, OpenAccessAuth
-from flowserv.model.base import RunHandle
+from flowserv.model.base import RunObject
 from flowserv.model.database import DB
 from flowserv.model.files.base import FileStore
 from flowserv.model.files.factory import FS
@@ -137,7 +137,7 @@ class LocalAPIFactory(APIFactory):
         self._engine.cancel_run(run_id=run_id)
 
     def exec_workflow(
-        self, run: RunHandle, template: WorkflowTemplate, arguments: Dict
+        self, run: RunObject, template: WorkflowTemplate, arguments: Dict
     ) -> Tuple[WorkflowState, str]:
         """Initiate the execution of a given workflow template for a set of
         argument values. Returns the state of the workflow and the path to
@@ -150,7 +150,7 @@ class LocalAPIFactory(APIFactory):
 
         Parameters
         ----------
-        run: flowserv.model.base.RunHandle
+        run: flowserv.model.base.RunObject
             Handle for the run that is being executed.
         template: flowserv.model.template.base.WorkflowTemplate
             Workflow template containing the parameterized specification and
