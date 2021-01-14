@@ -18,7 +18,7 @@ from sqlalchemy.orm.session import Session
 from typing import Dict, List, Optional
 
 from flowserv.model.base import UploadFile, GroupHandle, WorkflowHandle
-from flowserv.model.files.base import DatabaseFile, FileObject, FileStore
+from flowserv.model.files.base import DatabaseFile, IOHandle, FileStore
 from flowserv.model.constraint import validate_identifier
 from flowserv.model.parameter.base import Parameter
 from flowserv.model.user import UserManager
@@ -218,7 +218,7 @@ class WorkflowGroupManager(object):
 
         Returns the file handle and an object that provides read access to the
         file contents. The object may either be the path to the file on disk
-        or a FileObject.
+        or a IOHandle.
 
         Parameters
         ----------
@@ -340,7 +340,7 @@ class WorkflowGroupManager(object):
                 group.members.append(self.users.get_user(user_id, active=True))
         return group
 
-    def upload_file(self, group_id: str, file: FileObject, name: str):
+    def upload_file(self, group_id: str, file: IOHandle, name: str):
         """Upload a new file for a workflow group. This will create a copy of
         the given file in the file store that is associated with the group. The
         file will be places in a unique folder inside the groups upload folder.
@@ -351,7 +351,7 @@ class WorkflowGroupManager(object):
         ----------
         group_id: string
             Unique group identifier
-        file: flowserv.model.files.base.FileObject
+        file: flowserv.model.files.base.IOHandle
             File object (e.g., uploaded via HTTP request)
         name: string
             Name of the file

@@ -10,7 +10,7 @@
 
 from io import StringIO
 
-from flowserv.model.files.base import IOFile
+from flowserv.model.files.base import IOBuffer
 
 
 def test_delete_file_remote(remote_service, mock_response):
@@ -32,6 +32,6 @@ def test_upload_file_remote(remote_service, mock_response):
     """Test uploading a file to the remote service."""
     remote_service.uploads().upload_file(
         group_id='0000',
-        file=IOFile(StringIO('ABC')),
+        file=IOBuffer(StringIO('ABC')),
         name='file.txt'
     )

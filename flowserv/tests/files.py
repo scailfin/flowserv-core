@@ -16,7 +16,7 @@ from io import BytesIO
 from typing import Dict, IO, List, Optional, Union
 
 from flowserv.config import FLOWSERV_API_BASEDIR
-from flowserv.model.files.base import FileObject, IOFile
+from flowserv.model.files.base import IOHandle, IOBuffer
 
 import flowserv.util as util
 
@@ -25,12 +25,12 @@ class FileStorage(object):
     """Fake stream object that simulates a werkzeug.FileStorage object to test
     the FlaskFile object. Wraps araond a given file object.
     """
-    def __init__(self, file: FileObject):
+    def __init__(self, file: IOHandle):
         """Initialize the wrapped file object.
 
         Parameters
         ----------
-        file: flowserv.model.files.FileObject
+        file: flowserv.model.files.IOHandle
             File data object
         """
         self.file = file
@@ -146,7 +146,7 @@ def parse_dir(dirname, prefix, result=None):
 # -- Helper Functions ---------------------------------------------------------
 
 
-def io_file(data: Union[List, Dict], format: Optional[str] = None) -> IOFile:
+def io_file(data: Union[List, Dict], format: Optional[str] = None) -> IOBuffer:
     """Write simple text to given bytes buffer."""
     buf = BytesIO()
     buf.seek(0)
@@ -155,4 +155,4 @@ def io_file(data: Union[List, Dict], format: Optional[str] = None) -> IOFile:
     else:
         for line in data:
             buf.write(str.encode('{}\n'.format(line)))
-    return IOFile(buf)
+    return IOBuffer(buf)

@@ -182,7 +182,7 @@ def upload_file(api, group_id, file):
         Service API manager.
     group_id: string
         Unique group identifier.
-    file: FileObject
+    file: IOHandle
         Uploaded file.
 
     Returns

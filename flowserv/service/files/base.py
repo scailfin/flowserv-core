@@ -13,7 +13,7 @@ methods to access, delete, and upload files for workflow groups.
 from abc import ABCMeta, abstractmethod
 from typing import Dict, IO
 
-from flowserv.model.files.base import FileObject
+from flowserv.model.files.base import IOHandle
 
 
 class UploadFileService(metaclass=ABCMeta):
@@ -90,14 +90,14 @@ class UploadFileService(metaclass=ABCMeta):
         raise NotImplementedError()  # pragma: no cover
 
     @abstractmethod
-    def upload_file(self, group_id: str, file: FileObject, name: str) -> Dict:
+    def upload_file(self, group_id: str, file: IOHandle, name: str) -> Dict:
         """Create a file for a given workflow group.
 
         Parameters
         ----------
         group_id: string
             Unique workflow group identifier
-        file: fflowserv.model.files.base.FileObject
+        file: fflowserv.model.files.base.IOHandle
             File object (e.g., uploaded via HTTP request)
         name: string
             Name of the file

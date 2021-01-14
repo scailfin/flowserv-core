@@ -14,13 +14,13 @@ import shutil
 from typing import Dict, IO, List, Optional, Tuple
 
 from flowserv.config import FLOWSERV_API_BASEDIR
-from flowserv.model.files.base import FileStore, FileObject
+from flowserv.model.files.base import FileStore, IOHandle
 
 import flowserv.error as err
 import flowserv.util as util
 
 
-class FSFile(FileObject):
+class FSFile(IOHandle):
     """Implementation of the file object interface for files that are stored on
     the file system.
     """
@@ -157,7 +157,7 @@ class FileSystemStore(FileStore):
         """
         return FSFile(os.path.join(self.basedir, key))
 
-    def store_files(self, files: List[Tuple[FileObject, str]], dst: str):
+    def store_files(self, files: List[Tuple[IOHandle, str]], dst: str):
         """Store a given list of file objects in the file store. The file
         destination key is a relative path name. This is used as the base path
         for all files. The file list contains tuples of file object and target
@@ -165,7 +165,7 @@ class FileSystemStore(FileStore):
 
         Paramaters
         ----------
-        file: flowserv.model.files.base.FileObject
+        file: flowserv.model.files.base.IOHandle
             The input file object.
         dst: string
             Relative target path for the stored file.

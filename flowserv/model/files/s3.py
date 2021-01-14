@@ -17,7 +17,7 @@ from io import BytesIO
 from typing import Dict, IO, List, Set, Tuple, TypeVar
 
 from flowserv.config import FLOWSERV_API_BASEDIR, FLOWSERV_S3BUCKET
-from flowserv.model.files.base import FileStore, FileObject
+from flowserv.model.files.base import FileStore, IOHandle
 
 import flowserv.error as err
 
@@ -26,7 +26,7 @@ import flowserv.error as err
 B = TypeVar('B')
 
 
-class BucketFile(FileObject):
+class BucketFile(IOHandle):
     """Implementation of the file object interface for files that are stored on
     the file system.
     """
@@ -184,7 +184,7 @@ class BucketStore(FileStore):
         """
         return BucketFile(bucket=self.bucket, key=key)
 
-    def store_files(self, files: List[Tuple[FileObject, str]], dst: str):
+    def store_files(self, files: List[Tuple[IOHandle, str]], dst: str):
         """Store a given list of file objects in the associated bucket. The
         file destination key is a relative path name. This is used as the base
         path for all files. The file list contains tuples of file object and
@@ -192,7 +192,7 @@ class BucketStore(FileStore):
 
         Paramaters
         ----------
-        file: flowserv.model.files.base.FileObject
+        file: flowserv.model.files.base.IOHandle
             The input file object.
         dst: string
             Relative target path for the stored file.

@@ -12,7 +12,7 @@ upload files at a remote RESTful API.
 
 from typing import Dict, IO
 
-from flowserv.model.files.base import FileObject
+from flowserv.model.files.base import IOHandle
 from flowserv.service.descriptor import ServiceDescriptor
 from flowserv.service.files.base import UploadFileService
 from flowserv.service.remote import delete, download_file, get, post
@@ -103,14 +103,14 @@ class RemoteUploadFileService(UploadFileService):
         """
         return get(url=self.urls(route.FILES_LIST, userGroupId=group_id))
 
-    def upload_file(self, group_id: str, file: FileObject, name: str) -> Dict:
+    def upload_file(self, group_id: str, file: IOHandle, name: str) -> Dict:
         """Create a file for a given workflow group.
 
         Parameters
         ----------
         group_id: string
             Unique workflow group identifier
-        file: fflowserv.model.files.base.FileObject
+        file: fflowserv.model.files.base.IOHandle
             File object (e.g., uploaded via HTTP request)
         name: string
             Name of the file

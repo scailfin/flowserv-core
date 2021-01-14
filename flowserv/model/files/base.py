@@ -35,9 +35,9 @@ import os
 
 # -- File objects for file stores ---------------------------------------------
 
-class FileObject(metaclass=ABCMeta):
-    """Wrapper around different file objects (i.e., files on disk or files on
-    the file system). Provides functionality to load file content as a bytes
+class IOHandle(metaclass=ABCMeta):
+    """Wrapper around different file objects (i.e., files on disk or files in
+    object stores). Provides functionality to load file content as a bytes
     buffer and to write file contents to disk.
     """
     @abstractmethod
@@ -76,7 +76,7 @@ class FileObject(metaclass=ABCMeta):
         raise NotImplementedError()  # pragma: no cover
 
 
-class IOFile(FileObject):
+class IOBuffer(IOHandle):
     """Implementation of the file object interface for bytes IO buffers."""
     def __init__(self, buf: IO):
         """Initialize the IO buffer.
@@ -121,11 +121,14 @@ class IOFile(FileObject):
 
 # -- Wrapper for database files -----------------------------------------------
 
-class DatabaseFile(FileObject):
-    """Wrapper around a file handle for a file that is stored in the database
-    and a file object that allows to load the file contents.
+class DatabaseFile(IOHandle):
+    """Handle for a file that is stored in the database. Extends the file object
+    with the base file name and the mime type.
+
+    The implementation is a wrapper around a file object to make the handle
+    agnostic to the underlying storage mechanism.
     """
-    def __init__(self, name: str, mime_type: str, fileobj: FileObject):
+    def __init__(self, name: str, mime_type: str, fileobj: IOHandle):
         """Initialize the file object and file handle.
 
         Parameters
@@ -134,7 +137,7 @@ class DatabaseFile(FileObject):
             File name (or relative file path)
         mime_type: string
             File content mime type.
-        fileobj: flowserv.model.files.base.FileObject
+        fileobj: flowserv.model.files.base.IOHandle
             File object providing access to the file content.
         """
         self.name = name
@@ -177,7 +180,7 @@ class DatabaseFile(FileObject):
 
 # -- Wrapper for files that are uploaded as part of a Flask request -----------
 
-class FlaskFile(FileObject):
+class FlaskFile(IOHandle):
     """File object implementation for files that are uploaded via Flask
     requests as werkzeug.FileStorage objects.
     """
@@ -287,7 +290,7 @@ class FileStore(metaclass=ABCMeta):
         return os.path.join(groupdir, 'files')
 
     @abstractmethod
-    def load_file(self, key: str) -> FileObject:
+    def load_file(self, key: str) -> IOHandle:
         """Get a file object for the file with the given key. The key should
         reference a single file only and not a folder.
 
@@ -298,7 +301,7 @@ class FileStore(metaclass=ABCMeta):
 
         Returns
         -------
-        flowserv.model.files.base.FileObject
+        flowserv.model.files.base.IOHandle
         """
         raise NotImplementedError()  # pragma: no cover
 
@@ -321,7 +324,7 @@ class FileStore(metaclass=ABCMeta):
         return os.path.join(workflowdir, 'runs', run_id)
 
     @abstractmethod
-    def store_files(self, files: List[Tuple[FileObject, str]], dst: str):
+    def store_files(self, files: List[Tuple[IOHandle, str]], dst: str):
         """Store a given list of file objects in the file store. The file
         destination key is a relative path name. This is used as the base path
         for all files. The file list contains tuples of file object and target
@@ -329,7 +332,7 @@ class FileStore(metaclass=ABCMeta):
 
         Paramaters
         ----------
-        file: list of (flowserv.model.files.base.FileObject, string)
+        file: list of (flowserv.model.files.base.IOHandle, string)
             The input file objects.
         dst: string
             Relative target path for the stored file.

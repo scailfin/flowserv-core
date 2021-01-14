@@ -14,7 +14,7 @@ from io import BytesIO, StringIO
 from typing import Dict, List, Optional
 
 from flowserv.client.app.result import RunResult
-from flowserv.model.files.base import DatabaseFile, FileObject, IOFile
+from flowserv.model.files.base import DatabaseFile, IOHandle, IOBuffer
 from flowserv.model.files.fs import FSFile
 from flowserv.model.parameter.files import InputFile
 from flowserv.model.template.parameter import ParameterIndex
@@ -128,10 +128,10 @@ class Workflow(object):
 
         Returns
         -------
-        flowserv.model.files.base.IOFile
+        flowserv.model.files.base.IOBuffer
         """
         with self.service(user_id=self.user_id) as api:
-            return IOFile(
+            return IOBuffer(
                 api.runs().get_result_file(run_id=run_id, file_id=file_id)
             )
 
@@ -255,10 +255,10 @@ class Workflow(object):
                         upload_file = FSFile(val)
                     elif isinstance(val, StringIO):
                         buf = BytesIO(val.read().encode('utf8'))
-                        upload_file = IOFile(buf)
+                        upload_file = IOBuffer(buf)
                     elif isinstance(val, BytesIO):
-                        upload_file = IOFile(val)
-                    elif isinstance(val, FileObject):
+                        upload_file = IOBuffer(val)
+                    elif isinstance(val, IOHandle):
                         upload_file = val
                     elif isinstance(val, InputFile):
                         upload_file = val.source()
