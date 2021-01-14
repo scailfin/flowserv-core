@@ -107,7 +107,7 @@ class RemoteWorkflowService(WorkflowService):
 
         Returns
         -------
-        flowserv.model.files.base.DatabaseFile
+        flowserv.model.files.base.FileHandle
         """
         url = self.urls(
             route.WORKFLOWS_DOWNLOAD_FILE,

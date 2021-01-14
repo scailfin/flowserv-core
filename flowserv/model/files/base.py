@@ -121,7 +121,7 @@ class IOBuffer(IOHandle):
 
 # -- Wrapper for database files -----------------------------------------------
 
-class DatabaseFile(IOHandle):
+class FileHandle(IOHandle):
     """Handle for a file that is stored in the database. Extends the file object
     with the base file name and the mime type.
 

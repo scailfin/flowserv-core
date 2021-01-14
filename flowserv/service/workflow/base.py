@@ -77,7 +77,7 @@ class WorkflowService(metaclass=ABCMeta):  # pragma: no cover
 
         Returns
         -------
-        flowserv.model.files.base.DatabaseFile
+        flowserv.model.files.base.FileHandle
 
         Raises
         ------

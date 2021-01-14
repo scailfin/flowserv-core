@@ -14,7 +14,7 @@ from io import BytesIO, StringIO
 from typing import Dict, List, Optional
 
 from flowserv.client.app.result import RunResult
-from flowserv.model.files.base import DatabaseFile, IOHandle, IOBuffer
+from flowserv.model.files.base import FileHandle, IOHandle, IOBuffer
 from flowserv.model.files.fs import FSFile
 from flowserv.model.parameter.files import InputFile
 from flowserv.model.template.parameter import ParameterIndex
@@ -116,7 +116,7 @@ class Workflow(object):
         """
         return self._description
 
-    def get_file(self, run_id: str, file_id: str) -> DatabaseFile:
+    def get_file(self, run_id: str, file_id: str) -> FileHandle:
         """Get buffer, name and mime type for a run result file.
 
         Parameters

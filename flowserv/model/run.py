@@ -19,7 +19,7 @@ import shutil
 import tarfile
 
 from flowserv.model.base import RunFile, RunObject, RunMessage, WorkflowRankingRun
-from flowserv.model.files.base import DatabaseFile
+from flowserv.model.files.base import FileHandle
 from flowserv.model.files.fs import walk
 from flowserv.model.template.schema import ResultSchema
 from flowserv.model.workflow.state import WorkflowState
@@ -228,7 +228,7 @@ class RunManager(object):
 
     def get_runfile(
         self, run_id: str, file_id: str = None, key: str = None
-    ) -> DatabaseFile:
+    ) -> FileHandle:
         """Get handle and file object for a given run result file. The file is
         either identified by the unique file identifier or the file key. Raises
         an error if the specified file does not exist.
@@ -242,7 +242,7 @@ class RunManager(object):
 
         Returns
         -------
-        flowserv.model.files.base.DatabaseFile
+        flowserv.model.files.base.FileHandle
 
         Raises
         ------
@@ -264,7 +264,7 @@ class RunManager(object):
         # Return file handle for resource file
         workflow_id = run.workflow.workflow_id
         rundir = self.fs.run_basedir(workflow_id=workflow_id, run_id=run_id)
-        return DatabaseFile(
+        return FileHandle(
             name=fh.name,
             mime_type=fh.mime_type,
             fileobj=self.fs.load_file(os.path.join(rundir, fh.key))

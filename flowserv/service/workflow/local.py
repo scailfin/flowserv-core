@@ -213,7 +213,7 @@ class LocalWorkflowService(WorkflowService):
 
         Returns
         -------
-        flowserv.model.files.base.DatabaseFile
+        flowserv.model.files.base.FileHandle
 
         Raises
         ------

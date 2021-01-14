@@ -18,7 +18,7 @@ from sqlalchemy.orm.session import Session
 from typing import Dict, List, Optional
 
 from flowserv.model.base import UploadFile, GroupObject, WorkflowObject
-from flowserv.model.files.base import DatabaseFile, IOHandle, FileStore
+from flowserv.model.files.base import FileHandle, IOHandle, FileStore
 from flowserv.model.constraint import validate_identifier
 from flowserv.model.parameter.base import Parameter
 from flowserv.model.user import UserManager
@@ -212,7 +212,7 @@ class WorkflowGroupManager(object):
             raise err.UnknownWorkflowGroupError(group_id)
         return group
 
-    def get_uploaded_file(self, group_id: str, file_id: str) -> DatabaseFile:
+    def get_uploaded_file(self, group_id: str, file_id: str) -> FileHandle:
         """Get handle for an uploaded group file with the given identifier.
         Raises an error if the group or the file does not exists.
 
@@ -229,7 +229,7 @@ class WorkflowGroupManager(object):
 
         Returns
         -------
-        flowserv.model.files.base.DatabaseFile
+        flowserv.model.files.base.FileHandle
 
         Raises
         ------
@@ -239,7 +239,7 @@ class WorkflowGroupManager(object):
         group = self.get_group(group_id)
         for fh in group.uploads:
             if fh.file_id == file_id:
-                return DatabaseFile(
+                return FileHandle(
                     name=fh.name,
                     mime_type=fh.mime_type,
                     fileobj=self.fs.load_file(key=fh.key)

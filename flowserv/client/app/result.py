@@ -13,7 +13,7 @@ the results and resources of workflow runs.
 
 from typing import Callable, Dict, IO, List, Optional, Tuple
 
-from flowserv.model.files.base import DatabaseFile
+from flowserv.model.files.base import FileHandle
 
 import flowserv.model.workflow.state as st
 
@@ -66,7 +66,7 @@ class RunResult(object):
 
     def get_file(
         self, key: str, raise_error: Optional[bool] = True
-    ) -> DatabaseFile:
+    ) -> FileHandle:
         """Get result file object for the file with the given identifier.
         Raises a ValueError if no file with the given key exists and the raise
         error flag is True.
@@ -80,7 +80,7 @@ class RunResult(object):
 
         Returns
         -------
-        flowserv.model.files.base.DatabaseFile
+        flowserv.model.files.base.FileHandle
 
         Raises
         ------
