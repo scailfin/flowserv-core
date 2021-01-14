@@ -142,8 +142,6 @@ def download_result_file(file, output, workflow):
 def get_workflow(workflow):
     """Update workflow properties."""
     workflow_id = workflow if workflow is not None else config.APP()
-    if workflow_id is None:
-        raise click.UsageError('no workflow specified')
     with service() as api:
         doc = api.workflows().get_workflow(workflow_id=workflow_id)
     click.echo('ID          : {}'.format(doc[labels.WORKFLOW_ID]))

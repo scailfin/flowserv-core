@@ -90,7 +90,6 @@ def test_cli_group_lifecycle(flowserv_cli):
     assert result.exit_code == 1  # MissingConfigurationError
     cmd = ['groups', 'update', '-g', group_id]
     result = flowserv_cli.invoke(cli, cmd)
-    print(result.output)
     assert result.exit_code == 2  # UsageError
     # -- Delete Group ---------------------------------------------------------
     cmd = ['groups', 'delete', '-g', group_id, '-f']

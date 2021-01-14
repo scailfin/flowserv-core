@@ -11,6 +11,7 @@
 import os
 
 from flowserv.client.cli.base import cli
+from flowserv.client.cli.workflow import read_instructions
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))
@@ -64,3 +65,29 @@ def test_update_workflow(flowserv_cli, tmpdir):
     result = flowserv_cli.invoke(cli, cmd)
     assert str(result.exception) == "unknown workflow 'UNKNOWN'"
     assert result.exit_code == 1
+
+
+def test_read_instructions(tmpdir):
+    """Test read instructions function."""
+    assert read_instructions(None) is None
+    filename = os.path.join(tmpdir, 'instructions.txt')
+    with open(filename, 'wt') as f:
+        f.write('abc')
+    assert read_instructions(filename) == 'abc'
+
+
+def test_workflow_lifecycle(flowserv_cli, tmpdir):
+    """Test workflow life cycle via the command-line interface."""
+    # -- Create workflow ------------------------------------------------------
+    cmd = ['workflows', 'create', TEMPLATE_DIR]
+    result = flowserv_cli.invoke(cli, cmd)
+    assert result.exit_code == 0
+    workflow_id = result.output[result.output.rfind('=') + 1:].strip()
+    # -- Get workflow ---------------------------------------------------------
+    cmd = ['workflows', 'show', '-w', workflow_id]
+    result = flowserv_cli.invoke(cli, cmd)
+    assert result.exit_code == 0
+    # -- Delete workflow ------------------------------------------------------
+    cmd = ['workflows', 'delete', workflow_id]
+    result = flowserv_cli.invoke(cli, cmd)
+    assert result.exit_code == 0
