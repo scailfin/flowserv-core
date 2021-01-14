@@ -55,7 +55,7 @@ def test_run_helloworld_in_env(source, specfile, filekey, tmpdir):
     assert not run.is_active()
     assert str(run) == st.STATE_SUCCESS
     assert len(run.files()) == 2
-    text = run.open(filekey).read().decode('utf-8')
+    text = run.get_file(filekey).text()
     assert 'Hey Alice' in text
     assert 'Hey Bob' in text
     assert 'Hey Claire' in text
@@ -68,20 +68,16 @@ def test_run_helloworld_in_env(source, specfile, filekey, tmpdir):
     assert str(run) == st.STATE_SUCCESS
     assert len(run.files()) == 2
     file_handles = dict()
-    for _, key, obj in run.files():
-        file_handles[key] = obj
-    assert file_handles[filekey]['name'] == filekey
-    assert file_handles[filekey]['format'] == {'type': 'plaintext'}
-    assert file_handles['results/analytics.json']['name'] == 'results/analytics.json'  # noqa: E501
-    assert 'caption' not in file_handles['results/analytics.json']
-    assert file_handles['results/analytics.json']['format'] == {'type': 'json'}
+    for f in run.files():
+        file_handles[f.name] = f
+    assert file_handles[filekey].name == filekey
+    assert file_handles[filekey].format == {'type': 'plaintext'}
+    assert file_handles['results/analytics.json'].name == 'results/analytics.json'
+    assert file_handles['results/analytics.json'].caption is None
+    assert file_handles['results/analytics.json'].format == {'type': 'json'}
     # -- Cancelling a finished run raises an error ----------------------------
     with pytest.raises(err.InvalidRunStateError):
         wf.cancel_run(run.run_id)
-    # -- Delete the run -------------------------------------------------------
-    wf.delete_run(run.run_id)
-    with pytest.raises(err.UnknownRunError):
-        run.open(filekey)
     # -- Uninstall workflow ---------------------------------------------------
     db.uninstall(wf.identifier)
     # Running the workflow again will raise an error.
@@ -154,6 +150,10 @@ def test_run_helloworld_with_postproc(tmpdir):
     })
     assert run.is_success()
     postproc = wf.get_postproc_results()
-    f = postproc.get_file('results/ngrams.csv')
-    text = f.open().read().decode('utf-8')
-    assert text is not None
+    columns, rows = postproc.get_file('results/ngrams.csv').data()
+    assert columns == ['3-gram', 'Count']
+    assert rows is not None
+    columns.append('X')
+    # Access the data object again to receive the buffered data
+    columns, rows = postproc.get_file('results/ngrams.csv').data()
+    assert columns == ['3-gram', 'Count', 'X']

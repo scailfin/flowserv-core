@@ -13,7 +13,7 @@ import time
 from io import BytesIO, StringIO
 from typing import Dict, List, Optional
 
-from flowserv.client.app.result import RunResult
+from flowserv.client.app.run import Run
 from flowserv.model.files.base import FileHandle, IOHandle, IOBuffer
 from flowserv.model.files.fs import FSFile
 from flowserv.model.parameter.files import InputFile
@@ -32,10 +32,7 @@ class Workflow(object):
     provides functionality to execute and monitor workflow runs via the service
     API.
     """
-    def __init__(
-        self, workflow_id: str, group_id: str, service: APIFactory,
-        user_id: Optional[str] = None
-    ):
+    def __init__(self, workflow_id: str, group_id: str, service: APIFactory):
         """Initialize the required identifier and the API factory.
 
         Reads all metadata for the given workflow during intialization and
@@ -49,15 +46,12 @@ class Workflow(object):
             Unique workflow group identifier.
         service: flowserv.client.api.APIFactory
             Factory to create instances of the service API.
-        user_id: string, default=None
-            Identifier for an authenticated default user.
         """
         self.workflow_id = workflow_id
         self.group_id = group_id
         self.service = service
-        self.user_id = user_id
         # Get application properties from the database.
-        with self.service(user_id=self.user_id) as api:
+        with self.service() as api:
             wf = api.workflows().get_workflow(self.workflow_id)
             grp = api.groups().get_group(group_id=self.group_id)
         self._name = wf.get(wflbls.WORKFLOW_NAME)
@@ -77,14 +71,8 @@ class Workflow(object):
             Unique run identifier
         reason: string, optional
             Optional text describing the reason for cancelling the run
-
-        Raises
-        ------
-        flowserv.error.UnauthorizedAccessError
-        flowserv.error.UnknownRunError
-        flowserv.error.InvalidRunStateError
         """
-        with self.service(user_id=self.user_id) as api:
+        with self.service() as api:
             api.runs().cancel_run(run_id=run_id)
 
     def delete_run(self, run_id: str):
@@ -97,14 +85,8 @@ class Workflow(object):
         ----------
         run_id: string
             Unique run identifier
-
-        Raises
-        ------
-        flowserv.error.UnauthorizedAccessError
-        flowserv.error.UnknownRunError
-        flowserv.error.InvalidRunStateError
         """
-        with self.service(user_id=self.user_id) as api:
+        with self.service() as api:
             api.runs().delete_run(run_id=run_id)
 
     def description(self) -> str:
@@ -116,35 +98,39 @@ class Workflow(object):
         """
         return self._description
 
-    def get_file(self, run_id: str, file_id: str) -> FileHandle:
-        """Get buffer, name and mime type for a run result file.
+    def get_file(self, run_id: str, file_id: Optional[str] = None) -> FileHandle:
+        """Get handle for run result file. If the file identifier is not given
+        the handle for the run result archive is returned.
 
         Parameters
         ----------
         run_id: string
             Unique run identifier.
-        file_id: string
+        file_id: string, default=None
             Unique file identifier.
 
         Returns
         -------
         flowserv.model.files.base.FileHandle
         """
-        with self.service(user_id=self.user_id) as api:
-            return api.runs().get_result_file(run_id=run_id, file_id=file_id)
+        with self.service() as api:
+            if file_id is not None:
+                return api.runs().get_result_file(run_id=run_id, file_id=file_id)
+            else:
+                return api.runs().get_result_archive(run_id=run_id)
 
-    def get_postproc_results(self):
+    def get_postproc_results(self) -> Run:
         """Get results of a post-processing run. The result is None if no
         entry for a post-porcessing run is found in the workflow handle.
 
         Returns
         -------
-        flowserv.app.result.RunResult
+        flowserv.client.app.run.Run
         """
-        with self.service(user_id=self.user_id) as api:
+        with self.service() as api:
             doc = api.workflows().get_workflow(workflow_id=self.workflow_id)
             if wflbls.POSTPROC_RUN in doc:
-                return RunResult(doc=doc[wflbls.POSTPROC_RUN], loader=self.get_file)
+                return Run(doc=doc[wflbls.POSTPROC_RUN], service=self.service)
 
     @property
     def identifier(self) -> str:
@@ -183,7 +169,7 @@ class Workflow(object):
         """
         return self._parameters
 
-    def poll_run(self, run_id) -> RunResult:
+    def poll_run(self, run_id) -> Run:
         """Get run result handle for a given run.
 
         Raises an unauthorized access error if the user does not have read
@@ -196,20 +182,15 @@ class Workflow(object):
 
         Returns
         -------
-        flowserv.app.result.RunResult
-
-        Raises
-        ------
-        flowserv.error.UnauthorizedAccessError
-        flowserv.error.UnknownRunError
+        flowserv.client.app.run.Run
         """
-        with self.service(user_id=self.user_id) as api:
-            return RunResult(
+        with self.service() as api:
+            return Run(
                 doc=api.runs().get_run(run_id=run_id),
-                loader=self.get_file
+                service=self.service
             )
 
-    def start_run(self, arguments: Dict, poll_interval: Optional[int] = None) -> RunResult:
+    def start_run(self, arguments: Dict, poll_interval: Optional[int] = None) -> Run:
         """Run the associated workflow for the given set of arguments.
 
         Parameters
@@ -222,18 +203,9 @@ class Workflow(object):
 
         Returns
         -------
-        flowserv.app.result.RunResult
-
-        Raises
-        ------
-        flowserv.error.InvalidArgumentError
-        flowserv.error.MissingArgumentError
-        flowserv.error.UnauthorizedAccessError
-        flowserv.error.UnknownFileError
-        flowserv.error.UnknownParameterError
-        flowserv.error.UnknownWorkflowGroupError
+        flowserv.client.app.run.Run
         """
-        with self.service(user_id=self.user_id) as api:
+        with self.service() as api:
             # Upload any argument values as files that are either of type
             # StringIO or BytesIO.
             arglist = list()
@@ -278,7 +250,7 @@ class Workflow(object):
                 group_id=self.group_id,
                 arguments=arglist
             )
-            rh = RunResult(doc=run, loader=self.get_file)
+            rh = Run(doc=run, service=self.service)
             # Wait for run to finish if active an poll interval is given.
             while poll_interval and rh.is_active():
                 time.sleep(poll_interval)

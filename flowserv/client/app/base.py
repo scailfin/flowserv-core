@@ -74,9 +74,6 @@ class Flowserv(object):
         # clear flag is True.
         if clear:
             util.cleardir(self.basedir)
-        self.user_id = user_id
-        if user_id is None and open_access:
-            self.user_id = config.DEFAULT_USER
         self.service = ClientAPI(
             env=self.env,
             basedir=self.basedir,
@@ -84,7 +81,8 @@ class Flowserv(object):
             open_access=open_access,
             run_async=run_async,
             docker=docker,
-            s3bucket=s3bucket
+            s3bucket=s3bucket,
+            user_id=user_id
         )
 
     def erase(self):
@@ -137,7 +135,7 @@ class Flowserv(object):
         -------
         string
         """
-        with self.service(user_id=self.user_id) as api:
+        with self.service() as api:
             doc = api.workflows().create_workflow(
                 source=source,
                 identifier=identifier,
@@ -169,8 +167,7 @@ class Flowserv(object):
         return Workflow(
             workflow_id=workflow_id,
             group_id=group_id,
-            service=self.service,
-            user_id=self.user_id
+            service=self.service
         )
 
     def open(self, identifier: str) -> Workflow:

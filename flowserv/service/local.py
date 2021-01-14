@@ -61,7 +61,7 @@ class LocalAPIFactory(APIFactory):
     """
     def __init__(
         self, env: Optional[Dict] = None, db: Optional[DB] = None,
-        engine: Optional[WorkflowController] = None
+        engine: Optional[WorkflowController] = None, user_id: Optional[str] = None
     ):
         """Initialize the API factory from a given set of configuration
         parameters and their values. If the configuration dictionary is not
@@ -79,6 +79,8 @@ class LocalAPIFactory(APIFactory):
             Optional default database.
         engine: flowserv.controller.base.WorkflowController, default=None
             Optional workflow controller (for test purposes).
+        user_id: string, default=None
+            Optional identifier for the authenticated API user.
         """
         # Use the current environment settings if the configuration dictionary
         # is not given.
@@ -95,9 +97,9 @@ class LocalAPIFactory(APIFactory):
         self._fs = FS(self)
         # Ensure that the authentication policy identifier is set.
         self[AUTH] = self.get(AUTH, config.AUTH_OPEN)
-        # Authenticated default user. The initial value depends on the
-        # authentication policy.
-        self._user_id = config.DEFAULT_USER if self[AUTH] == config.AUTH_OPEN else None
+        # Authenticated default user. The initial value depends on the given
+        # value for the user_id or authentication policy.
+        self._user_id = config.DEFAULT_USER if not user_id and self[AUTH] == config.AUTH_OPEN else user_id
 
     def __call__(self, user_id: Optional[str] = None):
         """Get an instance of the context manager that creates the local service
@@ -108,7 +110,8 @@ class LocalAPIFactory(APIFactory):
         ----------
         user_id: string, default=None
             Optional identifier for the authenticated API user. This overrides
-            the access token.
+            the access token and any user_id that was provided when the service
+            was instantiated.
 
         Returns
         -------

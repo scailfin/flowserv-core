@@ -26,7 +26,7 @@ def ClientAPI(
     env: Optional[Dict] = None, basedir: Optional[str] = None,
     database: Optional[str] = None, open_access: Optional[bool] = None,
     run_async: Optional[bool] = None, docker: Optional[bool] = None,
-    s3bucket: Optional[str] = None
+    s3bucket: Optional[str] = None, user_id: Optional[str] = None
 ) -> APIFactory:
     """Create an instance of the API factory that is responsible for generating
     API instances for a flowserv client.
@@ -54,6 +54,8 @@ def ClientAPI(
     s3bucket: string, default=None
         Use the S3 bucket with the given identifier to store all workflow
         files.
+    user_id: string, default=None
+        Optional identifier for the authenticated API user.
 
     Returns
     -------
@@ -82,7 +84,7 @@ def ClientAPI(
     # Create local or remote API factory depending on the FLOWSERV_CLIENT value.
     client = env.get(config.FLOWSERV_CLIENT, config.LOCAL_CLIENT)
     if client == config.LOCAL_CLIENT:
-        return LocalAPIFactory(env=env)
+        return LocalAPIFactory(env=env, user_id=user_id)
     elif client == config.REMOTE_CLIENT:
         # Not implemented yet.
         pass
