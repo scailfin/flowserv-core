@@ -38,9 +38,9 @@ class DataFile(object):
         self.run_id = run_id
         self.file_id = doc['id']
         self.name = doc['name']
-        self.title = doc.get('title')
+        self.title = doc.get('title', self.name)
         self.caption = doc.get('caption')
-        self.format = doc.get('format')
+        self.format = doc.get('format', {})
         self.service = service
 
     def data(self) -> Tuple[List[str], List[List[str]]]:

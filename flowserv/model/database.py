@@ -32,6 +32,9 @@ def TEST_DB(dirname: str, filename: Optional[str] = 'test.db'):
     return 'sqlite:///{}'.format(os.path.join(dirname, filename))
 
 
+SQLITE_DB = TEST_DB
+
+
 class DB(object):
     """Wrapper to establish a database connection and create the database
     schema.
@@ -49,7 +52,7 @@ class DB(object):
         web_app: boolean, default=False
             Use scoped sessions for web applications if set to True.
         echo: bool, default=False
-            Flag that controlls whether the created engine is verbose or not.
+            Flag that controls whether the created engine is verbose or not.
         """
         # If the URL references a SQLite database ensure that the directory for
         # the database file exists (Issue #68).
