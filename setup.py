@@ -19,6 +19,7 @@ install_requires = [
     'gitpython',
     'passlib',
     'python-dateutil',
+    'jsonschema',
     'pyyaml>=5.1',
     'requests',
     'SQLAlchemy>=1.3.18',
@@ -88,7 +89,7 @@ setup(
     install_requires=install_requires,
     entry_points={
         'console_scripts': [
-            'flowserv = flowserv.cli.admin:cli'
+            'flowserv = flowserv.client.cli.base:cli'
         ]
     },
     classifiers=[

@@ -14,12 +14,11 @@ import botocore
 import os
 
 from io import BytesIO
-from typing import IO, List, Set, Tuple, TypeVar
+from typing import Dict, IO, List, Set, Tuple, TypeVar
 
-from flowserv.model.files.base import FileStore, FileObject
+from flowserv.config import FLOWSERV_BASEDIR, FLOWSERV_S3BUCKET
+from flowserv.model.files.base import FileStore, IOHandle
 
-import flowserv.config.base as config
-import flowserv.config.files as fconfig
 import flowserv.error as err
 
 
@@ -27,11 +26,7 @@ import flowserv.error as err
 B = TypeVar('B')
 
 
-"""Environment variable for unique bucket identifier."""
-FLOWSERV_S3BUCKET = 'FLOWSERV_S3BUCKET'
-
-
-class BucketFile(FileObject):
+class BucketFile(IOHandle):
     """Implementation of the file object interface for files that are stored on
     the file system.
     """
@@ -96,20 +91,23 @@ class BucketStore(FileStore):
     all files are maintained on the local file system under a given base
     directory.
     """
-    def __init__(self, bucket: B = None):
+    def __init__(self, env: Dict, bucket: B = None):
         """Initialize the storage bucket.
 
         Parameters
         ----------
+        env: dict
+            Configuration object that provides access to configuration
+            parameters in the environment.
         bucket: S3.Bucket
             Object that implements the delete, download, and upload methods of
             the S3.Bucket interface.
         """
         if bucket is None:
-            bucket_id = config.get_variable(FLOWSERV_S3BUCKET)
+            bucket_id = env.get(FLOWSERV_S3BUCKET)
             if bucket_id is None:
                 from flowserv.tests.files import DiskBucket
-                bucket = DiskBucket()
+                bucket = DiskBucket(basedir=env.get(FLOWSERV_BASEDIR))
             else:  # pragma: no cover
                 import boto3
                 bucket = boto3.resource('s3').Bucket(bucket_id)
@@ -118,20 +116,6 @@ class BucketStore(FileStore):
     def __repr__(self):
         """Get object representation ."""
         return "<BucketStore bucket={} />".format(self.bucket)
-
-    def configuration(self) -> List[Tuple[str, str]]:
-        """Get a list of tuples with the names of additional configuration
-        variables and their current values.
-
-        Returns
-        -------
-        list((string, string))
-        """
-        return [
-            (fconfig.FLOWSERV_FILESTORE_CLASS, 'BucketStore'),
-            (fconfig.FLOWSERV_FILESTORE_MODULE, 'flowserv.model.files.s3'),
-            (FLOWSERV_S3BUCKET, config.get_variable(FLOWSERV_S3BUCKET))
-        ]
 
     def copy_folder(self, key: str, dst: str):
         """Copy all files in the folder with the given key to a target folder
@@ -200,7 +184,7 @@ class BucketStore(FileStore):
         """
         return BucketFile(bucket=self.bucket, key=key)
 
-    def store_files(self, files: List[Tuple[FileObject, str]], dst: str):
+    def store_files(self, files: List[Tuple[IOHandle, str]], dst: str):
         """Store a given list of file objects in the associated bucket. The
         file destination key is a relative path name. This is used as the base
         path for all files. The file list contains tuples of file object and
@@ -208,7 +192,7 @@ class BucketStore(FileStore):
 
         Paramaters
         ----------
-        file: flowserv.model.files.base.FileObject
+        file: flowserv.model.files.base.IOHandle
             The input file object.
         dst: string
             Relative target path for the stored file.

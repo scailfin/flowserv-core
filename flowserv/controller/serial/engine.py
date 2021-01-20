@@ -15,18 +15,21 @@ local file system. The base folder for these run files in configured using the
 environment variable FLOWSERV_RUNSDIR.
 """
 
+from functools import partial
+from multiprocessing import Lock, Pool
+from typing import Callable, Optional
+
 import logging
 import os
 import subprocess
 
-from functools import partial
-from multiprocessing import Lock, Pool
-
-from flowserv.config.controller import ENGINE_ASYNC, FLOWSERV_ASYNC
+from flowserv.config import FLOWSERV_ASYNC, FLOWSERV_BASEDIR, FLOWSERV_RUNSDIR, DEFAULT_RUNSDIR
 from flowserv.controller.base import WorkflowController
+from flowserv.model.files.factory import FS
 from flowserv.model.workflow.serial import SerialWorkflow
+from flowserv.service.api import APIFactory
 
-import flowserv.controller.serial.config as config
+import flowserv.error as err
 import flowserv.util as util
 import flowserv.model.workflow.state as serialize
 
@@ -36,7 +39,9 @@ class SerialWorkflowEngine(WorkflowController):
     set of arguments. Each workflow is executed as a serial workflow. The
     individual workflow steps can be executed in a separate process on request.
     """
-    def __init__(self, fs=None, exec_func=None, is_async=None):
+    def __init__(
+        self, service: APIFactory, exec_func: Optional[Callable] = None
+    ):
         """Initialize the function that is used to execute individual workflow
         steps. The run workflow function in this module executes all steps
         within sub-processes in the same environment as the workflow
@@ -46,24 +51,26 @@ class SerialWorkflowEngine(WorkflowController):
         and private use only. It is not recommended (and very dangerous) to
         use this function in a public setting.
 
-        The is_async flag controlls the default setting for asynchronous
-        execution. If the flag is False all workflow steps will be executed
-        in a sequentiall (blocking) manner unless overridden by the in_sync
-        flag by the execute method.
-
         Parameters
         ----------
-        fs: flowserv.model.files.base.FileStore, default=None
-            File store for run input files.
-        exec_func: func, default=None
+        service: flowserv.service.api.APIFactory, default=None
+            API factory for service callbach during asynchronous workflow
+            execution.
+        exec_func: callable, default=None
             Function that is used to execute the workflow commands
-        is_async: bool, default=None
-            Flag that determines whether workflows execution is synchronous or
-            asynchronous by default.
         """
-        self.fs = fs
+        self.fs = FS(env=service)
+        self.service = service
         self.exec_func = exec_func if exec_func is not None else run_workflow
-        self.is_async = is_async if is_async is not None else ENGINE_ASYNC()
+        # The is_async flag controlls the default setting for asynchronous
+        # execution. If the flag is False all workflow steps will be executed
+        # in a sequentiall (blocking) manner.
+        self.is_async = service.get(FLOWSERV_ASYNC)
+        # Directory for temporary run files.
+        basedir = service.get(FLOWSERV_BASEDIR)
+        if basedir is None:
+            raise err.MissingConfigurationError('API base directory')
+        self.runsdir = service.get(FLOWSERV_RUNSDIR, os.path.join(basedir, DEFAULT_RUNSDIR))
         # Dictionary of all running tasks
         self.tasks = dict()
         # Lock to manage asynchronous access to the task dictionary
@@ -93,17 +100,7 @@ class SerialWorkflowEngine(WorkflowController):
                 # uses this controller for workflow execution
                 del self.tasks[run_id]
 
-    def configuration(self):
-        """Get a list of tuples with the names of additional configuration
-        variables and their current values.
-
-        Returns
-        -------
-        list((string, string))
-        """
-        return [(FLOWSERV_ASYNC, str(self.is_async))]
-
-    def exec_workflow(self, run, template, arguments, service=None):
+    def exec_workflow(self, run, template, arguments):
         """Initiate the execution of a given workflow template for a set of
         argument values. This will start a new process that executes a serial
         workflow asynchronously.
@@ -124,15 +121,13 @@ class SerialWorkflowEngine(WorkflowController):
 
         Parameters
         ----------
-        run: flowserv.model.base.RunHandle
+        run: flowserv.model.base.RunObject
             Handle for the run that is being executed.
         template: flowserv.model.template.base.WorkflowTemplate
             Workflow template containing the parameterized specification and
             the parameter declarations.
         arguments: dict
             Dictionary of argument values for parameters in the template.
-        service: contextlib,contextmanager, default=None
-            Context manager to create an instance of the service API.
 
         Returns
         -------
@@ -146,7 +141,7 @@ class SerialWorkflowEngine(WorkflowController):
         if not run.is_pending():
             raise RuntimeError("invalid run state '{}'".format(run.state))
         state = run.state()
-        rundir = os.path.join(config.RUNSDIR(), run.run_id)
+        rundir = os.path.join(self.runsdir, run.run_id)
         # Expand template parameters. Get (i) list of files that need to be
         # copied, (ii) the expanded commands that represent the workflow steps,
         # and (iii) the list of output files.
@@ -170,7 +165,7 @@ class SerialWorkflowEngine(WorkflowController):
             state = state.start()
             if self.is_async:
                 # Raise an error if the service manager is not given.
-                if service is None:
+                if self.service is None:
                     raise ValueError('service manager not given')
                 # Run steps asynchronously in a separate process
                 pool = Pool(processes=1)
@@ -178,7 +173,7 @@ class SerialWorkflowEngine(WorkflowController):
                     callback_function,
                     lock=self.lock,
                     tasks=self.tasks,
-                    service=service
+                    service=self.service
                 )
                 with self.lock:
                     self.tasks[run.run_id] = (pool, state)
@@ -205,7 +200,6 @@ class SerialWorkflowEngine(WorkflowController):
                 )
                 return serialize.deserialize_state(state_dict), rundir
         except Exception as ex:
-            print(ex)
             # Set the workflow runinto an ERROR state
             logging.error(ex)
             return state.error(messages=util.stacktrace(ex)), rundir

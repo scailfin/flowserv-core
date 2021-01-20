@@ -10,19 +10,20 @@
 about workflow runs in an underlying database.
 """
 
+from typing import List, Optional, Tuple
+
 import io
 import mimetypes
 import os
 import shutil
 import tarfile
 
-from typing import IO, List, Optional
-
-from flowserv.model.base import (
-    RunFile, RunHandle, RunMessage, WorkflowRankingRun
-)
-from flowserv.model.files.base import DatabaseFile
+from flowserv.model.base import RunFile, RunObject, RunMessage, WorkflowRankingRun
+from flowserv.model.files.base import FileHandle, IOBuffer
 from flowserv.model.files.fs import walk
+from flowserv.model.template.schema import ResultSchema
+from flowserv.model.workflow.state import WorkflowState
+
 import flowserv.error as err
 import flowserv.model.workflow.state as st
 import flowserv.util as util
@@ -57,9 +58,9 @@ class RunManager(object):
 
         Parameters
         ----------
-        workflow: flowserv.model.base.WorkflowHandle, default=None
+        workflow: flowserv.model.base.WorkflowObject, default=None
             Workflow handle if this is a post-processing run.
-        group: flowserv.model.base.GroupHandle
+        group: flowserv.model.base.GroupObject
             Group handle if this is a group sumbission run.
         arguments: list
             List of argument values for parameters in the template.
@@ -69,7 +70,7 @@ class RunManager(object):
 
         Returns
         -------
-        flowserv.model.base.RunHandle
+        flowserv.model.base.RunObject
 
         Raises
         ------
@@ -93,7 +94,7 @@ class RunManager(object):
             workflow_id = workflow.workflow_id
             group_id = None
         # Return handle for the created run.
-        run = RunHandle(
+        run = RunObject(
             run_id=run_id,
             workflow_id=workflow_id,
             group_id=group_id,
@@ -162,7 +163,7 @@ class RunManager(object):
             count += 1
         return count
 
-    def get_run(self, run_id):
+    def get_run(self, run_id: str) -> RunObject:
         """Get handle for the given run from the underlying database. Raises an
         error if the run does not exist.
 
@@ -173,7 +174,7 @@ class RunManager(object):
 
         Returns
         -------
-        flowserv.model.base.RunHandle
+        flowserv.model.base.RunObject
 
         Raises
         ------
@@ -182,14 +183,14 @@ class RunManager(object):
         # Fetch run information from the database. Raises an error if the run
         # is unknown..
         run = self.session\
-            .query(RunHandle)\
-            .filter(RunHandle.run_id == run_id)\
+            .query(RunObject)\
+            .filter(RunObject.run_id == run_id)\
             .one_or_none()
         if run is None:
             raise err.UnknownRunError(run_id)
         return run
 
-    def get_runarchive(self, run_id: str) -> IO:
+    def get_runarchive(self, run_id: str) -> FileHandle:
         """Get tar archive containing all result files for a given workflow
         run. Raises UnknownRunError if the run is not in SUCCESS state.
 
@@ -200,7 +201,7 @@ class RunManager(object):
 
         Returns
         -------
-        io.BytesIO
+        flowserv.model.files.base.FileHandle
 
         Raises
         ------
@@ -223,13 +224,20 @@ class RunManager(object):
             tar_handle.addfile(tarinfo=info, fileobj=file)
         tar_handle.close()
         io_buffer.seek(0)
-        return io_buffer
+        # Create file handle for the archive. The file name includes the run
+        # identifier. The mime type is 'application/gzip' based on
+        # https://superuser.com/questions/901962.
+        return FileHandle(
+            name='run.{}.tar.gz'.format(run_id),
+            mime_type='application/gzip',
+            fileobj=IOBuffer(io_buffer)
+        )
 
     def get_runfile(
         self, run_id: str, file_id: str = None, key: str = None
-    ) -> DatabaseFile:
+    ) -> FileHandle:
         """Get handle and file object for a given run result file. The file is
-        either identified by the unique file identifier or the file key.Raises
+        either identified by the unique file identifier or the file key. Raises
         an error if the specified file does not exist.
 
         Parameters
@@ -241,7 +249,7 @@ class RunManager(object):
 
         Returns
         -------
-        flowserv.model.files.base.DatabaseFile
+        flowserv.model.files.base.FileHandle
 
         Raises
         ------
@@ -263,7 +271,7 @@ class RunManager(object):
         # Return file handle for resource file
         workflow_id = run.workflow.workflow_id
         rundir = self.fs.run_basedir(workflow_id=workflow_id, run_id=run_id)
-        return DatabaseFile(
+        return FileHandle(
             name=fh.name,
             mime_type=fh.mime_type,
             fileobj=self.fs.load_file(os.path.join(rundir, fh.key))
@@ -283,23 +291,23 @@ class RunManager(object):
 
         Returns
         -------
-        list(flowserv.model.base.RunHandle)
+        list(flowserv.model.base.RunObject)
         """
         # Generate query that returns the handles of all runs. If the state
         # conditions are given, we add further filters.
         query = self.session\
-            .query(RunHandle)\
-            .filter(RunHandle.group_id == group_id)
+            .query(RunObject)\
+            .filter(RunObject.group_id == group_id)
         if state is not None:
             if isinstance(state, list):
-                query = query.filter(RunHandle.state_type.in_(state))
+                query = query.filter(RunObject.state_type.in_(state))
             else:
-                query = query.filter(RunHandle.state_type == state)
+                query = query.filter(RunObject.state_type == state)
         return query.all()
 
     def list_obsolete_runs(
         self, date: str, state: Optional[str] = None
-    ) -> List[RunHandle]:
+    ) -> List[RunObject]:
         """List all workflow runs that were created before the given date.
         The optional state parameter allows to further restrict the list of
         returned runs to those that were created before the given date and
@@ -314,42 +322,22 @@ class RunManager(object):
 
         Returns
         -------
-        list(flowserv.model.base.RunHandle)
+        list(flowserv.model.base.RunObject)
         """
         # Get handles for all runs before the given date. Ensure to exclude
         # runs that are part of a current workflow ranking result.
         query = self.session\
-            .query(RunHandle)\
-            .filter(RunHandle.created_at < date)\
-            .filter(RunHandle.run_id.notin_(
+            .query(RunObject)\
+            .filter(RunObject.created_at < date)\
+            .filter(RunObject.run_id.notin_(
                 self.session.query(WorkflowRankingRun.run_id)
             ))
         # Add filter for run state if given.
         if state is not None:
-            query = query.filter(RunHandle.state_type == state)
+            query = query.filter(RunObject.state_type == state)
         return query.all()
 
-    def poll_runs(self, group_id, state=None):
-        """Get list of identifier for group runs that are currently in the
-        given state. By default, the active runs are returned.
-
-        Parameters
-        ----------
-        group_id: string, optional
-            Unique workflow group identifier
-        state: string, Optional
-                State identifier query
-
-        Returns
-        -------
-        list(flowserv.model.base.RunHandle)
-        """
-        if state is not None:
-            return self.list_runs(group_id=group_id, state=state)
-        else:
-            return self.list_runs(group_id=group_id, state=st.ACTIVE_STATES)
-
-    def update_run(self, run_id, state, rundir=None):
+    def update_run(self, run_id: str, state: WorkflowState, rundir: Optional[str] = None):
         """Update the state of the given run. This method does check if the
         state transition is valid. Transitions are valid for active workflows,
         if the transition is (a) from pending to running or (b) to an inactive
@@ -371,7 +359,7 @@ class RunManager(object):
 
         Returns
         -------
-        flowserv.model.base.RunHandle
+        flowserv.model.base.RunObject
 
         Raises
         ------
@@ -391,15 +379,11 @@ class RunManager(object):
         # For pending workflows an entry is created when the run starts.
         # -- RUNNING ----------------------------------------------------------
         if state.is_running():
-            if current_state != st.STATE_PENDING:
-                msg = 'cannot start run in {} state'
-                raise err.ConstraintViolationError(msg.format(current_state))
+            validate_state_transition(current_state, state.type_id, [st.STATE_PENDING])
             run.started_at = state.started_at
         # -- CANCELED or ERROR ------------------------------------------------
         elif state.is_canceled() or state.is_error():
-            if current_state not in st.ACTIVE_STATES:
-                msg = 'cannot set run in {} state to error'
-                raise err.ConstraintViolationError(msg.format(current_state))
+            validate_state_transition(current_state, state.type_id, st.ACTIVE_STATES)
             messages = list()
             for i, msg in enumerate(state.messages):
                 messages.append(RunMessage(message=msg, pos=i))
@@ -408,75 +392,19 @@ class RunManager(object):
             run.ended_at = state.stopped_at
             # Delete all run files.
             if rundir is not None and os.path.exists(rundir):
-                try:
-                    shutil.rmtree(rundir)
-                except PermissionError:
-                    pass
+                delete_run_dir(rundir)
         # -- SUCCESS ----------------------------------------------------------
         elif state.is_success():
-            if current_state not in st.ACTIVE_STATES:
-                msg = 'cannot set run in {} state to error state'
-                raise err.ConstraintViolationError(msg.format(current_state))
+            validate_state_transition(current_state, state.type_id, st.ACTIVE_STATES)
             assert rundir is not None
-            # Create list of output file keyss depending on whether files are
-            # specified in the workflow specification or not.
-            filekeys = None
-            outputs = run.outputs()
-            if outputs:
-                # List only existing files for output specifications in the
-                # workflow handle. Note that (i) the result of run.outputs() is
-                # always a dictionary and (ii) that the keys in the returned
-                # dictionary are not necessary equal to the file sources.
-                filekeys = [f.source for f in run.outputs().values()]
-            else:
-                # List all files that were generated by the workflow run as
-                # output.
-                filekeys = state.files
-            # For each run file ensure that it exist before adding a file
-            # handle to the run. We use the file system store's walk method to
-            # get a list of all files that need to be retained for a run.
-            walklist = list()
-            for filekey in filekeys:
-                filename = os.path.join(rundir, filekey)
-                if not os.path.exists(filename):
-                    continue
-                walklist.append((filename, filekey))
-            # Get files that will be copied to the file store.
-            runfiles = list()
-            storefiles = walk(files=walklist)
-            for file, filekey in storefiles:
-                mime_type, _ = mimetypes.guess_type(url=file.filename)
-                rf = RunFile(
-                    key=filekey,
-                    name=filekey,
-                    mime_type=mime_type,
-                    size=file.size()
-                )
-                runfiles.append(rf)
             # Set run properties.
-            run.files = runfiles
+            run.files, storefiles = get_run_files(run, state, rundir)
             run.started_at = state.started_at
             run.ended_at = state.finished_at
             # Parse run result if the associated workflow has a result schema.
             result_schema = run.workflow.result_schema
             if result_schema is not None:
-                # Read the results from the result file that is specified in
-                # the workflow result schema. If the file is not found we
-                # currently do not raise an error.
-                filename = os.path.join(rundir, result_schema.result_file)
-                if os.path.exists(filename):
-                    results = util.read_object(filename)
-                    # Create a dictionary of result values.
-                    values = dict()
-                    for col in result_schema.columns:
-                        val = util.jquery(doc=results, path=col.jpath())
-                        col_id = col.column_id
-                        if val is None and col.required:
-                            msg = "missing value for '{}'".format(col_id)
-                            raise err.ConstraintViolationError(msg)
-                        elif val is not None:
-                            values[col_id] = col.cast(val)
-                    run.result = values
+                read_run_results(run, result_schema, rundir)
             # Archive run files (and remove all other files from the run
             # directory).
             storedir = self.fs.run_basedir(
@@ -485,19 +413,135 @@ class RunManager(object):
             )
             self.fs.store_files(files=storefiles, dst=storedir)
             if os.path.exists(rundir):
-                # The run directory does not have to exist if the workflow does
-                # not access and files or create any files. If the workflow is
-                # running in a docker container we may also not have the
-                # permissions to delete the directory.
-                try:
-                    shutil.rmtree(rundir)
-                except PermissionError:
-                    pass
+                delete_run_dir(rundir)
         # -- PENDING ----------------------------------------------------------
-        elif current_state != st.STATE_PENDING:
-            msg = 'cannot set run in pending state to {}'
-            raise err.ConstraintViolationError(msg.format(state.type_id))
+        else:
+            validate_state_transition(current_state, state.type_id, [st.STATE_PENDING])
         run.state_type = state.type_id
         # Commit changes to database. Then remove the local run directory.
         self.session.commit()
         return run
+
+
+# -- Helper Functions ---------------------------------------------------------
+
+def delete_run_dir(rundir: str):
+    """Delete the run directory for a workflow run. The directory does not have
+    to exist if the workflow does not access and files or create any files. If
+    the workflow is running in a docker container we may also not have the
+    permissions to delete the directory.
+
+    Parameters
+    ----------
+    rundir: string
+        Workflow run directory
+    """
+    try:
+        shutil.rmtree(rundir)
+    except PermissionError:
+        pass
+
+
+def get_run_files(run: RunObject, state: WorkflowState, rundir: str) -> Tuple[List[RunFile], List[str]]:
+    """Create list of output files for a successful run. The list of files
+    depends on whether files are specified in the workflow specification or not.
+    If files are specified only those files are included in the returned lists.
+    Otherwise, all result files that are listed in the run state are returned.
+
+    Parameters
+    ----------
+    run: flowserv.model.base.RunObject
+        Handle for a workflow run.
+    state: flowserv.model.workflow.state.WorkflowState
+        SUCCESS state for the workflow run.
+    rundir: string
+        Directory containing run result files.
+
+    Returns
+    -------
+    list of RunObject, list of string
+    """
+    filekeys = None
+    outputs = run.outputs()
+    if outputs:
+        # List only existing files for output specifications in the
+        # workflow handle. Note that (i) the result of run.outputs() is
+        # always a dictionary and (ii) that the keys in the returned
+        # dictionary are not necessary equal to the file sources.
+        filekeys = [f.source for f in run.outputs().values()]
+    else:
+        # List all files that were generated by the workflow run as
+        # output.
+        filekeys = state.files
+    # For each run file ensure that it exist before adding a file
+    # handle to the run. We use the file system store's walk method to
+    # get a list of all files that need to be retained for a run.
+    walklist = list()
+    for filekey in filekeys:
+        filename = os.path.join(rundir, filekey)
+        if not os.path.exists(filename):
+            continue
+        walklist.append((filename, filekey))
+    # Get files that will be copied to the file store.
+    runfiles = list()
+    storefiles = walk(files=walklist)
+    for file, filekey in storefiles:
+        mime_type, _ = mimetypes.guess_type(url=file.filename)
+        rf = RunFile(
+            key=filekey,
+            name=filekey,
+            mime_type=mime_type,
+            size=file.size()
+        )
+        runfiles.append(rf)
+    return runfiles, storefiles
+
+
+def read_run_results(run: RunObject, schema: ResultSchema, rundir: str):
+    """Read the run results from the result file that is specified in the workflow
+    result schema. If the file is not found we currently do not raise an error.
+
+    Parameters
+    ----------
+    run: flowserv.model.base.RunObject
+        Handle for a workflow run.
+    schema: flowserv.model.template.schema.ResultSchema
+        Workflow result schema specification that contains the reference to the
+        result file key.
+    rundir: string
+        Directory containing run result files.
+    """
+    filename = os.path.join(rundir, schema.result_file)
+    if os.path.exists(filename):
+        results = util.read_object(filename)
+        # Create a dictionary of result values.
+        values = dict()
+        for col in schema.columns:
+            val = util.jquery(doc=results, path=col.jpath())
+            col_id = col.column_id
+            if val is None and col.required:
+                msg = "missing value for '{}'".format(col_id)
+                raise err.ConstraintViolationError(msg)
+            elif val is not None:
+                values[col_id] = col.cast(val)
+        run.result = values
+
+
+def validate_state_transition(current_state: str, target_state: str, valid_states: List[str]):
+    """Validate that a transition from current state to target state is
+    permitted. The list of valid state identifier determines the current states
+    that are permitted to transition to the target state. If an invalid
+    transition is detected an error is raised.
+
+    Parameters
+    ----------
+    current_state: str
+        Identifier for the current run state.
+    target_state: str
+        Identifier for the target workflow state.
+    valid_states: list of string
+        List of valid source states for the anticipated target state.
+    """
+    if current_state not in valid_states:
+        msg = 'cannot change run in state {} to state {}'
+        raise err.ConstraintViolationError(msg.format(current_state, target_state))

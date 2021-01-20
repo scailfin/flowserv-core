@@ -14,7 +14,7 @@
 
 * Read template metadata from project description file when adding a workflow template to the repository.
 * Create default names for templates with missing or non-unique names.
-* Include short-cuts to default repositories when creating workflow templates using the command-line interface.
+* Include Short cuts to default repositories when creating workflow templates using the command-line interface.
 
 
 ### 0.2.0 - 2020-07-30
@@ -92,3 +92,8 @@
 
 * Add parameter declarations for lists and records (\#73).
 * Rename run argument serialization helper functions.
+
+
+### 0.7.0 - 2020-??-??
+
+* Drop support for Python 3.6.

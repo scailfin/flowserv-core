@@ -15,9 +15,9 @@ import os
 from io import BytesIO
 from typing import Dict, IO, List, Optional, Union
 
-from flowserv.model.files.base import FileObject, IOFile
+from flowserv.config import FLOWSERV_BASEDIR
+from flowserv.model.files.base import IOHandle, IOBuffer
 
-import flowserv.config.api as config
 import flowserv.util as util
 
 
@@ -25,12 +25,12 @@ class FileStorage(object):
     """Fake stream object that simulates a werkzeug.FileStorage object to test
     the FlaskFile object. Wraps araond a given file object.
     """
-    def __init__(self, file: FileObject):
+    def __init__(self, file: IOHandle):
         """Initialize the wrapped file object.
 
         Parameters
         ----------
-        file: flowserv.model.files.FileObject
+        file: flowserv.model.files.IOHandle
             File data object
         """
         self.file = file
@@ -40,12 +40,9 @@ class FileStorage(object):
         """Get the size of the wrapped file."""
         return self.file.size()
 
-    def save(self, filename: Union[str, IO]):
+    def save(self, filename: str):
         """Write file to disk or to a given IO buffer."""
-        if isinstance(filename, str):
-            self.file.store(filename)
-        else:
-            filename.write(self.file.open().read())
+        self.file.store(filename)
 
 
 # -- S3 Buckets ---------------------------------------------------------------
@@ -55,9 +52,9 @@ class DiskBucket(object):
     BucketStore for test purposes. Persists all objects on disk. Uses the
     API_BASDIR if not storage directory is given.
     """
-    def __init__(self, basedir: str = None):
+    def __init__(self, basedir: str):
         """Initialize the internal object dictionary."""
-        self.basedir = basedir if basedir is not None else config.API_BASEDIR()
+        self.basedir = basedir
 
     def __repr__(self):
         """Get object representation ."""
@@ -113,10 +110,13 @@ class DiskBucket(object):
             f.write(file.read())
 
 
-def DiskStore(basedir):
+def DiskStore(env: Dict):
     """Create an instance of the buckect store with a disk bucket."""
     from flowserv.model.files.s3 import BucketStore
-    return BucketStore(DiskBucket(basedir))
+    return BucketStore(
+        env=env,
+        bucket=DiskBucket(basedir=env.get(FLOWSERV_BASEDIR))
+    )
 
 
 class ObjectSummary(object):
@@ -146,7 +146,7 @@ def parse_dir(dirname, prefix, result=None):
 # -- Helper Functions ---------------------------------------------------------
 
 
-def io_file(data: Union[List, Dict], format: Optional[str] = None) -> IOFile:
+def io_file(data: Union[List, Dict], format: Optional[str] = None) -> IOBuffer:
     """Write simple text to given bytes buffer."""
     buf = BytesIO()
     buf.seek(0)
@@ -155,4 +155,4 @@ def io_file(data: Union[List, Dict], format: Optional[str] = None) -> IOFile:
     else:
         for line in data:
             buf.write(str.encode('{}\n'.format(line)))
-    return IOFile(buf)
+    return IOBuffer(buf)

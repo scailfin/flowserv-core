@@ -146,14 +146,14 @@ def expand_value(value, arguments, parameters):
             raise err.MissingArgumentError(para.name)
         # Extract the variable name and the conditional return values.
         var = expr[:pos].strip()
-        expr = expr[pos+1:].strip()
+        expr = expr[pos + 1:].strip()
         pos = expr.find(':')
         if pos == -1:
             eval_true = expr
             eval_false = None
         else:
             eval_true = expr[:pos].strip()
-            eval_false = expr[pos+1:].strip()
+            eval_false = expr[pos + 1:].strip()
         if var not in arguments:
             raise err.MissingArgumentError(var)
         if str(arguments[var]).lower() == 'true':
@@ -266,14 +266,14 @@ def get_value(value, arguments):
         return expr
     # Extract the variable name and the conditional return values.
     var = expr[:pos].strip()
-    expr = expr[pos+1:].strip()
+    expr = expr[pos + 1:].strip()
     pos = expr.find(':')
     if pos == -1:
         eval_true = expr
         eval_false = None
     else:
         eval_true = expr[:pos].strip()
-        eval_false = expr[pos+1:].strip()
+        eval_false = expr[pos + 1:].strip()
     if var not in arguments:
         raise err.MissingArgumentError(var)
     if str(arguments[var]).lower() == 'true':

@@ -86,7 +86,7 @@ class WorkflowMonitor(Thread):
 # -- Helper functions ---------------------------------------------------------
 
 def monitor_workflow(
-    run_id,  state, workflow_id, output_files, client, poll_interval,
+    run_id, state, workflow_id, output_files, client, poll_interval,
     service=None
 ):
     """Monitor a remote workflow run by continuous polling at a given interval.

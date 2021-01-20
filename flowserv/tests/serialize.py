@@ -202,27 +202,6 @@ def validate_run_listing(doc):
         validate_run_descriptor(doc=r)
 
 
-# -- Service descriptor -------------------------------------------------------
-
-def validate_service_descriptor(doc):
-    """Validate serialization of the service descriptor.
-
-    Parameters
-    ----------
-    doc: dict
-        Service descriptor serialization
-
-    Raises
-    ------
-    ValueError
-    """
-    util.validate_doc(
-        doc=doc,
-        mandatory=['name', 'version', 'validToken'],
-        optional=['username']
-    )
-
-
 # -- Users --------------------------------------------------------------------
 
 def validate_reset_request(doc):
@@ -316,7 +295,7 @@ def validate_para_module(doc):
     util.validate_doc(doc=doc, mandatory=['name', 'title', 'index'])
 
 
-def validate_workflow_handle(doc, has_optional=False):
+def validate_workflow_handle(doc):
     """Validate serialization of a workflow handle. Here we distinguish between
     handles that have optional elements (description and instructions) and
     those that have not.
@@ -325,9 +304,6 @@ def validate_workflow_handle(doc, has_optional=False):
     ----------
     doc: dict
         Workflow handle serialization.
-    has_optional: bool, optional
-        Flag indicating whether the handle should contain description and
-        instruction elements.
 
     Raises
     ------
@@ -337,8 +313,6 @@ def validate_workflow_handle(doc, has_optional=False):
     # in all local test cases. That is the reason why it is in the list of
     # mandatory elements here.
     mandatory = ['id', 'name', 'parameters', 'parameterGroups']
-    if has_optional:
-        mandatory = mandatory + ['description', 'instructions']
     util.validate_doc(
         doc=doc,
         mandatory=mandatory,

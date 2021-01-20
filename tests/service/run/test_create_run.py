@@ -22,19 +22,20 @@ import flowserv.model.workflow.state as st
 import flowserv.tests.serialize as serialize
 
 
-def test_create_successful_run_view(service, hello_world):
-    """Test life cycle for successful run."""
+def test_create_run_local(local_service, hello_world):
+    """Test life cycle for successful run using the local service."""
     # -- Setup ----------------------------------------------------------------
     #
     # Start a new run for a group of the 'Hello World' workflow and set it into
     # success state.
     tmpdir = tempfile.mkdtemp()
-    with service() as api:
+    with local_service() as api:
         user_1 = create_user(api)
         user_2 = create_user(api)
-        workflow_id = hello_world(api)['id']
+        workflow_id = hello_world(api).workflow_id
+    with local_service(user_id=user_1) as api:
         group_id = create_group(api, workflow_id=workflow_id, users=[user_1])
-        run_id, file_id = start_hello_world(api, group_id, user_1)
+        run_id, file_id = start_hello_world(api, group_id)
         result = {'group': group_id, 'run': run_id}
         write_results(
             rundir=tmpdir,
@@ -45,7 +46,7 @@ def test_create_successful_run_view(service, hello_world):
         )
         api.runs().update_run(
             run_id=run_id,
-            state=api.engine.success(
+            state=api.runs().backend.success(
                 run_id,
                 files=['results/data.json', 'values.txt']
             ),
@@ -53,11 +54,17 @@ def test_create_successful_run_view(service, hello_world):
         )
     assert not os.path.exists(tmpdir)
     # -- Validate run handle --------------------------------------------------
-    with service() as api:
-        r = api.runs().get_run(run_id=run_id, user_id=user_1)
+    with local_service(user_id=user_1) as api:
+        r = api.runs().get_run(run_id=run_id)
         serialize.validate_run_handle(r, st.STATE_SUCCESS)
         assert is_fh(r['arguments'][0]['value'])
     # -- Error when non-member attempts to access run -------------------------
-    with service() as api:
+    with local_service(user_id=user_2) as api:
         with pytest.raises(err.UnauthorizedAccessError):
-            api.runs().get_run(run_id=run_id, user_id=user_2)
+            api.runs().get_run(run_id=run_id)
+
+
+def test_start_run_remote(remote_service, mock_response):
+    """Test starting a workflow run at the remote service."""
+    remote_service.runs().start_run(group_id='0000', arguments=[{'arg': 1}])
+    remote_service.runs().get_run(run_id='0000')

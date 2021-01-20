@@ -8,26 +8,19 @@
 
 """Unit test for API methods."""
 
-import os
 import pytest
 
-from flowserv.model.auth import DefaultAuthPolicy
-from flowserv.model.files.s3 import BucketStore, FLOWSERV_S3BUCKET
-from flowserv.service.files import get_filestore
+from flowserv.config import Config, FLOWSERV_FILESTORE_MODULE, FLOWSERV_FILESTORE_CLASS
+from flowserv.model.files.factory import FS
+from flowserv.model.files.s3 import BucketStore
 from flowserv.tests.files import DiskBucket
 
-import flowserv.config.files as config
 import flowserv.error as err
 
 
-def test_api_components(service):
+def test_api_components(local_service):
     """Test methods to access API components."""
-    with service() as api:
-        # The API uses the default authentication handler.
-        assert isinstance(api.auth, DefaultAuthPolicy)
-        # Error when authenticating unknown user.
-        with pytest.raises(err.UnauthenticatedAccessError):
-            api.authenticate('0000')
+    with local_service() as api:
         # Access the different managers to ensure that they are created
         # properly without raising errors.
         assert api.groups() is not None
@@ -43,25 +36,22 @@ def test_initialize_filestore_from_env(tmpdir):
     envirnment variables.
     """
     # -- Setup ----------------------------------------------------------------
-    os.environ[config.FLOWSERV_FILESTORE_MODULE] = 'flowserv.model.files.s3'
-    os.environ[config.FLOWSERV_FILESTORE_CLASS] = 'BucketStore'
-    if FLOWSERV_S3BUCKET in os.environ:
-        del os.environ[FLOWSERV_S3BUCKET]
+    env = Config().basedir(tmpdir)
+    env[FLOWSERV_FILESTORE_MODULE] = 'flowserv.model.files.s3'
+    env[FLOWSERV_FILESTORE_CLASS] = 'BucketStore'
     # -- Create bucket store instance -----------------------------------------
-    fs = get_filestore()
+    fs = FS(env=env)
     assert isinstance(fs, BucketStore)
     assert isinstance(fs.bucket, DiskBucket)
     # -- Error cases ----------------------------------------------------------
-    del os.environ[config.FLOWSERV_FILESTORE_MODULE]
+    del env[FLOWSERV_FILESTORE_MODULE]
     with pytest.raises(err.MissingConfigurationError):
-        get_filestore()
-    assert get_filestore(raise_error=False) is None
-    os.environ[config.FLOWSERV_FILESTORE_MODULE] = 'flowserv.model.files.s3'
-    del os.environ[config.FLOWSERV_FILESTORE_CLASS]
+        FS(env=env)
+    env[FLOWSERV_FILESTORE_MODULE] = 'flowserv.model.files.s3'
+    del env[FLOWSERV_FILESTORE_CLASS]
     with pytest.raises(err.MissingConfigurationError):
-        get_filestore()
+        FS(env=env)
     # -- Default file store ---------------------------------------------------
-    del os.environ[config.FLOWSERV_FILESTORE_MODULE]
-    os.environ[config.FLOWSERV_API_BASEDIR] = str(tmpdir)
-    assert get_filestore() is not None
-    del os.environ[config.FLOWSERV_API_BASEDIR]
+    assert FS(env=Config().basedir(tmpdir)) is not None
+    with pytest.raises(err.MissingConfigurationError):
+        FS(env=Config())

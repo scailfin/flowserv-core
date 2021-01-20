@@ -10,46 +10,50 @@
 sessions as well as to create a fresh database.
 """
 
-import os
-
+from __future__ import annotations
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
+from typing import Optional
+
+import os
 
 from flowserv.model.base import Base
 
-import flowserv.config.database as config
+import flowserv.config as config
+import flowserv.util as util
 
 
 """Database connection Url for test purposes."""
 TEST_URL = 'sqlite:///:memory:'
 
 
+def TEST_DB(dirname: str, filename: Optional[str] = 'test.db'):
+    """Get connection Url for a databse file."""
+    return 'sqlite:///{}'.format(os.path.join(dirname, filename))
+
+
+SQLITE_DB = TEST_DB
+
+
 class DB(object):
     """Wrapper to establish a database connection and create the database
     schema.
     """
-    def __init__(self, connect_url=None, web_app=None, echo=False):
-        """Initialize the database connection string. If no connect string is
-        given an attempt is made to access the value in the respective
-        environment variable. If the variable is not set an error is raised.
+    def __init__(
+        self, connect_url: str, web_app: Optional[bool] = False,
+        echo: Optional[bool] = False
+    ):
+        """Initialize the database object from the given configuration object.
 
         Parameters
         ----------
-        connect_url: string, default=None
-            Database connection string.
-        web_app: bool, default=None
+        connect_url: string
+            SQLAlchemy database connect Url string.
+        web_app: boolean, default=False
             Use scoped sessions for web applications if set to True.
         echo: bool, default=False
-            Flag that controlls whether the created engine is verbose or not.
-
-        Raises
-        ------
-        flowserv.error.MissingConfigurationError
+            Flag that controls whether the created engine is verbose or not.
         """
-        # Ensure that the connection URL is set.
-        connect_url = config.DB_CONNECT(value=connect_url)
-        # Get web_app flag from configuration.
-        web_app = config.WEBAPP(value=web_app)
         # If the URL references a SQLite database ensure that the directory for
         # the database file exists (Issue #68).
         if connect_url.startswith('sqlite://'):
@@ -65,13 +69,29 @@ class DB(object):
         else:
             self._session = sessionmaker(bind=self._engine)
 
-    def init(self):
-        """Create all tables in the database model schema."""
+    def init(self) -> DB:
+        """Create all tables in the database model schema. This will also
+        register the default user. The password for the user is a random UUID
+        since the default user is not expected to login (but be used only in
+        open access policies).
+        """
         # Add import for modules that contain ORM definitions.
         import flowserv.model.base  # noqa: F401
         # Drop all tables first before creating them
         Base.metadata.drop_all(self._engine)
         Base.metadata.create_all(self._engine)
+        # Create the default user.
+        with self.session() as session:
+            from passlib.hash import pbkdf2_sha256
+            from flowserv.model.base import User
+            user = User(
+                user_id=config.DEFAULT_USER,
+                name=config.DEFAULT_USER,
+                secret=pbkdf2_sha256.hash(util.get_unique_identifier()),
+                active=True
+            )
+            session.add(user)
+        return self
 
     def session(self):
         """Create a new database session instance. The sessoin is wrapped by a
@@ -124,3 +144,11 @@ class SessionScope(object):
                 self.session.rollback()
             finally:
                 self.session.close()
+
+    def close(self):
+        """Close the session."""
+        self.__exit__(None, None, None)
+
+    def open(self):
+        """Get a reference to the database session object."""
+        return self.__enter__()

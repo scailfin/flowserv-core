@@ -10,10 +10,13 @@
 local Docker daemon to execute workflow steps.
 """
 
+from typing import Optional
+
 import logging
 import os
 
 from flowserv.controller.serial.engine import SerialWorkflowEngine
+from flowserv.service.api import APIFactory
 
 import flowserv.model.workflow.state as serialize
 import flowserv.util as util
@@ -26,21 +29,18 @@ class DockerWorkflowEngine(SerialWorkflowEngine):
     the engine extends the multi-process controller for asynchronous execution.
     Workflow runs are executed by the docker_run() function.
     """
-    def __init__(self, fs, is_async=None):
+    def __init__(self, service: Optional[APIFactory] = None):
         """Initialize the super class using the docker_run execution function.
 
         Parameters
         ----------
-        fs: flowserv.model.files.base.FileStore
-            File store for run input files.
-        is_async: bool, optional
-            Flag that determines whether workflows execution is synchronous or
-            asynchronous by default.
+        service: flowserv.service.api.APIFactory, default=None
+            API factory for service callbach during asynchronous workflow
+            execution.
         """
         super(DockerWorkflowEngine, self).__init__(
-            fs=fs,
-            exec_func=docker_run,
-            is_async=is_async
+            service=service,
+            exec_func=docker_run
         )
 
 

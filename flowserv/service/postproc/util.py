@@ -15,14 +15,14 @@ import tempfile
 
 from typing import List, Tuple
 
-from flowserv.model.files.base import FileObject
+from flowserv.model.files.base import IOHandle
 
 import flowserv.util as util
 import flowserv.service.postproc.base as base
 
 
 def copy_postproc_files(
-    runs: List[Tuple[str, str, List[Tuple[str, FileObject]]]],
+    runs: List[Tuple[str, str, List[Tuple[str, IOHandle]]]],
     outputdir: str
 ):
     """Copy files for runs that are included as input for a post-processing

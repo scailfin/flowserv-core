@@ -8,82 +8,79 @@
 
 """Serializer for workflow user groups."""
 
-from flowserv.view.base import Serializer
+from typing import Dict, List, Optional
+
+from flowserv.model.base import GroupObject
+from flowserv.view.files import UploadFileSerializer
 
 
-class WorkflowGroupSerializer(Serializer):
+"""Serialization labels."""
+GROUP_ID = 'id'
+GROUP_LIST = 'groups'
+GROUP_MEMBERS = 'members'
+GROUP_NAME = 'name'
+GROUP_PARAMETERS = 'parameters'
+GROUP_UPLOADS = 'files'
+USER_ID = 'id'
+USER_NAME = 'username'
+WORKFLOW_ID = 'workflow'
+
+
+class WorkflowGroupSerializer(object):
     """Default serializer for workflow user groups."""
-    def __init__(self, files, labels=None):
-        """Initialize serialization labels.
+    def __init__(self, files: Optional[UploadFileSerializer] = None):
+        """Initialize the serializer for uploaded files.
 
         Parameters
         ----------
-        files: flowserv.view.files.UploadFileSerializer
+        files: flowserv.view.files.UploadFileSerializer, default=None
             Serializer for handles of uploaded files
-        labels: object, optional
-            Object instance that contains the values for serialization labels
         """
-        super(WorkflowGroupSerializer, self).__init__(
-            labels={
-                'GROUP_ID': 'id',
-                'GROUP_LIST': 'groups',
-                'GROUP_MEMBERS': 'members',
-                'GROUP_NAME': 'name',
-                'GROUP_PARAMETERS': 'parameters',
-                'GROUP_UPLOADS': 'files',
-                'USER_ID': 'id',
-                'USER_NAME': 'username',
-                'WORKFLOW_ID': 'workflow'
-            },
-            override_labels=labels
-        )
-        self.files = files
+        self.files = files if files is not None else UploadFileSerializer()
 
-    def group_descriptor(self, group):
+    def group_descriptor(self, group: GroupObject) -> Dict:
         """Get serialization for a workflow group descriptor. The descriptor
         contains the group identifier, name, and the base list of HATEOAS
         references.
 
         Parameters
         ----------
-        group: flowserv.model.base.GroupHandle
+        group: flowserv.model.base.GroupObject
             Workflow group handle
 
         Returns
         -------
         dict
         """
-        LABELS = self.labels
         return {
-            LABELS['GROUP_ID']: group.group_id,
-            LABELS['GROUP_NAME']: group.name,
-            LABELS['WORKFLOW_ID']: group.workflow_id
+            GROUP_ID: group.group_id,
+            GROUP_NAME: group.name,
+            WORKFLOW_ID: group.workflow_id
         }
 
-    def group_handle(self, group):
+    def group_handle(self, group: GroupObject) -> Dict:
         """Get serialization for a workflow group handle.
 
         Parameters
         ----------
-        group: flowserv.model.base.GroupHandle
+        group: flowserv.model.base.GroupObject
             Workflow group handle
 
         Returns
         -------
         dict
         """
-        LABELS = self.labels
         doc = self.group_descriptor(group)
         members = list()
         for u in group.members:
             members.append({
-                LABELS['USER_ID']: u.user_id,
-                LABELS['USER_NAME']: u.name
+                USER_ID: u.user_id,
+                USER_NAME: u.name
             })
-        doc[LABELS['GROUP_MEMBERS']] = members
+        doc[GROUP_MEMBERS] = members
         parameters = group.parameters.values()
         # Include group specific list of workflow template parameters
-        doc[LABELS['GROUP_PARAMETERS']] = [p.to_dict() for p in parameters]
+        doc[GROUP_PARAMETERS] = [p.to_dict() for p in parameters]
         # Include handles for all uploaded files
         files = list()
         for file in group.uploads:
@@ -92,23 +89,20 @@ class WorkflowGroupSerializer(Serializer):
                 fh=file
             )
             files.append(f)
-        doc[LABELS['GROUP_UPLOADS']] = files
+        doc[GROUP_UPLOADS] = files
 
         return doc
 
-    def group_listing(self, groups):
+    def group_listing(self, groups: List[GroupObject]) -> Dict:
         """Get serialization of a workflow group descriptor list.
 
         Parameters
         ----------
-        groups: list(flowserv.model.base.GroupHandle)
+        groups: list(flowserv.model.base.GroupObject)
             List of descriptors for workflow groups
 
         Returns
         -------
         dict
         """
-        LABELS = self.labels
-        return {
-            LABELS['GROUP_LIST']: [self.group_descriptor(g) for g in groups]
-        }
+        return {GROUP_LIST: [self.group_descriptor(g) for g in groups]}

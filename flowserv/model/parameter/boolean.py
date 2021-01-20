@@ -119,7 +119,7 @@ class Bool(Parameter):
         return Bool(
             name=doc[pd.NAME],
             index=doc[pd.INDEX],
-            label=doc[pd.LABEL],
+            label=doc.get(pd.LABEL),
             help=doc.get(pd.HELP),
             default=doc.get(pd.DEFAULT),
             required=doc[pd.REQUIRED],

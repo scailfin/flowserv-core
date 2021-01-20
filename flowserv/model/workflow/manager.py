@@ -19,7 +19,7 @@ import tempfile
 from contextlib import contextmanager
 from typing import Optional
 
-from flowserv.model.base import WorkflowHandle
+from flowserv.model.base import WorkflowObject
 from flowserv.model.constraint import validate_identifier
 from flowserv.model.workflow.manifest import WorkflowManifest
 from flowserv.model.workflow.repository import WorkflowRepository
@@ -60,7 +60,7 @@ class WorkflowManager(object):
         instructions: Optional[str] = None, specfile: Optional[str] = None,
         manifestfile: Optional[str] = None,
         ignore_postproc: Optional[bool] = False
-    ) -> WorkflowHandle:
+    ) -> WorkflowObject:
         """Add new workflow to the repository. The associated workflow template
         is created in the template repository from either the given source
         directory or a Git repository. The template repository will raise an
@@ -108,7 +108,7 @@ class WorkflowManager(object):
 
         Returns
         -------
-        flowserv.model.base.WorkflowHandle
+        flowserv.model.base.WorkflowObject
 
         Raises
         ------
@@ -141,7 +141,7 @@ class WorkflowManager(object):
             self.fs.store_files(files=manifest.copyfiles(), dst=staticdir)
 
         # Insert workflow into database and return the workflow handle.
-        workflow = WorkflowHandle(
+        workflow = WorkflowObject(
             workflow_id=workflow_id,
             name=manifest.name,
             description=manifest.description,
@@ -190,7 +190,7 @@ class WorkflowManager(object):
 
         Returns
         -------
-        flowserv.model.base.WorkflowHandle
+        flowserv.model.base.WorkflowObject
 
         Raises
         ------
@@ -199,8 +199,8 @@ class WorkflowManager(object):
         # Get workflow information from database. If the result is empty an
         # error is raised
         workflow = self.session\
-            .query(WorkflowHandle)\
-            .filter(WorkflowHandle.workflow_id == workflow_id)\
+            .query(WorkflowObject)\
+            .filter(WorkflowObject.workflow_id == workflow_id)\
             .one_or_none()
         if workflow is None:
             raise err.UnknownWorkflowError(workflow_id)
@@ -211,9 +211,9 @@ class WorkflowManager(object):
 
         Returns
         -------
-        list(flowserv.model.base.WorkflowHandle)
+        list(flowserv.model.base.WorkflowObject)
         """
-        return self.session.query(WorkflowHandle).all()
+        return self.session.query(WorkflowObject).all()
 
     def update_workflow(
         self, workflow_id, name=None, description=None, instructions=None
@@ -236,7 +236,7 @@ class WorkflowManager(object):
 
         Returns
         -------
-        flowserv.model.base.WorkflowHandle
+        flowserv.model.base.WorkflowObject
 
         Raises
         ------
@@ -252,8 +252,8 @@ class WorkflowManager(object):
             constraint.validate_name(name)
             # Ensure that the name is unique.
             wf = self.session\
-                .query(WorkflowHandle)\
-                .filter(WorkflowHandle.name == name)\
+                .query(WorkflowObject)\
+                .filter(WorkflowObject.name == name)\
                 .one_or_none()
             if wf is not None and wf.workflow_id != workflow_id:
                 msg = "workflow '{}' exists".format(name)

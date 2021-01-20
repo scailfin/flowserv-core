@@ -258,16 +258,23 @@ class Parameter(metaclass=ABCMeta):
         -------
         dict
         """
-        return {
+        # Create base serialization.
+        doc = {
             TYPE: self.dtype,
             NAME: self.name,
             INDEX: self.index,
-            LABEL: self.label,
-            HELP: self.help,
-            DEFAULT: self.default,
-            REQUIRED: self.required,
-            GROUP: self.group
+            REQUIRED: self.required
         }
+        # Add optional elements if present.
+        if self.label is not None:
+            doc[LABEL] = self.label
+        if self.help is not None:
+            doc[HELP] = self.help
+        if self.default is not None:
+            doc[DEFAULT] = self.default
+        if self.group is not None:
+            doc[GROUP] = self.group
+        return doc
 
 
 class ParameterGroup(object):

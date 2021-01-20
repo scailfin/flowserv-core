@@ -31,7 +31,7 @@ STATE_RUNNING = 'RUNNING'
 STATE_SUCCESS = 'SUCCESS'
 
 
-"""Short-cut to list of active states."""
+"""Short cut to list of active states."""
 ACTIVE_STATES = [STATE_PENDING, STATE_RUNNING]
 
 

@@ -8,7 +8,7 @@
 
 include LICENSE
 include *.rst
-recursive-include flowserv *.py *.sql
+recursive-include flowserv *.py *.yaml
 prune docs/_build
 recursive-include docs *.py
 recursive-include docs *.rst

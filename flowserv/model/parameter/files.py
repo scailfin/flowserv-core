@@ -14,7 +14,7 @@ run environment.
 from __future__ import annotations
 from typing import Dict, IO, Optional, Union
 
-from flowserv.model.files.base import FileObject
+from flowserv.model.files.base import IOHandle
 from flowserv.model.parameter.base import Parameter, PARA_FILE
 
 import flowserv.error as err
@@ -67,13 +67,13 @@ class File(Parameter):
         )
         self.target = target
 
-    def cast(self, value: FileObject, target: str = None):
+    def cast(self, value: IOHandle, target: str = None):
         """Get an instance of the InputFile class for a given argument value.
         The input value can either be a string (filename) or a dictionary.
 
         Parameters
         ----------
-        value: flowserv.model.files.base.FileObject
+        value: flowserv.model.files.base.IOHandle
             Handle for a file object.
         target: string, default=None
             Optional user-provided target path. If None the defined target path
@@ -135,7 +135,7 @@ class File(Parameter):
         return File(
             name=doc[pd.NAME],
             index=doc[pd.INDEX],
-            label=doc[pd.LABEL],
+            label=doc.get(pd.LABEL),
             help=doc.get(pd.HELP),
             default=doc.get(pd.DEFAULT),
             required=doc[pd.REQUIRED],
@@ -161,12 +161,12 @@ class InputFile(object):
     'file'. This class contains the path to the source for an uploaded file as
     well as the target path for the Upload.
     """
-    def __init__(self, source: FileObject, target: str):
+    def __init__(self, source: IOHandle, target: str):
         """Initialize the object properties.
 
         Parameters
         ----------
-        source: flowserv.model.files.base.FileObject
+        source: flowserv.model.files.base.IOHandle
             Handle for a file object.
         target: string
             Relative target path for file upload.
@@ -175,7 +175,7 @@ class InputFile(object):
         ------
         TypeError
         """
-        if not isinstance(source, FileObject):
+        if not isinstance(source, IOHandle):
             raise TypeError("invalid source type '{}'".format(type(source)))
         self._source = source
         self._target = target
@@ -196,7 +196,7 @@ class InputFile(object):
 
         Returns
         -------
-        flowserv.model.files.base.FileObject
+        flowserv.model.files.base.IOHandle
         """
         return self._source
 

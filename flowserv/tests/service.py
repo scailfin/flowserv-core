@@ -8,10 +8,10 @@
 
 """Helper methods to initialize the database state via the service API."""
 
+from typing import Tuple, Union
+
 import os
 import tempfile
-
-from typing import Tuple, Union
 
 from flowserv.service.run.argument import serialize_fh
 from flowserv.tests.files import io_file
@@ -19,7 +19,7 @@ from flowserv.tests.files import io_file
 import flowserv.util as util
 
 
-def create_group(api, workflow_id, users):
+def create_group(api, workflow_id, users=None):
     """Create a new group for the given workflow.
 
     Parameters
@@ -38,13 +38,12 @@ def create_group(api, workflow_id, users):
     doc = api.groups().create_group(
         workflow_id=workflow_id,
         name=util.get_unique_identifier(),
-        user_id=users[0],
         members=users
     )
     return doc['id']
 
 
-def create_ranking(api, workflow_id, user_id, count):
+def create_ranking(api, workflow_id, count):
     """Create a ranking with n groups for the Hello World benchmark having a
     successful run each. Returns the group identifier in order of creation.
     The avg_len value is increased as groups are created and the max_len value
@@ -68,17 +67,17 @@ def create_ranking(api, workflow_id, user_id, count):
     tmpdir = tempfile.mkdtemp()
     groups = list()
     for i in range(count):
-        group_id = create_group(api, workflow_id=workflow_id, users=[user_id])
+        group_id = create_group(api, workflow_id=workflow_id)
         # Start the new run. Then set it into SUCESS state.
-        run_id, file_id = start_hello_world(api, group_id, user_id)
-        data = {'avg_count': i, 'max_len': 100 - i, 'max_line': 'A'*i}
+        run_id, file_id = start_hello_world(api, group_id)
+        data = {'avg_count': i, 'max_len': 100 - i, 'max_line': 'A' * i}
         write_results(
             tmpdir,
             [(data, None, 'results/analytics.json')]
         )
         api.runs().update_run(
             run_id=run_id,
-            state=api.engine.success(
+            state=api.runs().backend.success(
                 run_id,
                 files=['results/analytics.json']
             ),
@@ -118,7 +117,7 @@ def create_user(api):
     return doc['id']
 
 
-def start_hello_world(api, group_id, user_id):
+def start_hello_world(api, group_id):
     """Start a new run for the Hello World template. Returns the run identifier
     and the identifier for the input file.
 
@@ -128,8 +127,6 @@ def start_hello_world(api, group_id, user_id):
         Service API manager.
     group_id: string
         Unique group identifier.
-    user_id: string
-        Unique user identifier.
 
     Returns
     -------
@@ -138,22 +135,20 @@ def start_hello_world(api, group_id, user_id):
     file_id = api.uploads().upload_file(
         group_id=group_id,
         file=io_file(data=['Alice', 'Bob'], format='txt/plain'),
-        name='n.txt',
-        user_id=user_id
+        name='n.txt'
     )['id']
     run_id = api.runs().start_run(
         group_id=group_id,
         arguments=[{
             'name': 'names',
             'value': serialize_fh(file_id=file_id)
-        }],
-        user_id=user_id
+        }]
     )['id']
-    api.engine.start(run_id)
+    api.runs().backend.start(run_id)
     return run_id, file_id
 
 
-def start_run(api, group_id, user_id, arguments=list()):
+def start_run(api, group_id, arguments=list()):
     """Start a new workflow run for a given group. Returns the identifier of
     the started run.
 
@@ -174,12 +169,11 @@ def start_run(api, group_id, user_id, arguments=list()):
     """
     return api.runs().start_run(
         group_id=group_id,
-        arguments=arguments,
-        user_id=user_id
+        arguments=arguments
     )['id']
 
 
-def upload_file(api, group_id, user_id, file):
+def upload_file(api, group_id, file):
     """Upload an input file for a workflow run. returns the file identifier.
 
     Parameters
@@ -188,9 +182,7 @@ def upload_file(api, group_id, user_id, file):
         Service API manager.
     group_id: string
         Unique group identifier.
-    user_id: string
-        Unique user identifier.
-    file: FileObject
+    file: IOHandle
         Uploaded file.
 
     Returns
@@ -200,8 +192,7 @@ def upload_file(api, group_id, user_id, file):
     return api.uploads().upload_file(
         group_id=group_id,
         file=file,
-        name=util.get_unique_identifier(),
-        user_id=user_id
+        name=util.get_unique_identifier()
     )['id']
 
 

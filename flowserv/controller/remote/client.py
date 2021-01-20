@@ -33,7 +33,7 @@ class RemoteClient(metaclass=ABCMeta):  # pragma: no cover
 
         Parameters
         ----------
-        run: flowserv.model.base.RunHandle
+        run: flowserv.model.base.RunObject
             Handle for the run that is being executed.
         template: flowserv.model.template.base.WorkflowTemplate
             Workflow template containing the parameterized specification and
@@ -43,7 +43,7 @@ class RemoteClient(metaclass=ABCMeta):  # pragma: no cover
 
         Returns
         -------
-        flowserv.model.workflow.remote.RemoteWorkflowHandle
+        flowserv.model.workflow.remote.RemoteWorkflowObject
         """
         raise NotImplementedError()
 

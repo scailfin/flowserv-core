@@ -8,16 +8,12 @@
 
 """Unit tests for the database manager."""
 
-import os
 import pytest
 
 from sqlalchemy.exc import IntegrityError
 
 from flowserv.model.base import User
 from flowserv.model.database import DB, TEST_URL
-
-import flowserv.config.database as config
-import flowserv.error as err
 
 
 @pytest.mark.parametrize(
@@ -32,37 +28,28 @@ def test_db_webapp(web_app, echo):
     db.init()
 
 
-def test_missing_connect_error():
-    """Error if connect URL is not given and environment variable is not
-    set.
-    """
-    if config.FLOWSERV_DB in os.environ:
-        del os.environ[config.FLOWSERV_DB]
-    with pytest.raises(err.MissingConfigurationError):
-        DB()
-
-
 def test_session_scope():
     """Test the session scope object."""
     db = DB(connect_url=TEST_URL, web_app=False)
     db.init()
     with db.session() as session:
         session.add(User(user_id='U', name='U', secret='U', active=True))
-    # Query all users. Expects one object in the resulting list.
+    # Query all users. Expects two objects in the resulting list (te created
+    # user and the default user).
     with db.session() as session:
-        assert len(session.query(User).all()) == 1
+        assert len(session.query(User).all()) == 2
     # Error when adding user with duplicate key.
     with pytest.raises(IntegrityError):
         with db.session() as session:
             session.add(User(user_id='U', name='U', secret='U', active=True))
     # Query all users. Still expects one object in the resulting list.
     with db.session() as session:
-        assert len(session.query(User).all()) == 1
+        assert len(session.query(User).all()) == 2
     # Raise an exception within the session scope.
     with pytest.raises(ValueError):
         with db.session() as session:
             session.add(User(user_id='W', name='W', secret='W', active=True))
             raise ValueError('some error')
-    # Query all users. Still expects one object in the resulting list.
+    # Query all users. Still expects two object in the resulting list.
     with db.session() as session:
-        assert len(session.query(User).all()) == 1
+        assert len(session.query(User).all()) == 2

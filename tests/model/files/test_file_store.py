@@ -14,6 +14,7 @@ import json
 import os
 import pytest
 
+from flowserv.config import Config
 from flowserv.model.files.fs import FileSystemStore, FSFile, walk
 from flowserv.model.files.s3 import BucketStore
 from flowserv.tests.files import DiskBucket
@@ -81,9 +82,9 @@ def create_files(basedir):
 def create_store(store_id, basedir):
     """Create an instance of the file store with the given identifier."""
     if store_id == 'BUCKET':
-        return BucketStore(DiskBucket(basedir=basedir))
+        return BucketStore(env=Config(), bucket=DiskBucket(basedir=basedir))
     else:
-        return FileSystemStore(basedir=basedir)
+        return FileSystemStore(env=Config().basedir(basedir))
 
 
 @pytest.mark.parametrize('store_id', ['FILE_SYSTEM', 'BUCKET'])
@@ -218,7 +219,5 @@ def test_store_name_and_configuration(store_id, tmpdir):
     fs = create_store(store_id, os.path.join(tmpdir, 'fs'))
     if store_id == 'FILE_SYSTEM':
         assert repr(fs).startswith('<FileSystemStore ')
-        assert len(fs.configuration()) == 2
     else:
         assert repr(fs).startswith('<BucketStore ')
-        assert len(fs.configuration()) == 3

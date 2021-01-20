@@ -13,7 +13,7 @@ given user can execute a requested action.
 
 from abc import ABCMeta, abstractmethod
 
-from flowserv.model.base import APIKey, GroupHandle, RunHandle, User
+from flowserv.model.base import APIKey, GroupObject, RunObject, User
 
 import datetime as dt
 import dateutil.parser
@@ -131,16 +131,16 @@ class Auth(metaclass=ABCMeta):
         # group or the run exists. Raise an error if either does not exist.
         if group_id is not None:
             group = self.session\
-                .query(GroupHandle)\
-                .filter(GroupHandle.group_id == group_id)\
+                .query(GroupObject)\
+                .filter(GroupObject.group_id == group_id)\
                 .one_or_none()
             if group is None:
                 raise err.UnknownWorkflowGroupError(group_id)
             return group_id
         else:
             run = self.session\
-                .query(RunHandle)\
-                .filter(RunHandle.run_id == run_id)\
+                .query(RunObject)\
+                .filter(RunObject.run_id == run_id)\
                 .one_or_none()
             if run is None:
                 raise err.UnknownRunError(run_id)
@@ -196,8 +196,8 @@ class DefaultAuthPolicy(Auth):
             return True
         # Check if the user is a member of the run group.
         group = self.session\
-            .query(GroupHandle)\
-            .filter(GroupHandle.group_id == run_group)\
+            .query(GroupObject)\
+            .filter(GroupObject.group_id == run_group)\
             .one_or_none()
         for member in group.members:
             if member.user_id == user_id:

@@ -93,13 +93,13 @@ def is_fh(value: Any) -> bool:
         return False
     try:
         util.validate_doc(value, mandatory=['type', 'value'])
-        if value['type'] == '$file':
-            util.validate_doc(
-                value['value'],
-                mandatory=['fileId'],
-                optional=['targetPath']
-            )
-            return True
+        assert value['type'] == '$file'
+        util.validate_doc(
+            value['value'],
+            mandatory=['fileId'],
+            optional=['targetPath']
+        )
+        return True
     except ValueError:
         pass
     return False
