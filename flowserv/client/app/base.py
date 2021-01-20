@@ -8,14 +8,16 @@
 
 """Helper methods for test runs of workflow templates."""
 
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 import shutil
 import tempfile
 
-
 from flowserv.client.api import ClientAPI
 from flowserv.client.app.workflow import Workflow
+from flowserv.model.parameter.base import Parameter
+from flowserv.view.group import GROUP_ID
+from flowserv.view.user import USER_ID
 
 import flowserv.config as config
 import flowserv.util as util
@@ -85,6 +87,40 @@ class Flowserv(object):
             user_id=user_id
         )
 
+    def create_submission(
+        self, workflow_id: str, name: str, members: Optional[List[str]] = None,
+        parameters: Optional[List[Parameter]] = None
+    ) -> str:
+        """Create a new user group for a given workflow. Each group has a
+        a unique name for the workflow, a list of additional group members, and
+        a specification of additional parameters. The parameters allow to define
+        variants of the original workflow template.
+
+        Parameters
+        ----------
+        workflow_id: string
+            Unique workflow identifier
+        name: string
+            Unique team name
+        members: list(string), default=None
+            List of user identifier for group members
+        parameters: list of flowserv.model.parameter.base.Parameter, default=None
+            Optional list of parameter declarations that are used to modify the
+            template parameters for submissions of the created group.
+
+        Returns
+        -------
+        string
+        """
+        with self.service() as api:
+            doc = api.groups().create_group(
+                workflow_id=workflow_id,
+                name=name,
+                members=members,
+                parameters=parameters
+            )
+        return doc[GROUP_ID]
+
     def erase(self):
         """Delete the base folder for the test environment that contains all
         workflow files.
@@ -99,14 +135,16 @@ class Flowserv(object):
         instructions: Optional[str] = None,
         specfile: Optional[str] = None,
         manifestfile: Optional[str] = None,
-        ignore_postproc: Optional[bool] = False
+        ignore_postproc: Optional[bool] = False,
+        multi_user: Optional[bool] = False
 
     ) -> str:
         """Create a new workflow in the environment that is defined by the
         template referenced by the source parameter. Returns the identifier
         of the created workflow.
 
-        Will create a group with the same identifier as the workflow.
+        If the multi user flag is False this method will also create a group
+        with the same identifier as the workflow.
 
         Parameters
         ----------
@@ -130,6 +168,9 @@ class Flowserv(object):
             of the default manifest file names in the base directory.
         ignore_postproc: bool, default=False
             Ignore post-processing workflow specification if True.
+        multi_user: bool, default=False
+            If the multi user flag is False a group will be created for the
+            workflow with the same identifier as the workflow.
 
         Returns
         -------
@@ -147,28 +188,29 @@ class Flowserv(object):
                 ignore_postproc=ignore_postproc
             )
             workflow_id = doc[labels.WORKFLOW_ID]
-            api.groups().create_group(
-                workflow_id=workflow_id,
-                name=workflow_id,
-                identifier=workflow_id
-            )
+            if not multi_user:
+                api.groups().create_group(
+                    workflow_id=workflow_id,
+                    name=workflow_id,
+                    identifier=workflow_id
+                )
         return workflow_id
 
-    def load(self, workflow_id: str, group_id: str) -> Workflow:
-        """Get the handle for a workflow with a given identifier.
+    def login(self, username: str, password: str):
+        """Authenticate the user using the given credentials.
 
         Parameters
         ----------
-
-        Returns
-        -------
-        flowserv.client.app.workflow.Workflow
+        username: string
+            Unique user name
+        password: string
+            User password
         """
-        return Workflow(
-            workflow_id=workflow_id,
-            group_id=group_id,
-            service=self.service
-        )
+        self.service.login(username=username, password=password)
+
+    def logout(self):
+        """Logout the currently authenticated user."""
+        self.service.logout()
 
     def open(self, identifier: str) -> Workflow:
         """Get an instance of the floserv app for the workflow with the given
@@ -183,7 +225,50 @@ class Flowserv(object):
         -------
         flowserv.client.app.workflow.Workflow
         """
-        return self.load(workflow_id=identifier, group_id=identifier)
+        return self.submission(workflow_id=identifier, group_id=identifier)
+
+    def register(self, username: str, password: str) -> str:
+        """Register a new user with the given credentials.
+
+        Parameters
+        ----------
+        username: string
+            Unique user name.
+        password: string
+            User password.
+
+        Returns
+        -------
+        string
+        """
+        with self.service() as api:
+            doc = api.users().register_user(
+                username=username,
+                password=password,
+                verify=False
+            )
+        return doc[USER_ID]
+
+    def submission(self, workflow_id: str, group_id: str) -> Workflow:
+        """Get the handle for a workflow with a given identifier and for a
+        given user group.
+
+        Parameters
+        ----------
+        workflow_id: string
+            Unique workflow identifier.
+        group_id: string
+            Unique user group identifier.
+
+        Returns
+        -------
+        flowserv.client.app.workflow.Workflow
+        """
+        return Workflow(
+            workflow_id=workflow_id,
+            group_id=group_id,
+            service=self.service
+        )
 
     def uninstall(self, identifier: str):
         """Remove the workflow with the given identifier. This will also remove

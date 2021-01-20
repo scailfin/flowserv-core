@@ -104,7 +104,7 @@ class API(object):
         """
         return self._uploads
 
-    def users(self):
+    def users(self) -> UserService:
         """Get instance of the user service component.
 
         Returns

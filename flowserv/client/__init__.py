@@ -5,3 +5,6 @@
 #
 # flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
+
+from flowserv.client.app.base import Flowserv
+from flowserv.model.workflow.repository import WorkflowRepository as FlowservRepo

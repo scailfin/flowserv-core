@@ -11,7 +11,7 @@ it easier for a developer that uses the flowserv application object to access
 the results and resources of workflow runs.
 """
 
-from typing import Dict, List
+from typing import Dict, IO, List
 
 from flowserv.client.app.data import DataFile
 from flowserv.service.api import APIFactory
@@ -141,3 +141,18 @@ class Run(object):
         list
         """
         return self.doc.get('messages', [])
+
+    def open_file(self, key: str) -> IO:
+        """Get result file object and return an opened file handles. This is a
+        shortcut for opening result files.
+
+        Parameters
+        ----------
+        key: string
+            User-provided file identifier or the file source name.
+
+        Returns
+        -------
+        flowserv.client.app.data.File
+        """
+        return self._files.get(key).load().open()

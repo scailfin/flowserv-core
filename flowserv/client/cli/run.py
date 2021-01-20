@@ -96,8 +96,6 @@ def download_result_file(file, output, run):
 def list_runs(group, state):
     """List workflow runs."""
     group_id = group if group is not None else config.SUBMISSION_ID()
-    if group_id is None:
-        raise click.UsageError('no group identifier given')
     with service() as api:
         doc = api.runs().list_runs(group_id=group_id, state=state)
     table = ResultTable(
@@ -158,8 +156,6 @@ def show_run(run):
 def start_run(group):
     """Start new workflow run."""
     group_id = group if group is not None else config.SUBMISSION_ID()
-    if group_id is None:
-        raise click.UsageError('no group identifier given')
     with service() as api:
         doc = api.groups().get_group(group_id=group_id)
         # Create list of file descriptors for uploaded files that are included

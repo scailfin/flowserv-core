@@ -8,10 +8,10 @@
 
 """Wrapper that provides access to a workflow via the service API."""
 
-import time
-
 from io import BytesIO, StringIO
 from typing import Dict, List, Optional
+
+import time
 
 from flowserv.client.app.run import Run
 from flowserv.model.files.base import FileHandle, IOHandle, IOBuffer
