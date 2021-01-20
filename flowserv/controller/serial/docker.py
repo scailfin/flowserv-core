@@ -47,7 +47,7 @@ class DockerWorkflowEngine(SerialWorkflowEngine):
 # -- Workflow execution function ----------------------------------------------
 
 
-def docker_run(run_id, rundir, state, output_files, steps):
+def docker_run(run_id, rundir, state, output_files, steps):  # pragma: no cover
     """Execute a list of workflow steps synchronously using the Docker engine.
 
     Returns a tuple containing the run identifier, the folder with the run

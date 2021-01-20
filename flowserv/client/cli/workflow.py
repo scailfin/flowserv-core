@@ -140,7 +140,7 @@ def download_result_file(file, output, workflow):
 @click.command()
 @click.option('-w', '--workflow', required=False, help='Workflow identifier')
 def get_workflow(workflow):
-    """Update workflow properties."""
+    """Print workflow properties."""
     workflow_id = workflow if workflow is not None else config.APP()
     with service() as api:
         doc = api.workflows().get_workflow(workflow_id=workflow_id)
@@ -194,8 +194,6 @@ def list_workflows():
 def show_ranking(workflow, all):
     """Show ranking for workflow results."""
     workflow_id = workflow if workflow is not None else config.APP()
-    if workflow_id is None:
-        raise click.UsageError('no workflow specified')
     with service() as api:
         doc = api.workflows().get_ranking(workflow_id=workflow_id, include_all=all)
     # Print ranking.
@@ -262,13 +260,13 @@ def update_workflow(
 @click.group(name='workflows')
 def cli_workflow():
     """Create, delete, and maintain workflow templates in the repository."""
-    pass
+    pass  # pragma: no cover
 
 
 @click.group(name='download')
 def cli_workflow_download():
     """Download post-processing results."""
-    pass
+    pass  # pragma: no cover
 
 
 cli_workflow_download.add_command(download_result_archive, name='archive')
