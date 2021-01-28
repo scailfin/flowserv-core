@@ -77,7 +77,7 @@ def ClientAPI(
     # By default, the client runs all workflows synchronously.
     if run_async is not None and run_async:
         env.run_async()
-    else:
+    elif env.get(config.FLOWSERV_ASYNC) is None:
         env.run_sync()
     if docker is not None and docker:
         env.docker_engine()
