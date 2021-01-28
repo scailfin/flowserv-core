@@ -37,6 +37,8 @@ tests_require = [
     'tox'
 ]
 
+dev_require = ['flake8', 'python-language-server']
+
 
 extras_require = {
     'docs': [
@@ -44,6 +46,7 @@ extras_require = {
         'sphinx-rtd-theme'
     ],
     'tests': tests_require,
+    'dev': dev_require + tests_require,
     'aws': aws_requires,
     'docker': docker_requires,
     'postgres': docker_requires,

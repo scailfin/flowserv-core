@@ -101,10 +101,10 @@ class LocalAPIFactory(APIFactory):
         # value for the user_id or authentication policy.
         self._user_id = config.DEFAULT_USER if not user_id and self[AUTH] == config.AUTH_OPEN else user_id
 
-    def __call__(self, user_id: Optional[str] = None):
+    def __call__(self, user_id: Optional[str] = None, access_token: Optional[str] = None):
         """Get an instance of the context manager that creates the local service
         API instance. Provides the option to initialize the default user for
-        the returned API instance.
+        the returned API instance or to provide an access token for authentication.
 
         Parameters
         ----------
@@ -112,6 +112,10 @@ class LocalAPIFactory(APIFactory):
             Optional identifier for the authenticated API user. This overrides
             the access token and any user_id that was provided when the service
             was instantiated.
+        access_token: string, default=None
+            Optional access token that is used to authenticate the user. This
+            will override the current value for the access token in the local
+            configuration.
 
         Returns
         -------
@@ -122,7 +126,8 @@ class LocalAPIFactory(APIFactory):
             db=self._db,
             engine=self._engine,
             fs=self._fs,
-            user_id=user_id if user_id is not None else self._user_id
+            user_id=user_id if user_id is not None else self._user_id,
+            access_token=access_token
         )
 
     def cancel_run(self, run_id: str):
@@ -177,18 +182,18 @@ class LocalAPIFactory(APIFactory):
 
 
 class SessionManager(object):
-    """Context manager that creates a local API and controlls the database
+    """Context manager that creates a local API and controls the database
     session that is used by all the API components.
     """
     def __init__(
         self, env: Dict, db: DB, engine: WorkflowController, fs: FileStore,
-        user_id: str
+        user_id: str, access_token: str
     ):
         """Initialize the object.
 
         Parameters
         ----------
-        env: dict, default=None
+        env: dict
             Dictionary that provides access to configuration parameter values.
         db: flowserv.model.database.DB
             Database manager.
@@ -197,14 +202,20 @@ class SessionManager(object):
         fs: flowserv.model.files.base.FileStore
             File store for accessing and maintaining files for workflows,
             groups and workflow runs.
-        user_id: string, default=None
-            Optional identifier of a user that has been authenticated.
+        user_id: string
+            Identifier of a user that has been authenticated. The value may be
+            None.
+        access_token: string
+            Access token that is used to authenticate the user. The value may
+            be None. This will override the value in the respective environment
+            variable but not the user identifier if given.
         """
         self._env = env
         self._db = db
         self._engine = engine
         self._fs = fs
         self._user_id = user_id
+        self._access_token = access_token
         self._session = None
 
     def __enter__(self) -> API:
@@ -226,7 +237,7 @@ class SessionManager(object):
             user_id = config.DEFAULT_USER if user_id is None else user_id
         else:
             auth = DefaultAuthPolicy(session)
-            access_token = env.get(ACCESS_TOKEN)
+            access_token = self._access_token if self._access_token is not None else env.get(ACCESS_TOKEN)
             if access_token and user_id is None:
                 # If an access token is given we retrieve the user that is
                 # associated with the token. Authentication may raise an error.
