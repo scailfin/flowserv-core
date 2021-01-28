@@ -45,6 +45,8 @@ def ClientAPI(
     basedir: string, default=None
         Base directory for all workflow files. If no directory is given or
         specified in the environment a temporary directory will be created.
+    database: string, default=None
+        Optional database connect url.
     open_access: bool, default=None
         Use an open access policy if set to True.
     run_async: bool, default=False
