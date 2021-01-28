@@ -232,6 +232,7 @@ class SessionManager(object):
         # Start by creating the authorization component and setting the
         # identifier for and authenticated user.
         user_id = self._user_id
+        username = None
         if env[AUTH] == config.AUTH_OPEN:
             auth = OpenAccessAuth(session)
             user_id = config.DEFAULT_USER if user_id is None else user_id
@@ -245,6 +246,9 @@ class SessionManager(object):
                 # token that is stored in the environment.
                 try:
                     user = auth.authenticate(access_token)
+                    # Set the user name for the authenticated user (to be
+                    # included in the service descriptor).
+                    username = user.name
                     user_id = user.user_id
                 except err.UnauthenticatedAccessError:
                     pass
@@ -256,7 +260,7 @@ class SessionManager(object):
         run_manager = RunManager(session=session, fs=fs)
         workflow_repo = WorkflowManager(session=session, fs=fs)
         return API(
-            service=ServiceDescriptor.from_config(env=env),
+            service=ServiceDescriptor.from_config(env=env, username=username),
             workflow_service=LocalWorkflowService(
                 workflow_repo=workflow_repo,
                 ranking_manager=ranking_manager,

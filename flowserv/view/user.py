@@ -14,7 +14,9 @@ REQUEST_ID = 'requestId'
 USER_ID = 'id'
 USER_LIST = 'users'
 USER_NAME = 'username'
+USER_PASSWORD = 'password'
 USER_TOKEN = 'token'
+VERIFY_USER = 'verify'
 
 
 class UserSerializer(object):
