@@ -18,8 +18,6 @@ from typing import Any, Dict, Optional
 
 import os
 
-import flowserv.error as err
-
 
 # --
 # -- Environment variables and default values
@@ -91,37 +89,13 @@ def API_URL(env: Dict) -> str:
 # -- Application --------------------------------------------------------------
 
 """Names of environment variables that configure the application."""
+
 FLOWSERV_APP = 'FLOWSERV_APP'
-# Identifier of the default submission
+FLOWSERV_GROUP = 'FLOWSERV_GROUP'
+
+# Respective variable names for ROB.
+ROB_BENCHMARK = 'ROB_BENCHMARK'
 ROB_SUBMISSION = 'ROB_SUBMISSION'
-
-
-def APP() -> str:
-    """Get the value for the FLOWSERV_APP variable from the environment. Raises
-    a missing configuration error if the value is not set.
-
-    Returns
-    -------
-    string
-    """
-    app_key = os.environ.get(FLOWSERV_APP)
-    if not app_key:
-        raise err.MissingConfigurationError('workflow identifier')
-    return app_key
-
-
-BENCHMARK_ID = APP
-
-
-def SUBMISSION_ID() -> str:
-    """Get the submission identifier. If the variable ROB_SUBMISSION is not set
-    the application identifier is returned.
-
-    Returns
-    -------
-    string
-    """
-    return os.environ.get(ROB_SUBMISSION, APP())
 
 
 # -- Auth ---------------------------------------------------------------------
@@ -145,20 +119,6 @@ AUTH_OPEN = 'open'
 
 """Default user."""
 DEFAULT_USER = '0' * 8
-
-
-def ACCESS_TOKEN() -> str:
-    """Get the value for the FLOWSERV_ACCESS_TOKEN variable from the
-    environment. Raises a missing configuration error if the value is not set.
-
-    Returns
-    -------
-    string
-    """
-    access_token = os.environ.get(FLOWSERV_ACCESS_TOKEN)
-    if not access_token:
-        raise err.MissingConfigurationError('access token')
-    return access_token
 
 
 # -- Backend ------------------------------------------------------------------

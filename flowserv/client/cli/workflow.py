@@ -16,7 +16,6 @@ from flowserv.client.api import service
 from flowserv.client.cli.table import ResultTable
 from flowserv.model.parameter.base import PARA_INT, PARA_STRING
 
-import flowserv.config as config
 import flowserv.view.files as flbls
 import flowserv.view.run as rlbls
 import flowserv.view.workflow as labels
@@ -60,8 +59,9 @@ import flowserv.view.workflow as labels
     help='Print run logs'
 )
 @click.argument('template')
+@click.pass_context
 def create_workflow(
-    name, description, instructions, specfile, manifest, template,
+    ctx, name, description, instructions, specfile, manifest, template,
     ignore_postproc
 ):
     """Create a new workflow for a given template."""
@@ -79,18 +79,20 @@ def create_workflow(
             ignore_postproc=ignore_postproc
         )
     workflow_id = doc[labels.WORKFLOW_ID]
-    click.echo('export {}={}'.format(config.FLOWSERV_APP, workflow_id))
+    click.echo('export {}={}'.format(ctx.obj.vars['workflow'], workflow_id))
 
 
 # -- Delete Workflow ----------------------------------------------------------
 
 @click.command()
-@click.argument('identifier')
-def delete_workflow(identifier):
+@click.option('-w', '--workflow', required=False, help='Workflow identifier')
+@click.pass_context
+def delete_workflow(ctx, workflow):
     """Delete an existing workflow and all runs."""
+    workflow_id = ctx.obj.get_workflow(ctx.params)
     with service() as api:
-        api.workflows().delete_workflow(workflow_id=identifier)
-    click.echo('workflow {} deleted.'.format(identifier))
+        api.workflows().delete_workflow(workflow_id=workflow_id)
+    click.echo('workflow {} deleted.'.format(workflow_id))
 
 
 # -- Download result files ----------------------------------------------------
@@ -103,9 +105,10 @@ def delete_workflow(identifier):
     help='Save as ...'
 )
 @click.option('-w', '--workflow', required=False, help='Workflow identifier')
-def download_result_archive(output, workflow):
+@click.pass_context
+def download_result_archive(ctx, output, workflow):
     """Download post-processing result archive."""
-    workflow_id = workflow if workflow is not None else config.APP()
+    workflow_id = ctx.obj.get_workflow(ctx.params)
     if workflow_id is None:
         raise click.UsageError('no workflow specified')
     with service() as api:
@@ -123,9 +126,10 @@ def download_result_archive(output, workflow):
     help='Save as ...'
 )
 @click.option('-w', '--workflow', required=False, help='Workflow identifier')
-def download_result_file(file, output, workflow):
+@click.pass_context
+def download_result_file(ctx, file, output, workflow):
     """Download post-processing result file."""
-    workflow_id = workflow if workflow is not None else config.APP()
+    workflow_id = ctx.obj.get_workflow(ctx.params)
     if workflow_id is None:
         raise click.UsageError('no workflow specified')
     with service() as api:
@@ -139,9 +143,10 @@ def download_result_file(file, output, workflow):
 
 @click.command()
 @click.option('-w', '--workflow', required=False, help='Workflow identifier')
-def get_workflow(workflow):
+@click.pass_context
+def get_workflow(ctx, workflow):
     """Print workflow properties."""
-    workflow_id = workflow if workflow is not None else config.APP()
+    workflow_id = ctx.obj.get_workflow(ctx.params)
     with service() as api:
         doc = api.workflows().get_workflow(workflow_id=workflow_id)
     click.echo('ID          : {}'.format(doc[labels.WORKFLOW_ID]))
@@ -191,9 +196,10 @@ def list_workflows():
     help='Include all runs.'
 )
 @click.option('-w', '--workflow', required=False, help='Workflow identifier')
-def show_ranking(workflow, all):
+@click.pass_context
+def show_ranking(ctx, workflow, all):
     """Show ranking for workflow results."""
-    workflow_id = workflow if workflow is not None else config.APP()
+    workflow_id = ctx.obj.get_workflow(ctx.params)
     with service() as api:
         doc = api.workflows().get_ranking(workflow_id=workflow_id, include_all=all)
     # Print ranking.
@@ -220,7 +226,6 @@ def show_ranking(workflow, all):
 # -- Update workflow ----------------------------------------------------------
 
 @click.command()
-@click.argument('identifier')
 @click.option(
     '-n', '--name',
     required=False,
@@ -237,22 +242,23 @@ def show_ranking(workflow, all):
     required=False,
     help='File containing instructions for participants.'
 )
-def update_workflow(
-    identifier, name=None, description=None, instructions=None
-):
+@click.option('-w', '--workflow', required=False, help='Workflow identifier')
+@click.pass_context
+def update_workflow(ctx, name, description, instructions, workflow):
     """Update workflow properties."""
+    workflow_id = ctx.obj.get_workflow(ctx.params)
     # Ensure that at least one of the optional arguments is given
     if name is None and description is None and instructions is None:
         click.echo('nothing to update')
     else:
         with service() as api:
             api.workflows().update_workflow(
-                workflow_id=identifier,
+                workflow_id=workflow_id,
                 name=name,
                 description=description,
                 instructions=read_instructions(instructions)
             )
-        click.echo('updated workflow {}'.format(identifier))
+        click.echo('updated workflow {}'.format(workflow_id))
 
 
 # -- Command Group ------------------------------------------------------------

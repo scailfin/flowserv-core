@@ -10,7 +10,7 @@
 
 import os
 
-from flowserv.client.cli.base import cli
+from flowserv.client.cli.base import cli_flowserv as cli
 from flowserv.client.cli.workflow import read_instructions
 
 
@@ -45,7 +45,7 @@ def test_update_workflow(flowserv_cli, tmpdir):
     pos = result.output.find('export FLOWSERV_APP=') + 20
     workflow_id = result.output[pos:].strip()
     # -- Update without any arguments -----------------------------------------
-    cmd = ['workflows', 'update', workflow_id]
+    cmd = ['workflows', 'update', '-w', workflow_id]
     result = flowserv_cli.invoke(cli, cmd)
     assert result.exit_code == 0
     assert 'nothing to update' in result.output
@@ -53,7 +53,7 @@ def test_update_workflow(flowserv_cli, tmpdir):
     filename = os.path.join(tmpdir, 'instructions.txt')
     with open(filename, 'w') as f:
         f.write('My new instructions')
-    cmd = ['workflows', 'update', '-i', filename, workflow_id]
+    cmd = ['workflows', 'update', '-i', filename, '-w', workflow_id]
     result = flowserv_cli.invoke(cli, cmd)
     assert result.exit_code == 0
     assert 'updated workflow {}'.format(workflow_id) in result.output
@@ -62,7 +62,7 @@ def test_update_workflow(flowserv_cli, tmpdir):
     result = flowserv_cli.invoke(cli, cmd)
     assert 'My new instructions' in result.output
     # -- Error when updating an unknown workflow ------------------------------
-    cmd = ['workflows', 'update', '-i', filename, 'UNKNOWN']
+    cmd = ['workflows', 'update', '-i', filename, '-w', 'UNKNOWN']
     result = flowserv_cli.invoke(cli, cmd)
     assert str(result.exception) == "unknown workflow 'UNKNOWN'"
     assert result.exit_code == 1
@@ -89,7 +89,7 @@ def test_workflow_lifecycle(flowserv_cli, tmpdir):
     result = flowserv_cli.invoke(cli, cmd)
     assert result.exit_code == 0
     # -- Delete workflow ------------------------------------------------------
-    cmd = ['workflows', 'delete', workflow_id]
+    cmd = ['workflows', 'delete', '-w', workflow_id]
     result = flowserv_cli.invoke(cli, cmd)
     assert result.exit_code == 0
 
@@ -142,6 +142,6 @@ def test_workflow_result_files(flowserv_cli, tmpdir):
     assert result.exit_code == 0
     assert os.path.isfile(filename)
     # -- Update without any arguments -----------------------------------------
-    cmd = ['workflows', 'update', '-d', 'New description', workflow_id]
+    cmd = ['workflows', 'update', '-d', 'New description', '-w', workflow_id]
     result = flowserv_cli.invoke(cli, cmd)
     assert result.exit_code == 0

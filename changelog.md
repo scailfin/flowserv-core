@@ -94,6 +94,18 @@
 * Rename run argument serialization helper functions.
 
 
-### 0.7.0 - 2020-??-??
+### 0.7.0 - 2020-01-20
 
+* Introduce `flowserv.service.api.APIFactory` to support multiple clients with different configuration on the same machine.
+* Add functionality for user groups and authentication via the API client.
+* Better support for accessing run result files via the API client.
+* Include full functionality from [rob-client](https://github.com/scailfin/rob-client) into the `flowserv` CLI (\#72).
+* Provide support for local and remote API's.
+* Remove some of the obsolete code for running workflows in Jupyter Notebooks (now included in the new client interface `flowserv.client.Flowserv`).
 * Drop support for Python 3.6.
+
+
+### 0.7.1 - 2020-??-??
+
+* Add option for passing an access token in API factory call.
+* Ensure not to override *FLOWSERV_ASYNC* in `ClientAPI`.

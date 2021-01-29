@@ -10,7 +10,7 @@
 
 from click.testing import CliRunner
 
-from flowserv.client.cli.base import cli
+from flowserv.client.cli.base import cli_flowserv as cli
 
 
 def test_config_options(flowserv_cli):
