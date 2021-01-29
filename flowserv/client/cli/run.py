@@ -17,7 +17,6 @@ from flowserv.model.parameter.base import PARA_STRING
 from flowserv.model.template.parameter import ParameterIndex
 from flowserv.service.run.argument import deserialize_fh, serialize_arg
 
-import flowserv.config as config
 import flowserv.view.files as flbls
 import flowserv.view.group as glbls
 import flowserv.view.run as labels
@@ -93,9 +92,10 @@ def download_result_file(file, output, run):
     required=False,
     help='Run state filter'
 )
-def list_runs(group, state):
+@click.pass_context
+def list_runs(ctx, group, state):
     """List workflow runs."""
-    group_id = group if group is not None else config.SUBMISSION_ID()
+    group_id = ctx.obj.get_group(ctx.params)
     with service() as api:
         doc = api.runs().list_runs(group_id=group_id, state=state)
     table = ResultTable(
@@ -153,9 +153,10 @@ def show_run(run):
     required=False,
     help='Group identifier'
 )
-def start_run(group):
+@click.pass_context
+def start_run(ctx, group):
     """Start new workflow run."""
-    group_id = group if group is not None else config.SUBMISSION_ID()
+    group_id = ctx.obj.get_group(ctx.params)
     with service() as api:
         doc = api.groups().get_group(group_id=group_id)
         # Create list of file descriptors for uploaded files that are included

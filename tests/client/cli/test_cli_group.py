@@ -10,7 +10,7 @@
 
 import os
 
-from flowserv.client.cli.base import cli
+from flowserv.client.cli.base import cli_flowserv as cli
 
 import flowserv.util as util
 

@@ -61,8 +61,8 @@ WORKFLOWS_LIST = 'workflows:list'
 ROUTES = {
     FILES_DELETE: 'uploads/{userGroupId}/files/{fileId}',
     FILES_DOWNLOAD: 'uploads/{userGroupId}/files/{fileId}',
-    FILES_LIST: 'uploads/{userGroupId}',
-    FILES_UPLOAD: 'uploads/{userGroupId}',
+    FILES_LIST: 'uploads/{userGroupId}/files',
+    FILES_UPLOAD: 'uploads/{userGroupId}/files',
     GROUPS_CREATE: 'workflows/{workflowId}/groups',
     GROUPS_DELETE: 'groups/{userGroupId}',
     GROUPS_GET: 'groups/{userGroupId}',
@@ -127,7 +127,7 @@ class ServiceDescriptor(object):
             self.url = self.url[:-1]
 
     @staticmethod
-    def from_config(env: Dict) -> ServiceDescriptor:
+    def from_config(env: Dict, username: Optional[str] = None) -> ServiceDescriptor:
         """Get descriptor with basic information from values in the given
         configuration settings.
 
@@ -135,13 +135,15 @@ class ServiceDescriptor(object):
         ----------
         env: dict, default=None
             Dictionary that provides access to configuration parameter values.
+        username: string, default=None
+            Optional name for an authenticated user.
 
         Returns
         -------
         flowserv.service.descriptor.ServiceDescriptor
         """
         serializer = ServiceDescriptorSerializer()
-        doc = serializer.from_config(env=env)
+        doc = serializer.from_config(env=env, username=username)
         return ServiceDescriptor(doc=doc, serializer=serializer)
 
     def routes(self) -> Dict:

@@ -999,6 +999,10 @@ definitions:
               type: "string"
             format:
               type: "object"
+  Runs:
+    type: "array"
+    items:
+      $ref: "#/definitions/RunDescriptor"
   RunListing:
     type: "object"
     description: "Listing of run handles"
@@ -1006,9 +1010,7 @@ definitions:
     - runs
     properties:
       runs:
-        type: "array"
-        items:
-          $ref: "#/definitions/RunDescriptor"
+        $ref: "#/definitions/Runs"
   ServiceDescriptor:
     type: "object"
     description: "Descriptor containing basic service properties"
@@ -1037,6 +1039,19 @@ definitions:
             pattern:
               type: "string"
       username:
+        type: "string"
+  User:
+    type: "object"
+    description: "Information about a registered user"
+    required:
+    - id
+    - username
+    properties:
+      id:
+        type: "string"
+      username:
+        type: "string"
+      token:
         type: "string"
   UserGroupHandle:
     type: "object"
@@ -1072,6 +1087,23 @@ definitions:
         type: "array"
         items:
           $ref: "#/definitions/FileHandle"
+      runs:
+        $ref: "#/definitions/Runs"
+  UserGroups:
+    type: "array"
+    items:
+      type: "object"
+      required:
+      - id
+      - name
+      - workflow
+      properties:
+        id:
+          type: "string"
+        name:
+          type: "string"
+        workflow:
+            type: "string"
   UserGroupListing:
     type: "object"
     description: 'List of user group descriptors'
@@ -1079,20 +1111,7 @@ definitions:
     - groups
     properties:
       groups:
-        type: "array"
-        items:
-          type: "object"
-          required:
-          - id
-          - name
-          - workflow
-          properties:
-            id:
-              type: "string"
-            name:
-              type: "string"
-            workflow:
-              type: "string"
+        $ref: "#/definitions/UserGroups"
   UserCredentials:
     type: "object"
     description: "User login credentials"
@@ -1114,19 +1133,6 @@ definitions:
       id:
         type: "string"
       username:
-        type: "string"
-  User:
-    type: "object"
-    description: "Information about a registered user"
-    required:
-    - id
-    - username
-    properties:
-      id:
-        type: "string"
-      username:
-        type: "string"
-      token:
         type: "string"
   UserListing:
     type: "object"
@@ -1202,6 +1208,8 @@ definitions:
               format: int64
       postproc:
         $ref: "#/definitions/RunHandle"
+      groups:
+        $ref: "#/definitions/UserGroups"
   WorkflowLeaderboard:
     type: "object"
     description: "Ordered list of run results"

@@ -14,6 +14,7 @@ functions are not available via the remote service API.
 from typing import Dict, List, Optional
 
 from flowserv.model.files.base import FileHandle
+from flowserv.model.group import WorkflowGroupManager
 from flowserv.model.ranking import RankingManager
 from flowserv.model.run import RunManager
 from flowserv.model.template.schema import SortColumn
@@ -32,7 +33,8 @@ class LocalWorkflowService(WorkflowService):
     """
     def __init__(
         self, workflow_repo: WorkflowManager, ranking_manager: RankingManager,
-        run_manager: RunManager, serializer: Optional[WorkflowSerializer] = None
+        group_manager: WorkflowGroupManager, run_manager: RunManager,
+        user_id: Optional[str] = None, serializer: Optional[WorkflowSerializer] = None
     ):
         """Initialize the internal reference to the workflow repository, the
         ranking manager, and the resource serializer.
@@ -43,15 +45,21 @@ class LocalWorkflowService(WorkflowService):
             Repository to access registered workflows.
         ranking_manager: flowserv.model.ranking.RankingManager
             Manager for workflow evaluation rankings.
+        group_manager: flowserv.model.group.WorkflowGroupManager
+            Manager for workflow groups.
         run_manager: flowserv.model.run.RunManager
             Manager for workflow runs. The run manager is used to access
-            prost-processing runs.
+            post-processing runs.
+        user_id: string, default=None
+            Identifier of an authenticated user.
         serializer: flowserv.view.workflow.WorkflowSerializer, default=None
             Override the default serializer.
         """
         self.workflow_repo = workflow_repo
         self.ranking_manager = ranking_manager
+        self.group_manager = group_manager
         self.run_manager = run_manager
+        self.user_id = user_id
         self.serialize = serializer if serializer is not None else WorkflowSerializer()
 
     def create_workflow(
@@ -253,9 +261,22 @@ class LocalWorkflowService(WorkflowService):
         # Get the workflow handle. This will ensure that the workflow exists.
         workflow = self.workflow_repo.get_workflow(workflow_id)
         postproc = None
+        # Load post-processing run (if exisits).
         if workflow.postproc_run_id is not None:
             postproc = self.run_manager.get_run(workflow.postproc_run_id)
-        return self.serialize.workflow_handle(workflow, postproc=postproc)
+        # Get user groups for this workflow if a valid user identifier was
+        # given.
+        groups = None
+        if self.user_id is not None:
+            groups = self.group_manager.list_groups(
+                workflow_id=workflow_id,
+                user_id=self.user_id
+            )
+        return self.serialize.workflow_handle(
+            workflow=workflow,
+            postproc=postproc,
+            groups=groups
+        )
 
     def list_workflows(self) -> Dict:
         """Get serialized listing of descriptors for all workflows in the

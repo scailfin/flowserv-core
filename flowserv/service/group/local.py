@@ -16,6 +16,7 @@ from flowserv.controller.base import WorkflowController
 from flowserv.model.auth import Auth
 from flowserv.model.group import WorkflowGroupManager
 from flowserv.model.parameter.base import Parameter
+from flowserv.model.run import RunManager
 from flowserv.model.workflow.manager import WorkflowManager
 from flowserv.service.group.base import WorkflowGroupService
 from flowserv.view.group import WorkflowGroupSerializer
@@ -29,8 +30,8 @@ class LocalWorkflowGroupService(WorkflowGroupService):
     """
     def __init__(
         self, group_manager: WorkflowGroupManager, workflow_repo: WorkflowManager,
-        backend: WorkflowController, auth: Auth, user_id: Optional[str] = None,
-        serializer: Optional[WorkflowGroupSerializer] = None
+        backend: WorkflowController, run_manager: RunManager, auth: Auth,
+        user_id: Optional[str] = None, serializer: Optional[WorkflowGroupSerializer] = None
     ):
         """Initialize the internal reference to the group manager, the workflow
         repository, and the serializer.
@@ -43,6 +44,9 @@ class LocalWorkflowGroupService(WorkflowGroupService):
             Repository for workflow templates
         backend: flowserv.controller.base.WorkflowController
             Workflow engine controller
+        run_manager: flowserv.model.run.RunManager
+            Manager for workflow runs. The run manager is used to fetch the
+            list of runs for an authenticated user.
         auth: flowserv.model.auth.Auth
             Implementation of the authorization policy for the API.
         user_id: string, default=None
@@ -53,6 +57,7 @@ class LocalWorkflowGroupService(WorkflowGroupService):
         self.group_manager = group_manager
         self.workflow_repo = workflow_repo
         self.backend = backend
+        self.run_manager = run_manager
         self.auth = auth
         self.user_id = user_id
         self.serialize = serializer if serializer is not None else WorkflowGroupSerializer()
@@ -136,7 +141,11 @@ class LocalWorkflowGroupService(WorkflowGroupService):
         dict
         """
         group = self.group_manager.get_group(group_id)
-        return self.serialize.group_handle(group)
+        # Fetch user runs if a valid user identifier was given.
+        runs = None
+        if self.user_id is not None:
+            runs = self.run_manager.list_runs(group_id=group_id)
+        return self.serialize.group_handle(group=group, runs=runs)
 
     def list_groups(self, workflow_id: Optional[str] = None) -> Dict:
         """Get a listing of all workflow groups. The result contains only those

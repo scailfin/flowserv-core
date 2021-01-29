@@ -13,7 +13,7 @@ import pytest
 
 from click.testing import CliRunner
 
-from flowserv.client.cli.base import cli
+from flowserv.client.cli.base import cli_flowserv
 from flowserv.model.database import TEST_DB
 
 import flowserv.config as config
@@ -32,7 +32,7 @@ def flowserv_cli(tmpdir):
     os.environ[config.FLOWSERV_ASYNC] = 'False'
     # Make sure to reset the database.
     runner = CliRunner()
-    runner.invoke(cli, ['init', '-f'])
+    runner.invoke(cli_flowserv, ['init', '-f'])
     yield runner
     # Clear environment variables that were set for the test runner.
     del os.environ[config.FLOWSERV_BASEDIR]

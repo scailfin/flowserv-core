@@ -14,7 +14,6 @@ from flowserv.client.api import service
 from flowserv.model.parameter.base import PARA_STRING
 from flowserv.client.cli.table import ResultTable
 
-import flowserv.config as config
 import flowserv.view.user as labels
 
 
@@ -48,22 +47,24 @@ def list_users():
     confirmation_prompt=False,
     help='User password'
 )
-def login_user(username, password):
+@click.pass_context
+def login_user(ctx, username, password):
     """Login to to obtain access token."""
     with service() as api:
         doc = api.users().login_user(username=username, password=password)
     # Get the access token from the response and print it to the console.
     token = doc[labels.USER_TOKEN]
-    click.echo('export {}={}'.format(config.FLOWSERV_ACCESS_TOKEN, token))
+    click.echo('export {}={}'.format(ctx.obj.vars['token'], token))
 
 
 # -- Logout -------------------------------------------------------------------
 
 @click.command()
-def logout_user():
+@click.pass_context
+def logout_user(ctx):
     """Logout from current user session."""
     with service() as api:
-        api.users().logout_user(config.ACCESS_TOKEN())
+        api.users().logout_user(ctx.obj.access_token())
     click.echo('See ya mate!')
 
 
@@ -98,10 +99,11 @@ def register_user(username, password):
 # -- Who am I -----------------------------------------------------------------
 
 @click.command()
-def whoami_user():
+@click.pass_context
+def whoami_user(ctx):
     """Print name of current user."""
     with service() as api:
-        doc = api.users().whoami_user(config.ACCESS_TOKEN())
+        doc = api.users().whoami_user(ctx.obj.access_token())
     click.echo('Logged in as {}.'.format(doc[labels.USER_NAME]))
 
 

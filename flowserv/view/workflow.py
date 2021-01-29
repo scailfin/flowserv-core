@@ -10,8 +10,9 @@
 
 from typing import Dict, List, Optional
 
-from flowserv.model.base import RunObject, WorkflowObject
+from flowserv.model.base import GroupObject, RunObject, WorkflowObject
 from flowserv.model.ranking import RunResult
+from flowserv.view.group import WorkflowGroupSerializer
 from flowserv.view.run import RunSerializer
 
 
@@ -48,16 +49,22 @@ class WorkflowSerializer(object):
     """Default serializer for workflow resource objects. Defines the methods
     that are used to serialize workflow descriptors, handles, and listing.
     """
-    def __init__(self, runs: Optional[RunSerializer] = None):
+    def __init__(
+        self, groups: Optional[WorkflowGroupSerializer] = None,
+        runs: Optional[RunSerializer] = None
+    ):
         """Initialize the serializer for run handles. The run serializer is
         required to serialize run handles that are part of a workflow handle
         with post-porcessing results.
 
         Parameters
         ----------
+        groups: flowserv.view.group.WorkflowGroupSerializer, default=None
+            Serializer for workflow groups.
         runs: flowserv.view.run.RunSerializer, default=None
-            Serializer for run handles
+            Serializer for run handles.
         """
+        self.groups = groups if groups is not None else WorkflowGroupSerializer()
         self.runs = runs if runs is not None else RunSerializer()
 
     def workflow_descriptor(self, workflow: WorkflowObject) -> Dict:
@@ -84,7 +91,8 @@ class WorkflowSerializer(object):
         return obj
 
     def workflow_handle(
-        self, workflow: WorkflowObject, postproc: Optional[RunObject] = None
+        self, workflow: WorkflowObject, postproc: Optional[RunObject] = None,
+        groups: Optional[List[GroupObject]] = None
     ) -> Dict:
         """Get dictionary serialization containing the handle of a workflow
         resource.
@@ -95,6 +103,9 @@ class WorkflowSerializer(object):
             Workflow handle
         postproc: flowserv.model.base.RunObject
             Handle for workflow post-porcessing run.
+        groups: list(flowserv.model.base.GroupObject), default=None
+            Optional list of descriptors for workflow groups for an
+            authenticated user.
 
         Returns
         -------
@@ -116,6 +127,9 @@ class WorkflowSerializer(object):
         # Add serialization for post-processing workflow (if present).
         if postproc is not None:
             obj[POSTPROC_RUN] = self.runs.run_handle(run=postproc)
+        # Add users' workflow groups if given.
+        if groups is not None:
+            obj.update(self.groups.group_listing(groups=groups))
         return obj
 
     def workflow_leaderboard(

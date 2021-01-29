@@ -279,8 +279,7 @@ class LocalRunService(RunService):
         if not self.auth.is_group_member(group_id=group_id, user_id=self.user_id):
             raise err.UnauthorizedAccessError()
         return self.serialize.run_listing(
-            runs=self.run_manager.list_runs(group_id=group_id, state=state),
-            group_id=group_id
+            runs=self.run_manager.list_runs(group_id=group_id, state=state)
         )
 
     def start_run(self, group_id: str, arguments: List[Dict]) -> Dict:

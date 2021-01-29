@@ -12,8 +12,6 @@ import click
 
 from flowserv.client.app.base import Flowserv
 
-import flowserv.config as config
-
 
 @click.command()
 @click.option(
@@ -56,8 +54,9 @@ import flowserv.config as config
     help='Print run logs'
 )
 @click.argument('template')
+@click.pass_context
 def install_application(
-    key, name, description, instructions, specfile, manifest, template,
+    ctx, key, name, description, instructions, specfile, manifest, template,
     ignore_postproc
 ):
     """Install workflow from local folder or repository."""
@@ -73,7 +72,7 @@ def install_application(
         manifestfile=manifest,
         ignore_postproc=ignore_postproc
     )
-    click.echo('export {}={}'.format(config.FLOWSERV_APP, app_key))
+    click.echo('export {}={}'.format(ctx.obj.vars['workflow'], app_key))
 
 
 @click.command()

@@ -14,7 +14,6 @@ from flowserv.client.api import service
 from flowserv.client.cli.table import ResultTable
 from flowserv.model.parameter.base import PARA_INT, PARA_STRING
 
-import flowserv.config as config
 import flowserv.view.files as filelabels
 import flowserv.view.group as labels
 
@@ -25,9 +24,10 @@ import flowserv.view.group as labels
 @click.option('-w', '--workflow', required=False, help='Workflow identifier')
 @click.option('-n', '--name', required=True, help='Group name')
 @click.option('-m', '--members', required=False, help='Group members')
-def create_group(workflow, name, members):
+@click.pass_context
+def create_group(ctx, workflow, name, members):
     """Create a new user group."""
-    workflow_id = workflow if workflow is not None else config.BENCHMARK_ID()
+    workflow_id = ctx.obj.get_workflow(ctx.params)
     with service() as api:
         doc = api.groups().create_group(
             workflow_id=workflow_id,
@@ -35,7 +35,7 @@ def create_group(workflow, name, members):
             members=members.split(',') if members is not None else None
         )
     group_id = doc[labels.GROUP_ID]
-    click.echo('export {}={}'.format(config.ROB_SUBMISSION, group_id))
+    click.echo('export {}={}'.format(ctx.obj.vars['group'], group_id))
 
 
 # -- Delete user group --------------------------------------------------------
@@ -52,9 +52,10 @@ def create_group(workflow, name, members):
     default=False,
     help='Delete group without confirmation'
 )
-def delete_group(group, force):
+@click.pass_context
+def delete_group(ctx, group, force):
     """Delete an existing user group."""
-    group_id = group if group is not None else config.SUBMISSION_ID()
+    group_id = ctx.obj.get_group(ctx.params)
     if not force:  # pragma: no cover
         msg = 'Do you really want to delete the group {}'.format(group_id)
         click.confirm(msg, default=True, abort=True)
@@ -86,9 +87,10 @@ def list_groups():
     required=False,
     help='Group identifier'
 )
-def show_group(group):
+@click.pass_context
+def show_group(ctx, group):
     """Show user group information."""
-    group_id = group if group is not None else config.SUBMISSION_ID()
+    group_id = ctx.obj.get_group(ctx.params)
     with service() as api:
         doc = api.groups().get_group(group_id)
     print_group(doc)
@@ -104,11 +106,12 @@ def show_group(group):
 )
 @click.option('-n', '--name', required=False, help='Group name')
 @click.option('-m', '--members', required=False, help='Group members')
-def update_group(group, name, members):
+@click.pass_context
+def update_group(ctx, group, name, members):
     """Update user group."""
     if name is None and members is None:
         raise click.UsageError('nothing to update')
-    group_id = group if group is not None else config.SUBMISSION_ID()
+    group_id = ctx.obj.get_group(ctx.params)
     with service() as api:
         doc = api.groups().update_group(
             group_id=group_id,

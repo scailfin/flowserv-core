@@ -64,6 +64,6 @@ def test_run_serialization(database, tmpdir):
         doc = view.run_handle(run)
         validator('RunHandle').validate(doc)
         # Validate run listing.
-        doc = view.run_listing(runs=runs.list_runs(group_id), group_id=group_id)
+        doc = view.run_listing(runs=runs.list_runs(group_id))
         validator('RunListing').validate(doc)
         assert len(doc[labels.RUN_LIST]) == 2

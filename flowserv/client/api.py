@@ -45,6 +45,8 @@ def ClientAPI(
     basedir: string, default=None
         Base directory for all workflow files. If no directory is given or
         specified in the environment a temporary directory will be created.
+    database: string, default=None
+        Optional database connect url.
     open_access: bool, default=None
         Use an open access policy if set to True.
     run_async: bool, default=False
@@ -75,7 +77,7 @@ def ClientAPI(
     # By default, the client runs all workflows synchronously.
     if run_async is not None and run_async:
         env.run_async()
-    else:
+    elif env.get(config.FLOWSERV_ASYNC) is None:
         env.run_sync()
     if docker is not None and docker:
         env.docker_engine()

@@ -8,6 +8,8 @@
 
 """Unit tests for the local workflow service API."""
 
+from flowserv.tests.service import create_user
+
 import flowserv.tests.serialize as serialize
 
 
@@ -32,15 +34,21 @@ def test_get_workflow_local(local_service, hello_world):
     """Test serialization for created workflows."""
     # -- Create workflow with minimal metadata --------------------------------
     with local_service() as api:
+        user_1 = create_user(api)
         workflow = hello_world(api, name='W1')
         workflow_id = workflow.workflow_id
         r = api.workflows().get_workflow(workflow_id)
-        serialize.validate_workflow_handle(doc=r)
-        assert len(r['parameterGroups']) == 1
-        serialize.validate_para_module(r['parameterGroups'][0])
-        assert len(r['parameters']) == 3
-        for para in r['parameters']:
-            serialize.validate_parameter(para)
+    serialize.validate_workflow_handle(doc=r)
+    assert len(r['parameterGroups']) == 1
+    serialize.validate_para_module(r['parameterGroups'][0])
+    assert len(r['parameters']) == 3
+    for para in r['parameters']:
+        serialize.validate_parameter(para)
+    with local_service(user_id=user_1) as api:
+        api.groups().create_group(workflow_id=workflow_id, name='G1')
+        r = api.workflows().get_workflow(workflow_id)
+    serialize.validate_workflow_handle(doc=r)
+    assert len(r['groups']) == 1
 
 
 def test_list_workflows_local(local_service, hello_world):

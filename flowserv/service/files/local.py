@@ -13,7 +13,7 @@ delete, and upload files for workflow groups.
 from typing import Dict, IO, Optional
 
 from flowserv.model.auth import Auth
-from flowserv.model.files.base import IOHandle
+from flowserv.model.files.base import FileHandle, IOHandle
 from flowserv.model.group import WorkflowGroupManager
 from flowserv.service.files.base import UploadFileService
 from flowserv.view.files import UploadFileSerializer
@@ -74,12 +74,8 @@ class LocalUploadFileService(UploadFileService):
         self.group_manager.delete_file(group_id=group_id, file_id=file_id)
 
     def get_uploaded_file(self, group_id: str, file_id: str) -> IO:
-        """Get handle for file with given identifier that was uploaded to the
+        """Get IO buffer for file with given identifier that was uploaded to the
         workflow group.
-
-        Currently we do allow downloads for non-submission members (i.e., the
-        user identifier iis optional). If a user identifier is given
-        Returns the file handle and the serialization of the file handle.
 
         Parameters
         ----------
@@ -93,6 +89,34 @@ class LocalUploadFileService(UploadFileService):
         Returns
         -------
         io.BytesIO
+
+        Raises
+        ------
+        flowserv.error.UnauthorizedAccessError
+        flowserv.error.UnknownFileError
+        flowserv.error.UnknownWorkflowGroupError
+        """
+        fh = self.get_uploaded_file_handle(group_id=group_id, file_id=file_id)
+        return fh.open()
+
+    def get_uploaded_file_handle(self, group_id: str, file_id: str) -> FileHandle:
+        """Get handle for file with given identifier that was uploaded to the
+        workflow group.
+
+        Returns the file handle for the uploaded file.
+
+        Parameters
+        ----------
+        group_id: string
+            Unique workflow group identifier
+        file_id: string
+            Unique file identifier
+        user_id: string, optional
+            Unique user identifier
+
+        Returns
+        -------
+        flowserv.model.base.files.FileHandle
 
         Raises
         ------
@@ -114,7 +138,7 @@ class LocalUploadFileService(UploadFileService):
         return self.group_manager.get_uploaded_file(
             group_id=group_id,
             file_id=file_id
-        ).open()
+        )
 
     def list_uploaded_files(self, group_id: str) -> Dict:
         """Get a listing of all files that have been uploaded for the given

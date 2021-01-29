@@ -16,7 +16,6 @@ from flowserv.client.cli.table import ResultTable
 from flowserv.model.files.fs import FSFile
 from flowserv.model.parameter.base import PARA_INT, PARA_STRING
 
-import flowserv.config as config
 import flowserv.view.files as labels
 
 
@@ -35,9 +34,10 @@ import flowserv.view.files as labels
     default=False,
     help='Delete file without confirmation'
 )
-def delete_file(group, file, force):
+@click.pass_context
+def delete_file(ctx, group, file, force):
     """Delete a previously uploaded file."""
-    group_id = group if group is not None else config.SUBMISSION_ID()
+    group_id = ctx.obj.get_group(ctx.params)
     if not force:  # pragma: no cover
         msg = 'Do you really want to delete file {}'
         click.confirm(msg, default=True, abort=True)
@@ -61,9 +61,10 @@ def delete_file(group, file, force):
     required=True,
     help='Save as ...'
 )
-def download_file(group, file, output):
+@click.pass_context
+def download_file(ctx, group, file, output):
     """Download a previously uploaded file."""
-    group_id = group if group is not None else config.SUBMISSION_ID()
+    group_id = ctx.obj.get_group(ctx.params)
     with service() as api:
         buf = api.uploads().get_uploaded_file(group_id=group_id, file_id=file)
         with open(output, 'wb') as local_file:
@@ -78,9 +79,10 @@ def download_file(group, file, output):
     required=False,
     help='Group identifier'
 )
-def list_files(group):
+@click.pass_context
+def list_files(ctx, group):
     """List uploaded files for a submission."""
-    group_id = group if group is not None else config.SUBMISSION_ID()
+    group_id = ctx.obj.get_group(ctx.params)
     with service() as api:
         doc = api.uploads().list_uploaded_files(group_id)
     table = ResultTable(
@@ -112,9 +114,10 @@ def list_files(group):
     required=True,
     help='Input file'
 )
-def upload_file(group, input):
+@click.pass_context
+def upload_file(ctx, group, input):
     """Upload a file for a submission."""
-    group_id = group if group is not None else config.SUBMISSION_ID()
+    group_id = ctx.obj.get_group(ctx.params)
     filename = os.path.basename(input)
     with service() as api:
         doc = api.uploads().upload_file(

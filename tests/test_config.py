@@ -11,7 +11,6 @@
 import os
 import pytest
 
-import flowserv.error as err
 import flowserv.config as config
 
 
@@ -122,30 +121,3 @@ def test_config_url():
         'app-path/v1'
     )
     assert config.API_URL(conf) == api_url
-
-
-def test_env_app_identifier():
-    """Test getting the workflow identifier and sbmission identifier from the
-    environment.
-    """
-    os.environ[config.FLOWSERV_APP] = '0000'
-    assert config.APP() == '0000'
-    assert config.SUBMISSION_ID() == '0000'
-    os.environ[config.ROB_SUBMISSION] = '000A'
-    assert config.APP() == '0000'
-    assert config.SUBMISSION_ID() == '000A'
-    del os.environ[config.FLOWSERV_APP]
-    del os.environ[config.ROB_SUBMISSION]
-    with pytest.raises(err.MissingConfigurationError):
-        config.APP()
-    with pytest.raises(err.MissingConfigurationError):
-        config.SUBMISSION_ID()
-
-
-def test_env_access_token():
-    """Test getting the access token from the environment."""
-    os.environ[config.FLOWSERV_ACCESS_TOKEN] = '0001'
-    assert config.ACCESS_TOKEN() == '0001'
-    del os.environ[config.FLOWSERV_ACCESS_TOKEN]
-    with pytest.raises(err.MissingConfigurationError):
-        config.ACCESS_TOKEN()

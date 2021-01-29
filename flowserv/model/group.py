@@ -187,7 +187,7 @@ class WorkflowGroupManager(object):
         # Commit changes before deleting the directory.
         self.session.delete(group)
         self.session.commit()
-        self.fs.delete_file(key=groupdir)
+        self.fs.delete_folder(key=groupdir)
 
     def get_group(self, group_id):
         """Get handle for the workflow group with the given identifier.

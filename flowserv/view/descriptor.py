@@ -28,7 +28,7 @@ SERVICE_VERSION = 'version'
 
 class ServiceDescriptorSerializer(object):
     """Default serializer for the service descriptor."""
-    def from_config(self, env: Dict) -> Dict:
+    def from_config(self, env: Dict, username: Optional[str] = None) -> Dict:
         """Get serialized descriptor with basic information from values in the
         given configuration settings.
 
@@ -36,15 +36,20 @@ class ServiceDescriptorSerializer(object):
         ----------
         env: dict, default=None
             Dictionary that provides access to configuration parameter values.
+        username: string, default=None
+            Optional name for an authenticated user.
 
         Returns
         -------
         dict
         """
-        return {
+        doc = {
             SERVICE_NAME: env.get(FLOWSERV_API_NAME, DEFAULT_NAME),
             SERVICE_URL: API_URL(env)
         }
+        if username is not None:
+            doc[SERVICE_USER] = username
+        return doc
 
     def get_name(self, doc: Dict) -> str:
         """Get the name value from the given document.
@@ -97,9 +102,7 @@ class ServiceDescriptorSerializer(object):
         return doc.get(SERVICE_URL)
 
     def get_username(self, doc: Dict) -> str:
-        """Get the user name from the given document. Note that the document may
-        be None. Returns None if the document is None or if the respective element
-        is not present.
+        """Get the user name from the given document.
 
         Parameters
         ----------

@@ -72,8 +72,7 @@ class DiskBucket(object):
         """
         for obj in Delete.get('Objects'):
             filename = os.path.join(self.basedir, obj.get('Key'))
-            if os.path.isfile(filename):
-                os.remove(filename)
+            os.remove(filename)
 
     def download_fileobj(self, key: str, data: IO):
         """Copy the buffer for the identified object into the given data
