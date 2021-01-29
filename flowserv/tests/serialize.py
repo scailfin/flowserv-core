@@ -316,7 +316,7 @@ def validate_workflow_handle(doc):
     util.validate_doc(
         doc=doc,
         mandatory=mandatory,
-        optional=['postproc', 'outputs']
+        optional=['groups', 'postproc', 'outputs']
     )
     # Validate the post-processing run handle if present
     if 'postproc' in doc:

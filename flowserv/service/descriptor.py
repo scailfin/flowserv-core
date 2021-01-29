@@ -61,8 +61,8 @@ WORKFLOWS_LIST = 'workflows:list'
 ROUTES = {
     FILES_DELETE: 'uploads/{userGroupId}/files/{fileId}',
     FILES_DOWNLOAD: 'uploads/{userGroupId}/files/{fileId}',
-    FILES_LIST: 'uploads/{userGroupId}',
-    FILES_UPLOAD: 'uploads/{userGroupId}',
+    FILES_LIST: 'uploads/{userGroupId}/files',
+    FILES_UPLOAD: 'uploads/{userGroupId}/files',
     GROUPS_CREATE: 'workflows/{workflowId}/groups',
     GROUPS_DELETE: 'groups/{userGroupId}',
     GROUPS_GET: 'groups/{userGroupId}',

@@ -1038,6 +1038,19 @@ definitions:
               type: "string"
       username:
         type: "string"
+  User:
+    type: "object"
+    description: "Information about a registered user"
+    required:
+    - id
+    - username
+    properties:
+      id:
+        type: "string"
+      username:
+        type: "string"
+      token:
+        type: "string"
   UserGroupHandle:
     type: "object"
     description: "Handle for workflow user group"
@@ -1072,6 +1085,21 @@ definitions:
         type: "array"
         items:
           $ref: "#/definitions/FileHandle"
+  UserGroups:
+    type: "array"
+    items:
+      type: "object"
+      required:
+      - id
+      - name
+      - workflow
+      properties:
+        id:
+          type: "string"
+        name:
+          type: "string"
+        workflow:
+            type: "string"
   UserGroupListing:
     type: "object"
     description: 'List of user group descriptors'
@@ -1114,19 +1142,6 @@ definitions:
       id:
         type: "string"
       username:
-        type: "string"
-  User:
-    type: "object"
-    description: "Information about a registered user"
-    required:
-    - id
-    - username
-    properties:
-      id:
-        type: "string"
-      username:
-        type: "string"
-      token:
         type: "string"
   UserListing:
     type: "object"
@@ -1202,6 +1217,8 @@ definitions:
               format: int64
       postproc:
         $ref: "#/definitions/RunHandle"
+      groups:
+        $ref: "#/definitions/UserGroups"
   WorkflowLeaderboard:
     type: "object"
     description: "Ordered list of run results"

@@ -94,7 +94,7 @@
 * Rename run argument serialization helper functions.
 
 
-### 0.7.0 - 2020-01-20
+### 0.7.0 - 2021-01-20
 
 * Introduce `flowserv.service.api.APIFactory` to support multiple clients with different configuration on the same machine.
 * Add functionality for user groups and authentication via the API client.
@@ -105,7 +105,8 @@
 * Drop support for Python 3.6.
 
 
-### 0.7.1 - 2020-??-??
+### 0.7.1 - 2021-??-??
 
 * Add option for passing an access token in API factory call.
 * Ensure not to override *FLOWSERV_ASYNC* in `ClientAPI`.
+* Add CLI environment context to support entry points for `flowserv` and `rob`.

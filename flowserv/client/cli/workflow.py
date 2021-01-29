@@ -264,6 +264,12 @@ def update_workflow(ctx, name, description, instructions, workflow):
 # -- Command Group ------------------------------------------------------------
 
 @click.group(name='workflows')
+def cli_benchmark():
+    """Show benchmark templates."""
+    pass  # pragma: no cover
+
+
+@click.group(name='workflows')
 def cli_workflow():
     """Create, delete, and maintain workflow templates in the repository."""
     pass  # pragma: no cover
@@ -285,6 +291,11 @@ cli_workflow.add_command(list_workflows, name='list')
 cli_workflow.add_command(show_ranking, name='ranking')
 cli_workflow.add_command(get_workflow, name='show')
 cli_workflow.add_command(update_workflow, name='update')
+
+cli_benchmark.add_command(cli_workflow_download)
+cli_benchmark.add_command(list_workflows, name='list')
+cli_benchmark.add_command(show_ranking, name='ranking')
+cli_benchmark.add_command(get_workflow, name='show')
 
 
 # -- Helper Methods -----------------------------------------------------------

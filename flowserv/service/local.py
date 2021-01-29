@@ -264,7 +264,9 @@ class SessionManager(object):
             workflow_service=LocalWorkflowService(
                 workflow_repo=workflow_repo,
                 ranking_manager=ranking_manager,
-                run_manager=run_manager
+                group_manager=group_manager,
+                run_manager=run_manager,
+                user_id=user_id
             ),
             group_service=LocalWorkflowGroupService(
                 group_manager=group_manager,

@@ -23,7 +23,7 @@ from flowserv.client.cli.repository import list_repository
 from flowserv.client.cli.run import cli_run
 from flowserv.client.cli.uploads import cli_uploads
 from flowserv.client.cli.user import cli_user, login_user, logout_user, whoami_user
-from flowserv.client.cli.workflow import cli_workflow
+from flowserv.client.cli.workflow import cli_benchmark, cli_workflow
 
 import flowserv.config as config
 import flowserv.error as err
@@ -179,3 +179,33 @@ cli_flowserv.add_command(cli_workflow, name='workflows')
 
 # Workflow Runs
 cli_flowserv.add_command(cli_run, name='runs')
+
+
+# -- rob ----------------------------------------------------------------------
+
+@click.group()
+@click.pass_context
+def cli_rob(ctx):
+    """Command line interface for ROB."""
+    ctx.obj = EnvContext(
+        vars={'workflow': config.ROB_BENCHMARK, 'group': config.ROB_SUBMISSION}
+    )
+
+
+# Benchmarks
+cli_rob.add_command(cli_benchmark, name='benchmarks')
+
+# Benchmark Runs
+cli_flowserv.add_command(cli_run, name='runs')
+
+# Users
+cli_rob.add_command(login_user, name='login')
+cli_rob.add_command(logout_user, name='logout')
+cli_rob.add_command(cli_user, name='users')
+cli_rob.add_command(whoami_user, name='whoami')
+
+# Submissions
+cli_rob.add_command(cli_group, 'submissions')
+
+# Group files
+cli_rob.add_command(cli_uploads, 'files')
