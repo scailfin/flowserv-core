@@ -123,15 +123,13 @@ class RunSerializer(object):
             doc[RUN_FILES] = files
         return doc
 
-    def run_listing(self, runs: List[RunObject], group_id: str) -> Dict:
+    def run_listing(self, runs: List[RunObject]) -> Dict:
         """Get serialization for a list of run handles.
 
         Parameters
         ----------
         runs: list(flowserv.model.base.RunObject)
             List of run handles
-        group_id: string
-            Unique workflow group identifier
 
         Returns
         -------

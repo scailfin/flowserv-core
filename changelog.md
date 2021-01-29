@@ -105,7 +105,7 @@
 * Drop support for Python 3.6.
 
 
-### 0.7.1 - 2021-??-??
+### 0.7.1 - 2021-01-29
 
 * Add option for passing an access token in API factory call.
 * Ensure not to override *FLOWSERV_ASYNC* in `ClientAPI`.

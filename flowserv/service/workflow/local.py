@@ -49,7 +49,7 @@ class LocalWorkflowService(WorkflowService):
             Manager for workflow groups.
         run_manager: flowserv.model.run.RunManager
             Manager for workflow runs. The run manager is used to access
-            prost-processing runs.
+            post-processing runs.
         user_id: string, default=None
             Identifier of an authenticated user.
         serializer: flowserv.view.workflow.WorkflowSerializer, default=None

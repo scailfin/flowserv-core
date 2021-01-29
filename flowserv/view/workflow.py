@@ -59,8 +59,10 @@ class WorkflowSerializer(object):
 
         Parameters
         ----------
+        groups: flowserv.view.group.WorkflowGroupSerializer, default=None
+            Serializer for workflow groups.
         runs: flowserv.view.run.RunSerializer, default=None
-            Serializer for run handles
+            Serializer for run handles.
         """
         self.groups = groups if groups is not None else WorkflowGroupSerializer()
         self.runs = runs if runs is not None else RunSerializer()

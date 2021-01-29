@@ -10,8 +10,9 @@
 
 from typing import Dict, List, Optional
 
-from flowserv.model.base import GroupObject
+from flowserv.model.base import GroupObject, RunObject
 from flowserv.view.files import UploadFileSerializer
+from flowserv.view.run import RunSerializer
 
 
 """Serialization labels."""
@@ -28,15 +29,21 @@ WORKFLOW_ID = 'workflow'
 
 class WorkflowGroupSerializer(object):
     """Default serializer for workflow user groups."""
-    def __init__(self, files: Optional[UploadFileSerializer] = None):
-        """Initialize the serializer for uploaded files.
+    def __init__(
+        self, files: Optional[UploadFileSerializer] = None,
+        runs: Optional[RunSerializer] = None
+    ):
+        """Initialize the serializer for uploaded files and workflow runs.
 
         Parameters
         ----------
         files: flowserv.view.files.UploadFileSerializer, default=None
             Serializer for handles of uploaded files
+        runs: flowserv.view.run.RunSerializer, default=None
+            Serializer for run handles
         """
         self.files = files if files is not None else UploadFileSerializer()
+        self.runs = runs if runs is not None else RunSerializer()
 
     def group_descriptor(self, group: GroupObject) -> Dict:
         """Get serialization for a workflow group descriptor. The descriptor
@@ -58,13 +65,15 @@ class WorkflowGroupSerializer(object):
             WORKFLOW_ID: group.workflow_id
         }
 
-    def group_handle(self, group: GroupObject) -> Dict:
+    def group_handle(self, group: GroupObject, runs: Optional[List[RunObject]] = None) -> Dict:
         """Get serialization for a workflow group handle.
 
         Parameters
         ----------
         group: flowserv.model.base.GroupObject
             Workflow group handle
+        runs: list of flowserv.model.base.RunObject, default=None
+            Optional list of run handles for an authenticated user.
 
         Returns
         -------
@@ -90,7 +99,9 @@ class WorkflowGroupSerializer(object):
             )
             files.append(f)
         doc[GROUP_UPLOADS] = files
-
+        # Include run handles if given.
+        if runs is not None:
+            doc.update(self.runs.run_listing(runs=runs))
         return doc
 
     def group_listing(self, groups: List[GroupObject]) -> Dict:

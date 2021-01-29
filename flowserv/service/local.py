@@ -255,9 +255,13 @@ class SessionManager(object):
         # Create the individual components of the API.
         ttl = env.get(config.FLOWSERV_AUTH_LOGINTTL, config.DEFAULT_LOGINTTL)
         user_manager = UserManager(session=session, token_timeout=ttl)
-        group_manager = WorkflowGroupManager(session=session, fs=fs, users=user_manager)
-        ranking_manager = RankingManager(session=session)
         run_manager = RunManager(session=session, fs=fs)
+        group_manager = WorkflowGroupManager(
+            session=session,
+            fs=fs,
+            users=user_manager
+        )
+        ranking_manager = RankingManager(session=session)
         workflow_repo = WorkflowManager(session=session, fs=fs)
         return API(
             service=ServiceDescriptor.from_config(env=env, username=username),
@@ -272,6 +276,7 @@ class SessionManager(object):
                 group_manager=group_manager,
                 workflow_repo=workflow_repo,
                 backend=engine,
+                run_manager=run_manager,
                 auth=auth,
                 user_id=user_id
             ),

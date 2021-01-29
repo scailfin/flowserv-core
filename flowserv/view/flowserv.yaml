@@ -999,6 +999,10 @@ definitions:
               type: "string"
             format:
               type: "object"
+  Runs:
+    type: "array"
+    items:
+      $ref: "#/definitions/RunDescriptor"
   RunListing:
     type: "object"
     description: "Listing of run handles"
@@ -1006,9 +1010,7 @@ definitions:
     - runs
     properties:
       runs:
-        type: "array"
-        items:
-          $ref: "#/definitions/RunDescriptor"
+        $ref: "#/definitions/Runs"
   ServiceDescriptor:
     type: "object"
     description: "Descriptor containing basic service properties"
@@ -1085,6 +1087,8 @@ definitions:
         type: "array"
         items:
           $ref: "#/definitions/FileHandle"
+      runs:
+        $ref: "#/definitions/Runs"
   UserGroups:
     type: "array"
     items:
@@ -1107,20 +1111,7 @@ definitions:
     - groups
     properties:
       groups:
-        type: "array"
-        items:
-          type: "object"
-          required:
-          - id
-          - name
-          - workflow
-          properties:
-            id:
-              type: "string"
-            name:
-              type: "string"
-            workflow:
-              type: "string"
+        $ref: "#/definitions/UserGroups"
   UserCredentials:
     type: "object"
     description: "User login credentials"
