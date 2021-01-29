@@ -130,7 +130,7 @@ class FileSystemStore(FileStore):
             os.remove(filename)
 
     def delete_folder(self, key: str):
-        """Delete the file with the given key.
+        """Delete the folder with the given key.
 
         Parameters
         ----------

@@ -110,3 +110,4 @@
 * Add option for passing an access token in API factory call.
 * Ensure not to override *FLOWSERV_ASYNC* in `ClientAPI`.
 * Add CLI environment context to support entry points for `flowserv` and `rob`.
+* Extend serialized objects to contain additional resources (i.e., groups and runs) for authenticated users.
