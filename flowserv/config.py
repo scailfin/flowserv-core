@@ -18,6 +18,8 @@ from typing import Any, Dict, Optional
 
 import os
 
+import flowserv.error as err
+
 
 # --
 # -- Environment variables and default values
@@ -96,6 +98,19 @@ FLOWSERV_GROUP = 'FLOWSERV_GROUP'
 # Respective variable names for ROB.
 ROB_BENCHMARK = 'ROB_BENCHMARK'
 ROB_SUBMISSION = 'ROB_SUBMISSION'
+
+
+def APP() -> str:
+    """Get the value for the FLOWSERV_APP variable from the environment. Raises
+    a missing configuration error if the value is not set.
+    Returns
+    -------
+    string
+    """
+    app_key = os.environ.get(FLOWSERV_APP)
+    if not app_key:
+        raise err.MissingConfigurationError('workflow identifier')
+    return app_key
 
 
 # -- Auth ---------------------------------------------------------------------

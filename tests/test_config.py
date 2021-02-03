@@ -12,6 +12,7 @@ import os
 import pytest
 
 import flowserv.config as config
+import flowserv.error as err
 
 
 @pytest.mark.parametrize(
@@ -121,3 +122,14 @@ def test_config_url():
         'app-path/v1'
     )
     assert config.API_URL(conf) == api_url
+
+
+def test_env_app_identifier():
+    """Test getting the workflow identifier and sbmission identifier from the
+    environment.
+    """
+    os.environ[config.FLOWSERV_APP] = '0000'
+    assert config.APP() == '0000'
+    del os.environ[config.FLOWSERV_APP]
+    with pytest.raises(err.MissingConfigurationError):
+        config.APP()
