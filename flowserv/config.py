@@ -43,7 +43,6 @@ FLOWSERV_API_PROTOCOL = 'FLOWSERV_API_PROTOCOL'
 
 
 """Default values for environment variables."""
-DEFAULT_DIR = '.flowserv'
 DEFAULT_HOST = 'localhost'
 DEFAULT_NAME = 'Reproducible and Reusable Data Analysis Workflow Server (API)'
 DEFAULT_PATH = '/flowserv/api/v1'
@@ -62,7 +61,7 @@ def API_DEFAULTDIR() -> str:
     -------
     string
     """
-    return os.path.join(user_cache_dir(appname=__name__.split('.')[0]), DEFAULT_DIR)
+    return user_cache_dir(appname=__name__.split('.')[0])
 
 
 def API_URL(env: Dict) -> str:
