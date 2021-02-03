@@ -16,6 +16,7 @@ from setuptools import setup, find_packages
 
 install_requires = [
     'future',
+    'appdirs>=1.4.4',
     'gitpython',
     'passlib',
     'python-dateutil',

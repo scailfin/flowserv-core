@@ -13,10 +13,12 @@ variables and to customize the configuration settings.
 """
 
 from __future__ import annotations
-from pathlib import Path
+from appdirs import user_cache_dir
 from typing import Any, Dict, Optional
 
 import os
+
+import flowserv.error as err
 
 
 # --
@@ -50,14 +52,17 @@ DEFAULT_PROTOCOL = 'http'
 
 
 def API_DEFAULTDIR() -> str:
-    """The default API base directory is a subfolder in the users HOME
+    """The default API base directory is a subfolder in the users data cache
     directory.
+
+    The default user cache directory is different for different OS's. We use
+    appdirs.user_cache_dir to get the directory.
 
     Returns
     -------
     string
     """
-    return os.path.join(str(Path.home()), DEFAULT_DIR)
+    return os.path.join(user_cache_dir(appname=__name__.split('.')[0]), DEFAULT_DIR)
 
 
 def API_URL(env: Dict) -> str:
@@ -96,6 +101,19 @@ FLOWSERV_GROUP = 'FLOWSERV_GROUP'
 # Respective variable names for ROB.
 ROB_BENCHMARK = 'ROB_BENCHMARK'
 ROB_SUBMISSION = 'ROB_SUBMISSION'
+
+
+def APP() -> str:
+    """Get the value for the FLOWSERV_APP variable from the environment. Raises
+    a missing configuration error if the value is not set.
+    Returns
+    -------
+    string
+    """
+    app_key = os.environ.get(FLOWSERV_APP)
+    if not app_key:
+        raise err.MissingConfigurationError('workflow identifier')
+    return app_key
 
 
 # -- Auth ---------------------------------------------------------------------
