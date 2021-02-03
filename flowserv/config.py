@@ -13,7 +13,7 @@ variables and to customize the configuration settings.
 """
 
 from __future__ import annotations
-from pathlib import Path
+from appdirs import user_cache_dir
 from typing import Any, Dict, Optional
 
 import os
@@ -52,14 +52,17 @@ DEFAULT_PROTOCOL = 'http'
 
 
 def API_DEFAULTDIR() -> str:
-    """The default API base directory is a subfolder in the users HOME
+    """The default API base directory is a subfolder in the users data cache
     directory.
+
+    The default user cache directory is different for different OS's. We use
+    appdirs.user_cache_dir to get the directory.
 
     Returns
     -------
     string
     """
-    return os.path.join(str(Path.home()), DEFAULT_DIR)
+    return os.path.join(user_cache_dir(appname=__name__.split('.')[0]), DEFAULT_DIR)
 
 
 def API_URL(env: Dict) -> str:
