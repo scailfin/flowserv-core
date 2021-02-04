@@ -30,7 +30,6 @@ Below is the sequence of steps that can be used to run the ROB Hello World demo 
     # Install the 'Hello World' demo (-k specifies the identifier)
     $> flowserv app install -k helloworld helloworld
 
-
 .. code-block:: bash
 
     # Set workflow identifier to point to the installed Hello World demo
@@ -43,6 +42,7 @@ Below is the sequence of steps that can be used to run the ROB Hello World demo 
     $> flowserv files upload -i names.txt
 
 .. code-block:: console
+
     Uploaded 'names.txt' with ID 2c98a278acdb41a3bb572ae4fbea5177.
 
 .. code-block:: bash
