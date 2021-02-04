@@ -4,7 +4,7 @@ How To Run 'Hello World' Demo from Command Line
 
 Below is the sequence of steps that can be used to run the ROB Hello World demo to test if an installation of **flowserv** is working properly. This example assumes that you have installed flowserv-core in you Python environment.
 
-.. code-block:: console
+.. code-block:: bash
 
     # Create/Go to an empty directory (optional)
     $> cd /home/user/flowserv-test
@@ -30,11 +30,16 @@ Below is the sequence of steps that can be used to run the ROB Hello World demo 
     # Upload a file with names (need to create the file first)
     # Note that the file identifier will be different.
     $> flowserv files upload -i names.txt
+
+.. code-block:: console
     Uploaded 'names.txt' with ID 2c98a278acdb41a3bb572ae4fbea5177.
 
     # Start a new workflow run. Will ask you to input run parameters.
     # Input files are specified by their identifier
     $> flowserv runs start
+
+
+.. code-block:: console
 
     Select file identifier from uploaded files:
 
@@ -62,6 +67,9 @@ Below is the sequence of steps that can be used to run the ROB Hello World demo 
     Files:
       db7741f03b3b475ab8288d66871a0b3e (results/greetings.txt)
       0cebe830b8074a3faf2c95dc756f3a77 (results/analytics.json)
+
+
+.. code-block:: bash
 
     # Download the greetings file (identifier will be different)
     $> flowserv runs download file -f db7741f03b3b475ab8288d66871a0b3e -o greetings.txt 07993089f08f42cd89485c3a53f11766
