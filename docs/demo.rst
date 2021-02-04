@@ -9,6 +9,8 @@ Below is the sequence of steps that can be used to run the ROB Hello World demo 
     # Create/Go to an empty directory (optional)
     $> cd /home/user/flowserv-test
 
+.. code-block:: bash
+
     # Set the following environment variables
     # Directory for all workflow files. Use a sub-directory
     # in the current workin directory.
@@ -18,14 +20,22 @@ Below is the sequence of steps that can be used to run the ROB Hello World demo 
     # Open access policy to avoid having to register users and login
     $> export FLOWSERV_AUTH=open
 
+.. code-block:: bash
+
     # Create the database
-    flowserv init
+    $> flowserv init
+
+.. code-block:: bash
 
     # Install the 'Hello World' demo (-k specifies the identifier)
     $> flowserv app install -k helloworld helloworld
 
+.. code-block:: bash
+
     # Set workflow identifier to point to the installed Hello World demo
     $> export FLOWSERV_APP=helloworld
+
+.. code-block:: bash
 
     # Upload a file with names (need to create the file first)
     # Note that the file identifier will be different.
@@ -33,6 +43,8 @@ Below is the sequence of steps that can be used to run the ROB Hello World demo 
 
 .. code-block:: console
     Uploaded 'names.txt' with ID 2c98a278acdb41a3bb572ae4fbea5177.
+
+.. code-block:: bash
 
     # Start a new workflow run. Will ask you to input run parameters.
     # Input files are specified by their identifier
