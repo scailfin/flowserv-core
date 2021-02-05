@@ -25,8 +25,8 @@ import subprocess
 
 from flowserv.config import FLOWSERV_ASYNC, FLOWSERV_BASEDIR, FLOWSERV_RUNSDIR, DEFAULT_RUNSDIR
 from flowserv.controller.base import WorkflowController
+from flowserv.controller.serial.workflow import SerialWorkflow
 from flowserv.model.files.factory import FS
-from flowserv.model.workflow.serial import SerialWorkflow
 from flowserv.service.api import APIFactory
 
 import flowserv.error as err

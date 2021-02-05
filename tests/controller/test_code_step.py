@@ -10,7 +10,7 @@
 current workflow state.
 """
 
-from flowserv.model.workflow.serial import CodeStep
+from flowserv.controller.serial.workflow import CodeStep
 
 
 def my_add(x: int, y: int) -> int:

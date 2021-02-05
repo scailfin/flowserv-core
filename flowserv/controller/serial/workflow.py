@@ -21,42 +21,6 @@ from flowserv.model.template.base import WorkflowTemplate
 import flowserv.model.template.parameter as tp
 
 
-class Step(object):
-    """List of command line statements that are executed in a given
-    environment. The environment can, for example, specify a Docker image.
-    """
-    def __init__(self, env: str, commands: Optional[List[str]] = None):
-        """Initialize the object properties.
-
-        Parameters
-        ----------
-        env: string
-            Execution environment name.
-        commands: list(string), optional
-            List of command line statements.
-        """
-        self.env = env
-        self.commands = commands if commands is not None else list()
-
-    def add(self, cmd: str) -> Step:
-        """Append a given command line statement to the list of commands in the
-        workflow step.
-
-        Returns a reference to the object itself.
-
-        Parameters
-        ----------
-        cmd: string
-            Command line statement
-
-        Returns
-        -------
-        flowserv.model.workflow.serial.Step
-        """
-        self.commands.append(cmd)
-        return self
-
-
 class CodeStep(object):
     """Workflow step that executes a given Python function.
 
@@ -119,6 +83,43 @@ class CodeStep(object):
             arguments[self.output] = result
 
 
+class ContainerStep(object):
+    """Workflow step that is executed in a container environment. Contains a
+    reference to the container identifier and a list of command line statements
+    that are executed in a given environment.
+    """
+    def __init__(self, env: str, commands: Optional[List[str]] = None):
+        """Initialize the object properties.
+
+        Parameters
+        ----------
+        env: string
+            Execution environment name.
+        commands: list(string), optional
+            List of command line statements.
+        """
+        self.env = env
+        self.commands = commands if commands is not None else list()
+
+    def add(self, cmd: str) -> ContainerStep:
+        """Append a given command line statement to the list of commands in the
+        workflow step.
+
+        Returns a reference to the object itself.
+
+        Parameters
+        ----------
+        cmd: string
+            Command line statement
+
+        Returns
+        -------
+        flowserv.model.workflow.serial.Step
+        """
+        self.commands.append(cmd)
+        return self
+
+
 class SerialWorkflow(object):
     """Wrapper around a workflow template for serial workflow specifications
     that are following the basic structure of REANA serial workflows.
@@ -147,7 +148,7 @@ class SerialWorkflow(object):
         self.arguments = arguments
         self.sourcedir = sourcedir
 
-    def commands(self) -> List[Step]:
+    def commands(self) -> List[ContainerStep]:
         """Get expanded commands from template workflow specification. The
         commands within each step of the serial workflow specification are
         expanded for the given set of arguments and appended to the result
@@ -187,7 +188,7 @@ class SerialWorkflow(object):
                 arguments=workflow_parameters,
                 parameters=self.template.parameters
             )
-            script = Step(env=env)
+            script = ContainerStep(env=env)
             for cmd in step.get('commands', []):
                 cmd = tp.expand_value(
                     value=cmd,

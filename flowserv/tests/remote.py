@@ -12,8 +12,8 @@ import os
 
 from flowserv.controller.remote.client import RemoteClient
 from flowserv.controller.remote.engine import RemoteWorkflowController
+from flowserv.controller.serial.workflow import SerialWorkflow
 from flowserv.model.workflow.remote import RemoteWorkflowObject
-from flowserv.model.workflow.serial import SerialWorkflow
 from flowserv.model.workflow.state import StatePending
 
 import flowserv.util as util
