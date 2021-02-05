@@ -10,7 +10,11 @@
 REANA serial workflow specifications.
 """
 
+from __future__ import annotations
+from typing import Callable, Dict, List, Optional
 from string import Template
+
+import inspect
 
 from flowserv.model.template.base import WorkflowTemplate
 
@@ -21,22 +25,24 @@ class Step(object):
     """List of command line statements that are executed in a given
     environment. The environment can, for example, specify a Docker image.
     """
-    def __init__(self, env, commands=None):
+    def __init__(self, env: str, commands: Optional[List[str]] = None):
         """Initialize the object properties.
 
         Parameters
         ----------
         env: string
-            Execution environment name
+            Execution environment name.
         commands: list(string), optional
-            List of command line statements
+            List of command line statements.
         """
         self.env = env
         self.commands = commands if commands is not None else list()
 
-    def add(self, cmd):
+    def add(self, cmd: str) -> Step:
         """Append a given command line statement to the list of commands in the
         workflow step.
+
+        Returns a reference to the object itself.
 
         Parameters
         ----------
@@ -45,10 +51,72 @@ class Step(object):
 
         Returns
         -------
-        flowserv.model.template.step.Step
+        flowserv.model.workflow.serial.Step
         """
         self.commands.append(cmd)
         return self
+
+
+class CodeStep(object):
+    """Workflow step that executes a given Python function.
+
+    The function is evaluated using the current state of the workflow arguments.
+    If the executed function returns a result, the returned object can be added
+    to the arguments. That is, the argument dictionary is updated and the added
+    object is availble for the following workflows steps.
+    """
+    def __init__(
+        self, func: Callable, output: Optional[str] = None,
+        varnames: Optional[Dict] = None
+    ):
+        """Initialize the reference to the executed function and the optional
+        return value target and variable name mapping.
+
+        Parameters
+        ----------
+        func: callable
+            Python function that is executed by the workflow step.
+        output: string, default=None
+            Name of the variable under which the function result is stored in
+            the workflow arguments. If None, the function result is discarded.
+        varnames: dict, default=None
+            Mapping of function argument names to names of workflow arguments.
+            This mapping is used when generating the arguments for the executed
+            function. By default it is assumed that the names of arguments for
+            the given function correspond to the names in the argument dictionary
+            for the workflow. This mapping provides the option to map names in
+            the function signature that do not occur in the arguments dictionary
+            to argument names that are in the dictionary.
+        """
+        self.func = func
+        self.output = output
+        self.varnames = varnames if varnames is not None else dict()
+
+    def exec(self, arguments: Dict):
+        """Execute workflow step using the given arguments.
+
+        The given set of input arguments may be modified by the return value of
+        the evaluated function.
+
+        Parameters
+        ----------
+        arguments: dict
+            Mapping of parameter names to their current value in the workflow
+            executon state.
+        """
+        # Generate argument dictionary from the signature of the evaluated function
+        # and the variable name mapping.
+        kwargs = dict()
+        for var in inspect.getfullargspec(self.func).args:
+            source = self.varnames.get(var, var)
+            if source in arguments:
+                kwargs[var] = arguments[source]
+        # Evaluate the given function using the generated argument dictionary.
+        result = self.func(**kwargs)
+        # Add the function result to the argument dictionary if a variable name for
+        # the result is given.
+        if self.output is not None:
+            arguments[self.output] = result
 
 
 class SerialWorkflow(object):
@@ -79,7 +147,7 @@ class SerialWorkflow(object):
         self.arguments = arguments
         self.sourcedir = sourcedir
 
-    def commands(self):
+    def commands(self) -> List[Step]:
         """Get expanded commands from template workflow specification. The
         commands within each step of the serial workflow specification are
         expanded for the given set of arguments and appended to the result
@@ -87,7 +155,7 @@ class SerialWorkflow(object):
 
         Returns
         -------
-        list(flowserv.model.template.step.Step)
+        list(flowserv.model.workflow.serial.Step)
 
         Raises
         ------
@@ -130,7 +198,7 @@ class SerialWorkflow(object):
             result.append(script)
         return result
 
-    def output_files(self):
+    def output_files(self) -> List[str]:
         """Replace references to template parameters in the list of output
         files in the workflow specification.
 
