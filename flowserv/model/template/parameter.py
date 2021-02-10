@@ -9,7 +9,7 @@
 """Collection of helper methods for parameter references in workflow templates.
 """
 
-from typing import Dict, Optional
+from typing import Dict, Optional, Set
 
 import re
 
@@ -296,6 +296,32 @@ def is_parameter(value):
     """
     # Check if the value matches the template parameter reference pattern
     return value.startswith('$[[') and value.endswith(']]')
+
+
+def placeholders(text: str) -> Set[str]:
+    """Get the set of names for all placeholders in the given string.
+
+    Placeholders start with '$' following the string.template syntax.
+
+    Parameters
+    ----------
+    text: string
+        Template string.
+
+    Returns
+    -------
+    set of string
+    """
+    # Replace escaped placeholder identifiers.
+    text = text.replace('$$', '')
+    values = set()
+    while '$' in text:
+        text = text[text.find('$') + 1:]
+        if text.startswith('{'):
+            values.add(text[1: text.find('}')])
+        else:
+            values.add(text.split()[0])
+    return values
 
 
 def replace_args(spec, arguments, parameters):

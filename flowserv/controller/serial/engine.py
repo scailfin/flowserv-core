@@ -15,9 +15,11 @@ local file system. The base folder for these run files in configured using the
 environment variable FLOWSERV_RUNSDIR.
 """
 
+from abc import ABCMeta, abstractmethod
 from functools import partial
 from multiprocessing import Lock, Pool
-from typing import Callable, Optional
+from string import Template
+from typing import Callable, Dict, List, Optional
 
 import logging
 import os
@@ -25,13 +27,92 @@ import subprocess
 
 from flowserv.config import FLOWSERV_ASYNC, FLOWSERV_BASEDIR, FLOWSERV_RUNSDIR, DEFAULT_RUNSDIR
 from flowserv.controller.base import WorkflowController
+from flowserv.controller.serial.result import ExecResult
 from flowserv.controller.serial.workflow import SerialWorkflow
+from flowserv.model.base import RunObject
+from flowserv.model.template.base import WorkflowTemplate
+from flowserv.model.template.parameter import ParameterIndex
 from flowserv.model.files.factory import FS
 from flowserv.service.api import APIFactory
 
 import flowserv.error as err
 import flowserv.util as util
+import flowserv.model.template.parameter as tp
 import flowserv.model.workflow.state as serialize
+
+
+class ContainerEngine(metaclass=ABCMeta):
+    """Execution egine for container steps in a serial workflow. Provides the
+    functionality to expand arguments in the individual command statements.
+    Implementations may differ in the run method that executes the expanded
+    commands.
+    """
+    def __init__(self, env: Optional[Dict] = None):
+        """Initialize the default mapping for parameter and string template
+        placeholder substitution.
+
+        Parameters
+        ----------
+        env: dict, default=None
+            Mapping of parameter and placeholder names to their value.
+        """
+        self.env = env if env is not None else dict()
+
+    def exec(
+        self, commands: List[str], arguments: Dict, parameters: ParameterIndex,
+        rundir: str
+    ) -> ExecResult:
+        """Execute a given list of commands that are represented by template
+        strings.
+
+        Substitutes parameter and template placeholder occurrences first. Then
+        calls the implementation-specific run method to execute the individual
+        commands.
+
+        Parameters
+        ----------
+        commands: list of string
+            List of template strings for commands that are being executed.
+        arguments: dict
+            Dictionary of argument values for parameters in the template.
+        parameters: lowserv.model.template.parameter.ParameterIndex
+            Parameter declarations from the workflow template.
+        rundir: string
+            Path to the working directory of the workflow run.
+
+        Returns
+        -------
+        flowserv.controller.serial.result.ExecResult
+        """
+        # Combine pre-defined environment settings with the given arguments.
+        env = dict(self.env)
+        env.update(arguments)
+        expanded_commands = list()
+        for cmd in commands:
+            cmd = tp.expand_value(value=cmd, arguments=arguments, parameters=parameters)
+            # Generate mapping for template substitution. Include a mapping of
+            # placeholder names to themselves.
+            args = {p: p for p in tp.placeholders(cmd)
+            args.update(env)
+            expanded_commands.append(Template(cmd).substitute(args))
+        return self.run(commands=expanded_commands, rundir=rundir)
+
+    @abstractmethod
+    def run(self, commands: List[str], rundir: str) -> ExecResult:
+        """Execute a given list of commands.
+
+        Parameters
+        ----------
+        commands: list of string
+            List of template strings for commands that are being executed.
+        rundir: string
+            Path to the working directory of the workflow run.
+
+        Returns
+        -------
+        flowserv.controller.serial.result.ExecResult
+        """
+        raise NotImplementedError()  # pragma: no cover
 
 
 class SerialWorkflowEngine(WorkflowController):
@@ -100,7 +181,7 @@ class SerialWorkflowEngine(WorkflowController):
                 # uses this controller for workflow execution
                 del self.tasks[run_id]
 
-    def exec_workflow(self, run, template, arguments):
+    def exec_workflow(self, run: RunObject, template: WorkflowTemplate, arguments: Dict):
         """Initiate the execution of a given workflow template for a set of
         argument values. This will start a new process that executes a serial
         workflow asynchronously.

@@ -6,15 +6,14 @@
 # flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
-"""Unit tests for executing serial workflow steps in a multiprocess container
-environment.
-"""
+"""Unit tests for executing serial workflow steps in a subprocess environment."""
 
 import os
 import pytest
 import subprocess
 
-from flowserv.controller.serial.multiproc import exec_step
+from flowserv.controller.serial.subprocess import SubprocessWorker
+from flowserv.controller.serial.workflow import ContainerStep
 
 
 # Template directory
@@ -46,7 +45,8 @@ def test_run_steps_with_error():
         'python printenv.py TEST_ENV_2'
     ]
     env = {'TEST_ENV_1': 'Hello', 'TEST_ENV_ERROR': 'error', 'TEST_ENV_2': 'World'}
-    result = exec_step(commands=commands, rundir=RUN_DIR, env=env)
+    step = ContainerStep(image='test', commands=commands, env=env)
+    result = SubprocessWorker().run(step=step, rundir=RUN_DIR)
     assert result.returncode == 1
     assert result.exception is None
     assert result.stdout == ['Hello\n']
@@ -56,7 +56,8 @@ def test_run_steps_with_error():
 def test_run_steps_with_subprocess_error(mock_subprocess):
     """Test execution of a workflow step that fails to run."""
     commands = ['nothing to do']
-    result = exec_step(commands=commands, rundir=RUN_DIR)
+    step = ContainerStep(image='test', commands=commands)
+    result = SubprocessWorker().run(step=step, rundir=RUN_DIR)
     assert result.returncode == 1
     assert result.exception is not None
     assert result.stdout == []
@@ -70,7 +71,8 @@ def test_run_successful_steps():
         'python printenv.py TEST_ENV_2'
     ]
     env = {'TEST_ENV_1': 'Hello', 'TEST_ENV_2': 'World'}
-    result = exec_step(commands=commands, rundir=RUN_DIR, env=env)
+    step = ContainerStep(image='test', commands=commands, env=env)
+    result = SubprocessWorker().run(step=step, rundir=RUN_DIR)
     assert result.returncode == 0
     assert result.exception is None
     assert result.stdout == ['Hello\n', 'World\n']

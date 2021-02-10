@@ -14,7 +14,8 @@ import docker
 import os
 import pytest
 
-from flowserv.controller.serial.docker import exec_step
+from flowserv.controller.serial.docker import DockerWorker
+from flowserv.controller.serial.workflow import ContainerStep
 
 
 # Template directory
@@ -65,7 +66,8 @@ def test_run_steps_with_error(mock_docker):
         'TEST_ENV_2'
     ]
     env = {'TEST_ENV_1': 'Hello', 'TEST_ENV_2': 'World'}
-    result = exec_step(image='test', commands=commands, rundir=RUN_DIR, env=env)
+    step = ContainerStep(image='test', commands=commands, env=env)
+    result = DockerWorker().run(step=step, rundir=RUN_DIR)
     assert result.returncode == 1
     assert result.exception is not None
     assert result.stdout == ['Hello']
@@ -79,7 +81,8 @@ def test_run_successful_steps(mock_docker):
         'TEST_ENV_2'
     ]
     env = {'TEST_ENV_1': 'Hello', 'TEST_ENV_2': 'World'}
-    result = exec_step(image='test', commands=commands, rundir=RUN_DIR, env=env)
+    step = ContainerStep(image='test', commands=commands, env=env)
+    result = DockerWorker().run(step=step, rundir=RUN_DIR)
     assert result.returncode == 0
     assert result.exception is None
     assert result.stdout == ['Hello', 'World']

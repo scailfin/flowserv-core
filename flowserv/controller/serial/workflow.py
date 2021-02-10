@@ -130,19 +130,25 @@ class ContainerStep(WorkflowStep):
     reference to the container identifier and a list of command line statements
     that are executed in a given environment.
     """
-    def __init__(self, env: str, commands: Optional[List[str]] = None):
+    def __init__(
+        self, image: str, commands: Optional[List[str]] = None,
+        env: Optional[Dict] = None
+    ):
         """Initialize the object properties.
 
         Parameters
         ----------
-        env: string
-            Execution environment name.
+        image: string
+            Execution environment identifier.
         commands: list(string), optional
             List of command line statements.
+        env: dict, default=None
+            Environment variables for workflow step execution.
         """
         super(ContainerStep, self).__init__(step_type=0)
-        self.env = env
+        self.image = image
         self.commands = commands if commands is not None else list()
+        self.env = env if env is not None else dict()
 
     def add(self, cmd: str) -> ContainerStep:
         """Append a given command line statement to the list of commands in the

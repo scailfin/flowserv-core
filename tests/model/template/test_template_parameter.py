@@ -107,6 +107,19 @@ def test_get_parameter_value(value, result):
 
 
 @pytest.mark.parametrize(
+    'cmd,placeholders',
+    [
+        ('abcdefg', set()),
+        ('abc${d}ef $g\t$e', {'d', 'g', 'e'}),
+        ('abc$${d}ef $g\t$g', {'g'}),
+        ('${java} -jar $jarfile', {'java', 'jarfile'})
+    ]
+)
+def test_get_placeholders(cmd, placeholders):
+    assert tp.placeholders(cmd) == placeholders
+
+
+@pytest.mark.parametrize(
     'value',
     [(tp.VARIABLE('B?x')), (tp.VARIABLE('B?x:y')), (tp.VARIABLE('a?x'))]
 )
