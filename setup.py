@@ -32,11 +32,10 @@ postgres_requires = ['psycopg2-binary']
 
 
 tests_require = [
-    'coverage>=4.0',
+    'coverage>=5.0',
     'pytest',
-    'pytest-cov',
-    'tox'
-]
+    'pytest-cov'
+] + docker_requires
 
 dev_require = ['flake8', 'python-language-server']
 

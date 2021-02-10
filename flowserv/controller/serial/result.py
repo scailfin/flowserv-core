@@ -20,7 +20,7 @@ class ExecResult:
     Outputs that were written to standard output and standard error are part of
     the result object. Outputs are captured as lists of strings.
     """
-    returncode: int
+    returncode: Optional[int] = 0
     stdout: Optional[List[str]] = field(default_factory=list)
     stderr: Optional[List[str]] = field(default_factory=list)
     exception: Optional[Exception] = None

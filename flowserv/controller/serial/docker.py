@@ -10,12 +10,13 @@
 local Docker daemon to execute workflow steps.
 """
 
-from typing import Optional
+from typing import Dict, List, Optional
 
 import logging
 import os
 
 from flowserv.controller.serial.engine import SerialWorkflowEngine
+from flowserv.controller.serial.result import ExecResult
 from flowserv.service.api import APIFactory
 
 import flowserv.model.workflow.state as serialize
@@ -47,6 +48,71 @@ class DockerWorkflowEngine(SerialWorkflowEngine):
 # -- Workflow execution function ----------------------------------------------
 
 
+def exec_step(
+    image: str, commands: List[str], rundir: str, env: Optional[Dict] = None
+) -> ExecResult:
+    """Execute a list of commands from a workflow steps synchronously using the
+    Docker engine.
+
+    Stops execution if one of the commands fails. Returns the combined result
+    of all executed commands.
+
+    Parameters
+    ----------
+    image: str
+        Container image identifier.
+    commands: list of string
+        List of commands that are being executed.
+    rundir: string
+        Path to the working directory of the workflow run that this step
+        belongs to.
+    env: dict, default=None
+        Mapping of environment variables that is passed to the subprocess run
+        method.
+
+    Returns
+    -------
+    (string, string, dict)
+    """
+    # Keep output to STDOUT and STDERR for all executed commands in the
+    # respective attributes of the returned execution result.
+    result = ExecResult()
+    # Setup the workflow environment by obtaining volume information for all
+    # directories in the run folder.
+    volumes = dict()
+    for filename in os.listdir(rundir):
+        abs_file = os.path.abspath(os.path.join(rundir, filename))
+        if os.path.isdir(abs_file):
+            volumes[abs_file] = {'bind': '/{}'.format(filename), 'mode': 'rw'}
+    # Run the individual commands using the local Docker deamon. Import
+    # docker package here to avoid errors for installations that do not intend
+    # to use Docker and therefore did not install the package.
+    import docker
+    from docker.errors import ContainerError, ImageNotFound, APIError
+    client = docker.from_env()
+    try:
+        for cmd in commands:
+            logging.info('{}'.format(cmd))
+            logs = client.containers.run(
+                image=image,
+                command=cmd,
+                volumes=volumes,
+                auto_remove=True,
+                environment=env,
+                stdout=True
+            )
+            if logs:
+                result.stdout.append(logs.decode('utf-8'))
+    except (ContainerError, ImageNotFound, APIError) as ex:
+        logging.error(ex)
+        strace = '\n'.join(util.stacktrace(ex))
+        logging.debug(strace)
+        result.stderr.append(strace)
+        result.exception = ex
+        result.returncode = 1
+    return result
+
+
 def docker_run(run_id, rundir, state, output_files, steps):
     """Execute a list of workflow steps synchronously using the Docker engine.
 
@@ -71,34 +137,9 @@ def docker_run(run_id, rundir, state, output_files, steps):
     (string, string, dict)
     """
     logging.debug('start docker run {}'.format(run_id))
-    # Setup the workflow environment by obtaining volume information for all
-    # directories in the run folder.
-    volumes = dict()
-    for filename in os.listdir(rundir):
-        abs_file = os.path.abspath(os.path.join(rundir, filename))
-        if os.path.isdir(abs_file):
-            volumes[abs_file] = {'bind': '/{}'.format(filename), 'mode': 'rw'}
-    # Run the individual workflow steps using the local Docker deamon. Import
-    # docker package here to avoid errors for installations that do not intend
-    # to use Docker and therefore did not install the package.
-    import docker
-    from docker.errors import ContainerError, ImageNotFound, APIError
-    client = docker.from_env()
-    try:
-        for step in steps:
-            for cmd in step.commands:
-                logging.info('{}'.format(cmd))
-                client.containers.run(
-                    image=step.env,
-                    command=cmd,
-                    volumes=volumes
-                )
-    except (ContainerError, ImageNotFound, APIError) as ex:
-        logging.error(ex)
-        strace = util.stacktrace(ex)
-        logging.debug('\n'.join(strace))
-        result_state = state.error(messages=strace)
-        return run_id, rundir, serialize.serialize_state(result_state)
+    for step in steps:
+        for cmd in step.commands:
+            exec_step(image=step.env, command=cmd, rundir=rundir)
     # Create list of output files that were generated.
     files = list()
     for relative_path in output_files:
