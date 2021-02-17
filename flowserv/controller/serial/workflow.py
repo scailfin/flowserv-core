@@ -11,7 +11,7 @@ REANA serial workflow specifications.
 """
 
 from __future__ import annotations
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, Iterable, List, Optional
 from string import Template
 
 import inspect
@@ -196,6 +196,113 @@ class SerialWorkflow(object):
         self.template = template
         self.arguments = arguments
         self.sourcedir = sourcedir
+        self.steps = list()
+
+    def __iter__(self) -> Iterable[WorkflowStep]:
+        """Get an interator over the steps in the workflow.
+
+        Returns
+        -------
+        itarable
+        """
+        return iter(self.steps)
+
+    def add_step(
+        self, image: Optional[str] = None, commands: Optional[List[str]] = None,
+        env: Optional[Dict] = None, func: Optional[Callable] = None,
+        output: Optional[str] = None, varnames: Optional[Dict] = None
+    ) -> SerialWorkflow:
+        """append a step to the workflow.
+
+        Use this method to either add a code step or container step to the
+        workflow. The method signature contains arguments for both types of
+        steps. When calling the method only arguments for one of the two steps
+        can be provided. Otherwise, a ValueError is raised.
+
+        Parameters
+        ----------
+        image: string, default=None
+            Execution environment identifier.
+        commands: list(string), default=None
+            List of command line statements.
+        env: dict, default=None
+            Environment variables for workflow step execution.
+        func: callable, default=None
+            Python function that is executed by the workflow step.
+        output: string, default=None
+            Name of the variable under which the function result is stored in
+            the workflow arguments. If None, the function result is discarded.
+        varnames: dict, default=None
+            Mapping of function argument names to names of workflow arguments.
+            This mapping is used when generating the arguments for the executed
+            function. By default it is assumed that the names of arguments for
+            the given function correspond to the names in the argument dictionary
+            for the workflow. This mapping provides the option to map names in
+            the function signature that do not occur in the arguments dictionary
+            to argument names that are in the dictionary.
+
+        Returns
+        -------
+        flowserv.controller.serial.workflow.SerialWorkflow
+        """
+        if image is not None and not func and not output and not varnames:
+            return self.add_container_step(image=image, commands=commands, env=env)
+        elif func is not None and not image and not commands and not env:
+            return self.add_code_step(func=func, output=output, varnames=varnames)
+        raise ValueError('invalid combination of arguments')
+
+    def add_code_step(
+        self, func: Callable, output: Optional[str] = None,
+        varnames: Optional[Dict] = None
+    ) -> SerialWorkflow:
+        """Append a code step to the serial workflow.
+
+        Parameters
+        ----------
+        func: callable
+            Python function that is executed by the workflow step.
+        output: string, default=None
+            Name of the variable under which the function result is stored in
+            the workflow arguments. If None, the function result is discarded.
+        varnames: dict, default=None
+            Mapping of function argument names to names of workflow arguments.
+            This mapping is used when generating the arguments for the executed
+            function. By default it is assumed that the names of arguments for
+            the given function correspond to the names in the argument dictionary
+            for the workflow. This mapping provides the option to map names in
+            the function signature that do not occur in the arguments dictionary
+            to argument names that are in the dictionary.
+
+        Returns
+        -------
+        flowserv.controller.serial.workflow.SerialWorkflow
+        """
+        step = CodeStep(func=func, output=output, varnames=varnames)
+        self.steps.append(step)
+        return self
+
+    def add_container_step(
+        self, image: str, commands: Optional[List[str]] = None,
+        env: Optional[Dict] = None
+    ) -> SerialWorkflow:
+        """Append a container step to the serial workflow.
+
+        Parameters
+        ----------
+        image: string, default=None
+            Execution environment identifier.
+        commands: list(string), default=None
+            List of command line statements.
+        env: dict, default=None
+            Environment variables for workflow step execution.
+
+        Returns
+        -------
+        flowserv.controller.serial.workflow.SerialWorkflow
+        """
+        step = ContainerStep(image=image, commands=commands, env=env)
+        self.steps.append(step)
+        return self
 
     def commands(self) -> List[ContainerStep]:
         """Get expanded commands from template workflow specification. The
