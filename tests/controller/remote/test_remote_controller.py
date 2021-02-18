@@ -24,7 +24,7 @@ import flowserv.tests.serialize as serialize
 
 # Template directory
 DIR = os.path.dirname(os.path.realpath(__file__))
-TEMPLATE_DIR = os.path.join(DIR, '../.files/benchmark/remote')
+TEMPLATE_DIR = os.path.join(DIR, '../../.files/benchmark/remote')
 
 
 def test_cancel_remote_workflow(tmpdir):

@@ -1,0 +1,44 @@
+{
+    "definitions": {
+        "workerConfig": {
+            "type": "array",
+            "description": "List of workers that are associated with different container images.",
+            "items": {"$ref": "#/definitions/workerSpec"}
+        },
+        "workerSpec": {
+            "type": "object",
+            "description": "Specification for a worker engine that is associated with a container image.",
+            "properties": {
+                "image": {"type": "string", "description": "Conatiner image identifier."},
+                "worker": {"$ref": "#/definitions/workerRef"},
+                "args": {"type": "object"}
+            },
+            "required": ["image", "worker"]
+        },
+        "workerRef": {
+            "description": "Reference the class that extends the abstract container engine.",
+            "oneOf": [
+                {
+                    "type": "object",
+                    "description": "Worker class reference.",
+                    "properties": {
+                        "className": {
+                            "type": "string",
+                            "description": "Name of the class that implements the worker."
+                        },
+                        "moduleName": {
+                            "type": "string",
+                            "description": "Module that contains the class that implements the worker."
+                        }
+                    },
+                    "required": ["className", "moduleName"]
+                },
+                {
+                    "type": "string",
+                    "description": "Unique worker identifier.",
+                    "enum": ["docker", "subprocess"]
+                }
+            ]
+        }
+    }
+}

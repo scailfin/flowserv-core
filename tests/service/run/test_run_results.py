@@ -13,6 +13,7 @@ import tarfile
 
 from flowserv.config import Config
 from flowserv.model.files.factory import FS
+from flowserv.tests.controller import StateEngine
 from flowserv.tests.model import create_user, success_run
 from flowserv.service.local import LocalAPIFactory
 
@@ -26,7 +27,7 @@ def test_access_run_result_files_local(database, tmpdir):
     env = Config().basedir(tmpdir).auth()
     fs = FS(env=env)
     workflow_id, group_id, run_id, user_id = success_run(database, fs, tmpdir)
-    local_service = LocalAPIFactory(env=env, db=database)
+    local_service = LocalAPIFactory(env=env, db=database, engine=StateEngine())
     # -- Read result files ----------------------------------------------------
     with local_service(user_id=user_id) as api:
         # Map file names to file handles.
@@ -52,7 +53,7 @@ def test_access_run_result_files_local(database, tmpdir):
             )
     # -- With an open access policy user 2 can read the data file -------------
     env = Config().basedir(tmpdir).open_access()
-    local_service = LocalAPIFactory(env=env, db=database)
+    local_service = LocalAPIFactory(env=env, db=database, engine=StateEngine())
     with local_service(user_id=user_2) as api:
         api.runs().get_result_file(
             run_id=run_id,
@@ -66,7 +67,7 @@ def test_result_archive_local(database, tmpdir):
     env = Config().basedir(tmpdir).auth()
     fs = FS(env=env)
     workflow_id, group_id, run_id, user_id = success_run(database, fs, tmpdir)
-    local_service = LocalAPIFactory(env=env, db=database)
+    local_service = LocalAPIFactory(env=env, db=database, engine=StateEngine())
     # -- Get result archive ---------------------------------------------------
     with local_service(user_id=user_id) as api:
         archive = api.runs().get_result_archive(run_id=run_id)

@@ -11,14 +11,16 @@
 import os
 import pytest
 import subprocess
+import sys
 
-from flowserv.controller.serial.subprocess import SubprocessWorker
-from flowserv.controller.serial.workflow import ContainerStep
+from flowserv.controller.serial.worker.subprocess import SubprocessWorker
+from flowserv.controller.serial.step import ContainerStep
+from flowserv.model.template.parameter import ParameterIndex
 
 
 # Template directory
 DIR = os.path.dirname(os.path.realpath(__file__))
-RUN_DIR = os.path.join(DIR, '../.files')
+RUN_DIR = os.path.join(DIR, '../../.files')
 
 
 # -- Patching for error condition testing -------------------------------------
@@ -39,14 +41,16 @@ def test_run_steps_with_error():
     """Test execution of a workflow step where one of the commands raises an
     error.
     """
+    # Avoid error '/bin/sh: 1: python: not found
+    interpreter = sys.executable
     commands = [
-        'python printenv.py TEST_ENV_1',
-        'python printenv.py TEST_ENV_ERROR',
-        'python printenv.py TEST_ENV_2'
+        '{py} printenv.py TEST_ENV_1'.format(py=interpreter),
+        '{py} printenv.py TEST_ENV_ERROR'.format(py=interpreter),
+        '{py} printenv.py TEST_ENV_2'.format(py=interpreter)
     ]
     env = {'TEST_ENV_1': 'Hello', 'TEST_ENV_ERROR': 'error', 'TEST_ENV_2': 'World'}
-    step = ContainerStep(image='test', commands=commands, env=env)
-    result = SubprocessWorker().run(step=step, rundir=RUN_DIR)
+    step = ContainerStep(image='test', commands=commands)
+    result = SubprocessWorker().run(step=step, env=env, rundir=RUN_DIR)
     assert result.returncode == 1
     assert result.exception is None
     assert result.stdout == ['Hello\n']
@@ -57,7 +61,7 @@ def test_run_steps_with_subprocess_error(mock_subprocess):
     """Test execution of a workflow step that fails to run."""
     commands = ['nothing to do']
     step = ContainerStep(image='test', commands=commands)
-    result = SubprocessWorker().run(step=step, rundir=RUN_DIR)
+    result = SubprocessWorker().run(step=step, env=dict(), rundir=RUN_DIR)
     assert result.returncode == 1
     assert result.exception is not None
     assert result.stdout == []
@@ -66,13 +70,35 @@ def test_run_steps_with_subprocess_error(mock_subprocess):
 
 def test_run_successful_steps():
     """Test successful execution of a workflow step with two commands."""
+    # Avoid error '/bin/sh: 1: python: not found
+    interpreter = sys.executable
     commands = [
-        'python printenv.py TEST_ENV_1',
-        'python printenv.py TEST_ENV_2'
+        '{py} printenv.py TEST_ENV_1'.format(py=interpreter),
+        '{py} printenv.py TEST_ENV_2'.format(py=interpreter)
     ]
     env = {'TEST_ENV_1': 'Hello', 'TEST_ENV_2': 'World'}
-    step = ContainerStep(image='test', commands=commands, env=env)
-    result = SubprocessWorker().run(step=step, rundir=RUN_DIR)
+    step = ContainerStep(image='test', commands=commands)
+    result = SubprocessWorker().run(step=step, env=env, rundir=RUN_DIR)
+    assert result.returncode == 0
+    assert result.exception is None
+    assert result.stdout == ['Hello\n', 'World\n']
+    assert result.stderr == []
+    step = ContainerStep(image='test', commands=commands)
+
+
+def test_run_successful_steps_splitenv():
+    """Test successful execution of a workflow step when dividing environment
+    variables between worker and step.
+    """
+    # Avoid error '/bin/sh: 1: python: not found
+    interpreter = sys.executable
+    commands = [
+        '{py} printenv.py TEST_ENV_1'.format(py=interpreter),
+        '{py} printenv.py TEST_ENV_2'.format(py=interpreter)
+    ]
+    worker = SubprocessWorker(env={'TEST_ENV_1': 'Hello', 'TEST_ENV_2': 'You'})
+    step = ContainerStep(image='test', env={'TEST_ENV_2': 'World'}, commands=commands)
+    result = worker.exec(step=step, arguments=dict(), parameters=ParameterIndex(), rundir=RUN_DIR)
     assert result.returncode == 0
     assert result.exception is None
     assert result.stdout == ['Hello\n', 'World\n']

@@ -14,13 +14,13 @@ import docker
 import os
 import pytest
 
-from flowserv.controller.serial.docker import DockerWorker
-from flowserv.controller.serial.workflow import ContainerStep
+from flowserv.controller.serial.worker.docker import DockerWorker
+from flowserv.controller.serial.step import ContainerStep
 
 
 # Template directory
 DIR = os.path.dirname(os.path.realpath(__file__))
-RUN_DIR = os.path.join(DIR, '../.files')
+RUN_DIR = os.path.join(DIR, '../../.files')
 
 
 # -- Patching for error condition testing -------------------------------------
@@ -66,8 +66,8 @@ def test_run_steps_with_error(mock_docker):
         'TEST_ENV_2'
     ]
     env = {'TEST_ENV_1': 'Hello', 'TEST_ENV_2': 'World'}
-    step = ContainerStep(image='test', commands=commands, env=env)
-    result = DockerWorker().run(step=step, rundir=RUN_DIR)
+    step = ContainerStep(image='test', commands=commands)
+    result = DockerWorker().run(step=step, env=env, rundir=RUN_DIR)
     assert result.returncode == 1
     assert result.exception is not None
     assert result.stdout == ['Hello']
@@ -81,8 +81,8 @@ def test_run_successful_steps(mock_docker):
         'TEST_ENV_2'
     ]
     env = {'TEST_ENV_1': 'Hello', 'TEST_ENV_2': 'World'}
-    step = ContainerStep(image='test', commands=commands, env=env)
-    result = DockerWorker().run(step=step, rundir=RUN_DIR)
+    step = ContainerStep(image='test', commands=commands)
+    result = DockerWorker().run(step=step, env=env, rundir=RUN_DIR)
     assert result.returncode == 0
     assert result.exception is None
     assert result.stdout == ['Hello', 'World']

@@ -16,7 +16,7 @@ from string import Template
 from typing import Dict, Optional
 
 from flowserv.controller.serial.result import ExecResult
-from flowserv.controller.serial.workflow import ContainerStep
+from flowserv.controller.serial.step import ContainerStep
 from flowserv.model.template.parameter import ParameterIndex
 
 import flowserv.model.template.parameter as tp
@@ -28,7 +28,7 @@ class ContainerEngine(metaclass=ABCMeta):
     Implementations may differ in the run method that executes the expanded
     commands.
     """
-    def __init__(self, variables: Optional[Dict] = None):
+    def __init__(self, variables: Optional[Dict] = None, env: Optional[Dict] = None):
         """Initialize the optional mapping with default values for placeholders
         in command template strings.
 
@@ -37,8 +37,12 @@ class ContainerEngine(metaclass=ABCMeta):
         variables: dict, default=None
             Mapping with default values for placeholders in command template
             strings.
+        env: dict, default=None
+            Default settings for environment variables when executing workflow
+            steps. These settings can get overridden by step-specific settings.
         """
         self.variables = variables if variables is not None else dict()
+        self.env = env if env is not None else dict()
 
     def exec(
         self, step: ContainerStep, arguments: Dict, parameters: ParameterIndex,
@@ -66,6 +70,9 @@ class ContainerEngine(metaclass=ABCMeta):
         -------
         flowserv.controller.serial.result.ExecResult
         """
+        # Create a modified container step where all commands are expended so
+        # that they do not contain references to variables and template parameters
+        # any more.
         expanded_step = ContainerStep(image=step.image, env=step.env)
         for cmd in step.commands:
             cmd = tp.expand_value(
@@ -79,16 +86,23 @@ class ContainerEngine(metaclass=ABCMeta):
             args.update(self.variables)
             args.update(arguments)
             expanded_step.add(Template(cmd).substitute(args))
-        return self.run(step=expanded_step, rundir=rundir)
+        # Create mapping for environment variables.
+        environment = dict(self.env)
+        environment.update(step.env)
+        environment = environment if environment else None
+        return self.run(step=expanded_step, env=environment, rundir=rundir)
 
     @abstractmethod
-    def run(self, step: ContainerStep, rundir: str) -> ExecResult:
+    def run(self, step: ContainerStep, env: Dict, rundir: str) -> ExecResult:
         """Execute a list of commands in a workflow step.
 
         Parameters
         ----------
         step: flowserv.controller.serial.workflow.ContainerStep
             Step in a serial workflow.
+        env: dict, default=None
+            Default settings for environment variables when executing workflow
+            steps. May be None.
         rundir: string
             Path to the working directory of the workflow run.
 
@@ -97,3 +111,9 @@ class ContainerEngine(metaclass=ABCMeta):
         flowserv.controller.serial.result.ExecResult
         """
         raise NotImplementedError()  # pragma: no cover
+
+
+class WorkerFactory(object):
+    """
+    """
+    pass

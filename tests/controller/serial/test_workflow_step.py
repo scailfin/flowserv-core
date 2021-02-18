@@ -10,7 +10,7 @@
 
 import pytest
 
-from flowserv.controller.serial.workflow import CodeStep, ContainerStep, WorkflowStep
+from flowserv.controller.serial.step import CodeStep, ContainerStep, WorkflowStep
 
 
 def my_add(x: int, y: int) -> int:
@@ -21,8 +21,8 @@ def my_add(x: int, y: int) -> int:
 
 def test_container_step():
     """Test add method of the container step."""
-    step = ContainerStep(env='test').add('A').add('B')
-    assert step.env == 'test'
+    step = ContainerStep(image='test').add('A').add('B')
+    assert step.image == 'test'
     assert step.commands == ['A', 'B']
 
 
@@ -30,15 +30,15 @@ def test_exec_code_step():
     """Test executing a Python function as a step in a serial workflow."""
     args = {'x': 1, 'y': 2}
     step = CodeStep(func=my_add, output='z')
-    step.exec(arguments=args)
+    step.exec(context=args)
     assert args == {'x': 1, 'y': 2, 'z': 3}
     # Test renaming arguments.
     step = CodeStep(func=my_add, varnames={'x': 'z'}, output='x')
-    step.exec(arguments=args)
+    step.exec(context=args)
     assert args == {'x': 5, 'y': 2, 'z': 3}
     # Execute function but ignore output.
     step = CodeStep(func=my_add)
-    step.exec(arguments=args)
+    step.exec(context=args)
     assert args == {'x': 5, 'y': 2, 'z': 3}
 
 
@@ -49,7 +49,7 @@ def test_step_type():
     assert step.is_code_step()
     assert not step.is_container_step()
     # ContainerStep
-    step = ContainerStep(env='test')
+    step = ContainerStep(image='test')
     assert step.is_container_step()
     assert not step.is_code_step()
     # Invalid step type.
