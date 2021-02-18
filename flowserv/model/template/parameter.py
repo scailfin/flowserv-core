@@ -9,7 +9,7 @@
 """Collection of helper methods for parameter references in workflow templates.
 """
 
-from typing import Dict, Optional, Set
+from typing import Dict, List, Optional, Set
 
 import re
 
@@ -29,6 +29,23 @@ class ParameterIndex(dict):
     """Index of parameter declaration. Parameters are indexed by their unique
     identifier.
     """
+    def __init__(self, parameters: Optional[List[Parameter]] = None):
+        """Initialize the parameter index from an optional list of parameters.
+
+        Parameters are identified by their name. If the list contains parameters
+        with identical names an error is raised.
+
+        Parameters
+        ----------
+        parameters: list of flowserv.model.parameter.base.Parameter, default=None
+            List of parameter declarations that are added to the index.
+        """
+        for para in parameters if parameters is not None else list():
+            if para.name in self:
+                msg = "duplicate parameter '{}'".format(para.name)
+                raise err.InvalidTemplateError(msg)
+            self[para.name] = para
+
     @staticmethod
     def from_dict(doc: Dict, validate: Optional[bool] = True) -> Parameter:
         """Create a parameter index from a dictionary serialization. Expects a

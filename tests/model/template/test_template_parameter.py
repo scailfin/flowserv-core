@@ -21,23 +21,23 @@ import flowserv.model.template.parameter as tp
 def spec():
     """Workflow specification dictionary for test purposes."""
     return {
-            'name': 'myname',
-            'var1': tp.VARIABLE('A'),
-            'var2': '{} XYZ {}'.format(tp.VARIABLE('A'), tp.VARIABLE('E? e1')),
-            'values': [
-                {
-                    'name': 'name',
-                    'el1': tp.VARIABLE('B'),
-                    'el2': '{}{}'.format(tp.VARIABLE('G?Z'), tp.VARIABLE('F')),
-                    'nest': {'var': tp.VARIABLE('D')}
-                },
-                tp.VARIABLE('C'),
-                tp.VARIABLE('B'),
-                3,
-                'E'
-            ],
-            'count': 2
-        }
+        'name': 'myname',
+        'var1': tp.VARIABLE('A'),
+        'var2': '{} XYZ {}'.format(tp.VARIABLE('A'), tp.VARIABLE('E? e1')),
+        'values': [
+            {
+                'name': 'name',
+                'el1': tp.VARIABLE('B'),
+                'el2': '{}{}'.format(tp.VARIABLE('G?Z'), tp.VARIABLE('F')),
+                'nest': {'var': tp.VARIABLE('D')}
+            },
+            tp.VARIABLE('C'),
+            tp.VARIABLE('B'),
+            3,
+            'E'
+        ],
+        'count': 2
+    }
 
 
 @pytest.mark.parametrize(
@@ -130,6 +130,14 @@ def test_get_parameter_value_exception(value):
     args = {'A': True}
     with pytest.raises(err.MissingArgumentError):
         assert tp.get_value(value=value, arguments=args)
+
+
+def test_init_parameter_index():
+    """Test initializing the parameter index from a given list of parameters."""
+    assert len(ParameterIndex()) == 0
+    assert len(ParameterIndex(parameters=[String('A'), String('B')])) == 2
+    with pytest.raises(err.InvalidTemplateError):
+        ParameterIndex(parameters=[String('A'), String('B'), String('A')])
 
 
 def test_parameter_index_serialization():
