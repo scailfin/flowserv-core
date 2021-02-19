@@ -15,8 +15,8 @@ from abc import ABCMeta, abstractmethod
 from string import Template
 from typing import Dict, Optional
 
-from flowserv.controller.serial.result import ExecResult
-from flowserv.controller.serial.step import ContainerStep
+from flowserv.controller.serial.workflow.result import ExecResult
+from flowserv.controller.serial.workflow.step import ContainerStep
 from flowserv.model.template.parameter import ParameterIndex
 
 import flowserv.model.template.parameter as tp
@@ -68,7 +68,7 @@ class ContainerEngine(metaclass=ABCMeta):
 
         Returns
         -------
-        flowserv.controller.serial.result.ExecResult
+        flowserv.controller.serial.workflow.result.ExecResult
         """
         # Create a modified container step where all commands are expended so
         # that they do not contain references to variables and template parameters
@@ -108,7 +108,7 @@ class ContainerEngine(metaclass=ABCMeta):
 
         Returns
         -------
-        flowserv.controller.serial.result.ExecResult
+        flowserv.controller.serial.workflow.result.ExecResult
         """
         raise NotImplementedError()  # pragma: no cover
 

@@ -16,7 +16,7 @@ scripts.
 from __future__ import annotations
 from typing import Callable, Dict, Iterable, List, Optional
 
-from flowserv.controller.serial.step import CodeStep, ContainerStep, WorkflowStep
+from flowserv.controller.serial.workflow.step import CodeStep, ContainerStep, WorkflowStep
 from flowserv.controller.serial.worker.factory import WorkerFactory
 from flowserv.model.parameter.base import Parameter
 from flowserv.model.template.parameter import ParameterIndex
@@ -46,7 +46,7 @@ class SerialWorkflow(object):
 
         Parameters
         ----------
-        steps: list of flowserv.controller.serial.step.WorkflowStep, default=None
+        steps: list of flowserv.controller.serial.workflow.step.WorkflowStep, default=None
             Optional sequence of steps in the serial workflow.
         parameters: list of flowserv.model.parameter.base.Parameter, default=None
             Optional list of workflow termplate parameters.
@@ -63,7 +63,7 @@ class SerialWorkflow(object):
 
         Returns
         -------
-        itarable of flowserv.controller.serial.step.WorkflowStep
+        itarable of flowserv.controller.serial.workflow.step.WorkflowStep
         """
         return iter(self.steps)
 
@@ -84,7 +84,7 @@ class SerialWorkflow(object):
 
         Returns
         -------
-        flowserv.controller.serial.workflow.SerialWorkflow
+        flowserv.controller.serial.workflow.base.SerialWorkflow
         """
         self.parameters[parameter.name] = parameter
         return self
@@ -125,7 +125,7 @@ class SerialWorkflow(object):
 
         Returns
         -------
-        flowserv.controller.serial.workflow.SerialWorkflow
+        flowserv.controller.serial.workflow.base.SerialWorkflow
         """
         if image is not None and not func and not output and not varnames:
             return self.add_container_step(image=image, commands=commands, env=env)
@@ -157,7 +157,7 @@ class SerialWorkflow(object):
 
         Returns
         -------
-        flowserv.controller.serial.workflow.SerialWorkflow
+        flowserv.controller.serial.workflow.base.SerialWorkflow
         """
         step = CodeStep(func=func, output=output, varnames=varnames)
         self.steps.append(step)
@@ -180,7 +180,7 @@ class SerialWorkflow(object):
 
         Returns
         -------
-        flowserv.controller.serial.workflow.SerialWorkflow
+        flowserv.controller.serial.workflow.base.SerialWorkflow
         """
         step = ContainerStep(image=image, commands=commands, env=env)
         self.steps.append(step)

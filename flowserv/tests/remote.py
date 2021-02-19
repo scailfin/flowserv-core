@@ -12,7 +12,7 @@ import os
 
 from flowserv.controller.remote.client import RemoteClient
 from flowserv.controller.remote.engine import RemoteWorkflowController
-from flowserv.controller.serial.workflow import SerialWorkflow
+from flowserv.controller.serial.workflow.base import SerialWorkflow
 from flowserv.model.workflow.remote import RemoteWorkflowObject
 from flowserv.model.workflow.state import StatePending
 

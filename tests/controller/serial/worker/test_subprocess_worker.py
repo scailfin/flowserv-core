@@ -14,13 +14,13 @@ import subprocess
 import sys
 
 from flowserv.controller.serial.worker.subprocess import SubprocessWorker
-from flowserv.controller.serial.step import ContainerStep
+from flowserv.controller.serial.workflow.step import ContainerStep
 from flowserv.model.template.parameter import ParameterIndex
 
 
 # Template directory
 DIR = os.path.dirname(os.path.realpath(__file__))
-RUN_DIR = os.path.join(DIR, '../../.files')
+RUN_DIR = os.path.join(DIR, '../../../.files')
 
 
 # -- Patching for error condition testing -------------------------------------

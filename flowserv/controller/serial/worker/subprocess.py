@@ -15,8 +15,8 @@ from typing import Dict, List, Optional
 import logging
 import subprocess
 
-from flowserv.controller.serial.result import ExecResult
-from flowserv.controller.serial.step import ContainerStep
+from flowserv.controller.serial.workflow.result import ExecResult
+from flowserv.controller.serial.workflow.step import ContainerStep
 from flowserv.controller.serial.worker.base import ContainerEngine
 
 import flowserv.util as util
@@ -59,7 +59,7 @@ class SubprocessWorker(ContainerEngine):
 
         Returns
         -------
-        flowserv.controller.serial.result.ExecResult
+        flowserv.controller.serial.workflow.result.ExecResult
         """
         # Keep output to STDOUT and STDERR for all executed commands in the
         # respective attributes of the returned execution result.
