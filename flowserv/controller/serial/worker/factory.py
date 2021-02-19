@@ -185,7 +185,7 @@ class WorkerFactory(object):
             if validate:
                 validator.validate(spec)
             workers[spec['image']] = spec
-        return WorkerFactory(doc=workers)
+        return WorkerFactory(config=workers)
 
     def load_json(filename: str, validate: Optional[bool] = False) -> WorkerFactory:
         """Shortcut to load a worker configuration from a Json file.

@@ -18,7 +18,7 @@ from flowserv.controller.serial.worker.docker import DockerWorker
 from flowserv.controller.serial.workflow.step import ContainerStep
 
 
-# Template directory
+# Test files directory
 DIR = os.path.dirname(os.path.realpath(__file__))
 RUN_DIR = os.path.join(DIR, '../../../.files')
 

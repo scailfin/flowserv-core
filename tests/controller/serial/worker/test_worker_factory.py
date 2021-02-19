@@ -10,11 +10,19 @@
 
 from jsonschema.exceptions import ValidationError
 
+import os
 import pytest
 
 from flowserv.controller.serial.worker.docker import DockerWorker
 from flowserv.controller.serial.worker.factory import WorkerFactory
 from flowserv.controller.serial.worker.subprocess import SubprocessWorker
+
+
+# Config files.
+DIR = os.path.dirname(os.path.realpath(__file__))
+CONFIG_DIR = os.path.join(DIR, '../../../.files/controller')
+JSON_FILE = os.path.join(CONFIG_DIR, 'worker.json')
+YAML_FILE = os.path.join(CONFIG_DIR, 'worker.yaml')
 
 
 def callme():
@@ -90,3 +98,15 @@ def test_invalid_config(config):
     WorkerFactory(config=config)
     with pytest.raises(ValidationError):
         WorkerFactory(config=config, validate=True)
+
+
+def test_load_config_from_json_file():
+    """Test loading worker factory configuration from a Json file."""
+    worker = WorkerFactory.load_json(JSON_FILE).get('test')
+    assert worker.variables['a'] == 0
+
+
+def test_load_config_from_yaml_file():
+    """Test loading worker factory configuration from a Yaml file."""
+    worker = WorkerFactory.load_yaml(YAML_FILE).get('test')
+    assert worker.variables['a'] == 0
