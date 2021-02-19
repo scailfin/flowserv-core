@@ -65,7 +65,7 @@ class DockerWorker(ContainerEngine):
         """
         # Keep output to STDOUT and STDERR for all executed commands in the
         # respective attributes of the returned execution result.
-        result = ExecResult()
+        result = ExecResult(step=step)
         # Setup the workflow environment by obtaining volume information for
         # all directories in the run folder.
         volumes = dict()

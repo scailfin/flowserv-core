@@ -63,7 +63,7 @@ class SubprocessWorker(ContainerEngine):
         """
         # Keep output to STDOUT and STDERR for all executed commands in the
         # respective attributes of the returned execution result.
-        result = ExecResult()
+        result = ExecResult(step=step)
         try:
             # Run each command in the the workflow step. Each command is
             # expected to be a shell command that is executed using the

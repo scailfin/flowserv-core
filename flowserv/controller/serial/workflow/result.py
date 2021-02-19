@@ -9,7 +9,7 @@
 """Workflow (step) execution result."""
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 from flowserv.controller.serial.workflow.step import WorkflowStep
 
@@ -22,6 +22,7 @@ class ExecResult:
     Outputs that were written to standard output and standard error are part of
     the result object. Outputs are captured as lists of strings.
     """
+    step: WorkflowStep
     returncode: Optional[int] = 0
     stdout: Optional[List[str]] = field(default_factory=list)
     stderr: Optional[List[str]] = field(default_factory=list)
@@ -58,17 +59,15 @@ class RunResult(object):
         """
         return len(self.steps)
 
-    def add(self, step: WorkflowStep, result: ExecResult):
+    def add(self, result: ExecResult):
         """Add execution result for a workflow step.
 
         Parameters
         ----------
-        step: flowserv.controller.serial.workflow.step.WorkflowStep
-            Executed workflow step.
         result: flowserv.controller.serial.workflow.result.ExecResult
             Execution result for the workflow step.
         """
-        self.steps.append((step, result))
+        self.steps.append(result)
 
     @property
     def exception(self) -> Exception:
@@ -81,7 +80,7 @@ class RunResult(object):
         -------
         Exception
         """
-        return self.steps[-1][1].exception if self.steps else None
+        return self.steps[-1].exception if self.steps else None
 
     def get(self, var: str) -> Any:
         """Get the value for a given variable from the run context.
@@ -110,7 +109,7 @@ class RunResult(object):
         -------
         int
         """
-        return self.steps[-1][1].returncode if self.steps else None
+        return self.steps[-1].returncode if self.steps else None
 
     @property
     def stderr(self) -> List[str]:
@@ -121,7 +120,7 @@ class RunResult(object):
         -------
         list of string
         """
-        return [line for _, result in self.steps for line in result.stderr]
+        return [line for result in self.steps for line in result.stderr]
 
     @property
     def stdout(self) -> List[str]:
@@ -132,19 +131,4 @@ class RunResult(object):
         -------
         list of string
         """
-        return [line for _, result in self.steps for line in result.stdout]
-
-    def step(self, index: int) -> Tuple[WorkflowStep, ExecResult]:
-        """Get step sdefinition and execution result for the workflow step at
-        the given index position.
-
-        Parameters
-        ----------
-        index: int
-            Index position for an executed workflow run step.
-
-        Returns
-        -------
-        tuple of WorkflowStep, ExecResult
-        """
-        return self.steps[index]
+        return [line for result in self.steps for line in result.stdout]
