@@ -16,6 +16,10 @@ scripts.
 from __future__ import annotations
 from typing import Callable, Dict, Iterable, List, Optional
 
+import os
+
+from flowserv.controller.serial.engine.runner import exec_workflow
+from flowserv.controller.serial.workflow.result import RunResult
 from flowserv.controller.serial.workflow.step import CodeStep, ContainerStep, WorkflowStep
 from flowserv.controller.serial.worker.factory import WorkerFactory
 from flowserv.model.parameter.base import Parameter
@@ -49,7 +53,7 @@ class SerialWorkflow(object):
         steps: list of flowserv.controller.serial.workflow.step.WorkflowStep, default=None
             Optional sequence of steps in the serial workflow.
         parameters: list of flowserv.model.parameter.base.Parameter, default=None
-            Optional list of workflow termplate parameters.
+            Optional list of workflow template parameters.
         workers: flowserv.controller.serial.worker.factory.WorkerFactory
             Factory for :class:ContainerEngine objects that are used to execute
             individual :class:ContainerStep instances in the workflow sequence.
@@ -189,7 +193,41 @@ class SerialWorkflow(object):
     def run(
         self, arguments: Dict, workers: Optional[WorkerFactory] = None,
         rundir: Optional[str] = None
-    ) -> Dict:
+    ) -> RunResult:
+        """Execute workflow for the given set of input arguments.
+
+        Executes workflow steps in sequence. Terminates early if the execution
+        of a workflow step returns a non-zero value. Uses the given worker
+        factory to create workers for steps that are of class :class:ContainerStep.
+
+        Collects results for all executed steps and returns them in the
+        :class:RunResult.
+
+        Parameters
+        ----------
+        arguments: dict
+            User-provided arguments for the workflow run.
+        workers: flowserv.controller.serial.worker.factory.WorkerFactory, default=None
+            Factory for :class:ContainerStep steps. Uses the default worker for
+            all container steps if None.
+        rundir: str, default=None
+            Working directory for all executed workflow steps. Uses the current
+            working directory if None.
+
+        Returns
+        -------
+        flowserv.controller.serial.worker.result.RunResult
         """
-        """
-        pass
+        # Use current working directory if run directory is None.
+        rundir = rundir if rundir else os.getcwd()
+        # Use default worker for all container steps if no factory is given.
+        workers = workers if workers else WorkerFactory()
+        # Execute the workflow and return the run result that contains the
+        # results of the executed steps.
+        return exec_workflow(
+            steps=self.steps,
+            parameters=self.parameters,
+            workers=workers,
+            rundir=rundir,
+            result=RunResult(arguments=arguments)
+        )
