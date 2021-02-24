@@ -333,9 +333,9 @@ def init_backend(api: APIFactory) -> WorkflowController:
     # controller class. An error is raised if only one of the two environment
     # variables is set.
     if module_name is None and class_name is None:
-        engine = 'flowserv.controller.serial.engine.SerialWorkflowEngine'
+        engine = 'flowserv.controller.serial.engine.base.SerialWorkflowEngine'
         logging.info('API backend {}'.format(engine))
-        from flowserv.controller.serial.engine import SerialWorkflowEngine
+        from flowserv.controller.serial.engine.base import SerialWorkflowEngine
         return SerialWorkflowEngine(service=api)
     elif module_name is not None and class_name is not None:
         logging.info('API backend {}.{}'.format(module_name, class_name))

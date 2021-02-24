@@ -14,12 +14,11 @@ from flowserv.controller.serial.workflow.result import RunResult
 from flowserv.controller.serial.workflow.step import WorkflowStep
 from flowserv.controller.serial.worker.code import exec_code
 from flowserv.controller.serial.worker.factory import WorkerFactory
-from flowserv.model.template.parameter import ParameterIndex
 
 
 def exec_workflow(
-    steps: List[WorkflowStep], parameters: ParameterIndex, workers: WorkerFactory,
-    rundir: str, result: RunResult
+    steps: List[WorkflowStep], workers: WorkerFactory, rundir: str,
+    result: RunResult
 ) -> RunResult:
     """Execute steps in a serial workflow.
 
@@ -35,8 +34,6 @@ def exec_workflow(
     ----------
     steps: list of flowserv.controller.serial.workflow.step.WorkflowStep
         Steps in the serial workflow that are executed in the given context.
-    parameters: list of flowserv.model.parameter.base.Parameter
-        List of workflow template parameters.
     workers: flowserv.controller.serial.worker.factory.WorkerFactory, default=None
         Factory for :class:ContainerStep steps.
     rundir: str, default=None
@@ -57,7 +54,6 @@ def exec_workflow(
             r = worker.exec(
                 step=step,
                 arguments=result.context,
-                parameters=parameters,
                 rundir=rundir
             )
         result.add(r)

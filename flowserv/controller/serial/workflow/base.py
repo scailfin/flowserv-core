@@ -226,7 +226,6 @@ class SerialWorkflow(object):
         # results of the executed steps.
         return exec_workflow(
             steps=self.steps,
-            parameters=self.parameters,
             workers=workers,
             rundir=rundir,
             result=RunResult(arguments=arguments)

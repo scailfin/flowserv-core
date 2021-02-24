@@ -17,7 +17,6 @@ from typing import Dict, Optional
 
 from flowserv.controller.serial.workflow.result import ExecResult
 from flowserv.controller.serial.workflow.step import ContainerStep
-from flowserv.model.template.parameter import ParameterIndex
 
 import flowserv.model.template.parameter as tp
 
@@ -44,10 +43,7 @@ class ContainerEngine(metaclass=ABCMeta):
         self.variables = variables if variables is not None else dict()
         self.env = env if env is not None else dict()
 
-    def exec(
-        self, step: ContainerStep, arguments: Dict, parameters: ParameterIndex,
-        rundir: str
-    ) -> ExecResult:
+    def exec(self, step: ContainerStep, arguments: Dict, rundir: str) -> ExecResult:
         """Execute a given list of commands that are represented by template
         strings.
 
@@ -61,8 +57,6 @@ class ContainerEngine(metaclass=ABCMeta):
             Step in a serial workflow.
         arguments: dict
             Dictionary of argument values for parameters in the template.
-        parameters: lowserv.model.template.parameter.ParameterIndex
-            Parameter declarations from the workflow template.
         rundir: string
             Path to the working directory of the workflow run.
 
@@ -75,11 +69,6 @@ class ContainerEngine(metaclass=ABCMeta):
         # any more.
         expanded_step = ContainerStep(image=step.image, env=step.env)
         for cmd in step.commands:
-            cmd = tp.expand_value(
-                value=cmd,
-                arguments=arguments,
-                parameters=parameters
-            )
             # Generate mapping for template substitution. Include a mapping of
             # placeholder names to themselves.
             args = {p: p for p in tp.placeholders(cmd)}

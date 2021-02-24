@@ -95,6 +95,8 @@ An example template for the **Hello World example** is shown below.
 
 In this example, the workflow section is a REANA workflow specification. The main modification to the workflow specification is a simple addition to the syntax in order to allow references to template parameters. Such references are always enclosed in ``$[[...]]``. The parameters section is a list of template parameter declarations. Each parameter declaration has a unique identifier. The identifier is used to reference the parameter from within the workflow specification (e.g., ``$[[sleeptime]]`` to reference the user-provided value for the sleep period). Other elements of the parameter declaration are a human readable short name, a parameter description, and a specification of the data type. Refer to the `Template Parameter Specification <https://github.com/scailfin/flowserv-core/blob/master/docs/parameters.rst>`_ for a full description of the template parameter syntax.
 
+Note that for **serial workflows** parameter references are only allowed in the ``input`` part of the workflow specification.
+
 Parameter declarations are intended to be used by front-end tools to render forms that collect user input. Given a set of user-provided values for the template parameters, the references to parameters are replaced withing the workflow specification with the given values to generate a valid workflow that can be executed by the respective workflow engine.
 
 

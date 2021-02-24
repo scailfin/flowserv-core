@@ -99,6 +99,17 @@ class RunResult(object):
         return self.context[var]
 
     @property
+    def log(self) -> List[str]:
+        """Get single list containing the concatenation of STDOUT and STDERR
+        messages.
+
+        Returns
+        -------
+        list of string
+        """
+        return self.stdout + self.stderr
+
+    @property
     def returncode(self) -> int:
         """Get the return code from the last workflow step that was executed in
         the workflow run.

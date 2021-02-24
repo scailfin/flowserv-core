@@ -23,7 +23,7 @@ import flowserv.tests.serialize as serialize
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))
-TEMPLATE_DIR = os.path.join(DIR, '../.files/template')
+TEMPLATE_DIR = os.path.join(DIR, '../../../.files/template')
 # Workflow templates
 TEMPLATE_HELLOWORLD = os.path.join(TEMPLATE_DIR, './hello-world.yaml')
 INVALID_TEMPLATE = './template-invalid-cmd.yaml'
@@ -61,6 +61,8 @@ def test_run_helloworld_sync(sync_service, specfile, state):
     # -- Validate the run handle against the expected state -------------------
     with sync_service(user_id=user_id) as api:
         r = api.runs().get_run(run_id)
+        import json
+        print(json.dumps(r, indent=4))
         serialize.validate_run_handle(r, state=state)
         if state == st.STATE_SUCCESS:
             # The run should have the greetings.txt file as a result.

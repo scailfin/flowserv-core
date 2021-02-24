@@ -275,7 +275,7 @@ class Config(dict):
         -------
         flowserv.config.Config
         """
-        self[FLOWSERV_BACKEND_MODULE] = 'flowserv.controller.serial.engine'
+        self[FLOWSERV_BACKEND_MODULE] = 'flowserv.controller.serial.engine.base'
         self[FLOWSERV_BACKEND_CLASS] = 'SerialWorkflowEngine'
         return self
 
