@@ -159,6 +159,9 @@ FLOWSERV_POLL_INTERVAL = 'FLOWSERV_POLLINTERVAL'
 # Default value for the poll interval.
 DEFAULT_POLL_INTERVAL = 2
 
+# Serial workflow controller worker configuration.
+FLOWSERV_SERIAL_WORKERS = 'FLOWSERV_SERIAL_WORKERS'
+
 
 # -- Client -------------------------------------------------------------------
 
@@ -333,6 +336,32 @@ class Config(dict):
         """
         self[FLOWSERV_WEBAPP] = True
         return self
+
+    def workers(self, config: Dict) -> Config:
+        """Set configuration for container workers.
+
+        Parameters
+        ----------
+        config: dict
+            Worker configuration settings.
+
+        Returns
+        flowserv.config.Config
+        """
+        self[FLOWSERV_SERIAL_WORKERS] = config
+        return self
+
+    def worker_config(self) -> Dict:
+        """Get the configuration settings for workers that are used by the
+        serial workflow controller.
+
+        If the configuration is not set an empty dictionary is returned.
+
+        Returns
+        -------
+        dict
+        """
+        return self.get(FLOWSERV_SERIAL_WORKERS, dict())
 
 
 # -- Initialize configuration from environment variables ----------------------

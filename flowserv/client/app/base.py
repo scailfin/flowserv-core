@@ -32,9 +32,10 @@ class Flowserv(object):
     """
     def __init__(
         self, env: Optional[Dict] = None, basedir: Optional[str] = None,
-        database: Optional[str] = None, open_access: Optional[bool] = None,
-        run_async: Optional[bool] = None, s3bucket: Optional[str] = None,
-        clear: Optional[bool] = False, user_id: Optional[str] = None
+        database: Optional[str] = None, workers: Optional[Dict] = None,
+        open_access: Optional[bool] = None, run_async: Optional[bool] = None,
+        s3bucket: Optional[str] = None, clear: Optional[bool] = False,
+        user_id: Optional[str] = None
     ):
         """Initialize the client API factory. Provides the option to alter the
         default settings of environment variables and for using custom instance
@@ -47,6 +48,11 @@ class Flowserv(object):
         basedir: string, default=None
             Base directory for all workflow files. If no directory is given or
             specified in the environment a temporary directory will be created.
+        database: str, defualt=None
+            Databse connection Url.
+        workers: dict, default=None
+            Mapping of container image identifier to worker specifications that
+            are used to create an instance of a :class:ContainerEngine worker.
         open_access: bool, default=None
             Use an open access policy if set to True.
         run_async: bool, default=False
@@ -77,6 +83,7 @@ class Flowserv(object):
             env=self.env,
             basedir=self.basedir,
             database=database,
+            workers=workers,
             open_access=open_access,
             run_async=run_async,
             s3bucket=s3bucket,

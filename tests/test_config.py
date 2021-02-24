@@ -121,6 +121,14 @@ def test_config_url():
     assert config.API_URL(conf) == api_url
 
 
+def test_config_workers():
+    """Test worker configuration for the serial workflow controller."""
+    conf = config.Config()
+    assert conf.worker_config() == dict()
+    conf = conf.workers({'a': 1})
+    assert conf.worker_config() == {'a': 1}
+
+
 def test_env_app_identifier():
     """Test getting the workflow identifier and sbmission identifier from the
     environment.

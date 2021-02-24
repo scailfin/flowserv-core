@@ -68,7 +68,7 @@ class SerialWorkflowEngine(WorkflowController):
         """
         self.fs = FS(env=service)
         self.service = service
-        self.worker_config = worker_config
+        self.worker_config = worker_config if worker_config else service.worker_config()
         # The is_async flag controlls the default setting for asynchronous
         # execution. If the flag is False all workflow steps will be executed
         # in a sequentiall (blocking) manner.
