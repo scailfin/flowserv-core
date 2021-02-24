@@ -8,15 +8,20 @@
 
 """Parser for serial workflow templates."""
 
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 
 from flowserv.controller.serial.workflow.step import ContainerStep
 from flowserv.model.template.base import WorkflowTemplate
 
+import flowserv.model.template.parameter as tp
 
-def parse_template(template: WorkflowTemplate) -> Tuple[List[ContainerStep], List[str]]:
+
+def parse_template(template: WorkflowTemplate, arguments: Dict) -> Tuple[List[ContainerStep], Dict, List[str]]:
     """Parse a serial workflow template to extract workflow steps and output
     files.
+
+    Expands template parameter references in the workflow argument specification
+    and returns the modified argument list as part of the result.
 
     Parameters
     ----------
@@ -25,7 +30,7 @@ def parse_template(template: WorkflowTemplate) -> Tuple[List[ContainerStep], Lis
 
     Returns
     -------
-    tuple of list of flowsert.controller.serial.workflow.step.ContainerStep and list of string
+    tuple of list of flowsert.controller.serial.workflow.step.ContainerStep, dict and list of string
     """
     # Get the commands from the workflow specification.
     workflow_spec = template.workflow_spec
@@ -35,8 +40,17 @@ def parse_template(template: WorkflowTemplate) -> Tuple[List[ContainerStep], Lis
         for cmd in step.get('commands', []):
             script.add(cmd)
         steps.append(script)
+    # Get the workflow arguments that are defined in the workflow template.
+    # Expand template parameter references using the given argument set.
+    run_args = workflow_spec.get('inputs', {}).get('parameters', {})
+    for key in run_args.keys():
+        run_args[key] = tp.expand_value(
+            value=run_args[key],
+            arguments=arguments,
+            parameters=template.parameters
+        )
     # Get the list of output files from the workflow specification. At this
     # point we do not support references to template arguments or parameters.
     output_files = workflow_spec.get('outputs', {}).get('files', {})
     # Return tuple of workflow steps and output file list.
-    return steps, output_files
+    return steps, run_args, output_files

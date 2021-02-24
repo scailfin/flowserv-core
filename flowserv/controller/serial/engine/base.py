@@ -155,7 +155,7 @@ class SerialWorkflowEngine(WorkflowController):
         # and (iii) the list of output files.
         sourcedir = self.fs.workflow_staticdir(run.workflow.workflow_id)
         # Get the list of workflow steps and the generated output files.
-        commands, outputs = parser.parse_template(template)
+        steps, run_args, outputs = parser.parse_template(template=template, arguments=arguments)
         try:
             # Copy template files to the run folder.
             self.fs.copy_folder(key=sourcedir, dst=rundir)
@@ -190,7 +190,7 @@ class SerialWorkflowEngine(WorkflowController):
                         rundir,
                         state,
                         outputs,
-                        commands
+                        steps
                     ),
                     callback=task_callback_function
                 )
@@ -202,9 +202,8 @@ class SerialWorkflowEngine(WorkflowController):
                     rundir=rundir,
                     state=state,
                     output_files=outputs,
-                    steps=commands,
-                    arguments=arguments,
-                    parameters=template.parameters,
+                    steps=steps,
+                    arguments=run_args,
                     workers=WorkerFactory(config=self.worker_config)
                 )
                 return serialize.deserialize_state(state_dict), rundir
@@ -250,8 +249,7 @@ def callback_function(result, lock, tasks, service):
 
 def run_workflow(
     run_id: str, rundir: str, state: WorkflowState, output_files: List[str],
-    steps: List[ContainerStep], arguments: Dict, parameters: ParameterIndex,
-    workers: WorkerFactory
+    steps: List[ContainerStep], arguments: Dict, workers: WorkerFactory
 ) -> Tuple[str, str, Dict]:
     """Execute a list of workflow steps synchronously.
 
@@ -273,8 +271,6 @@ def run_workflow(
         Steps in the serial workflow that are executed in the given context.
     arguments: dict
         Dictionary of argument values for parameters in the template.
-    parameters: list of flowserv.model.parameter.base.Parameter
-        List of workflow template parameters.
     workers: flowserv.controller.serial.worker.factory.WorkerFactory, default=None
         Factory for :class:ContainerStep steps.
 
@@ -286,7 +282,6 @@ def run_workflow(
     try:
         run_result = exec_workflow(
             steps=steps,
-            parameters=parameters,
             workers=workers,
             rundir=rundir,
             result=RunResult(arguments=arguments)
