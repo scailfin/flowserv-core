@@ -63,6 +63,7 @@ class DockerWorker(ContainerEngine):
         -------
         flowserv.controller.serial.workflow.result.ExecResult
         """
+        logging.info('run step with Docker worker')
         # Keep output to STDOUT and STDERR for all executed commands in the
         # respective attributes of the returned execution result.
         result = ExecResult(step=step)

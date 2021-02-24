@@ -222,3 +222,78 @@ class WorkerFactory(object):
         """
         with open(filename, 'r') as f:
             return WorkerFactory.load(doc=yaml.load(f, Loader=yaml.FullLoader), validate=validate)
+
+
+# -- Helper Functions for Worker configurations -------------------------------
+
+def WorkerSpec(
+    identifier: str, variables: Optional[Dict] = None, env: Optional[Dict] = None
+) -> Dict:
+    """Get a base configuration for a worker with the given arguments.
+
+    Parameters
+    ----------
+    identifier: string
+        Uniuqe worker type identifier.
+    variables: dict, default=None
+        Mapping with default values for placeholders in command template
+        strings.
+    env: dict, default=None
+        Default settings for environment variables when executing workflow
+        steps. These settings can get overridden by step-specific settings.
+
+    Returns
+    -------
+    dict
+    """
+    doc = {'worker': identifier}
+    # Add optional mappings for template placeholders and environment variables
+    # to thw worker configuration if given.
+    args = dict()
+    if variables:
+        args['variables'] = variables
+    if env:
+        args['env'] = env
+    if args:
+        doc['arguments'] = args
+    return doc
+
+
+def Docker(variables: Optional[Dict] = None, env: Optional[Dict] = None) -> Dict:
+    """Get base configuration for a subprocess worker with the given optional
+    arguments.
+
+    Parameters
+    ----------
+    variables: dict, default=None
+        Mapping with default values for placeholders in command template
+        strings.
+    env: dict, default=None
+        Default settings for environment variables when executing workflow
+        steps. These settings can get overridden by step-specific settings.
+
+    Returns
+    -------
+    dict
+    """
+    return WorkerSpec(identifier='docker', variables=variables, env=env)
+
+
+def Subprocess(variables: Optional[Dict] = None, env: Optional[Dict] = None) -> Dict:
+    """Get base configuration for a subprocess worker with the given optional
+    arguments.
+
+    Parameters
+    ----------
+    variables: dict, default=None
+        Mapping with default values for placeholders in command template
+        strings.
+    env: dict, default=None
+        Default settings for environment variables when executing workflow
+        steps. These settings can get overridden by step-specific settings.
+
+    Returns
+    -------
+    dict
+    """
+    return WorkerSpec(identifier='subprocess', variables=variables, env=env)

@@ -14,7 +14,7 @@ import os
 import pytest
 
 from flowserv.controller.serial.worker.docker import DockerWorker
-from flowserv.controller.serial.worker.factory import WorkerFactory
+from flowserv.controller.serial.worker.factory import WorkerFactory, Docker, Subprocess
 from flowserv.controller.serial.worker.subprocess import SubprocessWorker
 
 
@@ -27,6 +27,22 @@ YAML_FILE = os.path.join(CONFIG_DIR, 'worker.yaml')
 
 def callme():
     return 'called'
+
+
+def test_config_helper():
+    """Test helper function for generating worker configurations."""
+    # -- Config without additional arguments. ---------------------------------
+    doc = Docker()
+    assert doc == {'worker': 'docker'}
+    doc = Subprocess()
+    assert doc == {'worker': 'subprocess'}
+    # -- Config with arguments ------------------------------------------------
+    vars = {'x': 1}
+    env = {'TEST_ENV': 'abc'}
+    doc = Docker(variables=vars, env=env)
+    assert doc == {'worker': 'docker', 'arguments': {'variables': vars, 'env': env}}
+    doc = Subprocess(variables=vars, env=env)
+    assert doc == {'worker': 'subprocess', 'arguments': {'variables': vars, 'env': env}}
 
 
 def test_eval_arg_func():
