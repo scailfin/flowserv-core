@@ -25,8 +25,8 @@ import flowserv.config as config
 def ClientAPI(
     env: Optional[Dict] = None, basedir: Optional[str] = None,
     database: Optional[str] = None, open_access: Optional[bool] = None,
-    run_async: Optional[bool] = None, docker: Optional[bool] = None,
-    s3bucket: Optional[str] = None, user_id: Optional[str] = None
+    run_async: Optional[bool] = None, s3bucket: Optional[str] = None,
+    user_id: Optional[str] = None
 ) -> APIFactory:
     """Create an instance of the API factory that is responsible for generating
     API instances for a flowserv client.
@@ -51,8 +51,6 @@ def ClientAPI(
         Use an open access policy if set to True.
     run_async: bool, default=False
         Run workflows in asynchronous mode.
-    docker: bool, default=False
-        Use Docker workflow engine.
     s3bucket: string, default=None
         Use the S3 bucket with the given identifier to store all workflow
         files.
@@ -79,8 +77,6 @@ def ClientAPI(
         env.run_async()
     elif env.get(config.FLOWSERV_ASYNC) is None:
         env.run_sync()
-    if docker is not None and docker:
-        env.docker_engine()
     if s3bucket is not None:
         env.s3(s3bucket)
     # Create local or remote API factory depending on the FLOWSERV_CLIENT value.
