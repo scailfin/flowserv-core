@@ -67,15 +67,27 @@ class WorkflowMonitor(Thread):
 
     def run(self):
         """Poll the remote server continuously until execution is finished."""
-        monitor_workflow(
-            run_id=self.run_id,
-            state=self.state,
-            workflow_id=self.workflow_id,
-            output_files=self.output_files,
-            client=self.client,
-            poll_interval=self.poll_interval,
-            service=self.service
-        )
+        try:
+            monitor_workflow(
+                run_id=self.run_id,
+                state=self.state,
+                workflow_id=self.workflow_id,
+                output_files=self.output_files,
+                client=self.client,
+                poll_interval=self.poll_interval,
+                service=self.service
+            )
+        except Exception as ex:
+            logging.error(ex)
+            strace = util.stacktrace(ex)
+            logging.debug('\n'.join(strace))
+            state = self.state.error(messages=strace)
+            if self.service is not None:
+                with self.service() as api:
+                    try:
+                        api.runs().update_run(self.run_id, state)
+                    except err.ConstraintViolationError:
+                        pass
         # Remove the workflow information form the task list.
         try:
             del self.tasks[self.run_id]
@@ -124,77 +136,65 @@ def monitor_workflow(
     """
     logging.info('start monitoring workflow {}'.format(workflow_id))
     rundir = None
-    try:
-        # Monitor the workflow state until the workflow is not in an active
-        # state anymore.
-        while state.is_active():
-            time.sleep(poll_interval)
-            # Get the current workflow status
-            curr_state = client.get_workflow_state(
-                workflow_id=workflow_id,
-                current_state=state
-            )
-            logging.info('current state is {}'.format(curr_state))
-            if state == curr_state:
-                # Do nothing if the workflow status hasn't changed
-                continue
-            state = curr_state
-            if state.is_success():
-                # Create a temporary directory to download the run result
-                # files.
-                rundir = tempfile.mkdtemp()
-                # Download the result files. The curr_state object is not
-                # expected to contain the resource file information.
-                files = list()
-                for relative_path in output_files:
-                    target = os.path.join(rundir, relative_path)
-                    client.download_file(
-                        workflow_id=workflow_id,
-                        source=relative_path,
-                        target=target
-                    )
-                    files.append(relative_path)
-                # Create a modified workflow state handle that contains the
-                # workflow result resources.
-                state = StateSuccess(
-                    created_at=state.created_at,
-                    started_at=state.started_at,
-                    finished_at=state.finished_at,
-                    files=files
+    # Monitor the workflow state until the workflow is not in an active
+    # state anymore.
+    while state.is_active():
+        time.sleep(poll_interval)
+        # Get the current workflow status
+        curr_state = client.get_workflow_state(
+            workflow_id=workflow_id,
+            current_state=state
+        )
+        logging.info('current state is {}'.format(curr_state))
+        if state == curr_state:
+            # Do nothing if the workflow status hasn't changed
+            continue
+        state = curr_state
+        if state.is_success():
+            # Create a temporary directory to download the run result
+            # files.
+            rundir = tempfile.mkdtemp()
+            # Download the result files. The curr_state object is not
+            # expected to contain the resource file information.
+            files = list()
+            for relative_path in output_files:
+                target = os.path.join(rundir, relative_path)
+                client.download_file(
+                    workflow_id=workflow_id,
+                    source=relative_path,
+                    target=target
                 )
-            # Update the local state and the workflow state in the service
-            # API. If the service object is None the run state will be updated
-            # by the calling code.
-            if service is None:
-                continue
-            try:
-                with service() as api:
-                    api.runs().update_run(run_id, state, rundir=rundir)
-            except Exception as ex:
-                # If the workflow is canceled for example, the state in the
-                # API will have been changed and this may cause an error
-                # here. If the remote workflow, however, remains active we
-                # notify the remote engine to stop the workflow.
-                logging.error('attempt to update run {}'.format(run_id))
-                logging.error(ex)
-                if state.is_active():
-                    try:
-                        client.stop_workflow(workflow_id)
-                    except Exception as ex:
-                        logging.error(ex)
-                # Stop the thread by exiting the run method.
-                return state, rundir
-    except Exception as ex:
-        logging.error(ex)
-        strace = util.stacktrace(ex)
-        logging.debug('\n'.join(strace))
-        state = state.error(messages=strace)
-        if service is not None:
+                files.append(relative_path)
+            # Create a modified workflow state handle that contains the
+            # workflow result resources.
+            state = StateSuccess(
+                created_at=state.created_at,
+                started_at=state.started_at,
+                finished_at=state.finished_at,
+                files=files
+            )
+        # Update the local state and the workflow state in the service
+        # API. If the service object is None the run state will be updated
+        # by the calling code.
+        if service is None:
+            continue
+        try:
             with service() as api:
+                api.runs().update_run(run_id, state, rundir=rundir)
+        except Exception as ex:
+            # If the workflow is canceled for example, the state in the
+            # API will have been changed and this may cause an error
+            # here. If the remote workflow, however, remains active we
+            # notify the remote engine to stop the workflow.
+            logging.error('attempt to update run {}'.format(run_id))
+            logging.error(ex)
+            if state.is_active():
                 try:
-                    api.runs().update_run(run_id, state)
-                except err.ConstraintViolationError:
-                    pass
+                    client.stop_workflow(workflow_id)
+                except Exception as ex:
+                    logging.error(ex)
+            # Stop the thread by exiting the run method.
+            return state, rundir
     msg = 'finished run {} = {}'.format(run_id, state.type_id)
     logging.info(msg)
     return state, rundir
