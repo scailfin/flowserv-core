@@ -20,6 +20,7 @@ from threading import Thread
 
 from flowserv.model.workflow.state import StateSuccess
 
+import flowserv.error as err
 import flowserv.util as util
 
 
@@ -190,7 +191,10 @@ def monitor_workflow(
         state = state.error(messages=strace)
         if service is not None:
             with service() as api:
-                api.runs().update_run(run_id, state)
+                try:
+                    api.runs().update_run(run_id, state)
+                except err.ConstraintViolationError:
+                    pass
     msg = 'finished run {} = {}'.format(run_id, state.type_id)
     logging.info(msg)
     return state, rundir

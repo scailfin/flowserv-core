@@ -12,10 +12,10 @@ import os
 
 from flowserv.controller.remote.client import RemoteClient
 from flowserv.controller.remote.engine import RemoteWorkflowController
-from flowserv.controller.serial.workflow.base import SerialWorkflow
 from flowserv.model.workflow.remote import RemoteWorkflowObject
 from flowserv.model.workflow.state import StatePending
 
+import flowserv.controller.serial.workflow.parser as parser
 import flowserv.util as util
 
 
@@ -72,13 +72,13 @@ class RemoteTestClient(RemoteClient):
         flowserv.model.workflow.remote.RemoteWorkflowObject
         """
         # Create a serial workfow to have a workflow handle.
-        wf = SerialWorkflow(template, arguments, sourcedir=None)
+        _, _, output_file = parser.parse_template(template=template, arguments=arguments)
         self.state = StatePending()
         self._pollcount = 0
         return RemoteWorkflowObject(
             workflow_id=run.run_id,
             state=self.state,
-            output_files=wf.output_files()
+            output_files=output_file
         )
 
     def download_file(self, workflow_id, source, target):

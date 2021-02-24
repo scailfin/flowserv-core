@@ -26,7 +26,7 @@ import flowserv.model.workflow.state as st
 
 # Template directory
 DIR = os.path.dirname(os.path.realpath(__file__))
-TEMPLATE_DIR = os.path.join(DIR, '../.files/benchmark/helloworld')
+TEMPLATE_DIR = os.path.join(DIR, '../../../.files/benchmark/helloworld')
 
 
 def test_cancel_run_helloworld(async_service):
@@ -106,8 +106,10 @@ def test_run_helloworld_async(async_service, fsconfig, target):
     # Poll workflow state every second.
     with async_service(user_id=user_id) as api:
         run = api.runs().get_run(run_id=run_id)
-    while run['state'] in st.ACTIVE_STATES:
+    watch_dog = 30
+    while run['state'] in st.ACTIVE_STATES and watch_dog:
         time.sleep(1)
+        watch_dog -= 1
         with async_service(user_id=user_id) as api:
             run = api.runs().get_run(run_id=run_id)
     assert run['state'] == st.STATE_SUCCESS

@@ -31,7 +31,6 @@ from flowserv.controller.serial.workflow.step import ContainerStep
 from flowserv.model.base import RunObject
 from flowserv.model.files.factory import FS
 from flowserv.model.template.base import WorkflowTemplate
-from flowserv.model.template.parameter import ParameterIndex
 from flowserv.model.workflow.state import WorkflowState
 from flowserv.service.api import APIFactory
 
@@ -190,7 +189,9 @@ class SerialWorkflowEngine(WorkflowController):
                         rundir,
                         state,
                         outputs,
-                        steps
+                        steps,
+                        run_args,
+                        WorkerFactory(config=self.worker_config)
                     ),
                     callback=task_callback_function
                 )

@@ -28,10 +28,11 @@ import flowserv.tests.serialize as serialize
 
 # Template directory
 DIR = os.path.dirname(os.path.realpath(__file__))
-SPEC_FILE = os.path.join(DIR, '../.files/benchmark/postproc/benchmark.yaml')
-SPEC_FILE_ERR_1 = os.path.join(DIR, '../.files/benchmark/postproc/error1.yaml')
-SPEC_FILE_ERR_2 = os.path.join(DIR, '../.files/benchmark/postproc/error2.yaml')
-TEMPLATE_DIR = os.path.join(DIR, '../.files/benchmark/helloworld')
+BENCHMARK_DIR = os.path.join(DIR, '../../../.files/benchmark')
+SPEC_FILE = os.path.join(BENCHMARK_DIR, 'postproc/benchmark.yaml')
+SPEC_FILE_ERR_1 = os.path.join(BENCHMARK_DIR, 'postproc/error1.yaml')
+SPEC_FILE_ERR_2 = os.path.join(BENCHMARK_DIR, 'postproc/error2.yaml')
+TEMPLATE_DIR = os.path.join(BENCHMARK_DIR, 'helloworld')
 
 
 # List of names for input files

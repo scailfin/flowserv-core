@@ -45,7 +45,7 @@ def parse_template(template: WorkflowTemplate, arguments: Dict) -> Tuple[List[Co
     run_args = workflow_spec.get('inputs', {}).get('parameters', {})
     for key in run_args.keys():
         run_args[key] = tp.expand_value(
-            value=run_args[key],
+            value=str(run_args[key]),
             arguments=arguments,
             parameters=template.parameters
         )

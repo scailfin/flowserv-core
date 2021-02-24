@@ -91,10 +91,10 @@ def test_run_remote_workflow(tmpdir, is_async):
     # Poll workflow state every second.
     with service(user_id=user_id) as api:
         run = api.runs().get_run(run_id=run_id)
-    count = 0
-    while run['state'] in st.ACTIVE_STATES and count < 60:
+    watch_dog = 30
+    while run['state'] in st.ACTIVE_STATES and watch_dog:
         time.sleep(1)
-        count += 1
+        watch_dog -= 1
         with service(user_id=user_id) as api:
             run = api.runs().get_run(run_id=run_id)
     serialize.validate_run_handle(run, state=st.STATE_SUCCESS)
