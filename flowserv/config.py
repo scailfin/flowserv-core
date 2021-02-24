@@ -255,18 +255,6 @@ class Config(dict):
         self[FLOWSERV_DB] = url
         return self
 
-    def docker_engine(self) -> Config:
-        """Set configuration to use the Docker workflow controller as the
-        default backend.
-
-        Returns
-        -------
-        flowserv.config.Config
-        """
-        self[FLOWSERV_BACKEND_MODULE] = 'flowserv.controller.serial.docker'
-        self[FLOWSERV_BACKEND_CLASS] = 'DockerWorkflowEngine'
-        return self
-
     def multiprocess_engine(self) -> Config:
         """Set configuration to use the serial multi-porcess workflow controller
         as the default backend.
