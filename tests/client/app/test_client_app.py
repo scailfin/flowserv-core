@@ -11,19 +11,12 @@
 import os
 
 from flowserv.client.app.base import Flowserv, open_app
-from flowserv.controller.serial.docker import DockerWorkflowEngine
 
 import flowserv.config as config
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))
 TEMPLATE_DIR = os.path.join(DIR, '../../.files/benchmark/helloworld')
-
-
-def test_create_env_for_docker(tmpdir):
-    """Create test environment with a Docker engine."""
-    db = Flowserv(basedir=tmpdir, docker=True)
-    assert isinstance(db.service._engine, DockerWorkflowEngine)
 
 
 def test_install_app(tmpdir):
