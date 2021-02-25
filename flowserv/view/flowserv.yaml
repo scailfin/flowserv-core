@@ -221,6 +221,8 @@ paths:
                 type: "array"
                 items:
                   type: "string"
+              engine:
+                  type: "object"
               parameters:
                 type: "array"
                 items:

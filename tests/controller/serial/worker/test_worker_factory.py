@@ -17,6 +17,8 @@ from flowserv.controller.serial.worker.docker import DockerWorker
 from flowserv.controller.serial.worker.factory import WorkerFactory, Docker, Subprocess
 from flowserv.controller.serial.worker.subprocess import SubprocessWorker
 
+import flowserv.util as util
+
 
 # Config files.
 DIR = os.path.dirname(os.path.realpath(__file__))
@@ -116,9 +118,21 @@ def test_invalid_config(config):
         WorkerFactory(config=config, validate=True)
 
 
+def test_load_config_from_file():
+    """Test loading worker factory configuration from a file."""
+    # Passing the file content directly to the object constructor should work
+    # the same as using the static load method.
+    worker = WorkerFactory(util.read_object(JSON_FILE)).get('test')
+    assert worker.variables['a'] == 0
+
+
 def test_load_config_from_json_file():
     """Test loading worker factory configuration from a Json file."""
     worker = WorkerFactory.load_json(JSON_FILE).get('test')
+    assert worker.variables['a'] == 0
+    # Passing the file content directly to the object constructor should yield
+    # the same result.
+    worker = WorkerFactory(util.read_object(JSON_FILE)).get('test')
     assert worker.variables['a'] == 0
 
 

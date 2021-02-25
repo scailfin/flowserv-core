@@ -64,7 +64,8 @@ class LocalWorkflowGroupService(WorkflowGroupService):
 
     def create_group(
         self, workflow_id: str, name: str, members: Optional[List[str]] = None,
-        parameters: Optional[List[Parameter]] = None, identifier: Optional[str] = None
+        parameters: Optional[List[Parameter]] = None,
+        engine_config: Optional[Dict] = None, identifier: Optional[str] = None
     ) -> Dict:
         """Create a new user group for a given workflow. Each group has a
         a unique name for the workflow, a group owner, and a list of additional
@@ -84,6 +85,9 @@ class LocalWorkflowGroupService(WorkflowGroupService):
         parameters: list of flowserv.model.parameter.base.Parameter, default=None
             Optional list of parameter declarations that are used to modify the
             template parameters for submissions of the created group.
+        engine_config: dict, default=None
+            Optional configuration settings that will be used as the default
+            when running a workflow.
         identifier: string, default=None
             Optional user-provided group identifier.
 
@@ -97,6 +101,7 @@ class LocalWorkflowGroupService(WorkflowGroupService):
         # Get the handle for for the given workflow. This will raise an
         # exception if the workflow is unknown.
         workflow = self.workflow_repo.get_workflow(workflow_id)
+        engine_config = engine_config if engine_config else workflow.engine_config
         # If additional parameters are given we need to modify the workflow
         # specification accordingly. This may raise an error if a given
         # parameter identifier is not unique.
@@ -108,6 +113,7 @@ class LocalWorkflowGroupService(WorkflowGroupService):
             parameters=parameters if parameters is not None else template.parameters,
             workflow_spec=template.workflow_spec,
             members=members,
+            engine_config=engine_config,
             identifier=identifier
         )
         return self.serialize.group_handle(group)

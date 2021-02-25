@@ -16,6 +16,7 @@ from flowserv.view.run import RunSerializer
 
 
 """Serialization labels."""
+ENGINE_CONFIG = 'config'
 GROUP_ID = 'id'
 GROUP_LIST = 'groups'
 GROUP_MEMBERS = 'members'

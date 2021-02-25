@@ -308,11 +308,14 @@ class WorkflowObject(Base):
     parameters = Column(WorkflowParameters)
     parameter_groups = Column(WorkflowParameterGroups)
     outputs = Column(WorkflowOutputs)
-    # Omit foreign key here to avaoid circular dependencies. The run will
+    # Optional configuration settings that will be used as the default for this
+    # workflow AND the postproc workflow.
+    engine_config = Column(JsonObject, nullable=True)
+    # Omit foreign key here to avoid circular dependencies. The run will
     # reference the workflow to ensure integrity with respect to deleting
     # the workflow and all dependend runs.
     postproc_run_id = Column(String(32), nullable=True)
-    postproc_spec = Column(JsonObject)
+    postproc_spec = Column(JsonObject, nullable=True)
     ignore_postproc = Column(Boolean, nullable=False, default=False)
     result_schema = Column(WorkflowResultSchema)
 
@@ -420,6 +423,7 @@ class GroupObject(Base):
     owner_id = Column(String(32), ForeignKey('api_user.user_id'))
     parameters = Column(WorkflowParameters, nullable=False)
     workflow_spec = Column(JsonObject, nullable=False)
+    engine_config = Column(JsonObject, nullable=True)
 
     UniqueConstraint('workflow_id', 'name')
 

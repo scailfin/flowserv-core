@@ -370,6 +370,9 @@ class LocalRunService(RunService):
             arguments=arguments
         )
         run_id = run.run_id
+        # Use default engine configuration if the configuration argument was
+        # not given.
+        config = config if config else group.engine_config
         state, rundir = self.backend.exec_workflow(
             run=run,
             template=template,
@@ -502,7 +505,8 @@ def run_postproc_workflow(
                 workflow_spec=workflow_spec,
                 parameters=postbase.PARAMETERS
             ),
-            arguments=run_args
+            arguments=run_args,
+            config=workflow.engine_config
         )
         # Update the post-processing workflow run state if it is
         # no longer pending for execution.

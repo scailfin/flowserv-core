@@ -52,7 +52,7 @@ follow the following schema:
 from __future__ import annotations
 from importlib import import_module
 from jsonschema import Draft7Validator, RefResolver
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 import importlib.resources as pkg_resources
 import json
@@ -85,22 +85,32 @@ class WorkerFactory(object):
     Workers are instantiated from a dictionary that follows the `workerSpec`
     schema defined in the `schema.json` file.
     """
-    def __init__(self, config: Optional[Dict] = None, validate: Optional[bool] = False):
+    def __init__(
+        self, config: Optional[Union[List, Dict]] = None,
+        validate: Optional[bool] = False
+    ):
         """Initialize the dictionary that contains the mapping of container
         image identifier to worker specification.
+
+        If the configuration is a list of worker specification objects it will
+        be converted into a dictionary.
 
         If the validate flag is True the given worker specifications are
         validated against the `workerSpec` schema.
 
         Parameters
         ----------
-        config: dict, default=None
-            Mapping of container image identifier to worker specifications that
-            are used to create an instance of a :class:ContainerEngine worker.
+        config: list or dict, default=None
+            List of worker specificatins or mapping of container image identifier
+            to worker specifications that are used to create an instance of a
+            :class:ContainerEngine worker.
         validate: bool, default=False
             Validate the given worker specifications against the `workerSpec`
             schema if True.
         """
+        # If a list of worker specifications is given convert it to a mapping.
+        if config and isinstance(config, list):
+            config = convert_config(doc=config, validate=validate)
         self.config = config if config is not None else dict()
         if validate:
             for spec in self.config.values():
