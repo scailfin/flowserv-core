@@ -61,8 +61,6 @@ def test_run_helloworld_sync(sync_service, specfile, state):
     # -- Validate the run handle against the expected state -------------------
     with sync_service(user_id=user_id) as api:
         r = api.runs().get_run(run_id)
-        import json
-        print(json.dumps(r, indent=4))
         serialize.validate_run_handle(r, state=state)
         if state == st.STATE_SUCCESS:
             # The run should have the greetings.txt file as a result.

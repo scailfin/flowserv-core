@@ -132,7 +132,7 @@ def read_object(filename: str, format: Optional[str] = None) -> Dict:
     filename: string or io.BytesIO
         Path to file on disk
     format: string, optional
-        Optional file format identifier. The default is YAML
+        Optional file format identifier. The default is YAML.
 
     Returns
     -------

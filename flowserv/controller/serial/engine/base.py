@@ -83,7 +83,7 @@ class SerialWorkflowEngine(WorkflowController):
         # Lock to manage asynchronous access to the task dictionary
         self.lock = Lock()
 
-    def cancel_run(self, run_id):
+    def cancel_run(self, run_id: str):
         """Request to cancel execution of the given run. This method is usually
         called by the workflow engine that uses this controller for workflow
         execution. It is threfore assumed that the state of the workflow run
@@ -107,7 +107,10 @@ class SerialWorkflowEngine(WorkflowController):
                 # uses this controller for workflow execution
                 del self.tasks[run_id]
 
-    def exec_workflow(self, run: RunObject, template: WorkflowTemplate, arguments: Dict):
+    def exec_workflow(
+        self, run: RunObject, template: WorkflowTemplate, arguments: Dict,
+        config: Optional[Dict] = None
+    ) -> Tuple[WorkflowState, str]:
         """Initiate the execution of a given workflow template for a set of
         argument values. This will start a new process that executes a serial
         workflow asynchronously.
@@ -124,6 +127,11 @@ class SerialWorkflowEngine(WorkflowController):
         validation has been performed by the calling code (e.g., the run
         service manager).
 
+        The optional configuration object can be used to override the worker
+        configuration that was provided at object instantiation. Expects a
+        dictionary with an element `workers` that contains a mapping of container
+        identifier to a container worker configuration object.
+
         If the state of the run handle is not pending, an error is raised.
 
         Parameters
@@ -135,6 +143,8 @@ class SerialWorkflowEngine(WorkflowController):
             the parameter declarations.
         arguments: dict
             Dictionary of argument values for parameters in the template.
+        config: dict, default=None
+            Optional object to overwrite the worker configuration settings.
 
         Returns
         -------
@@ -149,9 +159,9 @@ class SerialWorkflowEngine(WorkflowController):
             raise RuntimeError("invalid run state '{}'".format(run.state))
         state = run.state()
         rundir = os.path.join(self.runsdir, run.run_id)
-        # Expand template parameters. Get (i) list of files that need to be
-        # copied, (ii) the expanded commands that represent the workflow steps,
-        # and (iii) the list of output files.
+        # Get the worker configuration.
+        worker_config = self.worker_config if not config else config.get('workers')
+        # Get the source directory for static workflow files.
         sourcedir = self.fs.workflow_staticdir(run.workflow.workflow_id)
         # Get the list of workflow steps and the generated output files.
         steps, run_args, outputs = parser.parse_template(template=template, arguments=arguments)
@@ -191,7 +201,7 @@ class SerialWorkflowEngine(WorkflowController):
                         outputs,
                         steps,
                         run_args,
-                        WorkerFactory(config=self.worker_config)
+                        WorkerFactory(config=worker_config)
                     ),
                     callback=task_callback_function
                 )
@@ -205,7 +215,7 @@ class SerialWorkflowEngine(WorkflowController):
                     output_files=outputs,
                     steps=steps,
                     arguments=run_args,
-                    workers=WorkerFactory(config=self.worker_config)
+                    workers=WorkerFactory(config=worker_config)
                 )
                 return serialize.deserialize_state(state_dict), rundir
         except Exception as ex:

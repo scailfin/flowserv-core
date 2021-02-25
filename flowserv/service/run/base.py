@@ -134,7 +134,9 @@ class RunService(metaclass=ABCMeta):  # pragma: no cover
         raise NotImplementedError()
 
     @abstractmethod
-    def start_run(self, group_id: str, arguments: List[Dict]) -> Dict:
+    def start_run(
+        self, group_id: str, arguments: List[Dict], config: Optional[Dict] = None
+    ) -> Dict:
         """Start a new workflow run for the given group. The user provided
         arguments are expected to be a list of (key,value)-pairs. The key value
         identifies the template parameter. The data type of the value depends
@@ -151,6 +153,9 @@ class RunService(metaclass=ABCMeta):  # pragma: no cover
             Unique workflow group identifier
         arguments: list(dict)
             List of user provided arguments for template parameters.
+        config: dict, default=None
+            Optional implementation-specific configuration settings that can be
+            used to overwrite settings that were intialized at object creation.
 
         Returns
         -------

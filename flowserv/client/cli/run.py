@@ -17,6 +17,7 @@ from flowserv.model.parameter.base import PARA_STRING
 from flowserv.model.template.parameter import ParameterIndex
 from flowserv.service.run.argument import deserialize_fh, serialize_arg
 
+import flowserv.controller.serial.worker.factory as factory
 import flowserv.view.files as flbls
 import flowserv.view.group as glbls
 import flowserv.view.run as labels
@@ -153,10 +154,17 @@ def show_run(run):
     required=False,
     help='Group identifier'
 )
+@click.option(
+    '-c', '--configfile',
+    type=click.Path(exists=True),
+    required=False,
+    help='Group identifier'
+)
 @click.pass_context
-def start_run(ctx, group):
+def start_run(ctx, group, configfile):
     """Start new workflow run."""
     group_id = ctx.obj.get_group(ctx.params)
+    config = factory.read_config(configfile) if configfile else None
     with service() as api:
         doc = api.groups().get_group(group_id=group_id)
         # Create list of file descriptors for uploaded files that are included
@@ -174,7 +182,7 @@ def start_run(ctx, group):
         user_input = read(parameters.sorted(), files=files)
         args = [serialize_arg(key, val) for key, val in user_input.items()]
         # Start the run and print returned run state information.
-        doc = api.runs().start_run(group_id=group_id, arguments=args)
+        doc = api.runs().start_run(group_id=group_id, arguments=args, config=config)
         run_id = doc[labels.RUN_ID]
         run_state = doc[labels.RUN_STATE]
         click.echo('started run {} is {}'.format(run_id, run_state))

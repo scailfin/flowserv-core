@@ -10,7 +10,7 @@
 modules.
 """
 
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from flowserv.model.base import RunObject
 from flowserv.model.files.base import FileStore
@@ -98,7 +98,7 @@ class StateEngine(WorkflowController):
 
     def exec_workflow(
         self, run: RunObject, template: WorkflowTemplate, arguments: dict,
-        service=None
+        config: Optional[Dict] = None
     ) -> Tuple[WorkflowState, str]:
         """Fake execute method that returns the workflow state that the was
         provided when the object was instantiated. Ignores all given arguments.

@@ -57,12 +57,13 @@ from typing import Dict, List, Optional
 import importlib.resources as pkg_resources
 import json
 import os
-import yaml
 
 from flowserv.controller.serial.worker.base import ContainerEngine
 from flowserv.controller.serial.worker.config import java_jvm, python_interpreter
 from flowserv.controller.serial.worker.docker import DockerWorker
 from flowserv.controller.serial.worker.subprocess import SubprocessWorker
+
+import flowserv.util as util
 
 
 """Create an instance of the default worker. By default a subprocess worker is
@@ -179,13 +180,7 @@ class WorkerFactory(object):
         -------
         flowserv.controller.serial.worker.factory.WorkerFactory
         """
-        # Convert list of specifications to a dictionary.
-        workers = dict()
-        for spec in doc:
-            if validate:
-                validator.validate(spec)
-            workers[spec['image']] = spec
-        return WorkerFactory(config=workers)
+        return WorkerFactory(config=convert_config(doc=doc, validate=validate))
 
     def load_json(filename: str, validate: Optional[bool] = False) -> WorkerFactory:
         """Shortcut to load a worker configuration from a Json file.
@@ -202,8 +197,8 @@ class WorkerFactory(object):
         -------
         flowserv.controller.serial.worker.factory.WorkerFactory
         """
-        with open(filename, 'r') as f:
-            return WorkerFactory.load(doc=json.load(f), validate=validate)
+        doc = read_config(filename=filename, format=util.FORMAT_JSON, validate=validate)
+        return WorkerFactory(config=doc)
 
     def load_yaml(filename: str, validate: Optional[bool] = False) -> WorkerFactory:
         """Shortcut to load a worker configuration from a Yaml file.
@@ -220,8 +215,8 @@ class WorkerFactory(object):
         -------
         flowserv.controller.serial.worker.factory.WorkerFactory
         """
-        with open(filename, 'r') as f:
-            return WorkerFactory.load(doc=yaml.load(f, Loader=yaml.FullLoader), validate=validate)
+        doc = read_config(filename=filename, format=util.FORMAT_YAML, validate=validate)
+        return WorkerFactory(config=doc)
 
 
 # -- Helper Functions for Worker configurations -------------------------------
@@ -297,3 +292,48 @@ def Subprocess(variables: Optional[Dict] = None, env: Optional[Dict] = None) -> 
     dict
     """
     return WorkerSpec(identifier='subprocess', variables=variables, env=env)
+
+
+def convert_config(doc: List[Dict], validate: Optional[bool] = False) -> Dict:
+    """Convertes a list of worker specifications into a dictionary.
+
+    Parameters
+    ----------
+    doc: list of dict
+        List of dictionaries that follow the `workerSpec` schema.
+    validate: bool, default=False
+        Validate the given worker specifications against the `workerSpec`
+        schema if True.
+
+    Returns
+    -------
+    dict
+    """
+    config = dict()
+    for spec in doc:
+        if validate:
+            validator.validate(spec)
+        config[spec['image']] = spec
+    return config
+
+
+def read_config(
+    filename: str, format: Optional[str] = None, validate: Optional[bool] = False
+) -> Dict:
+    """Read worker configuration object from a given file.
+
+    Parameters
+    ----------
+    filename: str
+        Input file name
+    format: string, optional
+        Optional file format identifier.
+    validate: bool, default=True
+        Validate the given worker specifications against the `workerSpec`
+        schema if True.
+
+    Returns
+    -------
+    dict
+    """
+    return convert_config(doc=util.read_object(filename, format=format), validate=validate)

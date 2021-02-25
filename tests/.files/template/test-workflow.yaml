@@ -1,0 +1,9 @@
+workflow:
+    version: 0.3.0
+    workflow:
+      type: serial
+      specification:
+        steps:
+          - environment: 'test'
+            commands:
+              - not a command
