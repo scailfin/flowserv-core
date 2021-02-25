@@ -167,6 +167,7 @@ def start_run(ctx, group, configfile):
     config = factory.read_config(configfile) if configfile else None
     with service() as api:
         doc = api.groups().get_group(group_id=group_id)
+        config = config if config else doc[glbls.ENGINE_CONFIG]
         # Create list of file descriptors for uploaded files that are included
         # in the submission handle
         files = []

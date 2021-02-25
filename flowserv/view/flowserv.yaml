@@ -1091,6 +1091,8 @@ definitions:
           $ref: "#/definitions/FileHandle"
       runs:
         $ref: "#/definitions/Runs"
+      engine:
+          type: "object"
   UserGroups:
     type: "array"
     items:

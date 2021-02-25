@@ -27,6 +27,11 @@ import flowserv.util as util
 
 @click.command()
 @click.option(
+    '-k', '--key',
+    required=False,
+    help='Workflow application key.'
+)
+@click.option(
     '-n', '--name',
     required=False,
     help='Application title.'
@@ -69,7 +74,7 @@ import flowserv.util as util
 @click.argument('template')
 @click.pass_context
 def create_workflow(
-    ctx, name, description, instructions, specfile, manifest, template,
+    ctx, key, name, description, instructions, specfile, manifest, template,
     configfile, ignore_postproc
 ):
     """Create a new workflow for a given template."""
@@ -80,6 +85,7 @@ def create_workflow(
         # error will be raised.
         doc = api.workflows().create_workflow(
             source=template,
+            identifier=key,
             name=name,
             description=description,
             instructions=read_instructions(instructions),
