@@ -67,7 +67,7 @@ def test_add_workflow_step():
     wf = wf.add_step(func=str.lower, output='x', varnames={'x': 'y'})
     assert len(wf.steps) == 2
     s = wf.steps[1]
-    assert s.is_code_step()
+    assert s.is_function_step()
     assert s.func('ABC') == 'abc'
     assert s.output == 'x'
     assert s.varnames == {'x': 'y'}

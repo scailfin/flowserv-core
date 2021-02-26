@@ -11,7 +11,7 @@
 import os
 import sys
 
-from flowserv.controller.serial.worker.config import java_jvm, python_interpreter
+from flowserv.controller.worker.config import java_jvm, python_interpreter
 
 
 def test_get_java_jvm():

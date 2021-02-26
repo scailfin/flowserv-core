@@ -12,8 +12,8 @@ from typing import List
 
 from flowserv.controller.serial.workflow.result import RunResult
 from flowserv.model.workflow.step import WorkflowStep
-from flowserv.controller.serial.worker.code import exec_code
-from flowserv.controller.serial.worker.factory import WorkerFactory
+from flowserv.controller.worker.code import exec_func
+from flowserv.controller.worker.factory import WorkerFactory
 
 
 def exec_workflow(
@@ -34,21 +34,21 @@ def exec_workflow(
     ----------
     steps: list of flowserv.model.workflow.step.WorkflowStep
         Steps in the serial workflow that are executed in the given context.
-    workers: flowserv.controller.serial.worker.factory.WorkerFactory, default=None
+    workers: flowserv.controller.worker.factory.WorkerFactory, default=None
         Factory for :class:ContainerStep steps.
     rundir: str, default=None
         Working directory for all executed workflow steps.
-    result: flowserv.controller.serial.worker.result.RunResult
+    result: flowserv.controller.worker.result.RunResult
         Collector for results from executed workflow steps. Contains the context
         within which the workflow is executed.
 
     Returns
     -------
-    flowserv.controller.serial.worker.result.RunResult
+    flowserv.controller.worker.result.RunResult
     """
     for step in steps:
-        if step.is_code_step():
-            r = exec_code(step=step, context=result.context, rundir=rundir)
+        if step.is_function_step():
+            r = exec_func(step=step, context=result.context, rundir=rundir)
         else:
             worker = workers.get(step.image)
             r = worker.exec(

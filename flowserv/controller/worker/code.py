@@ -15,7 +15,7 @@ import os
 import sys
 
 from flowserv.controller.serial.workflow.result import ExecResult
-from flowserv.model.workflow.step import CodeStep
+from flowserv.model.workflow.step import FunctionStep
 
 import flowserv.util as util
 
@@ -42,15 +42,15 @@ class OutputStream(object):
         self._stream.append(text)
 
 
-def exec_code(step: CodeStep, context: Dict, rundir: str) -> ExecResult:
-    """Execute a workflow code step in a given context.
+def exec_func(step: FunctionStep, context: Dict, rundir: str) -> ExecResult:
+    """Execute a workflow step of type :class:FunctionStep in a given context.
 
     Captures output to STDOUT and STDERR and includes them in the returned
     execution result.
 
     Parameters
     ----------
-    step: flowserv.model.workflow.step.CodeStep
+    step: flowserv.model.workflow.step.FunctionStep
         Code step in a serial workflow.
     context: dict
         Context for the executed code.

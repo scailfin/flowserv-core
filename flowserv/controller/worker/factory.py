@@ -58,10 +58,10 @@ import importlib.resources as pkg_resources
 import json
 import os
 
-from flowserv.controller.serial.worker.base import ContainerEngine
-from flowserv.controller.serial.worker.config import java_jvm, python_interpreter
-from flowserv.controller.serial.worker.docker import DockerWorker
-from flowserv.controller.serial.worker.subprocess import SubprocessWorker
+from flowserv.controller.worker.base import ContainerEngine
+from flowserv.controller.worker.config import java_jvm, python_interpreter
+from flowserv.controller.worker.docker import DockerWorker
+from flowserv.controller.worker.subprocess import SubprocessWorker
 
 import flowserv.util as util
 
@@ -139,7 +139,7 @@ class WorkerFactory(object):
 
         Returns
         -------
-        flowserv.controller.serial.worker.base.ContainerEngine
+        flowserv.controller.worker.base.ContainerEngine
         """
         # Return the worker from the cache if it exists.
         if image in self._workers:
@@ -188,7 +188,7 @@ class WorkerFactory(object):
 
         Returns
         -------
-        flowserv.controller.serial.worker.factory.WorkerFactory
+        flowserv.controller.worker.factory.WorkerFactory
         """
         return WorkerFactory(config=convert_config(doc=doc, validate=validate))
 
@@ -205,7 +205,7 @@ class WorkerFactory(object):
 
         Returns
         -------
-        flowserv.controller.serial.worker.factory.WorkerFactory
+        flowserv.controller.worker.factory.WorkerFactory
         """
         doc = read_config(filename=filename, format=util.FORMAT_JSON, validate=validate)
         return WorkerFactory(config=doc)
@@ -223,7 +223,7 @@ class WorkerFactory(object):
 
         Returns
         -------
-        flowserv.controller.serial.worker.factory.WorkerFactory
+        flowserv.controller.worker.factory.WorkerFactory
         """
         doc = read_config(filename=filename, format=util.FORMAT_YAML, validate=validate)
         return WorkerFactory(config=doc)

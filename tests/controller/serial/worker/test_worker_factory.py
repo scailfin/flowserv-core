@@ -13,9 +13,9 @@ from jsonschema.exceptions import ValidationError
 import os
 import pytest
 
-from flowserv.controller.serial.worker.docker import DockerWorker
-from flowserv.controller.serial.worker.factory import WorkerFactory, Docker, Subprocess
-from flowserv.controller.serial.worker.subprocess import SubprocessWorker
+from flowserv.controller.worker.docker import DockerWorker
+from flowserv.controller.worker.factory import WorkerFactory, Docker, Subprocess
+from flowserv.controller.worker.subprocess import SubprocessWorker
 
 import flowserv.util as util
 
@@ -75,12 +75,12 @@ def test_eval_arg_func():
         ({'default': {'worker': 'docker'}}, SubprocessWorker),
         (
             {'test': {
-                'worker': {'className': 'SubprocessWorker', 'moduleName': 'flowserv.controller.serial.worker.subprocess'}
+                'worker': {'className': 'SubprocessWorker', 'moduleName': 'flowserv.controller.worker.subprocess'}
             }},
             SubprocessWorker
         ),
         (
-            {'test': {'worker': {'className': 'DockerWorker', 'moduleName': 'flowserv.controller.serial.worker.docker'}}},
+            {'test': {'worker': {'className': 'DockerWorker', 'moduleName': 'flowserv.controller.worker.docker'}}},
             DockerWorker
         )
     ]

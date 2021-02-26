@@ -14,7 +14,7 @@ import docker
 import os
 import pytest
 
-from flowserv.controller.serial.worker.docker import DockerWorker
+from flowserv.controller.worker.docker import DockerWorker
 from flowserv.model.workflow.step import ContainerStep
 
 

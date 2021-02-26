@@ -13,7 +13,7 @@ import pytest
 import subprocess
 import sys
 
-from flowserv.controller.serial.worker.subprocess import SubprocessWorker
+from flowserv.controller.worker.subprocess import SubprocessWorker
 from flowserv.model.workflow.step import ContainerStep
 
 

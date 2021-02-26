@@ -25,7 +25,7 @@ import os
 from flowserv.config import FLOWSERV_ASYNC, FLOWSERV_BASEDIR, FLOWSERV_RUNSDIR, DEFAULT_RUNSDIR
 from flowserv.controller.base import WorkflowController
 from flowserv.controller.serial.engine.runner import exec_workflow
-from flowserv.controller.serial.worker.factory import WorkerFactory
+from flowserv.controller.worker.factory import WorkerFactory
 from flowserv.controller.serial.workflow.result import RunResult
 from flowserv.model.workflow.step import ContainerStep
 from flowserv.model.base import RunObject
@@ -282,7 +282,7 @@ def run_workflow(
         Steps in the serial workflow that are executed in the given context.
     arguments: dict
         Dictionary of argument values for parameters in the template.
-    workers: flowserv.controller.serial.worker.factory.WorkerFactory, default=None
+    workers: flowserv.controller.worker.factory.WorkerFactory, default=None
         Factory for :class:ContainerStep steps.
 
     Returns

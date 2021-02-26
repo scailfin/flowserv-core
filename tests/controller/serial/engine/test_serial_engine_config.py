@@ -12,7 +12,7 @@ import docker
 import os
 import pytest
 
-from flowserv.controller.serial.worker.factory import Docker
+from flowserv.controller.worker.factory import Docker
 from flowserv.tests.service import create_group, create_user, create_workflow, start_run
 
 import flowserv.model.workflow.state as state

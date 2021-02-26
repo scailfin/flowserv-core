@@ -7,10 +7,10 @@
 # terms of the MIT License; see LICENSE file for more details.
 
 """Definitions for the different types of steps in a serial workflow. At this
-point we distinguish two types of workflow steps: :class:CodeStep and
+point we distinguish two types of workflow steps: :class:FunctionStep and
 :class:ContainerStep.
 
-A :class:CodeStep is used to execute a given function within the workflow context.
+A :class:FunctionStep is used to execute a given function within the workflow context.
 The code is executed within the same thread and environment as the flowserv
 engine. Code steps are intended for minor actions (e.g., copying of files or
 reading results from previous workflow steps). For these actions it would cause
@@ -26,6 +26,13 @@ from __future__ import annotations
 from typing import Callable, Dict, List, Optional
 
 import inspect
+
+
+"""Unique identifier for workflow step types."""
+CONTAINER_STEP = 0
+FUNCTION_STEP = 1
+
+STEPS = [CONTAINER_STEP, FUNCTION_STEP]
 
 
 class WorkflowStep(object):
@@ -44,20 +51,11 @@ class WorkflowStep(object):
         Parameters
         ----------
         step_type: int
-            Either 0 (ContainerStep) or 1 (CodeStep).
+            Either 0 (ContainerStep) or 1 (FunctionStep).
         """
-        if step_type not in [0, 1]:
+        if step_type not in STEPS:
             raise ValueError("invalid step type '{}'".format(step_type))
         self.step_type = step_type
-
-    def is_code_step(self) -> bool:
-        """True if the workflow step is of type :class:CodeStep.
-
-        Returns
-        -------
-        bool
-        """
-        return self.step_type == 1
 
     def is_container_step(self) -> bool:
         """True if the workflow step is of type :class:ContainerStep.
@@ -66,71 +64,16 @@ class WorkflowStep(object):
         -------
         bool
         """
-        return self.step_type == 0
+        return self.step_type == CONTAINER_STEP
 
+    def is_function_step(self) -> bool:
+        """True if the workflow step is of type :class:FunctionStep.
 
-class CodeStep(WorkflowStep):
-    """Workflow step that executes a given Python function.
-
-    The function is evaluated using the current state of the workflow arguments.
-    If the executed function returns a result, the returned object can be added
-    to the arguments. That is, the argument dictionary is updated and the added
-    object is availble for the following workflows steps.
-    """
-    def __init__(
-        self, func: Callable, output: Optional[str] = None,
-        varnames: Optional[Dict] = None
-    ):
-        """Initialize the reference to the executed function and the optional
-        return value target and variable name mapping.
-
-        Parameters
-        ----------
-        func: callable
-            Python function that is executed by the workflow step.
-        output: string, default=None
-            Name of the variable under which the function result is stored in
-            the workflow arguments. If None, the function result is discarded.
-        varnames: dict, default=None
-            Mapping of function argument names to names of workflow arguments.
-            This mapping is used when generating the arguments for the executed
-            function. By default it is assumed that the names of arguments for
-            the given function correspond to the names in the argument dictionary
-            for the workflow. This mapping provides the option to map names in
-            the function signature that do not occur in the arguments dictionary
-            to argument names that are in the dictionary.
+        Returns
+        -------
+        bool
         """
-        super(CodeStep, self).__init__(step_type=1)
-        self.func = func
-        self.output = output
-        self.varnames = varnames if varnames is not None else dict()
-
-    def exec(self, context: Dict):
-        """Execute workflow step using the given arguments.
-
-        The given set of input arguments may be modified by the return value of
-        the evaluated function.
-
-        Parameters
-        ----------
-        context: dict
-            Mapping of parameter names to their current value in the workflow
-            executon state. These are the global variables in the execution
-            context.
-        """
-        # Generate argument dictionary from the signature of the evaluated function
-        # and the variable name mapping.
-        kwargs = dict()
-        for var in inspect.getfullargspec(self.func).args:
-            source = self.varnames.get(var, var)
-            if source in context:
-                kwargs[var] = context[source]
-        # Evaluate the given function using the generated argument dictionary.
-        result = self.func(**kwargs)
-        # Add the function result to the context dictionary if a variable name
-        # for the result is given.
-        if self.output is not None:
-            context[self.output] = result
+        return self.step_type == FUNCTION_STEP
 
 
 class ContainerStep(WorkflowStep):
@@ -175,3 +118,67 @@ class ContainerStep(WorkflowStep):
         """
         self.commands.append(cmd)
         return self
+
+
+class FunctionStep(WorkflowStep):
+    """Workflow step that executes a given Python function.
+
+    The function is evaluated using the current state of the workflow arguments.
+    If the executed function returns a result, the returned object can be added
+    to the arguments. That is, the argument dictionary is updated and the added
+    object is availble for the following workflows steps.
+    """
+    def __init__(
+        self, func: Callable, output: Optional[str] = None,
+        varnames: Optional[Dict] = None
+    ):
+        """Initialize the reference to the executed function and the optional
+        return value target and variable name mapping.
+
+        Parameters
+        ----------
+        func: callable
+            Python function that is executed by the workflow step.
+        output: string, default=None
+            Name of the variable under which the function result is stored in
+            the workflow arguments. If None, the function result is discarded.
+        varnames: dict, default=None
+            Mapping of function argument names to names of workflow arguments.
+            This mapping is used when generating the arguments for the executed
+            function. By default it is assumed that the names of arguments for
+            the given function correspond to the names in the argument dictionary
+            for the workflow. This mapping provides the option to map names in
+            the function signature that do not occur in the arguments dictionary
+            to argument names that are in the dictionary.
+        """
+        super(FunctionStep, self).__init__(step_type=1)
+        self.func = func
+        self.output = output
+        self.varnames = varnames if varnames is not None else dict()
+
+    def exec(self, context: Dict):
+        """Execute workflow step using the given arguments.
+
+        The given set of input arguments may be modified by the return value of
+        the evaluated function.
+
+        Parameters
+        ----------
+        context: dict
+            Mapping of parameter names to their current value in the workflow
+            executon state. These are the global variables in the execution
+            context.
+        """
+        # Generate argument dictionary from the signature of the evaluated function
+        # and the variable name mapping.
+        kwargs = dict()
+        for var in inspect.getfullargspec(self.func).args:
+            source = self.varnames.get(var, var)
+            if source in context:
+                kwargs[var] = context[source]
+        # Evaluate the given function using the generated argument dictionary.
+        result = self.func(**kwargs)
+        # Add the function result to the context dictionary if a variable name
+        # for the result is given.
+        if self.output is not None:
+            context[self.output] = result

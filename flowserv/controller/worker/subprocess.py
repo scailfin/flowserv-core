@@ -6,24 +6,24 @@
 # flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
-"""Implementation of a workflow step engine that uses the local Docker daemon
-to execute workflow steps.
+"""Workflow step processor that uses the Python subprocess package to
+execute a given list of commands in a container environment.
 """
 
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 import logging
-import os
+import subprocess
 
 from flowserv.controller.serial.workflow.result import ExecResult
 from flowserv.model.workflow.step import ContainerStep
-from flowserv.controller.serial.worker.base import ContainerEngine
+from flowserv.controller.worker.base import ContainerEngine
 
 import flowserv.util as util
 
 
-class DockerWorker(ContainerEngine):
-    """Container step engine that uses the local Docker deamon to execute the
+class SubprocessWorker(ContainerEngine):
+    """Container step engine that uses the subprocess package to execute the
     commands in a workflow step.
     """
     def __init__(self, variables: Optional[Dict] = None, env: Optional[Dict] = None):
@@ -39,11 +39,10 @@ class DockerWorker(ContainerEngine):
             Default settings for environment variables when executing workflow
             steps. These settings can get overridden by step-specific settings.
         """
-        super(DockerWorker, self).__init__(variables=variables, env=env)
+        super(SubprocessWorker, self).__init__(variables=variables, env=env)
 
     def run(self, step: ContainerStep, env: Dict, rundir: str) -> ExecResult:
-        """Execute a list of commands from a workflow steps synchronously using
-        the Docker engine.
+        """Execute a list of shell commands in a workflow step synchronously.
 
         Stops execution if one of the commands fails. Returns the combined
         result from all the commands that were executed.
@@ -56,44 +55,38 @@ class DockerWorker(ContainerEngine):
             Default settings for environment variables when executing workflow
             steps. May be None.
         rundir: string
-            Path to the working directory of the workflow run that this step
-            belongs to.
+            Path to the working directory of the workflow run.
 
         Returns
         -------
         flowserv.controller.serial.workflow.result.ExecResult
         """
-        logging.info('run step with Docker worker')
+        logging.info('run step with subprocess worker')
         # Keep output to STDOUT and STDERR for all executed commands in the
         # respective attributes of the returned execution result.
         result = ExecResult(step=step)
-        # Setup the workflow environment by obtaining volume information for
-        # all directories in the run folder.
-        volumes = dict()
-        for filename in os.listdir(rundir):
-            abs_file = os.path.abspath(os.path.join(rundir, filename))
-            if os.path.isdir(abs_file):
-                volumes[abs_file] = {'bind': '/{}'.format(filename), 'mode': 'rw'}
-        # Run the individual commands using the local Docker deamon. Import
-        # docker package here to avoid errors for installations that do not
-        # intend to use Docker and therefore did not install the package.
-        import docker
-        from docker.errors import ContainerError, ImageNotFound, APIError
-        client = docker.from_env()
         try:
+            # Run each command in the the workflow step. Each command is
+            # expected to be a shell command that is executed using the
+            # subprocess package. The subprocess.run() method is preferred for
+            # capturing output.
             for cmd in step.commands:
                 logging.info('{}'.format(cmd))
-                logs = client.containers.run(
-                    image=step.image,
-                    command=cmd,
-                    volumes=volumes,
-                    auto_remove=True,
-                    environment=env,
-                    stdout=True
+                proc = subprocess.run(
+                    cmd,
+                    cwd=rundir,
+                    shell=True,
+                    capture_output=True,
+                    env=env
                 )
-                if logs:
-                    result.stdout.append(logs.decode('utf-8'))
-        except (ContainerError, ImageNotFound, APIError) as ex:
+                # Append output to STDOUT and STDERR to the respecive lists.
+                append(result.stdout, proc.stdout.decode('utf-8'))
+                append(result.stderr, proc.stderr.decode('utf-8'))
+                if proc.returncode != 0:
+                    # Stop execution if the command failed.
+                    result.returncode = proc.returncode
+                    break
+        except Exception as ex:
             logging.error(ex)
             strace = '\n'.join(util.stacktrace(ex))
             logging.debug(strace)
@@ -101,3 +94,11 @@ class DockerWorker(ContainerEngine):
             result.exception = ex
             result.returncode = 1
         return result
+
+
+# -- Helper Functions ---------------------------------------------------------
+
+def append(outstream: List[str], text: str):
+    """Append the given text to an output stream if the text is not empty."""
+    if text:
+        outstream.append(text)

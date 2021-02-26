@@ -10,8 +10,8 @@
 
 import os
 
-from flowserv.controller.serial.worker.code import exec_code
-from flowserv.model.workflow.step import CodeStep
+from flowserv.controller.worker.code import exec_func
+from flowserv.model.workflow.step import FunctionStep
 
 
 def write_and_add(a):
@@ -25,8 +25,8 @@ def write_and_add(a):
 
 def test_error_exec(tmpdir):
     """Test error when running a code step."""
-    step = CodeStep(func=write_and_add, output='a')
-    r = exec_code(step=step, context={'a': -1}, rundir=tmpdir)
+    step = FunctionStep(func=write_and_add, output='a')
+    r = exec_func(step=step, context={'a': -1}, rundir=tmpdir)
     assert r.returncode == 1
     assert r.stdout == ['-1 written', '\n']
     assert r.stderr != []
@@ -35,8 +35,8 @@ def test_error_exec(tmpdir):
 
 def test_successful_exec(tmpdir):
     """Test successfully running a code step."""
-    step = CodeStep(func=write_and_add, output='a')
-    r = exec_code(step=step, context={'a': 1}, rundir=tmpdir)
+    step = FunctionStep(func=write_and_add, output='a')
+    r = exec_func(step=step, context={'a': 1}, rundir=tmpdir)
     assert r.returncode == 0
     assert r.stdout == ['1 written', '\n']
     assert r.stderr == []

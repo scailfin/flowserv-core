@@ -10,7 +10,7 @@
 
 import pytest
 
-from flowserv.model.workflow.step import CodeStep, ContainerStep, WorkflowStep
+from flowserv.model.workflow.step import FunctionStep, ContainerStep, WorkflowStep
 
 
 def my_add(x: int, y: int) -> int:
@@ -26,32 +26,32 @@ def test_container_step():
     assert step.commands == ['A', 'B']
 
 
-def test_exec_code_step():
+def test_exec_func_step():
     """Test executing a Python function as a step in a serial workflow."""
     args = {'x': 1, 'y': 2}
-    step = CodeStep(func=my_add, output='z')
+    step = FunctionStep(func=my_add, output='z')
     step.exec(context=args)
     assert args == {'x': 1, 'y': 2, 'z': 3}
     # Test renaming arguments.
-    step = CodeStep(func=my_add, varnames={'x': 'z'}, output='x')
+    step = FunctionStep(func=my_add, varnames={'x': 'z'}, output='x')
     step.exec(context=args)
     assert args == {'x': 5, 'y': 2, 'z': 3}
     # Execute function but ignore output.
-    step = CodeStep(func=my_add)
+    step = FunctionStep(func=my_add)
     step.exec(context=args)
     assert args == {'x': 5, 'y': 2, 'z': 3}
 
 
 def test_step_type():
     """Test methods that distinguish different step types."""
-    # CodeStep
-    step = CodeStep(func=my_add, output='z')
-    assert step.is_code_step()
+    # FunctionStep
+    step = FunctionStep(func=my_add, output='z')
+    assert step.is_function_step()
     assert not step.is_container_step()
     # ContainerStep
     step = ContainerStep(image='test')
     assert step.is_container_step()
-    assert not step.is_code_step()
+    assert not step.is_function_step()
     # Invalid step type.
     with pytest.raises(ValueError):
         WorkflowStep(step_type=-1)

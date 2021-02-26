@@ -20,8 +20,8 @@ import os
 
 from flowserv.controller.serial.engine.runner import exec_workflow
 from flowserv.controller.serial.workflow.result import RunResult
-from flowserv.model.workflow.step import CodeStep, ContainerStep, WorkflowStep
-from flowserv.controller.serial.worker.factory import WorkerFactory
+from flowserv.model.workflow.step import FunctionStep, ContainerStep, WorkflowStep
+from flowserv.controller.worker.factory import WorkerFactory
 from flowserv.model.parameter.base import Parameter
 from flowserv.model.template.parameter import ParameterIndex
 
@@ -30,8 +30,8 @@ class SerialWorkflow(object):
     """A serial workflow represents a sequence of steps (:class:WorkflowStep)
     that are executed in order for a given set of input parameters.
 
-    At this point we distinguish two types of workflow steps: :class:CodeStep
-    and :class:ContainerStep.  A :class:CodeStep is executed within the same
+    At this point we distinguish two types of workflow steps: :class:FunctionStep
+    and :class:ContainerStep.  A :class:FunctionStep is executed within the same
     thread and environment as the flowserv engine. A :class:ContainerStep is
     executed in a separate container-like environment. The execution environment
     is represented by a :clas:ContainerEngine that is associated in the
@@ -54,7 +54,7 @@ class SerialWorkflow(object):
             Optional sequence of steps in the serial workflow.
         parameters: list of flowserv.model.parameter.base.Parameter, default=None
             Optional list of workflow template parameters.
-        workers: flowserv.controller.serial.worker.factory.WorkerFactory
+        workers: flowserv.controller.worker.factory.WorkerFactory
             Factory for :class:ContainerEngine objects that are used to execute
             individual :class:ContainerStep instances in the workflow sequence.
         """
@@ -163,7 +163,7 @@ class SerialWorkflow(object):
         -------
         flowserv.controller.serial.workflow.base.SerialWorkflow
         """
-        step = CodeStep(func=func, output=output, varnames=varnames)
+        step = FunctionStep(func=func, output=output, varnames=varnames)
         self.steps.append(step)
         return self
 
@@ -207,7 +207,7 @@ class SerialWorkflow(object):
         ----------
         arguments: dict
             User-provided arguments for the workflow run.
-        workers: flowserv.controller.serial.worker.factory.WorkerFactory, default=None
+        workers: flowserv.controller.worker.factory.WorkerFactory, default=None
             Factory for :class:ContainerStep steps. Uses the default worker for
             all container steps if None.
         rundir: str, default=None
@@ -216,7 +216,7 @@ class SerialWorkflow(object):
 
         Returns
         -------
-        flowserv.controller.serial.worker.result.RunResult
+        flowserv.controller.worker.result.RunResult
         """
         # Use current working directory if run directory is None.
         rundir = rundir if rundir else os.getcwd()
