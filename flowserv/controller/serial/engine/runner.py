@@ -11,7 +11,7 @@
 from typing import List
 
 from flowserv.controller.serial.workflow.result import RunResult
-from flowserv.controller.serial.workflow.step import WorkflowStep
+from flowserv.model.workflow.step import WorkflowStep
 from flowserv.controller.serial.worker.code import exec_code
 from flowserv.controller.serial.worker.factory import WorkerFactory
 
@@ -32,7 +32,7 @@ def exec_workflow(
 
     Parameters
     ----------
-    steps: list of flowserv.controller.serial.workflow.step.WorkflowStep
+    steps: list of flowserv.model.workflow.step.WorkflowStep
         Steps in the serial workflow that are executed in the given context.
     workers: flowserv.controller.serial.worker.factory.WorkerFactory, default=None
         Factory for :class:ContainerStep steps.

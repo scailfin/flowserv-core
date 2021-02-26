@@ -14,7 +14,7 @@ import subprocess
 import sys
 
 from flowserv.controller.serial.worker.subprocess import SubprocessWorker
-from flowserv.controller.serial.workflow.step import ContainerStep
+from flowserv.model.workflow.step import ContainerStep
 
 
 # Test files directory

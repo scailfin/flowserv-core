@@ -15,7 +15,7 @@ import os
 import sys
 
 from flowserv.controller.serial.workflow.result import ExecResult
-from flowserv.controller.serial.workflow.step import CodeStep
+from flowserv.model.workflow.step import CodeStep
 
 import flowserv.util as util
 
@@ -50,7 +50,7 @@ def exec_code(step: CodeStep, context: Dict, rundir: str) -> ExecResult:
 
     Parameters
     ----------
-    step: flowserv.controller.serial.workflow.step.CodeStep
+    step: flowserv.model.workflow.step.CodeStep
         Code step in a serial workflow.
     context: dict
         Context for the executed code.

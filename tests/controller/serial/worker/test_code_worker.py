@@ -11,7 +11,7 @@
 import os
 
 from flowserv.controller.serial.worker.code import exec_code
-from flowserv.controller.serial.workflow.step import CodeStep
+from flowserv.model.workflow.step import CodeStep
 
 
 def write_and_add(a):

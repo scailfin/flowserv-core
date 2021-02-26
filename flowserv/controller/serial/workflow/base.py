@@ -20,7 +20,7 @@ import os
 
 from flowserv.controller.serial.engine.runner import exec_workflow
 from flowserv.controller.serial.workflow.result import RunResult
-from flowserv.controller.serial.workflow.step import CodeStep, ContainerStep, WorkflowStep
+from flowserv.model.workflow.step import CodeStep, ContainerStep, WorkflowStep
 from flowserv.controller.serial.worker.factory import WorkerFactory
 from flowserv.model.parameter.base import Parameter
 from flowserv.model.template.parameter import ParameterIndex
@@ -50,7 +50,7 @@ class SerialWorkflow(object):
 
         Parameters
         ----------
-        steps: list of flowserv.controller.serial.workflow.step.WorkflowStep, default=None
+        steps: list of flowserv.model.workflow.step.WorkflowStep, default=None
             Optional sequence of steps in the serial workflow.
         parameters: list of flowserv.model.parameter.base.Parameter, default=None
             Optional list of workflow template parameters.
@@ -67,7 +67,7 @@ class SerialWorkflow(object):
 
         Returns
         -------
-        itarable of flowserv.controller.serial.workflow.step.WorkflowStep
+        itarable of flowserv.model.workflow.step.WorkflowStep
         """
         return iter(self.steps)
 

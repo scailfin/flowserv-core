@@ -9,7 +9,7 @@
 """Unit tests for the serial workflow run result class."""
 
 from flowserv.controller.serial.workflow.result import ExecResult, RunResult
-from flowserv.controller.serial.workflow.step import ContainerStep
+from flowserv.model.workflow.step import ContainerStep
 
 
 def test_empty_run_result():

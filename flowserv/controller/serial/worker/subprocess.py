@@ -16,7 +16,7 @@ import logging
 import subprocess
 
 from flowserv.controller.serial.workflow.result import ExecResult
-from flowserv.controller.serial.workflow.step import ContainerStep
+from flowserv.model.workflow.step import ContainerStep
 from flowserv.controller.serial.worker.base import ContainerEngine
 
 import flowserv.util as util

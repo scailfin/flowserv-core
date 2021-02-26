@@ -10,7 +10,7 @@
 
 import pytest
 
-from flowserv.controller.serial.workflow.step import ContainerStep
+from flowserv.model.workflow.step import ContainerStep
 from flowserv.controller.serial.workflow.base import SerialWorkflow
 from flowserv.model.parameter.string import String
 

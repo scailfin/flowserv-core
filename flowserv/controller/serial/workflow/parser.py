@@ -10,7 +10,7 @@
 
 from typing import Dict, List, Tuple
 
-from flowserv.controller.serial.workflow.step import ContainerStep
+from flowserv.model.workflow.step import ContainerStep
 from flowserv.model.template.base import WorkflowTemplate
 
 import flowserv.model.template.parameter as tp

@@ -11,7 +11,7 @@
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
-from flowserv.controller.serial.workflow.step import WorkflowStep
+from flowserv.model.workflow.step import WorkflowStep
 
 
 @dataclass

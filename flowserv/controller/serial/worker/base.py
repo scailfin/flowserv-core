@@ -16,7 +16,7 @@ from string import Template
 from typing import Dict, Optional
 
 from flowserv.controller.serial.workflow.result import ExecResult
-from flowserv.controller.serial.workflow.step import ContainerStep
+from flowserv.model.workflow.step import ContainerStep
 
 import flowserv.model.template.parameter as tp
 

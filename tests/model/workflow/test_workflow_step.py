@@ -10,7 +10,7 @@
 
 import pytest
 
-from flowserv.controller.serial.workflow.step import CodeStep, ContainerStep, WorkflowStep
+from flowserv.model.workflow.step import CodeStep, ContainerStep, WorkflowStep
 
 
 def my_add(x: int, y: int) -> int:
