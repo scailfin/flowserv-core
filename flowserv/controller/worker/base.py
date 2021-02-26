@@ -74,7 +74,7 @@ class ContainerEngine(metaclass=ABCMeta):
             args = {p: p for p in tp.placeholders(cmd)}
             args.update(self.variables)
             args.update(arguments)
-            expanded_step.add(Template(cmd).substitute(args))
+            expanded_step.add(Template(cmd).substitute(args).strip())
         # Create mapping for environment variables.
         environment = dict(self.env)
         environment.update(step.env)

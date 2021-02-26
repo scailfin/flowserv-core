@@ -134,10 +134,10 @@ class SerialWorkflow(object):
         if image is not None and not func and not output and not varnames:
             return self.add_container_step(image=image, commands=commands, env=env)
         elif func is not None and not image and not commands and not env:
-            return self.add_code_step(func=func, output=output, varnames=varnames)
+            return self.add_function_step(func=func, output=output, varnames=varnames)
         raise ValueError('invalid combination of arguments')
 
-    def add_code_step(
+    def add_function_step(
         self, func: Callable, output: Optional[str] = None,
         varnames: Optional[Dict] = None
     ) -> SerialWorkflow:

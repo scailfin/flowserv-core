@@ -8,8 +8,12 @@
 
 """Unit tests for the serial workflow run result class."""
 
+import pytest
+
 from flowserv.controller.serial.workflow.result import ExecResult, RunResult
 from flowserv.model.workflow.step import ContainerStep
+
+import flowserv.error as err
 
 
 def test_empty_run_result():
@@ -30,10 +34,16 @@ def test_error_run_result():
     assert r.exception is None
     assert r.returncode == 0
     r.add(ExecResult(step=ContainerStep(image='test'), returncode=1, stderr=['e1', 'e2'], exception=ValueError()))
+    with pytest.raises(ValueError):
+        r.raise_for_status()
     assert r.exception is not None
     assert r.returncode == 1
     assert r.stdout == []
     assert r.stderr == ['e1', 'e2']
+    r = RunResult(arguments={})
+    r.add(ExecResult(step=ContainerStep(image='test'), returncode=1, stderr=['e1', 'e2']))
+    with pytest.raises(err.FlowservError):
+        r.raise_for_status()
 
 
 def test_successful_run_result():
@@ -45,6 +55,7 @@ def test_successful_run_result():
     r.context['b'] = 1
     assert r.exception is None
     assert r.returncode == 0
+    r.raise_for_status()
     assert r.stdout == ['o1', 'o2', 'o3']
     assert r.stderr == []
     assert r.get('a') == 2

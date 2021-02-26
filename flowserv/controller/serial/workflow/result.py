@@ -13,6 +13,8 @@ from typing import Any, Dict, List, Optional
 
 from flowserv.model.workflow.step import WorkflowStep
 
+import flowserv.error as err
+
 
 @dataclass
 class ExecResult:
@@ -108,6 +110,20 @@ class RunResult(object):
         list of string
         """
         return self.stdout + self.stderr
+
+    def raise_for_status(self):
+        """Raise an error if the returncode for this result is not zero.
+
+        Will re-raise a cought exception (if set). Otherwise, raises a
+        FlowservError.
+        """
+        if self.returncode == 0:
+            # Do nothing if the returncode is 0.
+            return
+        if self.exception:
+            # Re-raise exception if one was caught.
+            raise self.exception
+        raise err.FlowservError('\n'.join(self.stderr))
 
     @property
     def returncode(self) -> int:
