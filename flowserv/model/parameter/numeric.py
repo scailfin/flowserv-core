@@ -311,8 +311,6 @@ class Numeric(Parameter):
         elif self.dtype == PARA_INT:
             try:
                 value = int(value)
-            except OverflowError:
-                value = float('inf')
             except (TypeError, ValueError):
                 raise err.InvalidArgumentError("no int '{}'".format(value))
         else:

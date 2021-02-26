@@ -60,6 +60,7 @@ def test_range_boundary(boundary, left, right):
     'left,right,result',
     [
         (Boundary(1), Boundary(5), True),
+        (1, 5, True),
         (Boundary(1), Boundary(5, is_closed=False), False),
         (Boundary(1), None, True),
         (None, Boundary(1), False)
@@ -153,6 +154,14 @@ def test_create_numeric_parameter_error():
         })
 
 
+def test_numeric_parameter():
+    """Test creating instances of numeric parameters."""
+    para = Int('val')
+    assert para.is_int()
+    para = Float('val')
+    assert para.is_float()
+
+
 @pytest.mark.parametrize(
     'dtype,range',
     [
@@ -162,7 +171,7 @@ def test_create_numeric_parameter_error():
         (PARA_FLOAT, '(5,]')
     ]
 )
-def test_numeric_parameter(dtype, range):
+def test_numeric_parameter_deserialization(dtype, range):
     """Test creating numeric parameters from dictinaries."""
     doc = {
         'name': '0000',

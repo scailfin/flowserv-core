@@ -20,7 +20,7 @@ from flowserv.model.workflow.step import ContainerStep
 
 # Test files directory
 DIR = os.path.dirname(os.path.realpath(__file__))
-RUN_DIR = os.path.join(DIR, '../../../.files')
+RUN_DIR = os.path.join(DIR, '../../.files')
 
 
 # -- Patching for error condition testing -------------------------------------

@@ -6,28 +6,27 @@
 # flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
-"""Declarations for string parameter values. String parameters do not add any
-additional properties to the base parameter class.
-"""
+"""Declarations for parameters that represent actors (steps) in a workflow."""
 
 from __future__ import annotations
-from typing import Any, Dict, Optional
+from typing import Dict, List, Optional, Tuple, Union
 
-from flowserv.model.parameter.base import Parameter, PARA_STRING
+from flowserv.model.parameter.base import Parameter, PARA_ACTOR
+from flowserv.model.workflow.step import ContainerStep, WorkflowStep, CONTAINER_STEP
 
 import flowserv.error as err
 import flowserv.model.parameter.base as pd
 import flowserv.util as util
 
 
-class String(Parameter):
-    """String parameter type."""
+class Actor(Parameter):
+    """Workflow actor parameter type."""
     def __init__(
         self, name: str, index: Optional[int] = 0, label: Optional[str] = None,
         help: Optional[str] = None, default: Optional[str] = None,
         required: Optional[bool] = False, group: Optional[str] = None
     ):
-        """Initialize the base properties a string parameter declaration.
+        """Initialize the base properties a actor parameter declaration.
 
         Parameters
         ----------
@@ -47,8 +46,8 @@ class String(Parameter):
             Optional identifier for parameter group that this parameter
             belongs to.
         """
-        super(String, self).__init__(
-            dtype=PARA_STRING,
+        super(Actor, self).__init__(
+            dtype=PARA_ACTOR,
             name=name,
             index=index,
             label=label,
@@ -58,23 +57,40 @@ class String(Parameter):
             group=group
         )
 
-    def cast(self, value: Any) -> str:
-        """Convert the given value into a string value.
+    def cast(self, value: Union[List[str, Dict], Tuple[str, Dict]]) -> WorkflowStep:
+        """Convert the given serialization into a workflow step.
+
+        The given tuple contains the workflow step type identifier (str) and
+        a type-specific serialization of the step properties.
+
+        For values that represent a :class:ContainerStep the dictionary elements
+        are: `image`, `commands`, and `env`. The first two elements are mandatory.
 
         Parameters
         ----------
-        value: any
-            User-provided value for a template parameter.
+        value: list or tuple with str and dict
+            Pair of workflow step type identifier and type-specific values.
 
         Returns
         -------
-        sting
+        flowserv.model.workflow.step.WorkflowStep
         """
-        return str(value)
+        step_type, step_val = value
+        if step_type == CONTAINER_STEP:
+            try:
+                return ContainerStep(
+                    image=step_val['image'],
+                    commands=step_val['commands'],
+                    env=step_val.get('env')
+                )
+            except KeyError as ex:
+                raise err.InvalidArgumentError(str(ex))
+        raise err.InvalidArgumentError("unknown workflow step type '{}'".format(step_type))
 
     @staticmethod
-    def from_dict(doc: Dict, validate: Optional[bool] = True) -> String:
-        """Get string parameter instance from a given dictionary serialization.
+    def from_dict(doc: Dict, validate: Optional[bool] = True) -> Actor:
+        """Get an actor parameter instance from a given dictionary
+        serialization.
 
         Parameters
         ----------
@@ -98,9 +114,9 @@ class String(Parameter):
                 optional=pd.OPTIONAL,
                 exception=err.InvalidParameterError
             )
-            if doc[pd.TYPE] != PARA_STRING:
+            if doc[pd.TYPE] != PARA_ACTOR:
                 raise ValueError("invalid type '{}'".format(doc[pd.TYPE]))
-        return String(
+        return Actor(
             name=doc[pd.NAME],
             index=doc[pd.INDEX],
             label=doc.get(pd.LABEL),

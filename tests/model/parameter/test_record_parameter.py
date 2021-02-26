@@ -29,6 +29,16 @@ def test_invalid_serialization():
     }
     # Ensure that the original document is valid.
     Record.from_dict(doc, validate=True)
+    # Invalid dtype value.
+    with pytest.raises(ValueError):
+        Record.from_dict(doc={
+            'name': '0000',
+            'dtype': 'unknown',
+            'index': 0,
+            'label': 'Record',
+            'isRequired': True,
+            'fields': [Bool('0001').to_dict()]
+        }, validate=True)
     # Removing a field name will not raise a InvalidParameterError if we do not
     # validate the document but it raises a KeyError when an attempt is made to
     # access the field name.
@@ -50,6 +60,8 @@ def test_invalid_serialization():
     doc['fields'] = [field, field]
     with pytest.raises(err.InvalidParameterError):
         Record.from_dict(doc, validate=False)
+    with pytest.raises(err.InvalidParameterError):
+        Record('0', fields=[Bool('0001'), Bool('0001')])
 
 
 def test_record_parameter_from_dict():
@@ -86,9 +98,14 @@ def test_record_parameter_from_dict():
 
 def test_record_parameter_value():
     """Test getting argument value for a record parameter."""
-    para = Record('R', fields=[Bool('f1', required=True), Int('f2', default=10)])
-    assert para.cast([{'name': 'f1', 'value': True}]) == {'f1': True, 'f2': 10}
-    value = [{'name': 'f1', 'value': True}, {'name': 'f2', 'value': '5'}]
-    assert para.cast(value) == {'f1': True, 'f2': 5}
+    para = Record('R', fields=[Bool('f1', required=True), Int('f2', default=10), Int('f3')])
+    value = [{'name': 'f1', 'value': True}, {'name': 'f3', 'value': '6'}]
+    assert para.cast(value) == {'f1': True, 'f2': 10, 'f3': 6}
+    value = [{'name': 'f1', 'value': True}]
+    assert para.cast(value) == {'f1': True, 'f2': 10}
     with pytest.raises(err.InvalidArgumentError):
-        para.cast([{'name': 'f2', 'value': '5'}])
+        para.cast([])
+    with pytest.raises(err.InvalidArgumentError):
+        para.cast('a')
+    with pytest.raises(err.InvalidArgumentError):
+        para.cast([{'name': 'f4', 'value': '5'}])

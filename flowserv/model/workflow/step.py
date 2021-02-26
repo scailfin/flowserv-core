@@ -29,16 +29,17 @@ import inspect
 
 
 """Unique identifier for workflow step types."""
-CONTAINER_STEP = 0
-FUNCTION_STEP = 1
+CONTAINER_STEP = 'container'
+FUNCTION_STEP = 'func'
 
 STEPS = [CONTAINER_STEP, FUNCTION_STEP]
 
 
 class WorkflowStep(object):
-    """Base class for the different types of steps in a serial workflow. By now
-    we distinguish between workflow steps that are executed in a container-like
-    environment and steps that execute a given Python function.
+    """Base class for the different types of steps (actor) in a serial workflow.
+
+    We distinguish several workflow steps including steps that are executed in
+    a container-like environment and steps that directly execute Python code.
 
     The aim of this base class is to provide functions to distinguish between
     these two types of steps.
@@ -51,7 +52,7 @@ class WorkflowStep(object):
         Parameters
         ----------
         step_type: int
-            Either 0 (ContainerStep) or 1 (FunctionStep).
+            Either CONTAINER_STEP or FUNCTION_STEP.
         """
         if step_type not in STEPS:
             raise ValueError("invalid step type '{}'".format(step_type))
@@ -96,7 +97,7 @@ class ContainerStep(WorkflowStep):
         env: dict, default=None
             Environment variables for workflow step execution.
         """
-        super(ContainerStep, self).__init__(step_type=0)
+        super(ContainerStep, self).__init__(step_type=CONTAINER_STEP)
         self.image = image
         self.commands = commands if commands is not None else list()
         self.env = env if env is not None else dict()
@@ -151,7 +152,7 @@ class FunctionStep(WorkflowStep):
             the function signature that do not occur in the arguments dictionary
             to argument names that are in the dictionary.
         """
-        super(FunctionStep, self).__init__(step_type=1)
+        super(FunctionStep, self).__init__(step_type=FUNCTION_STEP)
         self.func = func
         self.output = output
         self.varnames = varnames if varnames is not None else dict()

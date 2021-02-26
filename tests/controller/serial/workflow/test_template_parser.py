@@ -17,8 +17,10 @@ import flowserv.util as util
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))
+BENCHMARK_DIR = os.path.join(DIR, '../../../.files/benchmark')
 TEMPLATE_DIR = os.path.join(DIR, '../../../.files/template')
 TEMPLATE_HELLOWORLD = os.path.join(TEMPLATE_DIR, './hello-world.yaml')
+TEMPLATE_TOPTAGGER = os.path.join(BENCHMARK_DIR, './top-tagger.yaml')
 
 
 def test_parse_hello_world_template():
@@ -32,3 +34,17 @@ def test_parse_hello_world_template():
     assert step.commands[0] == 'python "${helloworld}" --inputfile "${inputfile}" --outputfile "${outputfile}" --sleeptime ${sleeptime}'  # noqa: E501
     assert output_files == ['results/greetings.txt']
     assert args == {'helloworld': 'code/helloworld.py', 'inputfile': 'names.txt', 'outputfile': 'results/greetings.txt', 'sleeptime': '10'}  # noqa: E501
+
+
+def test_parse_top_tagger_template():
+    """Test parsing the Top-Tagger template that contains parameter references
+    as workflow steps.
+    """
+    template = WorkflowTemplate.from_dict(doc=util.read_object(TEMPLATE_TOPTAGGER))
+    args = {'tagger': ('container', {'image': 'test', 'commands': ['python analyze']})}
+    steps, _, _ = parser.parse_template(template=template, arguments=args)
+    assert len(steps) == 2
+    step = steps[0]
+    assert step.image == 'test'
+    assert len(step.commands) == 1
+    assert step.commands[0] == 'python analyze'

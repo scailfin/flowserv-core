@@ -8,12 +8,8 @@ workflow:
       type: 'serial'
       specification:
         steps:
-          - environment: '$[[env_preproc]]'
-            commands:
-              - '$[[cmd_preproc]]'
-          - environment: '$[[env_eval]]'
-            commands:
-              - '$[[cmd_eval]]'
+          - $[[preproc]]
+          - $[[tagger]]
           - environment: 'toptagger:1.0'
             commands:
               - 'python code/save-probabilities.py data/evaluate/ results/'
@@ -41,36 +37,25 @@ parameterGroups:
       title: 'ML Evaluation Step'
       index: 1
 parameters:
-    - name: 'env_preproc'
-      label: 'Environment (Pre-Processing)'
-      dtype: 'string'
-      defaultValue: 'toptagger:1.0'
+    - name: 'preproc'
+      label: 'Pre-Processing step'
+      dtype: 'actor'
+      defaultValue:
+          - 'container'
+          - image: 'toptagger:1.0'
+            commands:
+                - python code/preprocess-dataset.py
       index: 0
       group: 'preproc'
-    - name: 'cmd_preproc'
-      label: 'Command  (Pre-Processing)'
-      dtype: 'string'
-      defaultValue: 'python code/preprocess-dataset.py
-        data/test_jets.pkl
-        data/preprocess/jet_image_trim_pt800-900_card.dat
-        data/preprocess/transformer.pkl
-        results/'
-      index: 1
-      group: 'preproc'
-    - name: 'env_eval'
-      label: 'Environment (ML)'
-      dtype: 'string'
-      defaultValue: 'toptagger:1.0'
+    - name: 'tagger'
+      label: 'Tagger Step'
+      dtype: 'actor'
+      defaultValue:
+          - 'container'
+          - image: 'toptagger:1.0'
+            commands:
+                - python code/evaluate-models.py
       index: 2
-      group: 'eval'
-    - name: 'cmd_eval'
-      label: 'Command (ML)'
-      dtype: 'string'
-      defaultValue: 'python code/evaluate-models.py
-        results/processed_test_jets.pkl
-        data/evaluate/
-        results'
-      index: 3
       group: 'eval'
 results:
     file: 'results/results.json'

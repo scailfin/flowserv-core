@@ -354,10 +354,7 @@ class LocalRunService(RunService):
                     group_id=group_id,
                     file_id=file_id
                 ).fileobj
-                run_args[arg_id] = para.cast(
-                    value=fileobj,
-                    target=target
-                )
+                run_args[arg_id] = para.cast(value=(fileobj, target))
             else:
                 run_args[arg_id] = para.cast(arg_val)
         # Before we start creating directories and copying files make sure that

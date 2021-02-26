@@ -11,7 +11,7 @@ for a single parameter declaration.
 """
 
 from __future__ import annotations
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 from flowserv.model.parameter.base import Parameter, PARA_LIST
 
@@ -64,7 +64,7 @@ class Array(Parameter):
         )
         self.para = para
 
-    def cast(self, value: Any) -> List:
+    def cast(self, value: List) -> List:
         """Convert the given value into a list where each value in the given
         list has been converted using the parameter declaration for the list
         parameter.

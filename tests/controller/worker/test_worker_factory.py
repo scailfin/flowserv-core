@@ -22,7 +22,7 @@ import flowserv.util as util
 
 # Config files.
 DIR = os.path.dirname(os.path.realpath(__file__))
-CONFIG_DIR = os.path.join(DIR, '../../../.files/controller')
+CONFIG_DIR = os.path.join(DIR, '../../.files/controller')
 JSON_FILE = os.path.join(CONFIG_DIR, 'worker.json')
 YAML_FILE = os.path.join(CONFIG_DIR, 'worker.yaml')
 

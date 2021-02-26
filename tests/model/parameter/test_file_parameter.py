@@ -105,4 +105,4 @@ def test_file_parameter_value(tmpdir):
     assert file.target() == 'data/names.txt'
     # Invalid argument.
     with pytest.raises(err.InvalidArgumentError):
-        para.cast(value={'A': 1}, target='/dev/null')
+        para.cast(value=({'A': 1}, '/dev/null'))

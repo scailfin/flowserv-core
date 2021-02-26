@@ -36,10 +36,19 @@ def parse_template(template: WorkflowTemplate, arguments: Dict) -> Tuple[List[Co
     workflow_spec = template.workflow_spec
     steps = list()
     for step in workflow_spec.get('workflow', {}).get('specification', {}).get('steps', []):
-        script = ContainerStep(image=step.get('environment'))
-        for cmd in step.get('commands', []):
-            script.add(cmd)
-        steps.append(script)
+        # Workflow steps may either be parameter references or dictionaries
+        # with `image` and `commands` elements.
+        script = None
+        if tp.is_parameter(step):
+            para = template.parameters[tp.get_name(step)]
+            if para.name in arguments:
+                script = para.cast(arguments[para.name])
+        else:
+            script = ContainerStep(image=step.get('environment'))
+            for cmd in step.get('commands', []):
+                script.add(cmd)
+        if script:
+            steps.append(script)
     # Get the workflow arguments that are defined in the workflow template.
     # Expand template parameter references using the given argument set.
     run_args = workflow_spec.get('inputs', {}).get('parameters', {})

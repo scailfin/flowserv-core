@@ -14,8 +14,8 @@ from typing import Dict, Optional
 
 from flowserv.model.parameter.base import Parameter, TYPE
 from flowserv.model.parameter.base import (
-    PARA_BOOL, PARA_FILE, PARA_FLOAT, PARA_INT, PARA_LIST, PARA_RECORD,
-    PARA_SELECT, PARA_STRING
+    PARA_ACTOR, PARA_BOOL, PARA_FILE, PARA_FLOAT, PARA_INT, PARA_LIST,
+    PARA_RECORD, PARA_SELECT, PARA_STRING
 )
 from flowserv.model.parameter.boolean import Bool
 from flowserv.model.parameter.enum import Select
@@ -23,6 +23,7 @@ from flowserv.model.parameter.files import File
 from flowserv.model.parameter.list import Array
 from flowserv.model.parameter.numeric import Int, Float
 from flowserv.model.parameter.record import Record
+from flowserv.model.parameter.step import Actor
 from flowserv.model.parameter.string import String
 
 import flowserv.error as err
@@ -30,6 +31,7 @@ import flowserv.error as err
 
 """Dictionary of known parameter types. New types have to be added here."""
 PARAMETER_TYPES = {
+    PARA_ACTOR: Actor,
     PARA_BOOL: Bool,
     PARA_SELECT: Select,
     PARA_FILE: File,

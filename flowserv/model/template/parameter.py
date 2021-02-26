@@ -312,7 +312,7 @@ def is_parameter(value):
     bool
     """
     # Check if the value matches the template parameter reference pattern
-    return value.startswith('$[[') and value.endswith(']]')
+    return isinstance(value, str) and value.startswith('$[[') and value.endswith(']]')
 
 
 def placeholders(text: str) -> Set[str]:

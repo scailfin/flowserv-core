@@ -15,7 +15,9 @@ import os
 import pytest
 import subprocess
 
+from flowserv.controller.serial.engine.base import run_workflow
 from flowserv.controller.serial.workflow.base import SerialWorkflow
+from flowserv.model.workflow.state import StatePending, STATE_ERROR
 
 
 # -- Patch subprocess run -----------------------------------------------------
@@ -59,6 +61,20 @@ def test_error_run(mock_subprocess, workflow, tmpdir):
     assert r.steps[1].step.commands == ['py error']
     assert r.stdout == ['input 0', '\n']
     assert r.stderr != []
+
+
+def test_run_workflow_error(tmpdir):
+    """Test error edge case for the run_workflow function."""
+    _, _, result = run_workflow(
+        run_id='0',
+        rundir=tmpdir,
+        state=StatePending(),
+        output_files=[],
+        steps=None,
+        arguments=dict(),
+        workers=None
+    )
+    assert result['type'] == STATE_ERROR
 
 
 def test_successful_run(mock_subprocess, workflow, tmpdir):
