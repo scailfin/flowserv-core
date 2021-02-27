@@ -31,7 +31,7 @@ class MockClient:
     def containers(self):
         return self
 
-    def run(self, image, command, volumes, auto_remove, environment, stdout):
+    def run(self, image, command, volumes, remove, environment, stdout):
         """Mock run for docker container."""
         return command.encode('utf-8')
 
