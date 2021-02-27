@@ -31,11 +31,14 @@ class ContainerEngine(metaclass=ABCMeta):
         """Initialize the optional mapping with default values for placeholders
         in command template strings.
 
+        The default values for placeholder variables a fixed in the sense that
+        they cannot be overriden by user-provided argument values.
+
         Parameters
         ----------
         variables: dict, default=None
-            Mapping with default values for placeholders in command template
-            strings.
+            Mapping with fixed default values for placeholders in command
+            template strings.
         env: dict, default=None
             Default settings for environment variables when executing workflow
             steps. These settings can get overridden by step-specific settings.
@@ -72,8 +75,9 @@ class ContainerEngine(metaclass=ABCMeta):
             # Generate mapping for template substitution. Include a mapping of
             # placeholder names to themselves.
             args = {p: p for p in tp.placeholders(cmd)}
-            args.update(self.variables)
             args.update(arguments)
+            # Update arguments with fixed variables.
+            args.update(self.variables)
             expanded_step.add(Template(cmd).substitute(args).strip())
         # Create mapping for environment variables.
         environment = dict(self.env)
@@ -100,9 +104,3 @@ class ContainerEngine(metaclass=ABCMeta):
         flowserv.controller.serial.workflow.result.ExecResult
         """
         raise NotImplementedError()  # pragma: no cover
-
-
-class WorkerFactory(object):
-    """
-    """
-    pass
