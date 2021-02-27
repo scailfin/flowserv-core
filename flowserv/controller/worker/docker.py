@@ -87,7 +87,7 @@ class DockerWorker(ContainerEngine):
                     image=step.image,
                     command=cmd,
                     volumes=volumes,
-                    auto_remove=True,
+                    remove=True,
                     environment=env,
                     stdout=True
                 )
