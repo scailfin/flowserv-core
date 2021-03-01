@@ -14,12 +14,12 @@ variables and to customize the configuration settings.
 
 from __future__ import annotations
 from appdirs import user_cache_dir
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, Union
 
 import os
 
 import flowserv.error as err
-
+import flowserv.util as util
 
 # --
 # -- Environment variables and default values
@@ -351,7 +351,7 @@ class Config(dict):
         self[FLOWSERV_SERIAL_WORKERS] = config
         return self
 
-    def worker_config(self) -> Dict:
+    def worker_config(self) -> Union[Dict, List]:
         """Get the configuration settings for workers that are used by the
         serial workflow controller.
 
@@ -359,9 +359,12 @@ class Config(dict):
 
         Returns
         -------
-        dict
+        dict of list
         """
-        return self.get(FLOWSERV_SERIAL_WORKERS, dict())
+        wconf = self.get(FLOWSERV_SERIAL_WORKERS, dict())
+        if wconf and isinstance(wconf, str):
+            wconf = util.read_object(filename=wconf)
+        return wconf if wconf else dict()
 
 
 # -- Initialize configuration from environment variables ----------------------
@@ -438,6 +441,7 @@ ENV = [
     (FLOWSERV_AUTH, AUTH_DEFAULT, None),
     (FLOWSERV_BACKEND_CLASS, None, None),
     (FLOWSERV_BACKEND_MODULE, None, None),
+    (FLOWSERV_SERIAL_WORKERS, None, None),
     (FLOWSERV_RUNSDIR, None, None),
     (FLOWSERV_POLL_INTERVAL, DEFAULT_POLL_INTERVAL, to_float),
     (FLOWSERV_ACCESS_TOKEN, None, None),

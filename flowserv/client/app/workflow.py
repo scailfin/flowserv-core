@@ -248,8 +248,6 @@ class Workflow(object):
                         name=key
                     )
                     val = serialize_fh(fh[filelbls.FILE_ID], target=target)
-                else:
-                    val = para.cast(val)
                 arglist.append(serialize_arg(key, val))
             # Execute the run and return the serialized run handle.
             run = api.runs().start_run(

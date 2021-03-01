@@ -69,6 +69,7 @@ class SerialWorkflowEngine(WorkflowController):
         self.fs = FS(env=service)
         self.service = service
         self.worker_config = worker_config if worker_config else service.worker_config()
+        logging.info("workers {}".format(self.worker_config))
         # The is_async flag controlls the default setting for asynchronous
         # execution. If the flag is False all workflow steps will be executed
         # in a sequentiall (blocking) manner.
@@ -77,6 +78,7 @@ class SerialWorkflowEngine(WorkflowController):
         basedir = service.get(FLOWSERV_BASEDIR)
         if basedir is None:
             raise err.MissingConfigurationError('API base directory')
+        logging.info('base dir {}'.format(basedir))
         self.runsdir = service.get(FLOWSERV_RUNSDIR, os.path.join(basedir, DEFAULT_RUNSDIR))
         # Dictionary of all running tasks
         self.tasks = dict()

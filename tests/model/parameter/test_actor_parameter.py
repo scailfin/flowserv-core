@@ -52,6 +52,10 @@ def test_actor_step_factory():
     assert step.is_container_step()
     assert step.image == 'test'
     assert step.commands == ['step1']
+    step = para.cast(step)
+    assert step.is_container_step()
+    assert step.image == 'test'
+    assert step.commands == ['step1']
     # From list with additional environment settings.
     step = para.cast([CONTAINER_STEP, {'image': 'test', 'commands': ['step1'], 'env': {'a': 'x'}}])
     assert step.is_container_step()

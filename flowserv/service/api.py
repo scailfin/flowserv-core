@@ -11,7 +11,7 @@ managed by different components of the API.
 """
 
 from abc import ABCMeta
-from typing import Dict, Optional
+from typing import Dict
 
 from flowserv.config import Config
 from flowserv.controller.base import WorkflowController

@@ -75,6 +75,8 @@ class Actor(Parameter):
         -------
         flowserv.model.workflow.step.WorkflowStep
         """
+        if isinstance(value, ContainerStep):
+            return value
         step_type, step_val = value
         if step_type == CONTAINER_STEP:
             try:
