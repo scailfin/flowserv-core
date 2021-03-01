@@ -42,6 +42,7 @@ def test_create_group(fscls, database, tmpdir):
         )
         assert group.name == 'Group 1'
         assert group.owner_id == user_id
+        assert group.engine_config is None
         assert len(group.members) == 1
         assert isinstance(group.parameters, dict)
         assert len(group.parameters) == 0
@@ -56,7 +57,8 @@ def test_create_group(fscls, database, tmpdir):
         assert len(group.parameters) == 0
         assert isinstance(group.workflow_spec, dict)
         assert len(group.workflow_spec) == 0
-    # -- Test create group with duplicate members -----------------------------
+    # -- Test create group with duplicate members and different config --------
+    engine_config = {'workers': {'test': {'worker': 'docker'}}}
     with database.session() as session:
         manager = WorkflowGroupManager(session=session, fs=fs)
         group = manager.create_group(
@@ -65,9 +67,11 @@ def test_create_group(fscls, database, tmpdir):
             user_id=user_id,
             parameters=ParameterIndex(),
             workflow_spec=dict(),
-            members=[user_id, user_id, user_id]
+            members=[user_id, user_id, user_id],
+            engine_config=engine_config
         )
         assert len(group.members) == 1
+        assert group.engine_config == engine_config
         # Retrieve the group from the database
         group = manager.get_group(group.group_id)
         assert len(group.members) == 1

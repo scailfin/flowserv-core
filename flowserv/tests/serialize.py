@@ -71,7 +71,7 @@ def validate_group_handle(doc):
     util.validate_doc(
         doc=doc,
         mandatory=['id', 'name', 'workflow', 'members', 'parameters', 'files'],
-        optional=['runs']
+        optional=['runs', 'config']
     )
 
 

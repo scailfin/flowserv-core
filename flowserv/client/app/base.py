@@ -32,8 +32,8 @@ class Flowserv(object):
     """
     def __init__(
         self, env: Optional[Dict] = None, basedir: Optional[str] = None,
-        database: Optional[str] = None, open_access: Optional[bool] = None,
-        run_async: Optional[bool] = None, docker: Optional[bool] = None,
+        database: Optional[str] = None, workers: Optional[Dict] = None,
+        open_access: Optional[bool] = None, run_async: Optional[bool] = None,
         s3bucket: Optional[str] = None, clear: Optional[bool] = False,
         user_id: Optional[str] = None
     ):
@@ -48,12 +48,15 @@ class Flowserv(object):
         basedir: string, default=None
             Base directory for all workflow files. If no directory is given or
             specified in the environment a temporary directory will be created.
+        database: str, defualt=None
+            Databse connection Url.
+        workers: dict, default=None
+            Mapping of container image identifier to worker specifications that
+            are used to create an instance of a :class:ContainerEngine worker.
         open_access: bool, default=None
             Use an open access policy if set to True.
         run_async: bool, default=False
             Run workflows in asynchronous mode.
-        docker: bool, default=False
-            Use Docker workflow engine.
         s3bucket: string, default=None
             Use the S3 bucket with the given identifier to store all workflow
             files.
@@ -80,16 +83,16 @@ class Flowserv(object):
             env=self.env,
             basedir=self.basedir,
             database=database,
+            workers=workers,
             open_access=open_access,
             run_async=run_async,
-            docker=docker,
             s3bucket=s3bucket,
             user_id=user_id
         )
 
     def create_submission(
         self, workflow_id: str, name: str, members: Optional[List[str]] = None,
-        parameters: Optional[List[Parameter]] = None
+        parameters: Optional[List[Parameter]] = None, engine_config: Optional[Dict] = None
     ) -> str:
         """Create a new user group for a given workflow. Each group has a
         a unique name for the workflow, a list of additional group members, and
@@ -107,6 +110,9 @@ class Flowserv(object):
         parameters: list of flowserv.model.parameter.base.Parameter, default=None
             Optional list of parameter declarations that are used to modify the
             template parameters for submissions of the created group.
+        engine_config: dict, default=None
+            Optional configuration settings that will be used as the default
+            when running a workflow.
 
         Returns
         -------
@@ -117,7 +123,8 @@ class Flowserv(object):
                 workflow_id=workflow_id,
                 name=name,
                 members=members,
-                parameters=parameters
+                parameters=parameters,
+                engine_config=engine_config
             )
         return doc[GROUP_ID]
 
@@ -135,6 +142,7 @@ class Flowserv(object):
         instructions: Optional[str] = None,
         specfile: Optional[str] = None,
         manifestfile: Optional[str] = None,
+        engine_config: Optional[Dict] = None,
         ignore_postproc: Optional[bool] = False,
         multi_user: Optional[bool] = False
 
@@ -166,6 +174,9 @@ class Flowserv(object):
         manifestfile: string, default=None
             Path to manifest file. If not given an attempt is made to read one
             of the default manifest file names in the base directory.
+        engine_config: dict, default=None
+            Optional configuration settings that will be used as the default
+            when running a workflow.
         ignore_postproc: bool, default=False
             Ignore post-processing workflow specification if True.
         multi_user: bool, default=False
@@ -185,6 +196,7 @@ class Flowserv(object):
                 instructions=instructions,
                 specfile=specfile,
                 manifestfile=manifestfile,
+                engine_config=engine_config,
                 ignore_postproc=ignore_postproc
             )
             workflow_id = doc[labels.WORKFLOW_ID]
@@ -192,6 +204,7 @@ class Flowserv(object):
                 api.groups().create_group(
                     workflow_id=workflow_id,
                     name=workflow_id,
+                    engine_config=engine_config,
                     identifier=workflow_id
                 )
         return workflow_id

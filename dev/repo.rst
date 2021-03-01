@@ -92,7 +92,7 @@ UML Diagram
 
 The UML diagram for the relevant classes is shown below:
 
-.. figure:: figures/repository.png
+.. figure:: ../figures/repository.png
    :scale: 50 %
    :alt: UML Diagram for Repositories
 

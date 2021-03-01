@@ -282,7 +282,9 @@ class LocalRunService(RunService):
             runs=self.run_manager.list_runs(group_id=group_id, state=state)
         )
 
-    def start_run(self, group_id: str, arguments: List[Dict]) -> Dict:
+    def start_run(
+        self, group_id: str, arguments: List[Dict], config: Optional[Dict] = None
+    ) -> Dict:
         """Start a new workflow run for the given group. The user provided
         arguments are expected to be a list of (key,value)-pairs. The key value
         identifies the template parameter. The data type of the value depends
@@ -299,6 +301,9 @@ class LocalRunService(RunService):
             Unique workflow group identifier
         arguments: list(dict)
             List of user provided arguments for template parameters.
+        config: dict, default=None
+            Optional implementation-specific configuration settings that can be
+            used to overwrite settings that were intialized at object creation.
 
         Returns
         -------
@@ -349,10 +354,7 @@ class LocalRunService(RunService):
                     group_id=group_id,
                     file_id=file_id
                 ).fileobj
-                run_args[arg_id] = para.cast(
-                    value=fileobj,
-                    target=target
-                )
+                run_args[arg_id] = para.cast(value=(fileobj, target))
             else:
                 run_args[arg_id] = para.cast(arg_val)
         # Before we start creating directories and copying files make sure that
@@ -365,10 +367,14 @@ class LocalRunService(RunService):
             arguments=arguments
         )
         run_id = run.run_id
+        # Use default engine configuration if the configuration argument was
+        # not given.
+        config = config if config else group.engine_config
         state, rundir = self.backend.exec_workflow(
             run=run,
             template=template,
-            arguments=run_args
+            arguments=run_args,
+            config=config
         )
         # Update the run state if it is no longer pending for execution. Make
         # sure to call the update run method for the server to ensure that
@@ -496,7 +502,8 @@ def run_postproc_workflow(
                 workflow_spec=workflow_spec,
                 parameters=postbase.PARAMETERS
             ),
-            arguments=run_args
+            arguments=run_args,
+            config=workflow.engine_config
         )
         # Update the post-processing workflow run state if it is
         # no longer pending for execution.

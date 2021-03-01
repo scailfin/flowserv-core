@@ -14,6 +14,7 @@ from flowserv.client.api import service
 from flowserv.client.cli.table import ResultTable
 from flowserv.model.parameter.base import PARA_INT, PARA_STRING
 
+import flowserv.util as util
 import flowserv.view.files as filelabels
 import flowserv.view.group as labels
 
@@ -24,15 +25,23 @@ import flowserv.view.group as labels
 @click.option('-w', '--workflow', required=False, help='Workflow identifier')
 @click.option('-n', '--name', required=True, help='Group name')
 @click.option('-m', '--members', required=False, help='Group members')
+@click.option(
+    '-c', '--configfile',
+    type=click.Path(exists=True),
+    required=False,
+    help='Group identifier'
+)
 @click.pass_context
-def create_group(ctx, workflow, name, members):
+def create_group(ctx, workflow, name, members, configfile):
     """Create a new user group."""
     workflow_id = ctx.obj.get_workflow(ctx.params)
+    config = util.read_object(configfile) if configfile else None
     with service() as api:
         doc = api.groups().create_group(
             workflow_id=workflow_id,
             name=name,
-            members=members.split(',') if members is not None else None
+            members=members.split(',') if members is not None else None,
+            engine_config=config
         )
     group_id = doc[labels.GROUP_ID]
     click.echo('export {}={}'.format(ctx.obj.vars['group'], group_id))

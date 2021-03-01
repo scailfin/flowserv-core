@@ -17,7 +17,7 @@ import shutil
 import tempfile
 
 from contextlib import contextmanager
-from typing import Optional
+from typing import Dict, Optional
 
 from flowserv.model.base import WorkflowObject
 from flowserv.model.constraint import validate_identifier
@@ -58,7 +58,7 @@ class WorkflowManager(object):
         self, source: str, identifier: Optional[str] = None,
         name: Optional[str] = None, description: Optional[str] = None,
         instructions: Optional[str] = None, specfile: Optional[str] = None,
-        manifestfile: Optional[str] = None,
+        manifestfile: Optional[str] = None, engine_config: Optional[Dict] = None,
         ignore_postproc: Optional[bool] = False
     ) -> WorkflowObject:
         """Add new workflow to the repository. The associated workflow template
@@ -103,6 +103,9 @@ class WorkflowManager(object):
         manifestfile: string, default=None
             Path to manifest file. If not given an attempt is made to read one
             of the default manifest file names in the base directory.
+        engine_config: dict, default=None
+            Optional configuration settings that will be used as the default
+            when running the workflow and the post-processing workflow.
         ignore_postproc: bool, default=False
             Ignore post-processing workflow specification if True.
 
@@ -150,6 +153,7 @@ class WorkflowManager(object):
             parameters=template.parameters,
             parameter_groups=template.parameter_groups,
             outputs=template.outputs,
+            engine_config=engine_config,
             postproc_spec=template.postproc_spec,
             ignore_postproc=ignore_postproc,
             result_schema=template.result_schema

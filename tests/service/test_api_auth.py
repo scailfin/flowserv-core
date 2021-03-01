@@ -25,3 +25,5 @@ def test_api_authenticate(local_service):
     assert local_service[config.FLOWSERV_ACCESS_TOKEN] is not None
     local_service.logout()
     assert config.FLOWSERV_ACCESS_TOKEN not in local_service
+    # No error when logout is called without a valid access token being set.
+    local_service.logout()

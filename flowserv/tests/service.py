@@ -148,7 +148,7 @@ def start_hello_world(api, group_id):
     return run_id, file_id
 
 
-def start_run(api, group_id, arguments=list()):
+def start_run(api, group_id, arguments=list(), config=None):
     """Start a new workflow run for a given group. Returns the identifier of
     the started run.
 
@@ -162,6 +162,8 @@ def start_run(api, group_id, arguments=list()):
         Unique user identifier.
     arguments: list, default=None
         Optional arguments to run the workflow.
+    config: dict, default=None
+        Optional configuration settings for the workflow run.
 
     Returns
     -------
@@ -169,7 +171,8 @@ def start_run(api, group_id, arguments=list()):
     """
     return api.runs().start_run(
         group_id=group_id,
-        arguments=arguments
+        arguments=arguments,
+        config=config
     )['id']
 
 

@@ -38,6 +38,15 @@ def test_invalid_serialization():
         Array.from_dict(doc, validate=False)
     with pytest.raises(err.InvalidParameterError):
         Array.from_dict(doc, validate=True)
+    with pytest.raises(ValueError):
+        Array.from_dict(doc={
+            'name': '0000',
+            'dtype': 'unknown',
+            'index': 0,
+            'label': 'Record',
+            'isRequired': True,
+            'para': Bool('0001').to_dict()
+        }, validate=True)
 
 
 def test_list_parameter_from_dict():
@@ -77,3 +86,5 @@ def test_list_parameter_value():
         [{'name': 'f1', 'value': False}, {'name': 'f2', 'value': '10'}]
     ]
     assert para.cast(value) == [{'f1': True, 'f2': 5}, {'f1': False, 'f2': 10}]
+    with pytest.raises(err.InvalidArgumentError):
+        para.cast('a')

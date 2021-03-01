@@ -43,6 +43,9 @@ class WorkflowGroupService(metaclass=ABCMeta):  # pragma: no cover
         parameters: list of flowserv.model.parameter.base.Parameter, default=None
             Optional list of parameter declarations that are used to modify the
             template parameters for submissions of the created group.
+        engine_config: dict, default=None
+            Optional configuration settings that will be used as the default
+            when running a workflow.
         identifier: string, default=None
             Optional user-provided group identifier.
 
@@ -50,7 +53,7 @@ class WorkflowGroupService(metaclass=ABCMeta):  # pragma: no cover
         -------
         dict
         """
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
     @abstractmethod
     def delete_group(self, group_id: str):
@@ -63,7 +66,7 @@ class WorkflowGroupService(metaclass=ABCMeta):  # pragma: no cover
         group_id: string
             Unique workflow group identifier
         """
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
     @abstractmethod
     def get_group(self, group_id: str) -> Dict:
@@ -78,7 +81,7 @@ class WorkflowGroupService(metaclass=ABCMeta):  # pragma: no cover
         -------
         dict
         """
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
     @abstractmethod
     def list_groups(self, workflow_id: Optional[str] = None) -> Dict:
@@ -96,7 +99,7 @@ class WorkflowGroupService(metaclass=ABCMeta):  # pragma: no cover
         -------
         dict
         """
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
     @abstractmethod
     def update_group(
@@ -118,4 +121,4 @@ class WorkflowGroupService(metaclass=ABCMeta):  # pragma: no cover
         -------
         dict
         """
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover

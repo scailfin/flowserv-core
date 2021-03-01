@@ -14,12 +14,12 @@ variables and to customize the configuration settings.
 
 from __future__ import annotations
 from appdirs import user_cache_dir
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, Union
 
 import os
 
 import flowserv.error as err
-
+import flowserv.util as util
 
 # --
 # -- Environment variables and default values
@@ -43,7 +43,6 @@ FLOWSERV_API_PROTOCOL = 'FLOWSERV_API_PROTOCOL'
 
 
 """Default values for environment variables."""
-DEFAULT_DIR = '.flowserv'
 DEFAULT_HOST = 'localhost'
 DEFAULT_NAME = 'Reproducible and Reusable Data Analysis Workflow Server (API)'
 DEFAULT_PATH = '/flowserv/api/v1'
@@ -62,7 +61,7 @@ def API_DEFAULTDIR() -> str:
     -------
     string
     """
-    return os.path.join(user_cache_dir(appname=__name__.split('.')[0]), DEFAULT_DIR)
+    return user_cache_dir(appname=__name__.split('.')[0])
 
 
 def API_URL(env: Dict) -> str:
@@ -160,6 +159,9 @@ FLOWSERV_POLL_INTERVAL = 'FLOWSERV_POLLINTERVAL'
 # Default value for the poll interval.
 DEFAULT_POLL_INTERVAL = 2
 
+# Serial workflow controller worker configuration.
+FLOWSERV_SERIAL_WORKERS = 'FLOWSERV_SERIAL_WORKERS'
+
 
 # -- Client -------------------------------------------------------------------
 
@@ -256,18 +258,6 @@ class Config(dict):
         self[FLOWSERV_DB] = url
         return self
 
-    def docker_engine(self) -> Config:
-        """Set configuration to use the Docker workflow controller as the
-        default backend.
-
-        Returns
-        -------
-        flowserv.config.Config
-        """
-        self[FLOWSERV_BACKEND_MODULE] = 'flowserv.controller.serial.docker'
-        self[FLOWSERV_BACKEND_CLASS] = 'DockerWorkflowEngine'
-        return self
-
     def multiprocess_engine(self) -> Config:
         """Set configuration to use the serial multi-porcess workflow controller
         as the default backend.
@@ -276,7 +266,7 @@ class Config(dict):
         -------
         flowserv.config.Config
         """
-        self[FLOWSERV_BACKEND_MODULE] = 'flowserv.controller.serial.engine'
+        self[FLOWSERV_BACKEND_MODULE] = 'flowserv.controller.serial.engine.base'
         self[FLOWSERV_BACKEND_CLASS] = 'SerialWorkflowEngine'
         return self
 
@@ -346,6 +336,35 @@ class Config(dict):
         """
         self[FLOWSERV_WEBAPP] = True
         return self
+
+    def workers(self, config: Dict) -> Config:
+        """Set configuration for container workers.
+
+        Parameters
+        ----------
+        config: dict
+            Worker configuration settings.
+
+        Returns
+        flowserv.config.Config
+        """
+        self[FLOWSERV_SERIAL_WORKERS] = config
+        return self
+
+    def worker_config(self) -> Union[Dict, List]:
+        """Get the configuration settings for workers that are used by the
+        serial workflow controller.
+
+        If the configuration is not set an empty dictionary is returned.
+
+        Returns
+        -------
+        dict of list
+        """
+        wconf = self.get(FLOWSERV_SERIAL_WORKERS, dict())
+        if wconf and isinstance(wconf, str):
+            wconf = util.read_object(filename=wconf)
+        return wconf if wconf else dict()
 
 
 # -- Initialize configuration from environment variables ----------------------
@@ -422,6 +441,7 @@ ENV = [
     (FLOWSERV_AUTH, AUTH_DEFAULT, None),
     (FLOWSERV_BACKEND_CLASS, None, None),
     (FLOWSERV_BACKEND_MODULE, None, None),
+    (FLOWSERV_SERIAL_WORKERS, None, None),
     (FLOWSERV_RUNSDIR, None, None),
     (FLOWSERV_POLL_INTERVAL, DEFAULT_POLL_INTERVAL, to_float),
     (FLOWSERV_ACCESS_TOKEN, None, None),

@@ -1,0 +1,1 @@
+[{"image": "test", "worker": "subprocess", "args": {"variables": {"a": 0, "b": 1}}}, {"image": "dummy", "worker": {"className": "a", "moduleName": "b"}}]

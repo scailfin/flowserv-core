@@ -13,12 +13,15 @@ stop, and monitpring using an (abstract) client class. For different types of
 workflow engines only the RemoteClient class needs to be implements.
 """
 
-from typing import Optional
+from typing import Dict, Optional, Tuple
 
 import logging
 
 from flowserv.controller.base import WorkflowController
 from flowserv.controller.remote.client import RemoteClient
+from flowserv.model.base import RunObject
+from flowserv.model.template.base import WorkflowTemplate
+from flowserv.model.workflow.state import WorkflowState
 from flowserv.service.api import APIFactory
 
 import flowserv.controller.remote.monitor as monitor
@@ -60,7 +63,7 @@ class RemoteWorkflowController(WorkflowController):
         # each run.
         self.tasks = dict()
 
-    def cancel_run(self, run_id):
+    def cancel_run(self, run_id: str):
         """Request to cancel execution of the given run. This method is usually
         called by the workflow engine that uses this controller for workflow
         execution. It is threfore assumed that the state of the workflow run
@@ -86,7 +89,10 @@ class RemoteWorkflowController(WorkflowController):
             # uses this controller for workflow execution
             del self.tasks[run_id]
 
-    def exec_workflow(self, run, template, arguments):
+    def exec_workflow(
+        self, run: RunObject, template: WorkflowTemplate, arguments: Dict,
+        config: Optional[Dict] = None
+    ) -> Tuple[WorkflowState, str]:
         """Initiate the execution of a given workflow template for a set of
         argument values. This will start a new process that executes a serial
         workflow asynchronously. Returns the state of the workflow after the
@@ -107,6 +113,9 @@ class RemoteWorkflowController(WorkflowController):
             the parameter declarations.
         arguments: dict
             Dictionary of argument values for parameters in the template.
+        config: dict, default=None
+            Optional configuration settings are currently ignored. Included for
+            API completeness.
 
         Returns
         -------

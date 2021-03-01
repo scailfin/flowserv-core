@@ -58,7 +58,7 @@ class String(Parameter):
             group=group
         )
 
-    def cast(self, value: Any) -> Any:
+    def cast(self, value: Any) -> str:
         """Convert the given value into a string value.
 
         Parameters

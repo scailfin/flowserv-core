@@ -16,6 +16,7 @@ from flowserv.view.run import RunSerializer
 
 
 """Serialization labels."""
+ENGINE_CONFIG = 'config'
 GROUP_ID = 'id'
 GROUP_LIST = 'groups'
 GROUP_MEMBERS = 'members'
@@ -99,6 +100,8 @@ class WorkflowGroupSerializer(object):
             )
             files.append(f)
         doc[GROUP_UPLOADS] = files
+        # Add optional engine configuration
+        doc[ENGINE_CONFIG] = group.engine_config
         # Include run handles if given.
         if runs is not None:
             doc.update(self.runs.run_listing(runs=runs))

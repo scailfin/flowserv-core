@@ -79,11 +79,8 @@ def test_config_setter():
     conf = conf.open_access()
     assert conf[config.FLOWSERV_AUTH] == config.AUTH_OPEN
     # Workflow engine
-    conf = conf.docker_engine()
-    assert conf[config.FLOWSERV_BACKEND_MODULE] == 'flowserv.controller.serial.docker'
-    assert conf[config.FLOWSERV_BACKEND_CLASS] == 'DockerWorkflowEngine'
     conf = conf.multiprocess_engine()
-    assert conf[config.FLOWSERV_BACKEND_MODULE] == 'flowserv.controller.serial.engine'
+    assert conf[config.FLOWSERV_BACKEND_MODULE] == 'flowserv.controller.serial.engine.base'
     assert conf[config.FLOWSERV_BACKEND_CLASS] == 'SerialWorkflowEngine'
     # Sync engine
     conf = conf.run_sync()
@@ -122,6 +119,14 @@ def test_config_url():
         'app-path/v1'
     )
     assert config.API_URL(conf) == api_url
+
+
+def test_config_workers():
+    """Test worker configuration for the serial workflow controller."""
+    conf = config.Config()
+    assert conf.worker_config() == dict()
+    conf = conf.workers({'a': 1})
+    assert conf.worker_config() == {'a': 1}
 
 
 def test_env_app_identifier():

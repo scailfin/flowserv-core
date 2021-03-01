@@ -34,6 +34,7 @@ OPTIONAL = [LABEL, HELP, DEFAULT, GROUP]
 
 
 """Unique parameter type identifier."""
+PARA_ACTOR = 'actor'
 PARA_BOOL = 'bool'
 PARA_FILE = 'file'
 PARA_FLOAT = 'float'
@@ -149,6 +150,15 @@ class Parameter(metaclass=ABCMeta):
         flowserv.error.InvalidParameterError
         """
         raise NotImplementedError()  # pragma: no cover
+
+    def is_actor(self) -> bool:
+        """Test if the parameter is of type Actor.
+
+        Returns
+        -------
+        bool
+        """
+        return self.dtype == PARA_ACTOR
 
     def is_bool(self) -> bool:
         """Test if the parameter is of type Bool.

@@ -116,3 +116,11 @@
 ### 0.7.2 - 2021-02-03
 
 * Change the location of the default data directory to be the OS-specific user cache directory.
+
+
+### 0.8.0 - 2021-03-01
+
+* Remove additional sub-directory `.flowserv` from default data directory path.
+* New workflow template parameter type `actor` to support complete workflow steps as argument values.
+* Serial engine workers to support execution of individual workflow steps using different backends.
+* Remove separate Docker workflow controller

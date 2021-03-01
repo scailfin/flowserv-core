@@ -56,11 +56,11 @@ class Scanner(object):
         bool
         """
         val = self.reader.next_token()
-        if val == '' and default_value is not None:
+        if not val and default_value is not None:
             return default_value
-        if val.lower() in ['true', 'yes', 'y', 't', 1]:
+        if val.lower() in ['true', 'yes', 'y', 't', '1', 1]:
             return True
-        elif val.lower() in ['false', 'no', 'n', 'f', 0]:
+        elif val.lower() in ['false', 'no', 'n', 'f', '0', 0]:
             return False
         else:
             raise ValueError('not a boolean value \'' + str(val) + '\'')
@@ -81,7 +81,7 @@ class Scanner(object):
         string
         """
         val = self.reader.next_token().strip()
-        if val == '' and default_value is not None:
+        if not val and default_value is not None:
             return default_value
         return val
 
@@ -99,7 +99,7 @@ class Scanner(object):
         float
         """
         val = self.reader.next_token()
-        if val == '' and default_value is not None:
+        if not val and default_value is not None:
             return default_value
         return float(val)
 
@@ -117,7 +117,7 @@ class Scanner(object):
         int
         """
         val = self.reader.next_token()
-        if val == '' and default_value is not None:
+        if not val and default_value is not None:
             return default_value
         return int(val)
 
@@ -134,7 +134,7 @@ class Scanner(object):
         string
         """
         val = self.reader.next_token()
-        if val == '' and default_value is not None:
+        if not val and default_value is not None:
             return default_value
         return val
 
@@ -155,7 +155,7 @@ class TokenReader(metaclass=ABCMeta):
         -------
         string
         """
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
 
 class InputReader(TokenReader):
@@ -167,7 +167,7 @@ class InputReader(TokenReader):
         -------
         string
         """
-        return input()
+        return input()  # pragma: no cover
 
 
 class ListReader(TokenReader):

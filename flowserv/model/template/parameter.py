@@ -9,7 +9,7 @@
 """Collection of helper methods for parameter references in workflow templates.
 """
 
-from typing import Dict, Optional
+from typing import Dict, List, Optional, Set
 
 import re
 
@@ -29,6 +29,23 @@ class ParameterIndex(dict):
     """Index of parameter declaration. Parameters are indexed by their unique
     identifier.
     """
+    def __init__(self, parameters: Optional[List[Parameter]] = None):
+        """Initialize the parameter index from an optional list of parameters.
+
+        Parameters are identified by their name. If the list contains parameters
+        with identical names an error is raised.
+
+        Parameters
+        ----------
+        parameters: list of flowserv.model.parameter.base.Parameter, default=None
+            List of parameter declarations that are added to the index.
+        """
+        for para in parameters if parameters is not None else list():
+            if para.name in self:
+                msg = "duplicate parameter '{}'".format(para.name)
+                raise err.InvalidTemplateError(msg)
+            self[para.name] = para
+
     @staticmethod
     def from_dict(doc: Dict, validate: Optional[bool] = True) -> Parameter:
         """Create a parameter index from a dictionary serialization. Expects a
@@ -295,7 +312,33 @@ def is_parameter(value):
     bool
     """
     # Check if the value matches the template parameter reference pattern
-    return value.startswith('$[[') and value.endswith(']]')
+    return isinstance(value, str) and value.startswith('$[[') and value.endswith(']]')
+
+
+def placeholders(text: str) -> Set[str]:
+    """Get the set of names for all placeholders in the given string.
+
+    Placeholders start with '$' following the string.template syntax.
+
+    Parameters
+    ----------
+    text: string
+        Template string.
+
+    Returns
+    -------
+    set of string
+    """
+    # Replace escaped placeholder identifiers.
+    text = text.replace('$$', '')
+    values = set()
+    while '$' in text:
+        text = text[text.find('$') + 1:]
+        if text.startswith('{'):
+            values.add(text[1: text.find('}')])
+        else:
+            values.add(text.split()[0])
+    return values
 
 
 def replace_args(spec, arguments, parameters):

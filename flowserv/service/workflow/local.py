@@ -66,7 +66,7 @@ class LocalWorkflowService(WorkflowService):
         self, source: str, identifier: Optional[str] = None,
         name: Optional[str] = None, description: Optional[str] = None,
         instructions: Optional[str] = None, specfile: Optional[str] = None,
-        manifestfile: Optional[str] = None,
+        manifestfile: Optional[str] = None, engine_config: Optional[Dict] = None,
         ignore_postproc: Optional[bool] = False
     ) -> Dict:
         """Create a new workflow in the repository. If the workflow template
@@ -92,6 +92,9 @@ class LocalWorkflowService(WorkflowService):
         manifestfile: string, default=None
             Path to manifest file. If not given an attempt is made to read one
             of the default manifest file names in the base directory.
+        engine_config: dict, default=None
+            Optional configuration settings that will be used as the default
+            when running the workflow and the post-processing workflow.
         ignore_postproc: bool, default=False
             Ignore post-processing workflow specification if True.
 
@@ -114,6 +117,7 @@ class LocalWorkflowService(WorkflowService):
             instructions=instructions,
             specfile=specfile,
             manifestfile=manifestfile,
+            engine_config=engine_config,
             ignore_postproc=ignore_postproc
         )
         # Return serialization og the workflow handle

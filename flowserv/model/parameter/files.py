@@ -12,7 +12,7 @@ run environment.
 """
 
 from __future__ import annotations
-from typing import Dict, IO, Optional, Union
+from typing import Dict, IO, Optional, Tuple, Union
 
 from flowserv.model.files.base import IOHandle
 from flowserv.model.parameter.base import Parameter, PARA_FILE
@@ -67,18 +67,16 @@ class File(Parameter):
         )
         self.target = target
 
-    def cast(self, value: IOHandle, target: str = None):
+    def cast(self, value: Union[IOHandle, Tuple[IOHandle, str]]):
         """Get an instance of the InputFile class for a given argument value.
         The input value can either be a string (filename) or a dictionary.
 
         Parameters
         ----------
-        value: flowserv.model.files.base.IOHandle
-            Handle for a file object.
-        target: string, default=None
-            Optional user-provided target path. If None the defined target path
-            is used or the defined default value. If neither is given an error
-            is raised.
+        value: tuple of flowserv.model.files.base.IOHandle, str
+            Handle for a file object andoptional user-provided target path. If
+            the target path is None the defined target path is used or the
+            defined default value. If neither is given an error is raised.
 
         Returns
         -------
@@ -89,6 +87,9 @@ class File(Parameter):
         flowserv.error.InvalidArgumentError
         flowserv.error.UnknownFileError
         """
+        if not isinstance(value, tuple):
+            value = (value, None)
+        source, target = value
         # Ensure that the target path is set.
         if target is None:
             if self.target is not None:
@@ -100,7 +101,7 @@ class File(Parameter):
         # The InputFile constructor may raise a TypeError if the source
         # argument is not a string.
         try:
-            return InputFile(source=value, target=target)
+            return InputFile(source=source, target=target)
         except TypeError as ex:
             raise err.InvalidArgumentError(str(ex))
 

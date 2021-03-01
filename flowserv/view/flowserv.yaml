@@ -221,6 +221,8 @@ paths:
                 type: "array"
                 items:
                   type: "string"
+              engine:
+                  type: "object"
               parameters:
                 type: "array"
                 items:
@@ -1089,6 +1091,8 @@ definitions:
           $ref: "#/definitions/FileHandle"
       runs:
         $ref: "#/definitions/Runs"
+      engine:
+          type: "object"
   UserGroups:
     type: "array"
     items:

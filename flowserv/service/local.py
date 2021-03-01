@@ -145,7 +145,8 @@ class LocalAPIFactory(APIFactory):
         self._engine.cancel_run(run_id=run_id)
 
     def exec_workflow(
-        self, run: RunObject, template: WorkflowTemplate, arguments: Dict
+        self, run: RunObject, template: WorkflowTemplate, arguments: Dict,
+        config: Optional[Dict] = None
     ) -> Tuple[WorkflowState, str]:
         """Initiate the execution of a given workflow template for a set of
         argument values. Returns the state of the workflow and the path to
@@ -165,10 +166,9 @@ class LocalAPIFactory(APIFactory):
             the parameter declarations.
         arguments: dict
             Dictionary of argument values for parameters in the template.
-        service: contextlib,contextmanager
-            Context manager to create an instance of the service API. The
-            context manager is only used when executing workflows
-            asynchronously.
+        config: dict, default=None
+            Optional implementation-specific configuration settings that can be
+            used to overwrite settings that were intialized at object creation.
 
         Returns
         -------
@@ -177,7 +177,8 @@ class LocalAPIFactory(APIFactory):
         return self._engine.exec_workflow(
             run=run,
             template=template,
-            arguments=arguments
+            arguments=arguments,
+            config=config
         )
 
 
@@ -333,9 +334,9 @@ def init_backend(api: APIFactory) -> WorkflowController:
     # controller class. An error is raised if only one of the two environment
     # variables is set.
     if module_name is None and class_name is None:
-        engine = 'flowserv.controller.serial.engine.SerialWorkflowEngine'
+        engine = 'flowserv.controller.serial.engine.base.SerialWorkflowEngine'
         logging.info('API backend {}'.format(engine))
-        from flowserv.controller.serial.engine import SerialWorkflowEngine
+        from flowserv.controller.serial.engine.base import SerialWorkflowEngine
         return SerialWorkflowEngine(service=api)
     elif module_name is not None and class_name is not None:
         logging.info('API backend {}.{}'.format(module_name, class_name))

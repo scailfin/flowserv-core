@@ -54,7 +54,8 @@ class WorkflowGroupManager(object):
     def create_group(
         self, workflow_id: str, name: str, parameters: List[Parameter],
         workflow_spec: Dict, user_id: Optional[str] = None,
-        members: List[str] = None, identifier: Optional[str] = None
+        members: List[str] = None, engine_config: Optional[Dict] = None,
+        identifier: Optional[str] = None
     ):
         """Create a new group for a given workflow. Within each workflow,
         the names of groups are expected to be unique.
@@ -87,6 +88,9 @@ class WorkflowGroupManager(object):
             Workflow specification
         members: list(string), optional
             Optional list of user identifiers for other group members
+        engine_config: dict, default=None
+            Optional configuration settings that will be used as the default
+            when running a workflow.
         identifier: string, default=None
             Optional user-provided group identifier.
 
@@ -122,7 +126,8 @@ class WorkflowGroupManager(object):
             workflow_id=workflow_id,
             owner_id=user_id,
             parameters=parameters,
-            workflow_spec=workflow_spec
+            workflow_spec=workflow_spec,
+            engine_config=engine_config
         )
         # Create a set of member identifier that contains the identifier of
         # the group owner. Ensure that all group members exist. This will also

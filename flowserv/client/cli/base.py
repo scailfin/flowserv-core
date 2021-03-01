@@ -196,7 +196,7 @@ def cli_rob(ctx):
 cli_rob.add_command(cli_benchmark, name='benchmarks')
 
 # Benchmark Runs
-cli_flowserv.add_command(cli_run, name='runs')
+cli_rob.add_command(cli_run, name='runs')
 
 # Users
 cli_rob.add_command(login_user, name='login')

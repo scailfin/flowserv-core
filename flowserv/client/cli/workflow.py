@@ -20,10 +20,17 @@ import flowserv.view.files as flbls
 import flowserv.view.run as rlbls
 import flowserv.view.workflow as labels
 
+import flowserv.util as util
+
 
 # -- Create workflow ----------------------------------------------------------
 
 @click.command()
+@click.option(
+    '-k', '--key',
+    required=False,
+    help='Workflow application key.'
+)
 @click.option(
     '-n', '--name',
     required=False,
@@ -53,6 +60,12 @@ import flowserv.view.workflow as labels
     help='Optional path to workflow manifest file.'
 )
 @click.option(
+    '-c', '--configfile',
+    type=click.Path(exists=True),
+    required=False,
+    help='Group identifier'
+)
+@click.option(
     '-g', '--ignore_postproc',
     is_flag=True,
     default=False,
@@ -61,21 +74,24 @@ import flowserv.view.workflow as labels
 @click.argument('template')
 @click.pass_context
 def create_workflow(
-    ctx, name, description, instructions, specfile, manifest, template,
-    ignore_postproc
+    ctx, key, name, description, instructions, specfile, manifest, template,
+    configfile, ignore_postproc
 ):
     """Create a new workflow for a given template."""
+    config = util.read_object(configfile) if configfile else None
     with service() as api:
         # The create_workflow() method is only supported by the local API. If
         # an attempte is made to create a new workflow via a remote API an
         # error will be raised.
         doc = api.workflows().create_workflow(
             source=template,
+            identifier=key,
             name=name,
             description=description,
             instructions=read_instructions(instructions),
             specfile=specfile,
             manifestfile=manifest,
+            engine_config=config,
             ignore_postproc=ignore_postproc
         )
     workflow_id = doc[labels.WORKFLOW_ID]

@@ -11,7 +11,7 @@ managed by different components of the API.
 """
 
 from abc import ABCMeta
-from typing import Dict, Optional
+from typing import Dict
 
 from flowserv.config import Config
 from flowserv.controller.base import WorkflowController
@@ -129,18 +129,15 @@ class APIFactory(WorkflowController, Config, metaclass=ABCMeta):
     with a __call__ method that returns a context manager for creating new
     instances of either a local or remote service API.
     """
-    def __init__(self, defaults: Optional[Dict] = None):
+    def __init__(self, defaults: Dict):
         """Initialize the default configuration settings.
 
         Parameters
         ----------
-        defaults: dict, default=None
+        defaults: dict
             Dictionary with default settings.
         """
-        if defaults is not None:
-            super(APIFactory, self).__init__(defaults)
-        else:
-            super(APIFactory, self).__init__()
+        super(APIFactory, self).__init__(defaults)
 
     def login(self, username: str, password: str):
         """Authenticate the user using the given credentials. Updates the

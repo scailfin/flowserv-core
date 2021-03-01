@@ -73,11 +73,13 @@ def test_create_workflow(fscls, identifier, database, tmpdir):
             name='My benchmark',
             description='My description',
             instructions=INSTRUCTION_FILE,
-            source=BENCHMARK_DIR
+            source=BENCHMARK_DIR,
+            engine_config={'workers': {'test': {'worker': 'docker'}}}
         )
         assert wf.name == 'My benchmark'
         assert wf.description == 'My description'
         assert wf.instructions == '# Hello World'
+        wf.engine_config == {'workers': {'test': {'worker': 'docker'}}}
         template = wf.get_template()
         assert template.result_schema is not None
         staticdir = os.path.join(tmpdir, fs.workflow_staticdir(wf.workflow_id))

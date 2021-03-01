@@ -114,7 +114,7 @@ class Record(Parameter):
         for key, para in self.fields.items():
             if key not in result:
                 if para.default is not None:
-                    result[key] = para.default
+                    result[key] = para.cast(para.default)
                 elif para.required:
                     raise err.InvalidArgumentError("missing field '{}'".format(key))
         return result

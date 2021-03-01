@@ -32,11 +32,10 @@ postgres_requires = ['psycopg2-binary']
 
 
 tests_require = [
-    'coverage>=4.0',
+    'coverage>=5.0',
     'pytest',
-    'pytest-cov',
-    'tox'
-]
+    'pytest-cov'
+] + docker_requires
 
 dev_require = ['flake8', 'python-language-server']
 
@@ -50,7 +49,7 @@ extras_require = {
     'dev': dev_require + tests_require,
     'aws': aws_requires,
     'docker': docker_requires,
-    'postgres': docker_requires,
+    'postgres': postgres_requires,
     'full': aws_requires + docker_requires + postgres_requires
 }
 

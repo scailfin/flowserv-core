@@ -190,13 +190,19 @@ class Workflow(object):
                 service=self.service
             )
 
-    def start_run(self, arguments: Dict, poll_interval: Optional[int] = None) -> Run:
+    def start_run(
+        self, arguments: Dict, config: Optional[Dict] = None,
+        poll_interval: Optional[int] = None
+    ) -> Run:
         """Run the associated workflow for the given set of arguments.
 
         Parameters
         ----------
         arguments: dict
             Dictionary of user-provided arguments.
+        config: dict, default=None
+            Optional implementation-specific configuration settings that can be
+            used to overwrite settings that were intialized at object creation.
         poll_interval: int, default=None
             Optional poll interval that is used to check the state of a run
             until it is no longer in active state.
@@ -242,13 +248,12 @@ class Workflow(object):
                         name=key
                     )
                     val = serialize_fh(fh[filelbls.FILE_ID], target=target)
-                else:
-                    val = para.cast(val)
                 arglist.append(serialize_arg(key, val))
             # Execute the run and return the serialized run handle.
             run = api.runs().start_run(
                 group_id=self.group_id,
-                arguments=arglist
+                arguments=arglist,
+                config=config
             )
             rh = Run(doc=run, service=self.service)
             # Wait for run to finish if active an poll interval is given.
