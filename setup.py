@@ -49,7 +49,7 @@ extras_require = {
     'dev': dev_require + tests_require,
     'aws': aws_requires,
     'docker': docker_requires,
-    'postgres': docker_requires,
+    'postgres': postgres_requires,
     'full': aws_requires + docker_requires + postgres_requires
 }
 
