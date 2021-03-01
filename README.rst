@@ -2,6 +2,12 @@
 Reproducible and Reusable Data Analysis Workflow Server
 =======================================================
 
+.. image:: https://img.shields.io/pypi/pyversions/flowserv-core.svg
+    :target: https://pypi.org/pypi/flowserv-core
+
+.. image:: https://badge.fury.io/py/flowserv-core.svg
+    :target: https://badge.fury.io/py/flowserv-core
+
 .. image:: https://img.shields.io/badge/License-MIT-yellow.svg
     :target: https://github.com/scailfin/flowserv-core/blob/master/LICENSE
 
