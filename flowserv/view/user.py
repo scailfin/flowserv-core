@@ -38,6 +38,7 @@ class UserSerializer(object):
     def user(self, user, include_token=True):
         """Serialization for user handle. Contains the user name and the access
         token if the user is logged in.
+
         Parameters
         ----------
         user: flowserv.model.base.User

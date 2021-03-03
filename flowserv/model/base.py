@@ -508,7 +508,7 @@ class RunObject(Base):
 
         Raises a ValueError if an invalid combination of parameters is given.
 
-        Patameters
+        Parameters
         ----------
         by_id: string
             Unique file identifier.

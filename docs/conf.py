@@ -28,7 +28,9 @@ author = 'Heiko Mueller'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.napoleon'
+    'sphinx.ext.autodoc',
+    'sphinx.ext.napoleon',
+    'sphinxcontrib.apidoc'
 ]
 
 # Configure numpy style documentation with Napoleon
@@ -43,6 +45,15 @@ templates_path = ['_templates']
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+
+# -- apidoc configuration ----------------------------------------------------
+
+# Configuration for the sphinxcontrib-apidoc extension
+apidoc_module_dir = '../flowserv/'
+apidoc_output_dir = 'source/api'
+apidoc_separate_modules = True
+apidoc_module_first = True
+apidoc_extra_args = ['-d 3','--force']
 
 
 # -- Options for HTML output -------------------------------------------------

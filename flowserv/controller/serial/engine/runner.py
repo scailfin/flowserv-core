@@ -23,19 +23,20 @@ def exec_workflow(
     """Execute steps in a serial workflow.
 
     The workflow arguments are part of the execution context that is contained
-    in the :class:RunResult. The result object is used to maintain the results
-    for executed workflow steps.
+    in the :class:`flowserv.controller.serial.workflow.result.RunResult`. The
+    result object is used to maintain the results for executed workflow steps.
 
     Executes workflow steps in sequence. Terminates early if the execution
     of a workflow step returns a non-zero value. Uses the given worker
-    factory to create workers for steps that are of class :class:ContainerStep.
+    factory to create workers for steps that are of class
+    :class:`flowserv.model.workflow.step.ContainerStep`.
 
     Parameters
     ----------
     steps: list of flowserv.model.workflow.step.WorkflowStep
         Steps in the serial workflow that are executed in the given context.
     workers: flowserv.controller.worker.factory.WorkerFactory, default=None
-        Factory for :class:ContainerStep steps.
+        Factory for :class:`flowserv.model.workflow.step.ContainerStep` steps.
     rundir: str, default=None
         Working directory for all executed workflow steps.
     result: flowserv.controller.worker.result.RunResult

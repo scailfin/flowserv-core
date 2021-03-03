@@ -35,9 +35,10 @@ Workflow templates contain placeholders for workflow steps and/or input data and
    source/configuration
    source/api
 
-Indices and tables
-==================
+.. _api-ref:
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+..  toctree::
+    :maxdepth: 1
+    :caption: API Reference:
+
+    source/api/modules

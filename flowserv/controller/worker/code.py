@@ -43,7 +43,7 @@ class OutputStream(object):
 
 
 def exec_func(step: FunctionStep, context: Dict, rundir: str) -> ExecResult:
-    """Execute a workflow step of type :class:FunctionStep in a given context.
+    """Execute a workflow step of type :class:`flowserv.model.workflow.step.FunctionStep` in a given context.
 
     Captures output to STDOUT and STDERR and includes them in the returned
     execution result.

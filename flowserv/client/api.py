@@ -49,7 +49,7 @@ def ClientAPI(
         Optional database connect url.
     workers: dict, default=None
         Mapping of container image identifier to worker specifications that
-        are used to create an instance of a :class:ContainerEngine worker.
+        are used to create an instance of a :class:`flowserv.controller.worker.base.ContainerStep` worker.
     open_access: bool, default=None
         Use an open access policy if set to True.
     run_async: bool, default=False

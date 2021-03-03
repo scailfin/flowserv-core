@@ -70,13 +70,15 @@ class WorkflowManager(object):
         base folder with the name flowserv.json, flowserv.yaml, flowserv.yml
         (in this order). The expected structure of the file is:
 
-        name: ''
-        description: ''
-        instructions: ''
-        files:
-            - source: ''
-              target: ''
-        specfile: '' or workflowSpec: ''
+        .. code-block:: yaml
+
+            name: ''
+            description: ''
+            instructions: ''
+            files:
+                - source: ''
+                  target: ''
+            specfile: '' or workflowSpec: ''
 
         An error is raised if both specfile and workflowSpec are present in the
         description file.

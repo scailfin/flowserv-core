@@ -63,7 +63,7 @@ class Actor(Parameter):
         The given tuple contains the workflow step type identifier (str) and
         a type-specific serialization of the step properties.
 
-        For values that represent a :class:ContainerStep the dictionary elements
+        For values that represent a :class:`flowserv.model.workflow.step.ContainerStep` the dictionary elements
         are: `image`, `commands`, and `env`. The first two elements are mandatory.
 
         Parameters

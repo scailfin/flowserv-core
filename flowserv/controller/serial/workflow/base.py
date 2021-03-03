@@ -27,15 +27,21 @@ from flowserv.model.template.parameter import ParameterIndex
 
 
 class SerialWorkflow(object):
-    """A serial workflow represents a sequence of steps (:class:WorkflowStep)
-    that are executed in order for a given set of input parameters.
+    """A serial workflow represents a sequence of
+    :class:`flowserv.model.workflow.step.WorkflowStep`) steps that are executed
+    in order for a given set of input parameters.
 
-    At this point we distinguish two types of workflow steps: :class:FunctionStep
-    and :class:ContainerStep.  A :class:FunctionStep is executed within the same
-    thread and environment as the flowserv engine. A :class:ContainerStep is
-    executed in a separate container-like environment. The execution environment
-    is represented by a :clas:ContainerEngine that is associated in the
-    :class:WorkerFactory with the environment identifier of the container step.
+    At this point we distinguish two types of workflow steps:
+    :class:`flowserv.model.workflow.step.FunctionStep`
+    and :class:`flowserv.model.workflow.step.ContainerStep`.
+
+    A :class:`flowserv.model.workflow.step.FunctionStep` is executed within the
+    same thread and environment as the flowserv engine. A
+    :class:`flowserv.model.workflow.step.ContainerStep` is executed in a separate
+    container-like environment. The execution environment is represented by a
+    :class:`flowserv.controller.worker.base.ContainerEngine` that is associated
+    in the :class:`flowserv.controller.worker.factory.WorkerFactory` with the
+    environment identifier of the container step.
     """
     def __init__(
         self, steps: Optional[List[WorkflowStep]] = None,
@@ -55,8 +61,10 @@ class SerialWorkflow(object):
         parameters: list of flowserv.model.parameter.base.Parameter, default=None
             Optional list of workflow template parameters.
         workers: flowserv.controller.worker.factory.WorkerFactory
-            Factory for :class:ContainerEngine objects that are used to execute
-            individual :class:ContainerStep instances in the workflow sequence.
+            Factory for :class:`flowserv.controller.worker.base.ContainerStep`
+            objects that are used to execute individual
+            :class:`flowserv.model.workflow.step.ContainerStep` instances in the
+            workflow sequence.
         """
         self.steps = steps if steps is not None else list()
         self.parameters = ParameterIndex(parameters=parameters)
@@ -198,18 +206,19 @@ class SerialWorkflow(object):
 
         Executes workflow steps in sequence. Terminates early if the execution
         of a workflow step returns a non-zero value. Uses the given worker
-        factory to create workers for steps that are of class :class:ContainerStep.
+        factory to create workers for steps that are of class
+        :class:`flowserv.model.workflow.step.ContainerStep`.
 
         Collects results for all executed steps and returns them in the
-        :class:RunResult.
+        :class:`flowserv.controller.serial.workflow.result.RunResult`.
 
         Parameters
         ----------
         arguments: dict
             User-provided arguments for the workflow run.
         workers: flowserv.controller.worker.factory.WorkerFactory, default=None
-            Factory for :class:ContainerStep steps. Uses the default worker for
-            all container steps if None.
+            Factory for :class:`flowserv.model.workflow.step.ContainerStep`
+            steps. Uses the default worker for all container steps if None.
         rundir: str, default=None
             Working directory for all executed workflow steps. Uses the current
             working directory if None.

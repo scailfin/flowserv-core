@@ -33,7 +33,8 @@ class ExecResult:
 
 class RunResult(object):
     """Result for a serial workflow run. For each executed workflow step the
-    run result maintains the step itself and the :class:ExecResult. In addition,
+    run result maintains the step itself and the
+    :class:`flowserv.controller.serial.workflow.result.ExecResult`. In addition,
     the run result maintains the context of the workflow that is modified by the
     executed workflow steps.
 

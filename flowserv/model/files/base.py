@@ -15,15 +15,17 @@ workflows and their associated resources.
 
 The folder structure is currently as follows:
 
-/workflows/                  : Base directory
-    {workflow_id}            : Folder for individual workflow
-        groups/              : Folder for workflow groups
-            {group_id}       : Folder for individual group
-                files/       : Uploaded files for workflow group
-                    {file_id}: Folder for uploaded file
-        runs/                : Folder for all workflow runs
-            {run_id}         : Result files for individual runs
-        static/
+.. code-block:: console
+
+    /workflows/                  : Base directory
+        {workflow_id}            : Folder for individual workflow
+            groups/              : Folder for workflow groups
+                {group_id}       : Folder for individual group
+                    files/       : Uploaded files for workflow group
+                        {file_id}: Folder for uploaded file
+            runs/                : Folder for all workflow runs
+                {run_id}         : Result files for individual runs
+            static/
 """
 
 from abc import ABCMeta, abstractmethod
@@ -330,7 +332,7 @@ class FileStore(metaclass=ABCMeta):
         for all files. The file list contains tuples of file object and target
         path. The target is relative to the base destination path.
 
-        Paramaters
+        Parameters
         ----------
         file: list of (flowserv.model.files.base.IOHandle, string)
             The input file objects.

@@ -268,7 +268,7 @@ def validate_doc(
     label lists or if there are labels in the mandatory list that are not in
     the dictionary. Returns the given dictionary (if valid).
 
-    Paramaters
+    Parameters
     ----------
     doc: dict
         Dictionary serialization of an object

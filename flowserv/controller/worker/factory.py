@@ -6,47 +6,49 @@
 # flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
-"""Factory for workers that implement the :class:ContainerEngine class. Workers
+"""Factory for workers that implement the :class:`flowserv.controller.worker.base.ContainerStep` class. Workers
 are used to excute workflow steps using different, user-defined configurations.
 
 Instances of worker classes are created from a configuration specifications that
 follow the following schema:
 
-  workerRef:
-    description: Reference the class that extends the abstract container engine.
-    oneOf:
-    - description: Worker class reference.
-      properties:
-        className:
-          description: Name of the class that implements the worker.
+.. code-block:: yaml
+
+    workerRef:
+        description: Reference the class that extends the abstract container engine.
+        oneOf:
+        - description: Worker class reference.
+          properties:
+            className:
+              description: Name of the class that implements the worker.
+              type: string
+            moduleName:
+              description: Module that contains the class that implements the worker.
+              type: string
+            required:
+            - className
+            - moduleName
+          type: object
+        - description: Unique worker identifier.
+          enum:
+          - docker
+          - subprocess
           type: string
-        moduleName:
-          description: Module that contains the class that implements the worker.
-          type: string
+        workerSpec:
+        description: Specification for a worker engine that is associated with a container
+          image.
+        properties:
+          args:
+            type: object
+          image:
+            description: Conatiner image identifier.
+            type: string
+          worker:
+            $ref: '#/definitions/workerRef'
         required:
-        - className
-        - moduleName
-      type: object
-    - description: Unique worker identifier.
-      enum:
-      - docker
-      - subprocess
-      type: string
-  workerSpec:
-    description: Specification for a worker engine that is associated with a container
-      image.
-    properties:
-      args:
+        - image
+        - worker
         type: object
-      image:
-        description: Conatiner image identifier.
-        type: string
-      worker:
-        $ref: '#/definitions/workerRef'
-    required:
-    - image
-    - worker
-    type: object
 """
 
 from __future__ import annotations
@@ -80,7 +82,7 @@ validator = Draft7Validator(schema=schema['definitions']['workerSpec'], resolver
 
 
 class WorkerFactory(object):
-    """Factory for workers that implement the :class:ContainerEngine class.
+    """Factory for workers that implement the :class:`flowserv.controller.worker.base.ContainerStep` class.
 
     Workers are instantiated from a dictionary that follows the `workerSpec`
     schema defined in the `schema.json` file.
@@ -103,7 +105,7 @@ class WorkerFactory(object):
         config: list or dict, default=None
             List of worker specificatins or mapping of container image identifier
             to worker specifications that are used to create an instance of a
-            :class:ContainerEngine worker.
+            :class:`flowserv.controller.worker.base.ContainerStep` worker.
         validate: bool, default=False
             Validate the given worker specifications against the `workerSpec`
             schema if True.

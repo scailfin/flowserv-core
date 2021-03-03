@@ -163,7 +163,7 @@ class FileSystemStore(FileStore):
         for all files. The file list contains tuples of file object and target
         path. The target is relative to the base destination path.
 
-        Paramaters
+        Parameters
         ----------
         file: flowserv.model.files.base.IOHandle
             The input file object.

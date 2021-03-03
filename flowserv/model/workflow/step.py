@@ -7,19 +7,20 @@
 # terms of the MIT License; see LICENSE file for more details.
 
 """Definitions for the different types of steps in a serial workflow. At this
-point we distinguish two types of workflow steps: :class:FunctionStep and
-:class:ContainerStep.
+point we distinguish two types of workflow steps:
+:class:`flowserv.model.workflow.step.FunctionStep` and
+:class:`flowserv.model.workflow.step.ContainerStep`.
 
-A :class:FunctionStep is used to execute a given function within the workflow context.
-The code is executed within the same thread and environment as the flowserv
-engine. Code steps are intended for minor actions (e.g., copying of files or
-reading results from previous workflow steps). For these actions it would cause
-too much overhead to create an external Python script that is run as a subprocess
-or a Docker container image.
+A :class:`flowserv.model.workflow.step.FunctionStep` is used to execute a given
+function within the workflow context. The code is executed within the same
+thread and environment as the flowserv engine. Code steps are intended for minor
+actions (e.g., copying of files or reading results from previous workflow steps).
+For these actions it would cause too much overhead to create an external Python
+script that is run as a subprocess or a Docker container image.
 
-A :class:ContainerStep is a workflow step that is executed in a separate
-container-like environment. The environment can either be a subprocess with
-specific environment variable settings or a Docker container.
+A :class:`flowserv.model.workflow.step.ContainerStep` is a workflow step that is
+executed in a separate container-like environment. The environment can either be
+a subprocess with specific environment variable settings or a Docker container.
 """
 
 from __future__ import annotations
@@ -59,7 +60,8 @@ class WorkflowStep(object):
         self.step_type = step_type
 
     def is_container_step(self) -> bool:
-        """True if the workflow step is of type :class:ContainerStep.
+        """True if the workflow step is of type
+        :class:`flowserv.model.workflow.step.ContainerStep`.
 
         Returns
         -------
@@ -68,7 +70,8 @@ class WorkflowStep(object):
         return self.step_type == CONTAINER_STEP
 
     def is_function_step(self) -> bool:
-        """True if the workflow step is of type :class:FunctionStep.
+        """True if the workflow step is of type
+        :class:`flowserv.model.workflow.step.FunctionStep`.
 
         Returns
         -------

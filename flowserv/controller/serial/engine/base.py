@@ -64,7 +64,8 @@ class SerialWorkflowEngine(WorkflowController):
             execution.
         worker_config: dict, default=None
             Mapping of container image identifier to worker specifications that
-            are used to create an instance of a :class:ContainerEngine worker.
+            are used to create an instance of a
+            :class:`flowserv.controller.worker.base.ContainerStep` worker.
         """
         self.fs = FS(env=service)
         self.service = service
@@ -240,8 +241,8 @@ def callback_function(result, lock, tasks, service):
         Lock for concurrency control
     tasks: dict
         Task index of the backend
-        service: contextlib,contextmanager
-            Context manager to create an instance of the service API.
+    service: contextlib,contextmanager
+        Context manager to create an instance of the service API.
     """
     run_id, rundir, state_dict = result
     logging.info('finished run {} with {}'.format(run_id, state_dict))
@@ -285,7 +286,7 @@ def run_workflow(
     arguments: dict
         Dictionary of argument values for parameters in the template.
     workers: flowserv.controller.worker.factory.WorkerFactory, default=None
-        Factory for :class:ContainerStep steps.
+        Factory for :class:`flowserv.model.workflow.step.ContainerStep` steps.
 
     Returns
     -------
