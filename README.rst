@@ -58,7 +58,7 @@ ROB currently provides two different interfaces to interact with a Web API: the 
 
 For an overview of ROB there are `slides <https://github.com/scailfin/presentations/blob/master/slides/ROB-Demo-MSDSE2019.pdf>`_ from the ROB Demo at the `Moore-Sloan Data Science Environment's annual summit 2019 <https://sites.google.com/msdse.org/summit2019/home>`_ and our `presentation <https://indico.cern.ch/event/822074/contributions/3471463/attachments/1865533/3067815/Reproducible_Benchmarks_for_Data_Analysis-v3.pdf>`_ at the `Analysis Systems Topical Workshop <https://indico.cern.ch/event/822074/>`_.
 
-The full documentation is also available on `readthedocs.io <https://flowserv-core.readthedocs.io/en/latest/>_`.
+The full documentation is also available on `readthedocs.io <https://flowserv-core.readthedocs.io/en/latest/>`_.
 
 Note
 ====
