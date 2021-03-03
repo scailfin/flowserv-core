@@ -15,6 +15,7 @@ import os
 import sys
 
 from flowserv.controller.serial.workflow.result import ExecResult
+from flowserv.controller.worker.base import Worker
 from flowserv.model.workflow.step import FunctionStep
 
 import flowserv.util as util
@@ -42,44 +43,49 @@ class OutputStream(object):
         self._stream.append(text)
 
 
-def exec_func(step: FunctionStep, context: Dict, rundir: str) -> ExecResult:
-    """Execute a workflow step of type :class:`flowserv.model.workflow.step.FunctionStep` in a given context.
-
-    Captures output to STDOUT and STDERR and includes them in the returned
-    execution result.
-
-    Parameters
-    ----------
-    step: flowserv.model.workflow.step.FunctionStep
-        Code step in a serial workflow.
-    context: dict
-        Context for the executed code.
-
-    Returns
-    -------
-    flowserv.controller.serial.workflow.result.ExecResult
+class CodeWorker(Worker):
+    """Worker to execute workflow steps of type
+    :class:`flowserv.model.workflow.step.FunctionStep`
     """
-    result = ExecResult(step=step)
-    out = sys.stdout
-    err = sys.stderr
-    sys.stdout = OutputStream(stream=result.stdout)
-    sys.stderr = OutputStream(stream=result.stderr)
-    # Change working direcotry temporarily.
-    cwd = os.getcwd()
-    os.chdir(rundir)
-    try:
-        step.exec(context=context)
-    except Exception as ex:
-        logging.error(ex)
-        strace = '\n'.join(util.stacktrace(ex))
-        logging.debug(strace)
-        result.stderr.append(strace)
-        result.exception = ex
-        result.returncode = 1
-    finally:
-        # Make sure to reverse redirection of output streams
-        sys.stdout = out
-        sys.stderr = err
-        # Reset working directory.
-        os.chdir(cwd)
-    return result
+    def exec(self, step: FunctionStep, context: Dict, rundir: str) -> ExecResult:
+        """Execute a workflow step of type :class:`flowserv.model.workflow.step.FunctionStep`
+        in a given context.
+
+        Captures output to STDOUT and STDERR and includes them in the returned
+        execution result.
+
+        Parameters
+        ----------
+        step: flowserv.model.workflow.step.FunctionStep
+            Code step in a serial workflow.
+        context: dict
+            Context for the executed code.
+
+        Returns
+        -------
+        flowserv.controller.serial.workflow.result.ExecResult
+        """
+        result = ExecResult(step=step)
+        out = sys.stdout
+        err = sys.stderr
+        sys.stdout = OutputStream(stream=result.stdout)
+        sys.stderr = OutputStream(stream=result.stderr)
+        # Change working directory temporarily.
+        cwd = os.getcwd()
+        os.chdir(rundir)
+        try:
+            step.exec(context=context)
+        except Exception as ex:
+            logging.error(ex)
+            strace = '\n'.join(util.stacktrace(ex))
+            logging.debug(strace)
+            result.stderr.append(strace)
+            result.exception = ex
+            result.returncode = 1
+        finally:
+            # Make sure to reverse redirection of output streams
+            sys.stdout = out
+            sys.stderr = err
+            # Reset working directory.
+            os.chdir(cwd)
+        return result

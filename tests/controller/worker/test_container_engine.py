@@ -29,8 +29,8 @@ def test_fixed_variables():
     step = ContainerStep(image='test', commands=['${python} $run $me'])
     arguments = {'run': 'my_model.py', 'me': 1}
     engine = ContainerTestEngine(variables=dict())
-    engine.exec(step=step, arguments=arguments, rundir='/dev/null')
+    engine.exec(step=step, context=arguments, rundir='/dev/null')
     assert engine.commands == ['python my_model.py 1']
     engine = ContainerTestEngine(variables={'run': 'static.py'})
-    engine.exec(step=step, arguments=arguments, rundir='/dev/null')
+    engine.exec(step=step, context=arguments, rundir='/dev/null')
     assert engine.commands == ['python static.py 1']

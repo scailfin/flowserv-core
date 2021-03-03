@@ -97,7 +97,7 @@ def test_run_successful_steps_splitenv():
     ]
     worker = SubprocessWorker(env={'TEST_ENV_1': 'Hello', 'TEST_ENV_2': 'You'})
     step = ContainerStep(image='test', env={'TEST_ENV_2': 'World'}, commands=commands)
-    result = worker.exec(step=step, arguments=dict(), rundir=RUN_DIR)
+    result = worker.exec(step=step, context=dict(), rundir=RUN_DIR)
     assert result.returncode == 0
     assert result.exception is None
     assert result.stdout == ['Hello\n', 'World\n']
