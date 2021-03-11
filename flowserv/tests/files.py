@@ -8,16 +8,17 @@
 
 """helper classes and methods for unit tests that perform I/O operations."""
 
-import botocore.exceptions
 import json
 import os
 
 from io import BytesIO
-from typing import Dict, IO, List, Optional, Union
+from typing import Dict, IO, Iterable, List, Optional, Union
 
 from flowserv.config import FLOWSERV_BASEDIR
 from flowserv.model.files.base import IOHandle, IOBuffer
+from flowserv.model.files.bucket import Bucket
 
+import flowserv.error as err
 import flowserv.util as util
 
 
@@ -45,89 +46,96 @@ class FileStorage(object):
         self.file.store(filename)
 
 
-# -- S3 Buckets ---------------------------------------------------------------
+# -- Buckets ------------------------------------------------------------------
 
-class DiskBucket(object):
-    """Implementation of relevant methods for S3 buckets that are used by the
-    BucketStore for test purposes. Persists all objects on disk. Uses the
-    API_BASDIR if not storage directory is given.
+class DiskBucket(Bucket):
+    """Implementation of the :class:`flowserv.model.files.bucketBucket` interface
+    for test purposes. The test bucket maintains all files in a given folder on
+    the local file system.
     """
     def __init__(self, basedir: str):
-        """Initialize the internal object dictionary."""
+        """Initialize the storage directory.
+
+        Parameters
+        ----------
+        basedir: str
+            Path to a directory on the local file system.
+        """
         self.basedir = basedir
 
-    def __repr__(self):
-        """Get object representation ."""
-        return "<DiskBucket dir='{}' />".format(self.basedir)
+    def delete(self, keys: Iterable[str]):
+        """Delete files that are identified by their relative path in the given
+        list of object keys.
 
-    @property
-    def objects(self):
-        """Simulate .objects call by returning a reference to self."""
-        return self
-
-    def delete_objects(self, Delete: Dict):
-        """Delete objects in a dictionary with single key 'Objects' that points
-        to a list of dictionaries with single element 'Key' referencing the
-        object that is being deleted.
+        Parameters
+        ----------
+        keys: iterable of string
+            Unique identifier for objects that are being deleted.
         """
-        for obj in Delete.get('Objects'):
-            filename = os.path.join(self.basedir, obj.get('Key'))
+        for obj in keys:
+            filename = os.path.join(self.basedir, obj)
             os.remove(filename)
 
-    def download_fileobj(self, key: str, data: IO):
-        """Copy the buffer for the identified object into the given data
-        buffer.
+    def download(self, key: str) -> IO:
+        """Read file content into an IO buffer.
+
+        Parameters
+        ----------
+        key: string
+            Unique object identifier.
+
+        Returns
+        -------
+        io.BytesIO
         """
+        data = BytesIO()
         filename = os.path.join(self.basedir, key)
         if os.path.isfile(filename):
             with open(filename, 'rb') as f:
                 data.write(f.read())
         else:
-            raise botocore.exceptions.ClientError(
-                operation_name='download_fileobj',
-                error_response={'Error': {'Code': 404, 'Message': filename}}
-            )
+            raise err.UnknownFileError(key)
         data.seek(0)
+        return data
 
-    def filter(self, Prefix: str) -> List:
-        """Return all objects in the bucket that have a key which matches the
-        given prefix.
-        """
-        result = list()
-        for key in parse_dir(self.basedir, ''):
-            if key.startswith(Prefix):
-                result.append(ObjectSummary(key))
-        return result
+    def query(self, prefix: str) -> List[str]:
+        """Return all files with relative paths that match the given query
+        prefix.
 
-    def upload_fileobj(self, file: IO, dst: str):
-        """Add given buffer to the object index. Uses the destination as the
-        object key.
+        Parameters
+        ----------
+        filter: str
+            Prefix query for object identifiers.
+
+        Returns
+        -------
+        list of string
         """
-        filename = os.path.join(self.basedir, dst)
+        return [key for key in parse_dir(self.basedir) if key.startswith(prefix)]
+
+    def upload(self, file: IO, key: str):
+        """Store the given IO object on the file system.
+
+        Parameters
+        ----------
+        file: flowserv.model.files.base.IOHandle
+            Handle for uploaded file.
+        key: string
+            Unique object identifier.
+        """
+        filename = os.path.join(self.basedir, key)
         os.makedirs(os.path.dirname(filename), exist_ok=True)
         with open(filename, 'wb') as f:
-            f.write(file.read())
+            f.write(file.open().read())
 
 
 def DiskStore(env: Dict):
-    """Create an instance of the buckect store with a disk bucket."""
-    from flowserv.model.files.s3 import BucketStore
-    return BucketStore(
-        env=env,
-        bucket=DiskBucket(basedir=env.get(FLOWSERV_BASEDIR))
-    )
+    """Create an instance of the bucket store with a disk bucket."""
+    from flowserv.model.files.bucket import BucketStore
+    return BucketStore(bucket=DiskBucket(basedir=env.get(FLOWSERV_BASEDIR)))
 
 
-class ObjectSummary(object):
-    """Simple class to simulate object summaries. Only implements the .key
-    property.
-    """
-    def __init__(self, key):
-        """Initialize the object key."""
-        self.key = key
-
-
-def parse_dir(dirname, prefix, result=None):
+def parse_dir(dirname: str, prefix: Optional[str] = '', result: Optional[List] = None):
     result = result if result is not None else list()
     for filename in os.listdir(dirname):
         f = os.path.join(dirname, filename)

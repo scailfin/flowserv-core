@@ -10,18 +10,22 @@
 
 from typing import Dict
 
-from flowserv.config import FLOWSERV_FILESTORE_MODULE, FLOWSERV_FILESTORE_CLASS
 from flowserv.model.files.base import FileStore
 
+import flowserv.config as config
 import flowserv.error as err
 
 
 def FS(env: Dict) -> FileStore:
     """Factory pattern to create file store instances for the service API. Uses
-    the environment variables FLOWSERV_FILESTORE_MODULE and
-    FLOWSERV_FILESTORE_CLASS to create an instance of the file store. If the
-    environment variables are not set the FileSystemStore is returned as the
-    default file store.
+    the environment variables FLOWSERV_FILESTORE to create an instance of the
+    file store. If the environment variable is not set the FileSystemStore is
+    returned as the default file store.
+
+    The FLOWSERV_FILESTORE variable currently accepts two valid values: `fs`
+    and `bucket`. For `bucket` a :class:`flowserv.model.files.bucket.BucketStore`
+    is returned. The type of bucket that is use for the store is defined by
+    the environment variable FLOWSERV_FILESTORE_BUCKETTYPE.
 
     Parameters
     ----------
@@ -33,17 +37,24 @@ def FS(env: Dict) -> FileStore:
     -------
     flowserv.model.files.base.FileStore
     """
-    module_name = env.get(FLOWSERV_FILESTORE_MODULE)
-    class_name = env.get(FLOWSERV_FILESTORE_CLASS)
+    class_name = env.get(config.FLOWSERV_FILESTORE, config.FILESTORE_FS)
     # If both environment variables are None return the default file store.
     # Otherwise, import the specified module and return an instance of the
     # controller class. An error is raised if only one of the two environment
     # variables is set.
-    if module_name is None and class_name is None:
+    if class_name == config.FILESTORE_FS:
         from flowserv.model.files.fs import FileSystemStore
         return FileSystemStore(env=env)
-    elif module_name is not None and class_name is not None:
-        from importlib import import_module
-        module = import_module(module_name)
-        return getattr(module, class_name)(env=env)
+    elif class_name == config.FILESTORE_BUCKET:
+        from flowserv.model.files.bucket import BucketStore
+        bucket_type = env.get(config.FLOWSERV_FILESTORE_BUCKETTYPE)
+        if not bucket_type:
+            raise err.MissingConfigurationError('bucket type')
+        if bucket_type == config.BUCKET_S3:
+            from flowserv.model.files.s3 import S3Bucket
+            return BucketStore(bucket=S3Bucket(env=env))
+        elif bucket_type == 'test':
+            from flowserv.tests.files import DiskBucket
+            return BucketStore(bucket=DiskBucket(basedir=env.get('__testdir__')))
+        raise err.InvalidConfigurationError(config.FLOWSERV_FILESTORE_BUCKETTYPE, bucket_type)
     raise err.MissingConfigurationError('file store')
