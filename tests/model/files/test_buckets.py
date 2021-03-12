@@ -91,6 +91,9 @@ def test_mem_bucket(tmpdir):
 def test_s3_bucket(mock_boto, tmpdir):
     """Test functionality of the S3Buckey via the BucketStore."""
     run_test(bucket=S3Bucket({config.FLOWSERV_BUCKET: 'test'}), basedir=tmpdir)
+    # -- Error cases ----------------------------------------------------------
+    with pytest.raises(err.MissingConfigurationError):
+        S3Bucket(env=dict())
 
 
 # -- Generic test -------------------------------------------------------------

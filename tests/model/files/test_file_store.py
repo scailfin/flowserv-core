@@ -113,6 +113,7 @@ def test_delete_files_and_folders(store_id, tmpdir):
     assert json.load(fs.load_file(FILE_A).open()) == DATA1
     assert json.load(fs.load_file(FILE_D).open()) == DATA4
     fs.delete_file(FILE_D)
+    fs.delete_file(FILE_D)  # No harm deleting multiple times.
     # After deleting file D only file A but not file D can be read.
     assert json.load(fs.load_file(FILE_A).open()) == DATA1
     with pytest.raises(err.UnknownFileError):

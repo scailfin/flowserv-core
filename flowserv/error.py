@@ -10,12 +10,14 @@
 open benchmark platform.
 """
 
+from typing import Any, Optional
+
 
 class FlowservError(Exception):
     """Base exception indicating that a component of the reproducible and
     reusable data analysis server encountered an error situation.
     """
-    def __init__(self, message):
+    def __init__(self, message: str):
         """Initialize error message.
 
         Parameters
@@ -62,11 +64,28 @@ class UnauthorizedAccessError(FlowservError):
 
 # -- Configuration ------------------------------------------------------------
 
+class InvalidConfigurationError(FlowservError):
+    """Error indicating that the value for a mandatory environment variable is
+    invalid.
+    """
+    def __init__(self, name: str, value: Any):
+        """Initialize error message.
+
+        Parameters
+        ----------
+        name: string
+            Environment variable name or name of the configured object
+        """
+        super(InvalidConfigurationError, self).__init__(
+            message="invalid value '{}' for {}".format(value, name)
+        )
+
+
 class MissingConfigurationError(FlowservError):
     """Error indicating that the value for a mandatory environment variable is
     not set.
     """
-    def __init__(self, name):
+    def __init__(self, name: str):
         """Initialize error message.
 
         Parameters
@@ -86,7 +105,7 @@ class ConstraintViolationError(FlowservError):
     operation. Example constraints are (i) names that are expected to be
     unique, (ii) names that cannot have more than n characters long, etc.
     """
-    def __init__(self, message):
+    def __init__(self, message: str):
         """Initialize error message.
 
         Parameters
@@ -101,7 +120,7 @@ class DuplicateArgumentError(ConstraintViolationError):
     """Exception indicating that a given argument for a workflow run is not
     unique.
     """
-    def __init__(self, identifier):
+    def __init__(self, identifier: str):
         """Initialize error message for duplicate run arguments.
 
         Parameters
@@ -118,7 +137,7 @@ class DuplicateParameterError(ConstraintViolationError):
     """Exception indicating that a given template parameter does not have a
     unique identifier.
     """
-    def __init__(self, identifier):
+    def __init__(self, identifier: str):
         """Initialize error message for duplicate template parameters.
 
         Parameters
@@ -134,7 +153,7 @@ class DuplicateParameterError(ConstraintViolationError):
 class DuplicateResourceError(ConstraintViolationError):
     """Exception indicating that a given resource identifier is not unique.
     """
-    def __init__(self, identifier):
+    def __init__(self, identifier: str):
         """Initialize error message for duplicate resource identifier.
 
         Parameters
@@ -150,7 +169,7 @@ class DuplicateResourceError(ConstraintViolationError):
 class DuplicateRunError(ConstraintViolationError):
     """Exception indicating that a given run identifier is not unique.
     """
-    def __init__(self, identifier):
+    def __init__(self, identifier: str):
         """Initialize error message for duplicate run identifier.
 
         Parameters
@@ -165,7 +184,7 @@ class DuplicateRunError(ConstraintViolationError):
 
 class DuplicateUserError(ConstraintViolationError):
     """Exception indicating that a given user already exists."""
-    def __init__(self, user_id):
+    def __init__(self, user_id: str):
         """Initialize error message.
 
         Parameters
@@ -182,7 +201,7 @@ class InvalidArgumentError(ConstraintViolationError):
     """Exception indicating that a given template parameter argument value is
     not valid.
     """
-    def __init__(self, message):
+    def __init__(self, message: str):
         """Initialize error message. The message for invalid parameter argument
         errors is depending on the context
 
@@ -197,7 +216,7 @@ class InvalidArgumentError(ConstraintViolationError):
 class InvalidParameterError(ConstraintViolationError):
     """Exception indicating that a given template parameter is invalid.
     """
-    def __init__(self, message):
+    def __init__(self, message: str):
         """Initialize error message. The message for invalid parameter errors
         is depending on the context
 
@@ -236,7 +255,7 @@ class InvalidSortColumnError(ConstraintViolationError):
     """Exception indicating that a given sort column in a leader board query
     does not exist in the result schema.
     """
-    def __init__(self, col_name):
+    def __init__(self, col_name: str):
         """Initialize error message.
 
         Parameters
@@ -253,7 +272,7 @@ class InvalidManifestError(ConstraintViolationError):
     """Exception indicating that a given workflow manifest is invalid or has
     missing elements.
     """
-    def __init__(self, message):
+    def __init__(self, message: str):
         """Initialize error message. The message for invalid manifest errors
         is depending on the context
 
@@ -269,7 +288,7 @@ class InvalidTemplateError(ConstraintViolationError):
     """Exception indicating that a given workflow template is invalid or has
     missing elements.
     """
-    def __init__(self, message):
+    def __init__(self, message: str):
         """Initialize error message. The message for invalid template errors
         is depending on the context
 
@@ -285,7 +304,7 @@ class MissingArgumentError(ConstraintViolationError):
     """Exception indicating that a required parameter in a workflow template
     has no argument given for a workflow run.
     """
-    def __init__(self, identifier):
+    def __init__(self, identifier: str):
         """Initialize missing argument error message for parameter identifier.
 
         Parameters
@@ -302,7 +321,7 @@ class MissingArgumentError(ConstraintViolationError):
 
 class UnknownObjectError(FlowservError):
     """Generic error for references to unknown objects."""
-    def __init__(self, obj_id, type_name='object'):
+    def __init__(self, obj_id: str, type_name: Optional[str] = 'object'):
         """Initialize error message.
 
         Parameters
@@ -319,7 +338,7 @@ class UnknownObjectError(FlowservError):
 
 class UnknownFileError(UnknownObjectError):
     """Exception indicating that a given file identifier is unknown."""
-    def __init__(self, file_id):
+    def __init__(self, file_id: str):
         """Initialize error message.
 
         Parameters
@@ -337,7 +356,7 @@ class UnknownParameterError(UnknownObjectError):
     """Exception indicating that a workflow specification references a
     parameter that is not defined for a given template.
     """
-    def __init__(self, identifier):
+    def __init__(self, identifier: str):
         """Initialize error message for given parameter identifier.
 
         Parameters
@@ -355,7 +374,7 @@ class UnknownRequestError(UnknownObjectError):
     """Exception indicating that a given password reset request identifier is
     unknown.
     """
-    def __init__(self, request_id):
+    def __init__(self, request_id: str):
         """Initialize error message.
 
         Parameters
@@ -373,7 +392,7 @@ class UnknownRunError(UnknownObjectError):
     """Exception indicating that a given run identifier does not reference a
     known workflow run.
     """
-    def __init__(self, identifier):
+    def __init__(self, identifier: str):
         """Initialize error message for unknown run identifier.
 
         Parameters
@@ -389,7 +408,7 @@ class UnknownRunError(UnknownObjectError):
 
 class UnknownUserError(UnknownObjectError):
     """Exception indicating that a given user identifier is unknown."""
-    def __init__(self, user_id):
+    def __init__(self, user_id: str):
         """Initialize error message.
 
         Parameters
@@ -405,7 +424,7 @@ class UnknownUserError(UnknownObjectError):
 
 class UnknownWorkflowError(UnknownObjectError):
     """Exception indicating that a given workflow identifier is unknown."""
-    def __init__(self, workflow_id):
+    def __init__(self, workflow_id: str):
         """Initialize error message.
 
         Parameters
@@ -423,7 +442,7 @@ class UnknownWorkflowGroupError(UnknownObjectError):
     """Exception indicating that a given workflow group identifier is
     unknown.
     """
-    def __init__(self, group_id):
+    def __init__(self, group_id: str):
         """Initialize error message.
 
         Parameters

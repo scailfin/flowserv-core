@@ -6,8 +6,12 @@
 # flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
-"""Implementation of the file store for backends that use S3 buckets (or S3
-bucket-like) objects.
+"""Implementation of the :class:`flowserv.model.files.bucket.Bucket` for the
+use of AWS S3 buckets.
+
+For testing the S3Bucket the AWS credentials have to be configured. See the
+documentation for more details:
+https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html
 """
 
 import botocore
