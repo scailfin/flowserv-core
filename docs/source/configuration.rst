@@ -141,7 +141,7 @@ File Store
 
 By default, files are stored on the local file system in the directory that is specified by the *FLOWSERV_API_DIR* variable. Alternative storage backends can be configured using the environment variable *FLOWSERV_FILESTORE* that contains the identifier for a file store class. **flowServ** currently supports two types of file stores:
 
-- **bucket**: `flowserv.model.files.bucket.BucketStore` stores files in storage buckets like those available from cloud service providers like AWS S3 and Google Cloud File Store. The distinction between the bucket type that will be used by the `BucketStore` is defined by the environment variable *FLOWSERV_FILESTORE_BUCKETTYPE* that currently accepts values **s3** and **gc**.
+- **bucket**: `flowserv.model.files.bucket.BucketStore` stores files in storage buckets like those available from cloud service providers like AWS S3 and Google Cloud File Store. The distinction between the bucket type that will be used by the `BucketStore` is defined by the environment variable *FLOWSERV_FILESTORE_BUCKETTYPE* that currently accepts values **s3** and **gc**. A third value (**mem**) is primarily intended for test purposes.
 - **fs**: `flowserv.model.files.fs.FileSystemStore` maintains all file on the local file system.
 
 

@@ -285,4 +285,4 @@ def folder(key: str, bucket: Bucket) -> Set[str]:
     """
     # Prefix for objects if the query references a directory.
     prefix = key if key[-1] == os.path.sep else '{}{}'.format(key, os.path.sep)
-    return bucket.query(prefix=prefix)
+    return bucket.query(filter=prefix)

@@ -192,7 +192,9 @@ FLOWSERV_FILESTORE_BUCKETTYPE = 'FLOWSERV_FILESTORE_BUCKETTYPE'
 FILESTORE_BUCKET = 'bucket'
 FILESTORE_FS = 'fs'
 # Accepted values for bucket type.
+BUCKET_FS = 'fs'  # Disk bucket for test purposes
 BUCKET_GC = 'gc'  # Google Cloud File Store
+BUCKET_MEM = 'mem'  # In-memory bucket for test purposes.
 BUCKET_S3 = 's3'  # AWS S3
 
 """Environment variable for unique bucket identifier."""

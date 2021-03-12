@@ -50,11 +50,14 @@ def FS(env: Dict) -> FileStore:
         bucket_type = env.get(config.FLOWSERV_FILESTORE_BUCKETTYPE)
         if not bucket_type:
             raise err.MissingConfigurationError('bucket type')
-        if bucket_type == config.BUCKET_S3:
+        if bucket_type == config.BUCKET_FS:
+            from flowserv.model.files.fs import DiskBucket
+            return BucketStore(bucket=DiskBucket(basedir=env.get(config.FLOWSERV_BASEDIR)))
+        elif bucket_type == config.BUCKET_MEM:
+            from flowserv.model.files.mem import MemBucket
+            return BucketStore(bucket=MemBucket())
+        elif bucket_type == config.BUCKET_S3:
             from flowserv.model.files.s3 import S3Bucket
             return BucketStore(bucket=S3Bucket(env=env))
-        elif bucket_type == 'test':
-            from flowserv.tests.files import DiskBucket
-            return BucketStore(bucket=DiskBucket(basedir=env.get('__testdir__')))
         raise err.InvalidConfigurationError(config.FLOWSERV_FILESTORE_BUCKETTYPE, bucket_type)
     raise err.MissingConfigurationError('file store')

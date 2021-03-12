@@ -16,8 +16,7 @@ import pytest
 
 from flowserv.config import Config
 from flowserv.model.files.bucket import BucketStore
-from flowserv.model.files.fs import FileSystemStore, FSFile, walk
-from flowserv.tests.files import DiskBucket
+from flowserv.model.files.fs import DiskBucket, FileSystemStore, FSFile, walk
 
 import flowserv.error as err
 import flowserv.util as util
@@ -82,7 +81,7 @@ def create_files(basedir):
 def create_store(store_id, basedir):
     """Create an instance of the file store with the given identifier."""
     if store_id == 'BUCKET':
-        return BucketStore(bucket=DiskBucket(basedir=basedir))
+        return BucketStore(bucket=DiskBucket(basedir))
     else:
         return FileSystemStore(env=Config().basedir(basedir))
 

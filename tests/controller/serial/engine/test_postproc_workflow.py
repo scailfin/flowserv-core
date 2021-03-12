@@ -42,8 +42,11 @@ NAMES = ['Alice', 'Bob', 'Gabriel', 'William']
 @pytest.mark.parametrize(
     'fsconfig',
     [
-        {config.FLOWSERV_FILESTORE: 'fs'},
-        {config.FLOWSERV_FILESTORE: 'bucket', config.FLOWSERV_FILESTORE_BUCKETTYPE: 'test'}
+        {config.FLOWSERV_FILESTORE: config.FILESTORE_FS},
+        {
+            config.FLOWSERV_FILESTORE: config.FILESTORE_BUCKET,
+            config.FLOWSERV_FILESTORE_BUCKETTYPE: config.BUCKET_FS
+        }
     ]
 )
 def test_postproc_workflow(fsconfig, tmpdir):
@@ -56,7 +59,6 @@ def test_postproc_workflow(fsconfig, tmpdir):
     # --
     env = Config().basedir(tmpdir).run_async().auth()
     env.update(fsconfig)
-    env['__testdir__'] = os.path.join(tmpdir, 'files')
     service = LocalAPIFactory(env=env)
     # Start a new run for the workflow template.
     with service() as api:

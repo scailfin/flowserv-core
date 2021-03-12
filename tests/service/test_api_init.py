@@ -11,11 +11,11 @@
 import pytest
 
 from flowserv.config import Config
-from flowserv.config import FLOWSERV_FILESTORE, FLOWSERV_FILESTORE_BUCKETTYPE
 from flowserv.model.files.factory import FS
 from flowserv.model.files.bucket import BucketStore
-from flowserv.tests.files import DiskBucket
+from flowserv.model.files.mem import MemBucket
 
+import flowserv.config as config
 import flowserv.error as err
 
 
@@ -38,14 +38,14 @@ def test_initialize_filestore_from_env(tmpdir):
     """
     # -- Setup ----------------------------------------------------------------
     env = Config().basedir(tmpdir)
-    env[FLOWSERV_FILESTORE] = 'bucket'
-    env[FLOWSERV_FILESTORE_BUCKETTYPE] = 'test'
+    env[config.FLOWSERV_FILESTORE] = config.FILESTORE_BUCKET
+    env[config.FLOWSERV_FILESTORE_BUCKETTYPE] = config.BUCKET_MEM
     # -- Create bucket store instance -----------------------------------------
     fs = FS(env=env)
     assert isinstance(fs, BucketStore)
-    assert isinstance(fs.bucket, DiskBucket)
+    assert isinstance(fs.bucket, MemBucket)
     # -- Error cases ----------------------------------------------------------
-    del env[FLOWSERV_FILESTORE_BUCKETTYPE]
+    del env[config.FLOWSERV_FILESTORE_BUCKETTYPE]
     with pytest.raises(err.MissingConfigurationError):
         FS(env=env)
     # -- Default file store ---------------------------------------------------

@@ -23,7 +23,7 @@ from flowserv.model.run import RunManager
 from flowserv.model.template.schema import (
     ResultSchema, ResultColumn, SortColumn
 )
-from flowserv.tests.files import DiskStore
+from flowserv.tests.files import MemStore
 
 import flowserv.model.workflow.state as st
 import flowserv.util as util
@@ -101,7 +101,7 @@ def run_success(run_manager, run_id, rundir, values):
     )
 
 
-@pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
+@pytest.mark.parametrize('fscls', [FileSystemStore, MemStore])
 def test_empty_ranking(fscls, database, tmpdir):
     """The rankings for workflows without completed runs are empty."""
     # -- Setup ----------------------------------------------------------------
@@ -116,7 +116,7 @@ def test_empty_ranking(fscls, database, tmpdir):
             assert len(rankings.get_ranking(wf)) == 0
 
 
-@pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
+@pytest.mark.parametrize('fscls', [FileSystemStore, MemStore])
 def test_multi_success_runs(fscls, database, tmpdir):
     """Test rankings for workflows where each group has multiple successful
     runs.
