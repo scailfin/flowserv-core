@@ -152,10 +152,6 @@ class SerialWorkflowEngine(WorkflowController):
         Returns
         -------
         flowserv.model.workflow.state.WorkflowState, string
-
-        Raises
-        ------
-        flowserv.error.DuplicateRunError
         """
         # Get the run state. Ensure that the run is in pending state
         if not run.is_pending():

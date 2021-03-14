@@ -133,55 +133,6 @@ class DuplicateArgumentError(ConstraintViolationError):
         )
 
 
-class DuplicateParameterError(ConstraintViolationError):
-    """Exception indicating that a given template parameter does not have a
-    unique identifier.
-    """
-    def __init__(self, identifier: str):
-        """Initialize error message for duplicate template parameters.
-
-        Parameters
-        ----------
-        identifier: string
-            Unique parameter identifier
-        """
-        super(DuplicateParameterError, self).__init__(
-            message='non-unique template parameter \'{}\''.format(identifier)
-        )
-
-
-class DuplicateResourceError(ConstraintViolationError):
-    """Exception indicating that a given resource identifier is not unique.
-    """
-    def __init__(self, identifier: str):
-        """Initialize error message for duplicate resource identifier.
-
-        Parameters
-        ----------
-        identifier: string
-            Unique run identifier
-        """
-        super(DuplicateResourceError, self).__init__(
-            message='non-unique resource identifier \'{}\''.format(identifier)
-        )
-
-
-class DuplicateRunError(ConstraintViolationError):
-    """Exception indicating that a given run identifier is not unique.
-    """
-    def __init__(self, identifier: str):
-        """Initialize error message for duplicate run identifier.
-
-        Parameters
-        ----------
-        identifier: string
-            Unique run identifier
-        """
-        super(DuplicateRunError, self).__init__(
-            message='non-unique run identifier \'{}\''.format(identifier)
-        )
-
-
 class DuplicateUserError(ConstraintViolationError):
     """Exception indicating that a given user already exists."""
     def __init__(self, user_id: str):
@@ -249,23 +200,6 @@ class InvalidRunStateError(ConstraintViolationError):
             msg = 'illegal state transition from {} to {}'
             msg = msg.format(state, resulting_state)
         super(InvalidRunStateError, self).__init__(message=msg)
-
-
-class InvalidSortColumnError(ConstraintViolationError):
-    """Exception indicating that a given sort column in a leader board query
-    does not exist in the result schema.
-    """
-    def __init__(self, col_name: str):
-        """Initialize error message.
-
-        Parameters
-        ----------
-        col_name : string
-            Name of column that is not in the schema
-        """
-        super(InvalidSortColumnError, self).__init__(
-            message='unknown result column {}'.format(col_name)
-        )
 
 
 class InvalidManifestError(ConstraintViolationError):
