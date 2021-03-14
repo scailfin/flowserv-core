@@ -133,13 +133,16 @@ If the environment variable *FLOWSERV_WEBAPP* is set to `True` scoped database s
 File Store
 ----------
 
-**flowServ** needs to store and access files for a variety of components and tasks. The files that are maintaind by the system include:
+**flowServ** needs to store and access files for a variety of components and tasks. The files that are maintained by the system include:
 
 - static files that are associated with a workflow template,
 - files that are uploaded by users as input to workflow runs, and
 - result files of successful workflow runs.
 
-By default, files are stored on the local file system in the directory that is specified by the *FLOWSERV_API_DIR* variable. Alternative storage backends can be configured using the environment variables *FLOWSERV_FILESTORE_CLASS* and *FLOWSERV_FILESTORE_MODULE*. These two variables are used to identify an existing implementation for the :class:FileStore interface. The package currently includes two implementations of the file store.
+By default, files are stored on the local file system in the directory that is specified by the *FLOWSERV_API_DIR* variable. Alternative storage backends can be configured using the environment variable *FLOWSERV_FILESTORE* that contains the identifier for a file store class. **flowServ** currently supports two types of file stores:
+
+- **bucket**: `flowserv.model.files.bucket.BucketStore` stores files in storage buckets like those available from cloud service providers like AWS S3 and Google Cloud File Store. The distinction between the bucket type that will be used by the `BucketStore` is defined by the environment variable *FLOWSERV_FILESTORE_BUCKETTYPE* that currently accepts values **s3** and **gc**. Additional values **mem** and **fs** are primarily intended for test purposes.
+- **fs**: `flowserv.model.files.fs.FileSystemStore` maintains all file on the local file system.
 
 
 File System Store
@@ -149,8 +152,24 @@ The default file store maintains all files in subfolders under the directory tha
 
 .. code-block:: bash
 
-    export FLOWSERV_FILESTORE_MODULE=flowserv.model.files.fs
-    export FLOWSERV_FILESTORE_CLASS=FileSystemStore
+    export FLOWSERV_FILESTORE=fs
+
+
+
+Google Cloud File Store
+-----------------------
+
+The **Google Cloud Bucket** allows storage of all files using `Google Cloud File Store <https://cloud.google.com/filestore/>`_. To configure this option set the environment variables as follows:
+
+
+.. code-block:: bash
+
+    export FLOWSERV_FILESTORE=bucket
+    export FLOWSERV_FILESTORE_BUCKETTYPE=gc
+    export GOOGLE_APPLICATION_CREDENTIALS=[path-to-service-account-key-file]
+
+The environment variable *FLOWSERV_BUCKET* is used to get the name of the storage bucket. During development when running test cases, the value of this variable should not be set. When using the :class:`flowserv.model.files.gc.GCBucket` the Google Cloud credentials have to be configured. Set up authentication by creating a service account and setting the environment variable *GOOGLE_APPLICATION_CREDENTIALS*. See the `Cloud Storage Client Libraries documentation <https://cloud.google.com/storage/docs/reference/libraries#setting_up_authenticationcredentials>`_ for more details.
+
 
 
 S3 Bucket Store
@@ -161,7 +180,7 @@ The **S3 Bucket Store** allows storage of all files using `AWS Simple Cloud Stor
 
 .. code-block:: bash
 
-    export FLOWSERV_FILESTORE_MODULE=flowserv.model.files.s3
-    export FLOWSERV_FILESTORE_CLASS=BucketStore
+    export FLOWSERV_FILESTORE=bucket
+    export FLOWSERV_FILESTORE_BUCKETTYPE=s3
 
-This file store defines the additional environment variable *FLOWSERV_S3BUCKET*. This variable is used to get the unique identifier of the S3 storage bucket. During development when running test cases, the value of this variable should not be set.
+The environment variable *FLOWSERV_BUCKET* is used to get the unique identifier of the S3 storage bucket. During development when running test cases, the value of this variable should not be set. When using the :class:`flowserv.model.files.s3.S3Bucket` the AWS credentials have to be configured. See the `AWS S3 CLI configuration documentation <https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html>`_ for more details.

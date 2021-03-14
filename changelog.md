@@ -124,3 +124,9 @@
 * New workflow template parameter type `actor` to support complete workflow steps as argument values.
 * Serial engine workers to support execution of individual workflow steps using different backends.
 * Remove separate Docker workflow controller
+
+
+### 0.?.? - 2021-03-??
+
+* Make `BucketStore` generic for storing workflow files in different types of cloud storage buckets (\#80).
+* Add Google Cloud File Storage bucket implementation (\#80).

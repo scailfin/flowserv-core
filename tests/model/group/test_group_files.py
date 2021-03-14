@@ -14,13 +14,13 @@ import pytest
 from flowserv.config import Config
 from flowserv.model.files.fs import FileSystemStore
 from flowserv.model.group import WorkflowGroupManager
-from flowserv.tests.files import DiskStore, io_file
+from flowserv.tests.files import MemStore, io_file
 
 import flowserv.error as err
 import flowserv.tests.model as model
 
 
-@pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
+@pytest.mark.parametrize('fscls', [FileSystemStore, MemStore])
 def test_delete_file(fscls, database, tmpdir):
     """Test deleting an uploaded file."""
     # -- Setup ----------------------------------------------------------------
@@ -57,7 +57,7 @@ def test_delete_file(fscls, database, tmpdir):
             manager.delete_file(group_id=group_1, file_id=file_1)
 
 
-@pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
+@pytest.mark.parametrize('fscls', [FileSystemStore, MemStore])
 def test_get_file(fscls, database, tmpdir):
     """Test accessing uploaded files."""
     # -- Setup ----------------------------------------------------------------
@@ -98,7 +98,7 @@ def test_get_file(fscls, database, tmpdir):
             manager.get_uploaded_file(group_id=group_1, file_id='UNK').open()
 
 
-@pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
+@pytest.mark.parametrize('fscls', [FileSystemStore, MemStore])
 def test_list_files(fscls, database, tmpdir):
     """Test listing uploaded files."""
     # -- Setup ----------------------------------------------------------------
@@ -126,7 +126,7 @@ def test_list_files(fscls, database, tmpdir):
         assert len(files) == 1
 
 
-@pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
+@pytest.mark.parametrize('fscls', [FileSystemStore, MemStore])
 def test_upload_file(fscls, database, tmpdir):
     """Test uploading files."""
     # -- Setup ----------------------------------------------------------------

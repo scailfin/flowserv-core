@@ -11,14 +11,18 @@
 import os
 import shutil
 
-from typing import Dict, IO, List, Optional, Tuple
+from io import BytesIO
+from typing import Dict, Iterable, IO, List, Optional, Tuple
 
 from flowserv.config import FLOWSERV_BASEDIR
 from flowserv.model.files.base import FileStore, IOHandle
+from flowserv.model.files.bucket import Bucket
 
 import flowserv.error as err
 import flowserv.util as util
 
+
+# -- File store ---------------------------------------------------------------
 
 class FSFile(IOHandle):
     """Implementation of the file object interface for files that are stored on
@@ -87,10 +91,6 @@ class FileSystemStore(FileStore):
         self.basedir = env.get(FLOWSERV_BASEDIR)
         if self.basedir is None:
             raise err.MissingConfigurationError('API base directory')
-
-    def __repr__(self):
-        """Get object representation ."""
-        return "<FileSystemStore dir='{}' />".format(self.basedir)
 
     def copy_folder(self, key: str, dst: str):
         """Copy all files in the folder with the given key to a target folder.
@@ -179,6 +179,90 @@ class FileSystemStore(FileStore):
             file.store(os.path.join(target, filename))
 
 
+# -- Bucket -------------------------------------------------------------------
+
+class DiskBucket(Bucket):
+    """Implementation of the :class:`flowserv.model.files.bucket.Bucket` interface
+    for test purposes. The test bucket maintains all files in a given folder on
+    the local file system.
+    """
+    def __init__(self, basedir: str):
+        """Initialize the storage directory.
+
+        Parameters
+        ----------
+        basedir: str
+            Path to a directory on the local file system.
+        """
+        self.basedir = basedir
+
+    def delete(self, keys: Iterable[str]):
+        """Delete files that are identified by their relative path in the given
+        list of object keys.
+
+        Parameters
+        ----------
+        keys: iterable of string
+            Unique identifier for objects that are being deleted.
+        """
+        for obj in keys:
+            filename = os.path.join(self.basedir, obj)
+            if os.path.exists(filename):
+                os.remove(filename)
+
+    def download(self, key: str) -> IO:
+        """Read file content into an IO buffer.
+
+        Parameters
+        ----------
+        key: string
+            Unique object identifier.
+
+        Returns
+        -------
+        io.BytesIO
+        """
+        data = BytesIO()
+        filename = os.path.join(self.basedir, key)
+        if os.path.isfile(filename):
+            with open(filename, 'rb') as f:
+                data.write(f.read())
+        else:
+            raise err.UnknownFileError(key)
+        data.seek(0)
+        return data
+
+    def query(self, filter: str) -> List[str]:
+        """Return all files with relative paths that match the given query
+        prefix.
+
+        Parameters
+        ----------
+        filter: str
+            Prefix query for object identifiers.
+
+        Returns
+        -------
+        list of string
+        """
+        return [key for key in parse_dir(self.basedir) if key.startswith(filter)]
+
+    def upload(self, file: IO, key: str):
+        """Store the given IO object on the file system.
+
+        Parameters
+        ----------
+        file: flowserv.model.files.base.IOHandle
+            Handle for uploaded file.
+        key: string
+            Unique object identifier.
+        """
+        filename = os.path.join(self.basedir, key)
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+        with open(filename, 'wb') as f:
+            f.write(file.open().read())
+
+
 # -- Helper Methods -----------------------------------------------------------
 
 def copy(src: str, dst: str):
@@ -201,6 +285,42 @@ def copy(src: str, dst: str):
             shutil.copytree(src=src, dst=dst)
     else:
         shutil.copyfile(src=src, dst=dst)
+
+
+def parse_dir(
+    dirname: str, prefix: Optional[str] = '', result: Optional[List[str]] = None
+) -> List[str]:
+    """Parse a given directory recursively to create al ist of all files.
+
+    Each file in the result is represented by its relative path that starts at
+    the base directory that is given when first invoking the function.
+
+    Parameters
+    ----------
+    dirname: string
+        Path to the directory whose contents are being added to the result.
+    prefix: string
+        Relative path to current directory from the base directory that was
+        given when the function was initially invoked.
+    result: list of string, default=None
+        List of files from the directories that have already been parsed.
+
+    Returns
+    -------
+    list of string
+    """
+    result = result if result is not None else list()
+    for filename in os.listdir(dirname):
+        f = os.path.join(dirname, filename)
+        if os.path.isdir(f):
+            parse_dir(
+                dirname=f,
+                prefix=os.path.join(prefix, filename),
+                result=result
+            )
+        else:
+            result.append(os.path.join(prefix, filename))
+    return result
 
 
 def walk(

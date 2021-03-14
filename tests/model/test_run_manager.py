@@ -18,7 +18,7 @@ from flowserv.model.files.fs import FileSystemStore
 from flowserv.model.group import WorkflowGroupManager
 from flowserv.model.run import RunManager
 from flowserv.model.workflow.manager import WorkflowManager
-from flowserv.tests.files import DiskStore
+from flowserv.tests.files import MemStore
 from flowserv.tests.model import success_run
 
 import flowserv.error as err
@@ -49,7 +49,7 @@ def error_run(database, fs, messages):
     return workflow_id, group_id, run_id
 
 
-@pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
+@pytest.mark.parametrize('fscls', [FileSystemStore, MemStore])
 def test_cancel_run(fscls, database, tmpdir):
     """Test setting run state to canceled."""
     # -- Setup ----------------------------------------------------------------
@@ -79,7 +79,7 @@ def test_cancel_run(fscls, database, tmpdir):
         assert len(state.messages) == 1
 
 
-@pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
+@pytest.mark.parametrize('fscls', [FileSystemStore, MemStore])
 def test_create_run_errors(fscls, database, tmpdir):
     """Test error cases for create_run parameter combinations."""
     # -- Setup ----------------------------------------------------------------
@@ -103,7 +103,7 @@ def test_create_run_errors(fscls, database, tmpdir):
             runs.create_run(group=group, runs=['A'])
 
 
-@pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
+@pytest.mark.parametrize('fscls', [FileSystemStore, MemStore])
 def test_delete_run(fscls, database, tmpdir):
     """Test deleting a run."""
     # -- Setup ----------------------------------------------------------------
@@ -121,7 +121,7 @@ def test_delete_run(fscls, database, tmpdir):
             runs.delete_run(run_id)
 
 
-@pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
+@pytest.mark.parametrize('fscls', [FileSystemStore, MemStore])
 def test_error_run(fscls, database, tmpdir):
     """Test setting run state to error."""
     # -- Setup ----------------------------------------------------------------
@@ -141,7 +141,7 @@ def test_error_run(fscls, database, tmpdir):
         assert state.messages == messages
 
 
-@pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
+@pytest.mark.parametrize('fscls', [FileSystemStore, MemStore])
 def test_invalid_state_transitions(fscls, database, tmpdir):
     """Test error cases for invalid state transitions."""
     # -- Setup ----------------------------------------------------------------
@@ -175,7 +175,7 @@ def test_invalid_state_transitions(fscls, database, tmpdir):
             runs.update_run(run_id=run_id, state=state.success())
 
 
-@pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
+@pytest.mark.parametrize('fscls', [FileSystemStore, MemStore])
 def test_list_runs(fscls, database, tmpdir):
     """Test retrieving a list of run descriptors."""
     # -- Setup ----------------------------------------------------------------
@@ -213,7 +213,7 @@ def test_list_runs(fscls, database, tmpdir):
         assert len(runs.list_runs(group_id, state=st.STATE_SUCCESS)) == 0
 
 
-@pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
+@pytest.mark.parametrize('fscls', [FileSystemStore, MemStore])
 def test_obsolete_runs(fscls, database, tmpdir):
     """Test deleting runs that were created before a given date."""
     # -- Setup ----------------------------------------------------------------
@@ -244,7 +244,7 @@ def test_obsolete_runs(fscls, database, tmpdir):
         runs.get_run(run_id=run_3)
 
 
-@pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
+@pytest.mark.parametrize('fscls', [FileSystemStore, MemStore])
 def test_run_parameters(fscls, database, tmpdir):
     """Test creating run with template arguments."""
     # -- Setup ----------------------------------------------------------------
@@ -272,7 +272,7 @@ def test_run_parameters(fscls, database, tmpdir):
         assert run.arguments == arguments
 
 
-@pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
+@pytest.mark.parametrize('fscls', [FileSystemStore, MemStore])
 def test_success_run(fscls, database, tmpdir):
     """Test life cycle for a successful run."""
     # -- Setup ----------------------------------------------------------------

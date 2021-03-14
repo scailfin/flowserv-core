@@ -43,9 +43,9 @@ import flowserv.error as err
         (config.FLOWSERV_WEBAPP, 'False', False),
         (config.FLOWSERV_WEBAPP, 'ABC', False),
         (config.FLOWSERV_WEBAPP, '1', False),
-        (config.FLOWSERV_FILESTORE_CLASS, 'CLASS', 'CLASS'),
-        (config.FLOWSERV_FILESTORE_MODULE, 'MODULE', 'MODULE'),
-        (config.FLOWSERV_S3BUCKET, 'S3', 'S3')
+        (config.FLOWSERV_FILESTORE, 'CLASS', 'CLASS'),
+        (config.FLOWSERV_FILESTORE_BUCKETTYPE, 'BTYPE', 'BTYPE'),
+        (config.FLOWSERV_BUCKET, 'BUCKET', 'BUCKET')
     ]
 )
 def test_config_env(var, value, result):
@@ -89,9 +89,9 @@ def test_config_setter():
     assert conf[config.FLOWSERV_ASYNC]
     # S3 bucket
     conf = conf.s3('mybucket')
-    assert conf[config.FLOWSERV_FILESTORE_MODULE] == 'flowserv.model.files.s3'
-    assert conf[config.FLOWSERV_FILESTORE_CLASS] == 'BucketStore'
-    assert conf[config.FLOWSERV_S3BUCKET] == 'mybucket'
+    assert conf[config.FLOWSERV_FILESTORE] == config.FILESTORE_BUCKET
+    assert conf[config.FLOWSERV_FILESTORE_BUCKETTYPE] == config.BUCKET_S3
+    assert conf[config.FLOWSERV_BUCKET] == 'mybucket'
     # Token timeout
     conf = conf.token_timeout(100)
     assert conf[config.FLOWSERV_AUTH_LOGINTTL] == 100

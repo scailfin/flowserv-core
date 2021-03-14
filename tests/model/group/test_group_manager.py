@@ -14,13 +14,13 @@ from flowserv.config import Config
 from flowserv.model.files.fs import FileSystemStore
 from flowserv.model.group import WorkflowGroupManager
 from flowserv.model.template.parameter import ParameterIndex
-from flowserv.tests.files import DiskStore
+from flowserv.tests.files import MemStore
 
 import flowserv.error as err
 import flowserv.tests.model as model
 
 
-@pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
+@pytest.mark.parametrize('fscls', [FileSystemStore, MemStore])
 def test_create_group(fscls, database, tmpdir):
     """Test creating and retrieving new workflow groups."""
     # -- Setup ----------------------------------------------------------------
@@ -118,7 +118,7 @@ def test_create_group(fscls, database, tmpdir):
             )
 
 
-@pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
+@pytest.mark.parametrize('fscls', [FileSystemStore, MemStore])
 def test_delete_group(fscls, database, tmpdir):
     """Test creating and deleting workflow groups."""
     # -- Setup ----------------------------------------------------------------
@@ -154,7 +154,7 @@ def test_delete_group(fscls, database, tmpdir):
         assert manager.get_group(group_2) is not None
 
 
-@pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
+@pytest.mark.parametrize('fscls', [FileSystemStore, MemStore])
 def test_list_groups(fscls, database, tmpdir):
     """Test listing groups by user or by workflow."""
     # -- Setup ----------------------------------------------------------------
@@ -198,7 +198,7 @@ def test_list_groups(fscls, database, tmpdir):
         assert [g.name for g in groups] == [group_2, group_3]
 
 
-@pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
+@pytest.mark.parametrize('fscls', [FileSystemStore, MemStore])
 def test_update_groups(fscls, database, tmpdir):
     """Test updating group name and group members."""
     # -- Setup ----------------------------------------------------------------

@@ -17,7 +17,7 @@ import pytest
 from flowserv.config import Config
 from flowserv.model.files.fs import FileSystemStore
 from flowserv.model.workflow.manager import WorkflowManager
-from flowserv.tests.files import DiskStore
+from flowserv.tests.files import MemStore
 
 import flowserv.error as err
 
@@ -44,7 +44,7 @@ TEMPLATE = dict({'A': 1})
 
 @pytest.mark.parametrize(
     'fscls,identifier',
-    [(FileSystemStore, 'abc'), (DiskStore, 'def')]
+    [(FileSystemStore, 'abc'), (MemStore, 'def')]
 )
 def test_create_workflow(fscls, identifier, database, tmpdir):
     """Test creating workflows with different levels of detail."""
@@ -63,9 +63,6 @@ def test_create_workflow(fscls, identifier, database, tmpdir):
         assert wf.instructions is None
         template = wf.get_template()
         assert template.result_schema is not None
-        staticdir = os.path.join(tmpdir, fs.workflow_staticdir(wf.workflow_id))
-        assert os.path.isfile(os.path.join(staticdir, 'code/helloworld.py'))
-        assert os.path.isfile(os.path.join(staticdir, 'data/names.txt'))
     # -- Add workflow with user-provided metadata -----------------------------
     with database.session() as session:
         manager = WorkflowManager(session=session, fs=fs)
@@ -82,12 +79,9 @@ def test_create_workflow(fscls, identifier, database, tmpdir):
         wf.engine_config == {'workers': {'test': {'worker': 'docker'}}}
         template = wf.get_template()
         assert template.result_schema is not None
-        staticdir = os.path.join(tmpdir, fs.workflow_staticdir(wf.workflow_id))
-        assert os.path.isfile(os.path.join(staticdir, 'code/helloworld.py'))
-        assert os.path.isfile(os.path.join(staticdir, 'data/names.txt'))
 
 
-@pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
+@pytest.mark.parametrize('fscls', [FileSystemStore, MemStore])
 def test_create_workflow_with_alt_spec(fscls, database, tmpdir):
     """Test creating workflows with alternative specification files."""
     # -- Setup ----------------------------------------------------------------
@@ -125,7 +119,7 @@ def test_create_workflow_with_alt_spec(fscls, database, tmpdir):
         assert wf.get_template().postproc_spec is not None
 
 
-@pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
+@pytest.mark.parametrize('fscls', [FileSystemStore, MemStore])
 def test_create_workflow_with_error(fscls, database, tmpdir):
     """Error cases when creating a workflow."""
     # -- Setup ----------------------------------------------------------------
@@ -147,7 +141,7 @@ def test_create_workflow_with_error(fscls, database, tmpdir):
             )
 
 
-@pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
+@pytest.mark.parametrize('fscls', [FileSystemStore, MemStore])
 def test_create_workflow_with_alt_manifest(fscls, database, tmpdir):
     """Test creating 'Hello World' workflow with a different manifest file."""
     fs = fscls(env=Config().basedir(tmpdir))
@@ -162,12 +156,9 @@ def test_create_workflow_with_alt_manifest(fscls, database, tmpdir):
         assert wf.instructions == '# Hello World'
         template = wf.get_template()
         assert template.result_schema is not None
-        staticdir = os.path.join(tmpdir, fs.workflow_staticdir(wf.workflow_id))
-        assert os.path.isfile(os.path.join(staticdir, 'code/helloworld.py'))
-        assert not os.path.isfile(os.path.join(staticdir, 'data/names.txt'))
 
 
-@pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
+@pytest.mark.parametrize('fscls', [FileSystemStore, MemStore])
 def test_delete_workflow(fscls, database, tmpdir):
     """Test deleting a workflows from the repository."""
     # -- Setup ----------------------------------------------------------------
@@ -195,7 +186,7 @@ def test_delete_workflow(fscls, database, tmpdir):
             manager.delete_workflow(workflow_id=workflow_1)
 
 
-@pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
+@pytest.mark.parametrize('fscls', [FileSystemStore, MemStore])
 def test_get_workflow(fscls, database, tmpdir):
     """Test retrieving workflows from the repository."""
     # -- Setup ----------------------------------------------------------------

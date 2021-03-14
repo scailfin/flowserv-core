@@ -13,7 +13,6 @@ import os
 import pytest
 import time
 
-from flowserv.config import FLOWSERV_FILESTORE_CLASS, FLOWSERV_FILESTORE_MODULE
 from flowserv.service.run.argument import serialize_arg, serialize_fh
 from flowserv.tests.files import io_file
 from flowserv.tests.service import (
@@ -66,26 +65,8 @@ def test_cancel_run_helloworld(async_service):
         assert run['messages'][0] == 'done'
 
 
-@pytest.mark.parametrize(
-    'fsconfig,target',
-    [
-        (
-            {
-                FLOWSERV_FILESTORE_MODULE: 'flowserv.model.files.fs',
-                FLOWSERV_FILESTORE_CLASS: 'FileSystemStore'
-            },
-            None
-        ),
-        (
-            {
-                FLOWSERV_FILESTORE_MODULE: 'flowserv.model.files.s3',
-                FLOWSERV_FILESTORE_CLASS: 'BucketStore'
-            },
-            'somenames.txt'
-        )
-    ]
-)
-def test_run_helloworld_async(async_service, fsconfig, target):
+@pytest.mark.parametrize('target', [None, 'somenames.txt'])
+def test_run_helloworld_async(async_service, target):
     """Execute the helloworld example."""
     # -- Setup ----------------------------------------------------------------
     #

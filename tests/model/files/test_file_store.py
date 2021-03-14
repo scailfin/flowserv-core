@@ -6,8 +6,8 @@
 # flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
-"""Unit tests for the S3 bucket store. Uses the TestBucket to simulate S3
-buckets.
+"""Unit tests for the bucket store. Uses the TestBucket to simulate buckets for
+cloud service providers.
 """
 
 import json
@@ -15,9 +15,8 @@ import os
 import pytest
 
 from flowserv.config import Config
-from flowserv.model.files.fs import FileSystemStore, FSFile, walk
-from flowserv.model.files.s3 import BucketStore
-from flowserv.tests.files import DiskBucket
+from flowserv.model.files.bucket import BucketStore
+from flowserv.model.files.fs import DiskBucket, FileSystemStore, FSFile, walk
 
 import flowserv.error as err
 import flowserv.util as util
@@ -82,7 +81,7 @@ def create_files(basedir):
 def create_store(store_id, basedir):
     """Create an instance of the file store with the given identifier."""
     if store_id == 'BUCKET':
-        return BucketStore(env=Config(), bucket=DiskBucket(basedir=basedir))
+        return BucketStore(bucket=DiskBucket(basedir))
     else:
         return FileSystemStore(env=Config().basedir(basedir))
 
@@ -114,6 +113,7 @@ def test_delete_files_and_folders(store_id, tmpdir):
     assert json.load(fs.load_file(FILE_A).open()) == DATA1
     assert json.load(fs.load_file(FILE_D).open()) == DATA4
     fs.delete_file(FILE_D)
+    fs.delete_file(FILE_D)  # No harm deleting multiple times.
     # After deleting file D only file A but not file D can be read.
     assert json.load(fs.load_file(FILE_A).open()) == DATA1
     with pytest.raises(err.UnknownFileError):
@@ -210,14 +210,3 @@ def test_store_and_copy_folder(store_id, tmpdir):
     assert util.read_object(os.path.join(DOWNLOAD, FILE_DATA)) == EXDATA
     assert util.read_object(os.path.join(DOWNLOAD, 'E.json')) == DATA4
     assert not os.path.exists(os.path.join(DOWNLOAD, FILE_D))
-
-
-@pytest.mark.parametrize('store_id', ['FILE_SYSTEM', 'BUCKET'])
-def test_store_name_and_configuration(store_id, tmpdir):
-    """Test getting the file store string representation."""
-    # Initialize the file store and create the input file structure.
-    fs = create_store(store_id, os.path.join(tmpdir, 'fs'))
-    if store_id == 'FILE_SYSTEM':
-        assert repr(fs).startswith('<FileSystemStore ')
-    else:
-        assert repr(fs).startswith('<BucketStore ')

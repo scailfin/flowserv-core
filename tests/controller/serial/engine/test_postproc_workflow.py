@@ -41,13 +41,13 @@ NAMES = ['Alice', 'Bob', 'Gabriel', 'William']
 
 @pytest.mark.parametrize(
     'fsconfig',
-    [{
-        config.FLOWSERV_FILESTORE_MODULE: 'flowserv.model.files.fs',
-        config.FLOWSERV_FILESTORE_CLASS: 'FileSystemStore'
-    }, {
-        config.FLOWSERV_FILESTORE_MODULE: 'flowserv.model.files.s3',
-        config.FLOWSERV_FILESTORE_CLASS: 'BucketStore'
-    }]
+    [
+        {config.FLOWSERV_FILESTORE: config.FILESTORE_FS},
+        {
+            config.FLOWSERV_FILESTORE: config.FILESTORE_BUCKET,
+            config.FLOWSERV_FILESTORE_BUCKETTYPE: config.BUCKET_FS
+        }
+    ]
 )
 def test_postproc_workflow(fsconfig, tmpdir):
     """Execute the modified helloworld example."""

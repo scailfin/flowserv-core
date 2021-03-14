@@ -7,29 +7,34 @@
 # terms of the MIT License; see LICENSE file for more details.
 
 """Implementation of the :class:`flowserv.model.files.bucket.Bucket` for the
-use of AWS S3 buckets.
+use of Google Cloud File Store buckets.
 
-When using the S3Bucket the AWS credentials have to be configured. See the
-documentation for more details:
-https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html
+For testing the GCBucket the Google Cloud credentials have to be configured.
+Set up authentication by creating a service account and setting the environment
+variable *GOOGLE_APPLICATION_CREDENTIALS*. See the documentation for more details:
+https://cloud.google.com/storage/docs/reference/libraries#setting_up_authentication
 """
-
-import botocore
 
 from io import BytesIO
 from typing import Dict, IO, Iterable
 
-from flowserv.config import FLOWSERV_BUCKET
+from google.cloud import exceptions
+
 from flowserv.model.files.base import IOHandle
 from flowserv.model.files.bucket import Bucket
 
+import flowserv.config as config
 import flowserv.error as err
 
 
-class S3Bucket(Bucket):
-    """Implementation of the bucket interface for AWS S3 buckets."""
+class GCBucket(Bucket):
+    """Implementation of the bucket interface for Google Cloud File Store
+    buckets.
+    """
     def __init__(self, env: Dict):
-        """Initialize the storage bucket.
+        """Initialize the storage bucket from the environment settings.
+
+        Expects the bucket name in the environment variable FLOWSERV_BUCKET.
 
         Parameters
         ----------
@@ -37,11 +42,17 @@ class S3Bucket(Bucket):
             Configuration object that provides access to configuration
             parameters in the environment.
         """
-        bucket_id = env.get(FLOWSERV_BUCKET)
-        if bucket_id is None:
-            raise err.MissingConfigurationError('bucket identifier')
-        import boto3
-        self.bucket = boto3.resource('s3').Bucket(bucket_id)
+        self.bucket_name = env.get(config.FLOWSERV_BUCKET)
+        if self.bucket_name is None:
+            raise err.MissingConfigurationError('bucket name')
+        # Instantiates a client. Use helper method to better support mocking
+        # for unit tests.
+        self.client = get_google_client()
+        # Create the bucket if it does not exist.
+        for bucket in self.client.list_buckets():
+            if bucket.name == self.bucket_name:
+                return
+        self.client.create_bucket(self.bucket_name)
 
     def delete(self, keys: Iterable[str]):
         """Delete objects with the given identifier.
@@ -51,7 +62,10 @@ class S3Bucket(Bucket):
         keys: iterable of string
             Unique identifier for objects that are being deleted.
         """
-        self.bucket.delete_objects(Delete={'Objects': [{'Key': k} for k in keys]})
+        try:
+            self.client.bucket(self.bucket_name).delete_blobs(keys)
+        except exceptions.NotFound:
+            pass
 
     def download(self, key: str) -> IO:
         """Get content for the object with the given key as an IO buffer.
@@ -68,11 +82,11 @@ class S3Bucket(Bucket):
         -------
         io.BytesIO
         """
+        blob = self.client.bucket(self.bucket_name).blob(key)
         # Load object into a new bytes buffer.
-        data = BytesIO()
         try:
-            self.bucket.download_fileobj(key, data)
-        except botocore.exceptions.ClientError:
+            data = BytesIO(blob.download_as_bytes())
+        except exceptions.NotFound:
             raise err.UnknownFileError(key)
         # Ensure to reset the read pointer of the buffer before returning it.
         data.seek(0)
@@ -90,7 +104,8 @@ class S3Bucket(Bucket):
         -------
         iterable of string
         """
-        return {obj.key for obj in self.bucket.objects.filter(Prefix=filter)}
+        blobs = self.client.list_blobs(self.bucket_name, prefix=filter)
+        return {obj.name for obj in blobs}
 
     def upload(self, file: IOHandle, key: str):
         """Upload the file object and store it under the given key.
@@ -102,4 +117,15 @@ class S3Bucket(Bucket):
         key: string
             Unique object identifier.
         """
-        self.bucket.upload_fileobj(file.open(), key)
+        blob = self.client.bucket(self.bucket_name).blob(key)
+        blob.upload_from_file(file.open())
+
+
+# -- Helper Methods -----------------------------------------------------------
+
+def get_google_client():  # pragma: no cover
+    """Helper method to get instance of the Google Cloud Storage client. This
+    method was added to support mocking for unit tests.
+    """
+    from google.cloud import storage
+    return storage.Client()
