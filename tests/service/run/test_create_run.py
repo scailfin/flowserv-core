@@ -62,6 +62,19 @@ def test_create_run_local(local_service, hello_world):
     with local_service(user_id=user_2) as api:
         with pytest.raises(err.UnauthorizedAccessError):
             api.runs().get_run(run_id=run_id)
+    # -- Error for run with invalid arguments ---------------------------------
+    with local_service(user_id=user_1) as api:
+        with pytest.raises(err.DuplicateArgumentError):
+            api.runs().start_run(
+                group_id=group_id,
+                arguments=[{
+                    'name': 'sleeptime',
+                    'value': 1
+                }, {
+                    'name': 'sleeptime',
+                    'value': 2
+                }]
+            )['id']
 
 
 def test_start_run_remote(remote_service, mock_response):

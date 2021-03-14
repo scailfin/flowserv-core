@@ -19,6 +19,7 @@ https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html
 import sys
 
 from flowserv.model.files.fs import walkdir
+from flowserv.model.files.gc import GCBucket
 from flowserv.model.files.s3 import S3Bucket
 
 import flowserv.config as config
@@ -39,6 +40,8 @@ if __name__ == '__main__':
     # -- Create the bucket ----------------------------------------------------
     if provider_id in ['AWS', 'S3']:
         bucket = S3Bucket({config.FLOWSERV_BUCKET: bucket_id})
+    elif provider_id == 'GC':
+        bucket = GCBucket({config.FLOWSERV_BUCKET: bucket_id})
     else:
         raise ValueError('unknown provider {}'.format(provider_id))
     # -- Upload files ---------------------------------------------------------
