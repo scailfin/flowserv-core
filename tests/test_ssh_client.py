@@ -8,6 +8,9 @@
 
 """Unit tests for the SSH client."""
 
+from pathlib import Path
+
+import os
 import pytest
 
 import flowserv.util.ssh as ssh
@@ -31,6 +34,12 @@ class Channel:
         return self.exit_status
 
 
+class FH:
+    """File handle that provides the filename property."""
+    def __init__(self, filename):
+        self.filename = filename
+
+
 class SSHTestClient:
     """Fake SSH client for test purposes."""
     def __init__(self):
@@ -46,6 +55,9 @@ class SSHTestClient:
 
     def get(self, src, dst):
         pass
+
+    def listdir_attr(self, filename):
+        return [FH(f) for f in os.listdir(filename)]
 
     def mkdir(self, dirpath):
         if dirpath in self._dirs:
@@ -87,3 +99,32 @@ def test_ssh_upload_download(mock_ssh):
         client.upload(files=[], directories=[])
         client.upload(files=[('a', 'b')], directories=['a', 'a'])
         client.download('b', 'c')
+
+
+def test_ssh_walk(mock_ssh, tmpdir):
+    """Test the remote directory walk method."""
+    # -- Setup ----------------------------------------------------------------
+    #
+    # Create directory structure:
+    # a.txt
+    # b/
+    # b/c.txt
+    # b/d.txt
+    # b/e/
+    # b/e/f.txt
+    # b/g
+    os.makedirs(os.path.join(tmpdir, 'b', 'e'))
+    os.makedirs(os.path.join(tmpdir, 'b', 'g'))
+    Path(os.path.join(tmpdir, 'a.txt')).touch()
+    Path(os.path.join(tmpdir, 'b', 'c.txt')).touch()
+    Path(os.path.join(tmpdir, 'b', 'd.txt')).touch()
+    Path(os.path.join(tmpdir, 'b', 'e', 'f.txt')).touch()
+    Path(os.path.join(tmpdir, 'a.txt')).touch()
+    # -- Test -----------------------------------------------------------------
+    with ssh.ssh_client('test') as client:
+        files = client.walk(tmpdir)
+    assert len(files) == 4
+    assert (None, 'a.txt') in files
+    assert ('b', 'c.txt') in files
+    assert ('b', 'd.txt') in files
+    assert ('b/e', 'f.txt') in files

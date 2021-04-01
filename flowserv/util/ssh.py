@@ -13,6 +13,7 @@ package.
 from contextlib import contextmanager
 from typing import List, Optional, Tuple
 
+import os
 import paramiko
 
 
@@ -117,6 +118,32 @@ class SSHClient:
         finally:
             sftp.close()
 
+    def walk(self, dirpath: str) -> List[Tuple[str, str]]:
+        """Get recursive listing of all files in a given directory.
+
+        Returns a list of tuples that contain the relative sub-directory path
+        and the file name for all files. The sub-directory path for files in
+        the ``dirpath`` is None.
+
+        If ``dirpath`` does not reference a directory the result is None.
+
+        Parameters
+        ----------
+        dirpath: string
+            Path to a directory on the remote server.
+
+        Returns
+        -------
+        list of tuples of (string, string)
+        """
+        # Get a new SFTP client.
+        sftp = self._client.open_sftp()
+        try:
+            # Recursively walk the directory path.
+            return walk(client=sftp, dirpath=dirpath)
+        finally:
+            sftp.close()
+
 
 # -- Helper Method ------------------------------------------------------------
 
@@ -189,3 +216,49 @@ def ssh_client(
         yield client
     finally:
         client.close()
+
+
+def walk(
+    client: paramiko.SFTPClient, dirpath: str, prefix: Optional[str] = None
+) -> List[Tuple[str, str]]:
+    """Recursively scan contents of a remote directory.
+
+    Returns a list of tuples that contain the relative sub-directory path
+    and the file name for all files. The sub-directory path for files in
+    the ``dirpath`` is None.
+
+    If ``dirpath`` does not reference a directory the result is None.
+
+    Parameters
+    ----------
+    client: paramiko.SFTPClient
+        SFTP client.
+    dirpath: string
+        Path to a directory on the remote server.
+    prefix: string, default=None
+        Prefix path for the current (sub-)directory.
+
+    Returns
+    -------
+    list of tuples of (string, string)
+    """
+    result = list()
+    try:
+        for f in client.listdir_attr(dirpath):
+            children = walk(
+                client=client,
+                dirpath=os.path.join(dirpath, f.filename),
+                prefix=os.path.join(prefix, f.filename) if prefix else f.filename
+            )
+            if children is not None:
+                # The file is a directory.
+                result.extend(children)
+            else:
+                # Couldn't recursively explore the filename, i.e., it is not a
+                # directory but a file.
+                result.append((prefix, f.filename))
+    except IOError:
+        # An error is raised if the dirpath does not reference a valid
+        # directory.
+        return None
+    return result
