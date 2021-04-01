@@ -37,12 +37,13 @@ class SSHClient:
             Set to True to enable searching for discoverable private key files
             in ``~/.ssh/``.
         """
-        self._client = paramiko_ssh_client(
-            hostname=hostname,
-            port=port,
-            timeout=timeout,
-            look_for_keys=look_for_keys
-        )
+        self.hostname = hostname
+        self.port = port
+        self.timeout = timeout
+        self.look_for_keys = look_for_keys
+        # Create the SSH client.
+        self._client = None
+        self.ssh_client
 
     def close(self):
         """Close the SSH client."""
@@ -59,7 +60,7 @@ class SSHClient:
             Destination path for the downloaded file.
         """
         # Get a new SFTP client.
-        sftp = self._client.open_sftp()
+        sftp = self.sftp()
         try:
             sftp.get(src, dst)
         finally:
@@ -80,10 +81,36 @@ class SSHClient:
         -------
         string
         """
-        _, stdout, stderr = self._client.exec_command(command)
+        _, stdout, stderr = self.ssh_client.exec_command(command)
         if stdout.channel.recv_exit_status() != 0:
             raise RuntimeError(stderr.read().decode("utf-8"))
         return stdout.read().decode("utf-8")
+
+    def sftp(self) -> paramiko.SFTPClient:
+        """Get SFTP client.
+
+        Returns
+        -------
+        paramiko.SFTPClient
+        """
+        return self.ssh_client.open_sftp()
+
+    @property
+    def ssh_client(self) -> paramiko.SSHClient:
+        """Get an active instance of the SSH Client.
+
+        Returns
+        -------
+        paramiko.SSHClient
+        """
+        if not self._client or not self._client.get_transport().active:
+            self._client = paramiko_ssh_client(
+                hostname=self.hostname,
+                port=self.port,
+                timeout=self.timeout,
+                look_for_keys=self.look_for_keys
+            )
+        return self._client
 
     def upload(self, files: List[Tuple[str, str]], directories: List[str]):
         """Upload a given list of files.
@@ -103,7 +130,7 @@ class SSHClient:
             These directories will be created if they don't exist.
         """
         # Get a new SFTP client.
-        sftp = self._client.open_sftp()
+        sftp = self.sftp()
         try:
             # Attempt to create all required target directories on the remote
             # server first.
@@ -137,7 +164,7 @@ class SSHClient:
         list of tuples of (string, string)
         """
         # Get a new SFTP client.
-        sftp = self._client.open_sftp()
+        sftp = self.sftp()
         try:
             # Recursively walk the directory path.
             return walk(client=sftp, dirpath=dirpath)

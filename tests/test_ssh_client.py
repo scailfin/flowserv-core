@@ -45,6 +45,11 @@ class SSHTestClient:
     def __init__(self):
         self.exit_status = 0
         self._dirs = set()
+        self._active = 2
+
+    @property
+    def active(self):
+        return self._active > 0
 
     def close(self):
         pass
@@ -55,6 +60,10 @@ class SSHTestClient:
 
     def get(self, src, dst):
         pass
+
+    def get_transport(self):
+        self._active -= 1
+        return self
 
     def listdir_attr(self, filename):
         return [FH(f) for f in os.listdir(filename)]
