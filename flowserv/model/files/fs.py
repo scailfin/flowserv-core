@@ -94,6 +94,7 @@ class FileSystemStore(FileStore):
 
     def copy_folder(self, key: str, dst: str):
         """Copy all files in the folder with the given key to a target folder.
+
         Creates the destination folder if it does not exist.
 
         Parameters
@@ -103,18 +104,7 @@ class FileSystemStore(FileStore):
         dst: string
             Path on the file system to the target folder.
         """
-        # Create target directory if it does not exist.
-        os.makedirs(dst, exist_ok=True)
-        # Copy all files and folders from the source folder to the target
-        # folder.
-        src = os.path.join(self.basedir, key)
-        for filename in os.listdir(src):
-            source = os.path.join(src, filename)
-            target = os.path.join(dst, filename)
-            if os.path.isdir(source):
-                shutil.copytree(src=source, dst=target)
-            else:
-                shutil.copy(src=source, dst=target)
+        copy_folder(src=os.path.join(self.basedir, key), dst=dst)
 
     def delete_file(self, key: str):
         """Delete the file with the given key.
@@ -285,6 +275,31 @@ def copy(src: str, dst: str):
             shutil.copytree(src=src, dst=dst)
     else:
         shutil.copyfile(src=src, dst=dst)
+
+
+def copy_folder(src: str, dst: str):
+    """Copy all files in a source folder to a target folder.
+
+    Creates the destination folder if it does not exist.
+
+    Parameters
+    ----------
+    src: string
+        Path to the source folder.
+    dst: string
+        Path on the file system to the target folder.
+    """
+    # Create target directory if it does not exist.
+    os.makedirs(dst, exist_ok=True)
+    # Copy all files and folders from the source folder to the target
+    # folder.
+    for filename in os.listdir(src):
+        source = os.path.join(src, filename)
+        target = os.path.join(dst, filename)
+        if os.path.isdir(source):
+            shutil.copytree(src=source, dst=target)
+        else:
+            shutil.copy(src=source, dst=target)
 
 
 def parse_dir(
