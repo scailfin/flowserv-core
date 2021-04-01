@@ -1,0 +1,117 @@
+# This file is part of the Reproducible and Reusable Data Analysis Workflow
+# Server (flowServ).
+#
+# Copyright (C) 2019-2021 NYU.
+#
+# flowServ is free software; you can redistribute it and/or modify it under the
+# terms of the MIT License; see LICENSE file for more details.
+
+"""Collection of general utility functions."""
+
+import traceback
+import uuid
+
+from typing import Any, Dict, List, Optional, Type
+
+
+def get_unique_identifier() -> str:
+    """Create a new unique identifier.
+
+    Returns
+    -------
+    string
+    """
+    return str(uuid.uuid4()).replace('-', '')
+
+
+def jquery(doc: Dict, path: List[str]) -> Any:
+    """Json query to extract the value at the given path in a nested dictionary
+    object.
+
+    Returns None if the element that is specified by the path does not exist.
+
+    Parameters
+    ----------
+    doc: dict
+        Nested dictionary
+    path: list(string)
+        List of elements in the query path
+
+    Returns
+    -------
+    any
+    """
+    if not path or not doc or not isinstance(doc, dict):
+        # If the path or document is empty or the document is not a dictionary
+        # return None.
+        return None
+    elif len(path) == 1:
+        # If there is only one element in the path return the assocuated value
+        # or None if the element does not exist
+        return doc.get(path[0])
+    else:
+        # Recursively traverse the document
+        return jquery(doc=doc.get(path[0], dict()), path=path[1:])
+
+
+def stacktrace(ex):
+    """Get list of strings representing the stack trace for a given exception.
+
+    Parameters
+    ----------
+    ex: Exception
+        Exception that was raised by flowServ code
+
+    Returns
+    -------
+    list(string)
+    """
+    try:
+        st = traceback.format_exception(type(ex), ex, ex.__traceback__)
+    except (AttributeError, TypeError):  # pragma: no cover
+        st = [str(ex)]
+    return [line.strip() for line in st]
+
+
+def validate_doc(
+    doc: Dict,
+    mandatory: Optional[List[str]] = None,
+    optional: Optional[List[str]] = None,
+    exception: Optional[Type] = ValueError
+):
+    """Raises error if a dictionary contains labels that are not in the given
+    label lists or if there are labels in the mandatory list that are not in
+    the dictionary. Returns the given dictionary (if valid).
+
+    Parameters
+    ----------
+    doc: dict
+        Dictionary serialization of an object
+    mandatory: list(string), default=None
+        List of mandatory labels for the dictionary serialization
+    optional: list(string), optional
+        List of optional labels for the dictionary serialization
+    exception: Error, default=ValueError
+        Error class that is raised if validation fails. By default, a ValueError
+        is raised.
+
+    Returns
+    -------
+    dict
+
+    Raises
+    ------
+    ValueError
+    """
+    # Ensure that all mandatory labels are present in the dictionary
+    labels = mandatory if mandatory is not None else list()
+    for key in labels:
+        if key not in doc:
+            raise exception("missing element '{}'".format(key))
+    # Raise error if additional elements are present in the dictionary
+    if optional is not None:
+        labels = labels + optional
+    for key in doc:
+        if key not in labels:
+            raise exception("unknown element '{}'".format(key))
+    return doc

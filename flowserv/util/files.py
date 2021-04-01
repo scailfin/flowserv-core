@@ -12,60 +12,19 @@ directories, (iii) validate dictionaries, and (iv) to create of unique
 identifiers.
 """
 
-import datetime
 import io
 import json
 import os
 import shutil
-import traceback
-import uuid
 import yaml
 
-from dateutil.parser import isoparse
-from dateutil.tz import UTC
-from typing import Any, Dict, IO, List, Optional, Type, Union
+from typing import Dict, IO, List, Optional, Union
 
 
 """Identifier for supported data formats."""
 FORMAT_JSON = 'JSON'
 FORMAT_YAML = 'YAML'
 
-
-# -- Datetime -----------------------------------------------------------------
-
-def to_datetime(timestamp: str) -> datetime.datetime:
-    """Converts a timestamp string in ISO format into a datatime object.
-
-    Parameters
-    ----------
-    timstamp : string
-        Timestamp in ISO format
-
-    Returns
-    -------
-    datetime.datetime
-        Datetime object
-    """
-    # Assumes a string in ISO format (with or without milliseconds)
-    for format in ['%Y-%m-%dT%H:%M:%S.%f', '%Y-%m-%dT%H:%M:%S']:
-        try:
-            return datetime.datetime.strptime(timestamp, format)
-        except ValueError:
-            pass
-    return isoparse(timestamp)
-
-
-def utc_now() -> str:
-    """Get the current time in UTC timezone as a string in ISO format.
-
-    Returns
-    -------
-    string
-    """
-    return datetime.datetime.now(UTC).isoformat()
-
-
-# -- I/O ----------------------------------------------------------------------
 
 def cleardir(directory: str):
     """Remove all files in the given directory.
@@ -195,108 +154,3 @@ def write_object(
             json.dump(obj, f)
     else:
         raise ValueError('unknown data format \'' + str(format) + '\'')
-
-
-# -- Misc ---------------------------------------------------------------------
-
-def get_unique_identifier() -> str:
-    """Create a new unique identifier.
-
-    Returns
-    -------
-    string
-    """
-    return str(uuid.uuid4()).replace('-', '')
-
-
-def jquery(doc: Dict, path: List[str]) -> Any:
-    """Json query to extract the value at the given path in a nested dictionary
-    object.
-
-    Returns None if the element that is specified by the path does not exist.
-
-    Parameters
-    ----------
-    doc: dict
-        Nested dictionary
-    path: list(string)
-        List of elements in the query path
-
-    Returns
-    -------
-    any
-    """
-    if not path or not doc or not isinstance(doc, dict):
-        # If the path or document is empty or the document is not a dictionary
-        # return None.
-        return None
-    elif len(path) == 1:
-        # If there is only one element in the path return the assocuated value
-        # or None if the element does not exist
-        return doc.get(path[0])
-    else:
-        # Recursively traverse the document
-        return jquery(doc=doc.get(path[0], dict()), path=path[1:])
-
-
-def stacktrace(ex):
-    """Get list of strings representing the stack trace for a given exception.
-
-    Parameters
-    ----------
-    ex: Exception
-        Exception that was raised by flowServ code
-
-    Returns
-    -------
-    list(string)
-    """
-    try:
-        st = traceback.format_exception(type(ex), ex, ex.__traceback__)
-    except (AttributeError, TypeError):  # pragma: no cover
-        st = [str(ex)]
-    return [line.strip() for line in st]
-
-
-def validate_doc(
-    doc: Dict,
-    mandatory: Optional[List[str]] = None,
-    optional: Optional[List[str]] = None,
-    exception: Optional[Type] = ValueError
-):
-    """Raises error if a dictionary contains labels that are not in the given
-    label lists or if there are labels in the mandatory list that are not in
-    the dictionary. Returns the given dictionary (if valid).
-
-    Parameters
-    ----------
-    doc: dict
-        Dictionary serialization of an object
-    mandatory: list(string), default=None
-        List of mandatory labels for the dictionary serialization
-    optional: list(string), optional
-        List of optional labels for the dictionary serialization
-    exception: Error, default=ValueError
-        Error class that is raised if validation fails. By default, a ValueError
-        is raised.
-
-    Returns
-    -------
-    dict
-
-    Raises
-    ------
-    ValueError
-    """
-    # Ensure that all mandatory labels are present in the dictionary
-    labels = mandatory if mandatory is not None else list()
-    for key in labels:
-        if key not in doc:
-            raise exception("missing element '{}'".format(key))
-    # Raise error if additional elements are present in the dictionary
-    if optional is not None:
-        labels = labels + optional
-    for key in doc:
-        if key not in labels:
-            raise exception("unknown element '{}'".format(key))
-    return doc
