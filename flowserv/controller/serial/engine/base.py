@@ -219,7 +219,7 @@ class SerialWorkflowEngine(WorkflowController):
                 return serialize.deserialize_state(state_dict), rundir
         except Exception as ex:
             # Set the workflow runinto an ERROR state
-            logging.error(ex)
+            logging.error(ex, exc_info=True)
             return state.error(messages=util.stacktrace(ex)), rundir
 
 
@@ -253,7 +253,7 @@ def callback_function(result, lock, tasks, service):
         with service() as api:
             api.runs().update_run(run_id=run_id, state=state, rundir=rundir)
     except Exception as ex:
-        logging.error(ex)
+        logging.error(ex, exc_info=True)
         logging.debug('\n'.join(util.stacktrace(ex)))
 
 
@@ -310,7 +310,7 @@ def run_workflow(
         # Workflow executed successfully
         result_state = state.success(files=files)
     except Exception as ex:
-        logging.error(ex)
+        logging.error(ex, exc_info=True)
         strace = util.stacktrace(ex)
         logging.debug('\n'.join(strace))
         result_state = state.error(messages=strace)

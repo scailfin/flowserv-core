@@ -475,7 +475,7 @@ def run_postproc_workflow(
         }
         arg_list = [serialize_arg(postbase.PARA_RUNS, serialize_fh(datadir, dst))]
     except Exception as ex:
-        logging.error(ex)
+        logging.error(ex, exc_info=True)
         strace = util.stacktrace(ex)
         run_args = dict()
         arg_list = []

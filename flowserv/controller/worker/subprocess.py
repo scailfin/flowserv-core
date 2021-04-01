@@ -87,7 +87,7 @@ class SubprocessWorker(ContainerEngine):
                     result.returncode = proc.returncode
                     break
         except Exception as ex:
-            logging.error(ex)
+            logging.error(ex, exc_info=True)
             strace = '\n'.join(util.stacktrace(ex))
             logging.debug(strace)
             result.stderr.append(strace)

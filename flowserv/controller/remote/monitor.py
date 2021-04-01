@@ -78,7 +78,7 @@ class WorkflowMonitor(Thread):
                 service=self.service
             )
         except Exception as ex:
-            logging.error(ex)
+            logging.error(ex, exc_info=True)
             strace = util.stacktrace(ex)
             logging.debug('\n'.join(strace))
             state = self.state.error(messages=strace)
@@ -92,7 +92,7 @@ class WorkflowMonitor(Thread):
         try:
             del self.tasks[self.run_id]
         except Exception as ex:
-            logging.error(ex)
+            logging.error(ex, exc_info=True)
             logging.debug('\n'.join(util.stacktrace(ex)))
 
 
@@ -187,12 +187,12 @@ def monitor_workflow(
             # here. If the remote workflow, however, remains active we
             # notify the remote engine to stop the workflow.
             logging.error('attempt to update run {}'.format(run_id))
-            logging.error(ex)
+            logging.error(ex, exc_info=True)
             if state.is_active():
                 try:
                     client.stop_workflow(workflow_id)
                 except Exception as ex:
-                    logging.error(ex)
+                    logging.error(ex, exc_info=True)
             # Stop the thread by exiting the run method.
             return state, rundir
     msg = 'finished run {} = {}'.format(run_id, state.type_id)
