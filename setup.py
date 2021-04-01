@@ -18,6 +18,7 @@ install_requires = [
     'future',
     'appdirs>=1.4.4',
     'gitpython',
+    'paramiko',
     'passlib',
     'python-dateutil',
     'jsonschema',
