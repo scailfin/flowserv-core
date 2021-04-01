@@ -11,6 +11,8 @@
 import os
 
 from flowserv.controller.environment.fs import FSEnvironment
+from flowserv.model.files.fs import FSFile
+
 
 # Template directory
 DIR = os.path.dirname(os.path.realpath(__file__))
@@ -51,6 +53,7 @@ def test_fs_environment_upload(tmpdir):
     env = FSEnvironment(basedir=os.path.join(tmpdir, 'env'))
     assert os.path.isdir(env.basedir)
     env.upload(src=PREDICTOR_FILE, dst='workflow.yaml')
+    env.upload(src=FSFile(filename=PREDICTOR_FILE), dst='workflow.yaml')
     env.upload(src=HELLOWORLD_DIR, dst='benchmark')
     assert os.path.isfile(os.path.join(env.basedir, 'workflow.yaml'))
     assert os.path.isdir(os.path.join(env.basedir, 'benchmark'))
