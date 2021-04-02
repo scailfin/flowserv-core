@@ -22,7 +22,7 @@ from typing import Dict, List, Optional, Tuple
 import logging
 import os
 
-from flowserv.config import FLOWSERV_ASYNC, FLOWSERV_BASEDIR, FLOWSERV_RUNSDIR, DEFAULT_RUNSDIR
+from flowserv.config import FLOWSERV_ASYNC, FLOWSERV_BASEDIR, RUNSDIR
 from flowserv.controller.base import WorkflowController
 from flowserv.controller.serial.engine.runner import exec_workflow
 from flowserv.controller.worker.factory import WorkerFactory
@@ -33,6 +33,7 @@ from flowserv.model.files.factory import FS
 from flowserv.model.template.base import WorkflowTemplate
 from flowserv.model.workflow.state import WorkflowState
 from flowserv.service.api import APIFactory
+from flowserv.validate import validator
 
 import flowserv.controller.serial.workflow.parser as parser
 import flowserv.error as err
@@ -45,32 +46,26 @@ class SerialWorkflowEngine(WorkflowController):
     set of arguments. Each workflow is executed as a serial workflow. The
     individual workflow steps can be executed in a separate process on request.
     """
-    def __init__(
-        self, service: APIFactory, worker_config: Optional[Dict] = None
-    ):
-        """Initialize the function that is used to execute individual workflow
-        steps. The run workflow function in this module executes all steps
-        within sub-processes in the same environment as the workflow
-        controller.
+    def __init__(self, service: APIFactory, config: Optional[Dict] = None):
+        """Initialize the workflow engine.
 
-        NOTE: Using the provided execution function is intended for development
-        and private use only. It is not recommended (and very dangerous) to
-        use this function in a public setting.
+        The engine configuration that is maintained with the service API can
+        be overriden by providing a separate configuration object.
 
         Parameters
         ----------
         service: flowserv.service.api.APIFactory, default=None
             API factory for service callbach during asynchronous workflow
             execution.
-        worker_config: dict, default=None
-            Mapping of container image identifier to worker specifications that
-            are used to create an instance of a
-            :class:`flowserv.controller.worker.base.ContainerStep` worker.
+        config: dict, default=None
+            Configuration settings for the engine. Overrides the engine
+            configuration that is contained in the service API object.
         """
         self.fs = FS(env=service)
         self.service = service
-        self.worker_config = worker_config if worker_config else service.worker_config()
-        logging.info("workers {}".format(self.worker_config))
+        self.config = config if config else service.engine_config()
+        validator.validate(self.config)
+        logging.info("config {}".format(self.config))
         # The is_async flag controlls the default setting for asynchronous
         # execution. If the flag is False all workflow steps will be executed
         # in a sequentiall (blocking) manner.
@@ -80,7 +75,7 @@ class SerialWorkflowEngine(WorkflowController):
         if basedir is None:
             raise err.MissingConfigurationError('API base directory')
         logging.info('base dir {}'.format(basedir))
-        self.runsdir = service.get(FLOWSERV_RUNSDIR, os.path.join(basedir, DEFAULT_RUNSDIR))
+        self.runsdir = RUNSDIR(env=service)
         # Dictionary of all running tasks
         self.tasks = dict()
         # Lock to manage asynchronous access to the task dictionary
@@ -159,7 +154,7 @@ class SerialWorkflowEngine(WorkflowController):
         state = run.state()
         rundir = os.path.join(self.runsdir, run.run_id)
         # Get the worker configuration.
-        worker_config = self.worker_config if not config else config.get('workers')
+        worker_config = self.config.get('workers') if not config else config.get('workers')
         # Get the source directory for static workflow files.
         sourcedir = self.fs.workflow_staticdir(run.workflow.workflow_id)
         # Get the list of workflow steps and the generated output files.

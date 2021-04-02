@@ -75,10 +75,7 @@ class WorkerFactory(object):
     Workers are instantiated from a dictionary that follows the `workerSpec`
     schema defined in the `schema.json` file.
     """
-    def __init__(
-        self, config: Optional[Union[List, Dict]] = None,
-        validate: Optional[bool] = False
-    ):
+    def __init__(self, config: Optional[Union[List, Dict]] = None):
         """Initialize the dictionary that contains the mapping of container
         image identifier to worker specification.
 
@@ -94,17 +91,11 @@ class WorkerFactory(object):
             List of worker specificatins or mapping of container image identifier
             to worker specifications that are used to create an instance of a
             :class:`flowserv.controller.worker.base.ContainerStep` worker.
-        validate: bool, default=False
-            Validate the given worker specifications against the `workerSpec`
-            schema if True.
         """
         # If a list of worker specifications is given convert it to a mapping.
         if config and isinstance(config, list):
-            config = convert_config(doc=config, validate=validate)
+            config = convert_config(doc=config)
         self.config = config if config is not None else dict()
-        if validate:
-            for spec in self.config.values():
-                validator.validate(spec)
         # Replace callables in the worker arguments with their evaluation result.
         for spec in self.config.values():
             args = spec.get('args', dict())
@@ -294,16 +285,13 @@ def Subprocess(variables: Optional[Dict] = None, env: Optional[Dict] = None) -> 
     return WorkerSpec(identifier='subprocess', variables=variables, env=env)
 
 
-def convert_config(doc: List[Dict], validate: Optional[bool] = False) -> Dict:
+def convert_config(doc: List[Dict]) -> Dict:
     """Convert a list of worker specifications into a dictionary.
 
     Parameters
     ----------
     doc: list of dict
         List of dictionaries that follow the `workerSpec` schema.
-    validate: bool, default=False
-        Validate the given worker specifications against the `workerSpec`
-        schema if True.
 
     Returns
     -------
@@ -311,8 +299,6 @@ def convert_config(doc: List[Dict], validate: Optional[bool] = False) -> Dict:
     """
     config = dict()
     for spec in doc:
-        if validate:
-            validator.validate(spec)
         config[spec['image']] = spec
     return config
 

@@ -152,15 +152,31 @@ FLOWSERV_ASYNC = 'FLOWSERV_ASYNCENGINE'
 DEFAULT_ASYNC = 'True'
 # Base directory to temporary run files
 FLOWSERV_RUNSDIR = 'FLOWSERV_RUNSDIR'
-DEFAULT_RUNSDIR = 'runs'
 
 # Poll interval
 FLOWSERV_POLL_INTERVAL = 'FLOWSERV_POLLINTERVAL'
-# Default value for the poll interval.
 DEFAULT_POLL_INTERVAL = 2
 
-# Serial workflow controller worker configuration.
-FLOWSERV_SERIAL_WORKERS = 'FLOWSERV_SERIAL_WORKERS'
+# Workflow engine configuration.
+FLOWSERV_ENGINECONFIG = 'FLOWSERV_ENGINECONFIG'
+
+
+def RUNSDIR(env: Dict) -> str:
+    """The default base directory for workflow run files.
+
+    The default is a sub-folder of the API_DEFAULTDIR.
+
+    Parameters
+    ----------
+    env: dict
+        Configuration object that provides access to configuration
+        parameters in the environment.
+
+    Returns
+    -------
+    string
+    """
+    return env.get(FLOWSERV_RUNSDIR, os.path.join(API_DEFAULTDIR(), 'runs'))
 
 
 # -- Client -------------------------------------------------------------------
@@ -266,6 +282,21 @@ class Config(dict):
         self[FLOWSERV_DB] = url
         return self
 
+    def engine_config(self) -> Union[Dict, List]:
+        """Get the configuration settings for workers that are used by the
+        serial workflow controller.
+
+        If the configuration is not set an empty dictionary is returned.
+
+        Returns
+        -------
+        dict of list
+        """
+        engine_conf = self.get(FLOWSERV_ENGINECONFIG, dict())
+        if engine_conf and isinstance(engine_conf, str):
+            engine_conf = util.read_object(filename=engine_conf)
+        return engine_conf if engine_conf else dict()
+
     def multiprocess_engine(self) -> Config:
         """Set configuration to use the serial multi-porcess workflow controller
         as the default backend.
@@ -345,35 +376,6 @@ class Config(dict):
         self[FLOWSERV_WEBAPP] = True
         return self
 
-    def workers(self, config: Dict) -> Config:
-        """Set configuration for container workers.
-
-        Parameters
-        ----------
-        config: dict
-            Worker configuration settings.
-
-        Returns
-        flowserv.config.Config
-        """
-        self[FLOWSERV_SERIAL_WORKERS] = config
-        return self
-
-    def worker_config(self) -> Union[Dict, List]:
-        """Get the configuration settings for workers that are used by the
-        serial workflow controller.
-
-        If the configuration is not set an empty dictionary is returned.
-
-        Returns
-        -------
-        dict of list
-        """
-        wconf = self.get(FLOWSERV_SERIAL_WORKERS, dict())
-        if wconf and isinstance(wconf, str):
-            wconf = util.read_object(filename=wconf)
-        return wconf if wconf else dict()
-
 
 # -- Initialize configuration from environment variables ----------------------
 
@@ -449,7 +451,7 @@ ENV = [
     (FLOWSERV_AUTH, AUTH_DEFAULT, None),
     (FLOWSERV_BACKEND_CLASS, None, None),
     (FLOWSERV_BACKEND_MODULE, None, None),
-    (FLOWSERV_SERIAL_WORKERS, None, None),
+    (FLOWSERV_ENGINECONFIG, None, None),
     (FLOWSERV_RUNSDIR, None, None),
     (FLOWSERV_POLL_INTERVAL, DEFAULT_POLL_INTERVAL, to_float),
     (FLOWSERV_ACCESS_TOKEN, None, None),

@@ -13,6 +13,7 @@ import pytest
 
 import flowserv.config as config
 import flowserv.error as err
+import flowserv.util as util
 
 
 @pytest.mark.parametrize(
@@ -121,12 +122,20 @@ def test_config_url():
     assert config.API_URL(conf) == api_url
 
 
-def test_config_workers():
+def test_engine_config(tmpdir):
     """Test worker configuration for the serial workflow controller."""
     conf = config.Config()
-    assert conf.worker_config() == dict()
-    conf = conf.workers({'a': 1})
-    assert conf.worker_config() == {'a': 1}
+    assert conf.engine_config() == dict()
+    filename = os.path.join(tmpdir, 'config.json')
+    util.write_object(filename=filename, obj={'volumes': []})
+    conf = config.Config({config.FLOWSERV_ENGINECONFIG: filename})
+    assert conf.engine_config() == {'volumes': []}
+
+
+def test_engine_rundirectory():
+    """Test default run directory path."""
+    assert config.RUNSDIR(dict({config.FLOWSERV_RUNSDIR: 'abc'})) == 'abc'
+    assert config.RUNSDIR(dict()) is not None
 
 
 def test_env_app_identifier():
@@ -138,3 +147,9 @@ def test_env_app_identifier():
     del os.environ[config.FLOWSERV_APP]
     with pytest.raises(err.MissingConfigurationError):
         config.APP()
+
+
+@pytest.mark.parametrize('value,result', [(1, False), ('true', True), ('false', False)])
+def test_to_bool(value, result):
+    """Test the to boolean converter."""
+    config.to_bool(value) == result
