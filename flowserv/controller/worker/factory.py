@@ -53,12 +53,7 @@ follow the following schema:
 
 from __future__ import annotations
 from importlib import import_module
-from jsonschema import Draft7Validator, RefResolver
 from typing import Dict, List, Optional, Union
-
-import importlib.resources as pkg_resources
-import json
-import os
 
 from flowserv.controller.worker.base import ContainerEngine
 from flowserv.controller.worker.config import java_jvm, python_interpreter
@@ -72,13 +67,6 @@ import flowserv.util as util
 used to execute workflow steps.
 """
 default_engine = SubprocessWorker(variables={'python': python_interpreter(), 'java': java_jvm()})
-
-
-"""Create schema validator for API requests."""
-schemafile = os.path.abspath(os.path.join(__file__, 'schema.json'))
-schema = json.load(pkg_resources.open_text(__package__, 'schema.json'))
-resolver = RefResolver(schemafile, schema)
-validator = Draft7Validator(schema=schema['definitions']['workerSpec'], resolver=resolver)
 
 
 class WorkerFactory(object):
@@ -307,7 +295,7 @@ def Subprocess(variables: Optional[Dict] = None, env: Optional[Dict] = None) -> 
 
 
 def convert_config(doc: List[Dict], validate: Optional[bool] = False) -> Dict:
-    """Convertes a list of worker specifications into a dictionary.
+    """Convert a list of worker specifications into a dictionary.
 
     Parameters
     ----------

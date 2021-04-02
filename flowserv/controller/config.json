@@ -1,0 +1,93 @@
+{
+    "definitions": {
+        "engineConfig": {
+            "type": "object",
+            "description": "Configuration for a workflow engine.",
+            "properties": {
+                "workers": {
+                    "type": "array",
+                    "description": "List of worker configurations.",
+                    "items": {"$ref": "#/definitions/workerSpec"}
+                },
+                "volumes": {
+                    "type": "array",
+                    "description": "List of runtime storage volumes.",
+                    "items": {"$ref": "#/definitions/volumeSpec"}
+                }
+            }
+        },
+        "volumeSpec": {
+            "type": "object",
+            "description": "Specification for a runtime storage volume.",
+            "properties": {
+                "name": {"type": "string", "description": "Unique volume identifier."},
+                "type": {
+                    "type": "string",
+                    "description": "Volume type identifier",
+                    "enum": ["fs", "sftp"]
+                },
+                "config": {
+                    "description": "Volume type-specific configuration.",
+                    "oneOf": [
+                        {
+                            "type": "object",
+                            "description": "Local file system storage volume.",
+                            "properties": {
+                                "localdir": {
+                                    "type": "string",
+                                    "description": "Path to the local base directory where all files will be stored."
+                                }
+                            }
+                        },
+                        {
+                            "type": "object",
+                            "description": "Remote file system storage volume.",
+                            "properties": {
+                                "remotedir": {
+                                    "type": "string",
+                                    "description": "Path to the remote base directory where all files will be stored."
+                                },
+                                "hostname": {"type": "string", "description": "Server host name"},
+                                "port": {"type": "integer", "description": "Port number"},
+                                "timeout": {"type": "number", "description": "Connect timeout"}
+                            },
+                            "required": ["remotedir", "hostname", "port"]
+                        }
+                    ]
+                }
+            },
+            "required": ["name", "type"]
+        },
+        "workerSpec": {
+            "type": "object",
+            "description": "Specification for a worker engine instance.",
+            "properties": {
+                "name": {"type": "string", "description": "Unique worker identifier."},
+                "type": {
+                    "type": "string",
+                    "description": "Worker type identifier",
+                    "enum": ["docker", "subprocess"]
+                },
+                "isPrepared": {
+                    "type": "boolean",
+                    "decription": "True if static files are contained in the worker runtime environment."
+                },
+                "config": {
+                    "description": "Worker type-specific configuration.",
+                    "oneOf": [
+                        {
+                            "type": "object",
+                            "description": "Container worker.",
+                            "properties": {
+                                "image": {"type": "string", "description": "Conatiner image identifier."},
+                                "args": {"type": "object"}
+                            },
+                            "required": ["image"]
+                        }
+                    ]
+                }
+            },
+            "required": ["name", "type"]
+        }
+    }
+}

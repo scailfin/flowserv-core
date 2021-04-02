@@ -13,3 +13,31 @@ Files defines unique identifier for all static files (files or directories) and 
 These files together with the files that are defined as workflow parameters form the context (environment) for the workflow that is present in the run directory. **All file names are relative path names**.
 
 The steps section defines the individual workflow steps. This is a list of workflow steps, each of which is identified by a unique name, has an optional environment identifier, a list of required input and output files (referenced by their unique file identifier) and a list of workflow steps (this is only for container steps). Input files
+
+
+Config - Env
+------------
+
+A default local file system environment will be created (using the default FLOWSERV_RUNSDIR) value. This environment is assigned to any worker that does not specify the environment.
+
+
+.. code-block:: yaml
+
+    workers:
+        - name: 'unique id'
+          env: 'environment-name'
+          type: 'worker-type'
+          config:
+            image: ''
+            args:
+                key: 'value'
+            implementation
+    environments:
+        - name: 'unique name'
+          type: 'type identifier'
+
+    workflow:
+        - image: ''
+          worker: ''
+        - step: ''
+          worker: ''
