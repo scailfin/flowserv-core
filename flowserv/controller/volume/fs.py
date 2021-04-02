@@ -6,7 +6,7 @@
 # flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
-"""File system workflow runtime environment. Maintains workflow run files in
+"""File system workflow storage volume. Maintains workflow run files in
 a folder on the local file system.
 """
 
@@ -16,17 +16,17 @@ from typing import Optional, Tuple
 import os
 import shutil
 
-from flowserv.controller.environment.base import RunEnvironment
+from flowserv.controller.volume.base import StorageVolume
 from flowserv.model.files.base import IOHandle
 from flowserv.model.files.fs import FSFile, copy_folder
 
 
-class FSEnvironment(RunEnvironment):
-    """The file system runtime environment provides access to workflow run
+class FileSystemStorage(StorageVolume):
+    """The file system storage volume provides access to workflow run
     files that are maintained in a run directory on the local file system.
     """
     def __init__(self, basedir: str, identifier: Optional[str] = None):
-        """Initialize the run base directory and the unique environment
+        """Initialize the run base directory and the unique volume
         identifier.
 
         The base directory is created if it does not exist. If no identifier is
@@ -39,7 +39,7 @@ class FSEnvironment(RunEnvironment):
         identifier: string
             Unique identifier.
         """
-        super(FSEnvironment, self).__init__(identifier=identifier)
+        super(FileSystemStorage, self).__init__(identifier=identifier)
         self.basedir = basedir
         os.makedirs(self.basedir, exist_ok=True)
 
@@ -60,7 +60,7 @@ class FSEnvironment(RunEnvironment):
         Parameters
         ----------
         src: string
-            Relative source path on the environment run directory.
+            Relative source path on the volume run directory.
         dst: string
             Absolute or relative path on the local file system.
         """
@@ -74,19 +74,19 @@ class FSEnvironment(RunEnvironment):
             shutil.copy(src=source, dst=dst)
 
     def erase(self):
-        """Erase the run environment base directory and all its contents."""
+        """Erase the storage volume base directory and all its contents."""
         shutil.rmtree(self.basedir)
 
     def upload(self, src: Tuple[IOHandle, str], dst: str):
-        """Upload a file or folder to the run environment.
+        """Upload a file or folder to the storage volume.
 
-        The destination is relative to the base directory of the run
-        environment.
+        The destination is relative to the base directory of the storage
+        volume.
 
         Parameters
         ----------
         src: string or flowserv.model.files.base.IOHandle
-            Source file or folder that is being uploaded to the run environment.
+            Source file or folder that is being uploaded to the storage volume.
         dst: string
             Relative target path for the uploaded files.
         """

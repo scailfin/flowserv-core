@@ -6,13 +6,13 @@
 # flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
-"""Unit tests for the remote server (via SSH) runtime environment manager."""
+"""Unit tests for the remote server (via SSH) storage volume manager."""
 
 from pathlib import Path
 
 import os
 
-from flowserv.controller.environment.ssh import SSHEnvironment
+from flowserv.controller.volume.ssh import RemoteStorage
 from flowserv.model.files.fs import FSFile
 
 import flowserv.util.ssh as ssh
@@ -25,10 +25,10 @@ HELLOWORLD_DIR = os.path.join(BENCHMARK_DIR, 'helloworld')
 PREDICTOR_FILE = os.path.join(BENCHMARK_DIR, 'predictor.yaml')
 
 
-def test_ssh_environment_download(mock_ssh, tmpdir):
-    """Test downloading files from the runtime environment."""
+def test_ssh_volume_download(mock_ssh, tmpdir):
+    """Test downloading files from the storage volume."""
     with ssh.ssh_client('test') as client:
-        env = SSHEnvironment(remotedir=BENCHMARK_DIR, client=client)
+        env = RemoteStorage(remotedir=BENCHMARK_DIR, client=client)
         env.download(src='predictor.yaml', dst=os.path.join(tmpdir, 'workflow.yaml'))
         env.download(src='helloworld', dst=os.path.join(tmpdir, 'benchmark'))
         assert os.path.isfile(os.path.join(tmpdir, 'workflow.yaml'))
@@ -36,10 +36,10 @@ def test_ssh_environment_download(mock_ssh, tmpdir):
         env.close()
 
 
-def test_ssh_environment_init(mock_ssh, tmpdir):
-    """Test initializing the SSH run time environment manager."""
+def test_ssh_volume_init(mock_ssh, tmpdir):
+    """Test initializing the SSH run time storage volume."""
     with ssh.ssh_client('test') as client:
-        env = SSHEnvironment(
+        env = RemoteStorage(
             remotedir=os.path.join(tmpdir, 'env'),
             client=client
         )
@@ -47,7 +47,7 @@ def test_ssh_environment_init(mock_ssh, tmpdir):
         assert env.identifier is not None
         env.close()
     with ssh.ssh_client('test') as client:
-        env = SSHEnvironment(
+        env = RemoteStorage(
             remotedir=os.path.join(tmpdir, 'env'),
             client=client,
             identifier='abc'
@@ -57,7 +57,7 @@ def test_ssh_environment_init(mock_ssh, tmpdir):
         env.close()
 
 
-def test_ssh_environment_erase(mock_ssh, tmpdir):
+def test_ssh_volume_erase(mock_ssh, tmpdir):
     """Test erasing the remote folder."""
     remotedir = os.path.join(tmpdir, 'env')
     # -- Setup ----------------------------------------------------------------
@@ -72,7 +72,7 @@ def test_ssh_environment_erase(mock_ssh, tmpdir):
     Path(os.path.join(remotedir, 'b', 'c.txt')).touch()
     Path(os.path.join(remotedir, 'b', 'd.txt')).touch()
     with ssh.ssh_client('test') as client:
-        env = SSHEnvironment(
+        env = RemoteStorage(
             remotedir=remotedir,
             client=client
         )
@@ -82,11 +82,11 @@ def test_ssh_environment_erase(mock_ssh, tmpdir):
         env.close()
 
 
-def test_ssh_environment_upload(mock_ssh, tmpdir):
-    """Test uploading files to the remote server environment."""
+def test_ssh_volume_upload(mock_ssh, tmpdir):
+    """Test uploading files to the remote storage volume."""
     remotedir = os.path.join(tmpdir, 'env')
     with ssh.ssh_client('test') as client:
-        env = SSHEnvironment(
+        env = RemoteStorage(
             remotedir=remotedir,
             client=client
         )

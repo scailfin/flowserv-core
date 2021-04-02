@@ -6,7 +6,7 @@
 # flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
-"""Base classes for workflow runtime environments."""
+"""Base classes for workflow runtime storage volumes."""
 
 from abc import ABCMeta, abstractmethod
 from typing import Optional, Tuple
@@ -16,17 +16,17 @@ from flowserv.model.files.base import IOHandle
 import flowserv.util as util
 
 
-class RunEnvironment(metaclass=ABCMeta):
-    """The runtime environment provides access to a file system for storing and
-    retrieving files and folders that are required or produced by a workflow
-    step.
+class StorageVolume(metaclass=ABCMeta):
+    """The runtime storage volume provides access to a file system-like object
+    for storing and retrieving files and folders that are required or produced
+    by a workflow step.
 
-    Run environments are used to provide a copy of the required run files for
-    a workflow step. Each environment has a unique identifier that is used to
-    keep track which files and file versions are available in the environment.
+    Storage volumes are used to provide a copy of the required run files for
+    a workflow step. Each valume has a unique identifier that is used to
+    keep track which files and file versions are available in the volume.
     """
     def __init__(self, identifier: Optional[str] = None):
-        """Initialize the unique environment identifier.
+        """Initialize the unique volume identifier.
 
         If no identifier is provided a unique identifier is generated.
 
@@ -64,12 +64,12 @@ class RunEnvironment(metaclass=ABCMeta):
 
     @abstractmethod
     def erase(self):
-        """Erase the run environment base directory and all its contents."""
+        """Erase the storage volume base directory and all its contents."""
         raise NotImplementedError()  # pragma: no cover
 
     @abstractmethod
     def upload(self, src: Tuple[IOHandle, str], dst: str):
-        """Upload a file or folder to the run environment.
+        """Upload a file or folder to the storage volume.
 
         The destination is relative to the base directory of the run
         environment.
@@ -77,7 +77,7 @@ class RunEnvironment(metaclass=ABCMeta):
         Parameters
         ----------
         src: string or flowserv.model.files.base.IOHandle
-            Source file or folder that is being uploaded to the run environment.
+            Source file or folder that is being uploaded to the storage volume.
         dst: string
             Relative target path for the uploaded files.
         """

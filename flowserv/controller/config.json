@@ -70,7 +70,7 @@
                 },
                 "isPrepared": {
                     "type": "boolean",
-                    "decription": "True if static files are contained in the worker runtime environment."
+                    "decription": "True if static files are contained in the worker storage volume."
                 },
                 "config": {
                     "description": "Worker type-specific configuration.",

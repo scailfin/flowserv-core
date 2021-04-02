@@ -6,7 +6,7 @@
 # flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
-"""Workflow environment manager that uses a SSH client to connect to a remote
+"""Workflow storage manager that uses a SSH client to connect to a remote
 server where run files are maintained.
 """
 
@@ -16,12 +16,12 @@ from typing import Optional, Tuple
 import os
 import paramiko
 
-from flowserv.controller.environment.base import RunEnvironment
+from flowserv.controller.volume.base import StorageVolume
 from flowserv.model.files.base import IOHandle
 from flowserv.util.ssh import SSHClient, walk
 
 
-class SSHEnvironment(RunEnvironment):
+class RemoteStorage(StorageVolume):
     """Runtime file manager that connects to a remote server via sftp."""
     def __init__(self, client: SSHClient, remotedir: str, identifier: Optional[str] = None):
         """Initialize the run base directory on the remote server and the SSH
@@ -40,7 +40,7 @@ class SSHEnvironment(RunEnvironment):
         identifier: string
             Unique identifier.
         """
-        super(SSHEnvironment, self).__init__(identifier=identifier)
+        super(RemoteStorage, self).__init__(identifier=identifier)
         self.client = client
         self.remotedir = remotedir
         # Create the remote directory if it does not exists.
@@ -61,7 +61,7 @@ class SSHEnvironment(RunEnvironment):
         Parameters
         ----------
         src: string
-            Relative source path on the environment run directory.
+            Relative source path on the storage volume run directory.
         dst: string
             Absolute or relative path on the local file system.
         """
@@ -91,7 +91,7 @@ class SSHEnvironment(RunEnvironment):
             sftp.get(source, dst)
 
     def erase(self):
-        """Erase the run environment base directory and all its contents."""
+        """Erase the storage volume base directory and all its contents."""
         # Collect sub-directories that need to be removed separately after
         # the directories are empty.
         directories = set()
@@ -108,15 +108,15 @@ class SSHEnvironment(RunEnvironment):
         sftp.rmdir(self.remotedir)
 
     def upload(self, src: Tuple[IOHandle, str], dst: str):
-        """Upload a file or folder to the run environment.
+        """Upload a file or folder to the storage volume.
 
-        The destination is relative to the base directory of the run
-        environment.
+        The destination is relative to the base directory of the storage
+        volume.
 
         Parameters
         ----------
         src: string or flowserv.model.files.base.IOHandle
-            Source file or folder that is being uploaded to the run environment.
+            Source file or folder that is being uploaded to the storage volume.
         dst: string
             Relative target path for the uploaded files.
         """

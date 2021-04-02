@@ -8,7 +8,7 @@
 
 """Declarations for file parameter values. A file parameter extends the
 base parameter class with a target path for the file when creating the workflow
-run environment.
+storage volume.
 """
 
 from __future__ import annotations
