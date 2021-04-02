@@ -28,6 +28,7 @@ def test_fs_environment_download(tmpdir):
     env.download(src='helloworld', dst=os.path.join(tmpdir, 'benchmark'))
     assert os.path.isfile(os.path.join(tmpdir, 'workflow.yaml'))
     assert os.path.isdir(os.path.join(tmpdir, 'benchmark'))
+    env.close()
 
 
 def test_fs_environment_init(tmpdir):
@@ -35,9 +36,11 @@ def test_fs_environment_init(tmpdir):
     env = FSEnvironment(basedir=os.path.join(tmpdir, 'env'))
     assert os.path.isdir(env.basedir)
     assert env.identifier is not None
+    env.close()
     env = FSEnvironment(basedir=os.path.join(tmpdir, 'env'), identifier='abc')
     assert os.path.isdir(env.basedir)
     assert env.identifier == 'abc'
+    env.close()
 
 
 def test_fs_environment_erase(tmpdir):
@@ -46,6 +49,7 @@ def test_fs_environment_erase(tmpdir):
     assert os.path.isdir(env.basedir)
     env.erase()
     assert not os.path.isdir(env.basedir)
+    env.close()
 
 
 def test_fs_environment_upload(tmpdir):
@@ -57,3 +61,4 @@ def test_fs_environment_upload(tmpdir):
     env.upload(src=HELLOWORLD_DIR, dst='benchmark')
     assert os.path.isfile(os.path.join(env.basedir, 'workflow.yaml'))
     assert os.path.isdir(os.path.join(env.basedir, 'benchmark'))
+    env.close()

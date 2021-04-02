@@ -33,6 +33,7 @@ def test_ssh_environment_download(mock_ssh, tmpdir):
         env.download(src='helloworld', dst=os.path.join(tmpdir, 'benchmark'))
         assert os.path.isfile(os.path.join(tmpdir, 'workflow.yaml'))
         assert os.path.isdir(os.path.join(tmpdir, 'benchmark'))
+        env.close()
 
 
 def test_ssh_environment_init(mock_ssh, tmpdir):
@@ -44,6 +45,7 @@ def test_ssh_environment_init(mock_ssh, tmpdir):
         )
         assert os.path.isdir(env.remotedir)
         assert env.identifier is not None
+        env.close()
     with ssh.ssh_client('test') as client:
         env = SSHEnvironment(
             remotedir=os.path.join(tmpdir, 'env'),
@@ -52,6 +54,7 @@ def test_ssh_environment_init(mock_ssh, tmpdir):
         )
         assert os.path.isdir(env.remotedir)
         assert env.identifier == 'abc'
+        env.close()
 
 
 def test_ssh_environment_erase(mock_ssh, tmpdir):
@@ -76,6 +79,7 @@ def test_ssh_environment_erase(mock_ssh, tmpdir):
         assert os.path.isdir(remotedir)
         env.erase()
         assert not os.path.isdir(remotedir)
+        env.close()
 
 
 def test_ssh_environment_upload(mock_ssh, tmpdir):
@@ -92,3 +96,4 @@ def test_ssh_environment_upload(mock_ssh, tmpdir):
         env.upload(src=HELLOWORLD_DIR, dst='test/benchmark')
         assert os.path.isfile(os.path.join(env.remotedir, 'test', 'workflow.yaml'))
         assert os.path.isdir(os.path.join(env.remotedir, 'test', 'benchmark'))
+        env.close()

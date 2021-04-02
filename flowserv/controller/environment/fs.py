@@ -43,6 +43,12 @@ class FSEnvironment(RunEnvironment):
         self.basedir = basedir
         os.makedirs(self.basedir, exist_ok=True)
 
+    def close(self):
+        """The file system runtime manager has no connections to close or
+        resources to release.
+        """
+        pass
+
     def download(self, src: str, dst: str):
         """Download the file or folder at the source path to the given
         destination.

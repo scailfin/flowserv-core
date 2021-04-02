@@ -38,6 +38,13 @@ class RunEnvironment(metaclass=ABCMeta):
         self.identifier = identifier if identifier is not None else util.get_unique_identifier()
 
     @abstractmethod
+    def close(self):
+        """Close any open connection and release all resources when workflow
+        execution is done.
+        """
+        raise NotImplementedError()  # pragma: no cover
+
+    @abstractmethod
     def download(self, src: str, dst: str):
         """Download the file or folder at the source path to the given
         destination.

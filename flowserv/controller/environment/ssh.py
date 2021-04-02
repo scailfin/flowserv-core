@@ -46,6 +46,10 @@ class SSHEnvironment(RunEnvironment):
         # Create the remote directory if it does not exists.
         sftp_mkdir(client=client.sftp(), dirpath=self.remotedir)
 
+    def close(self):
+        """Close the SSH connection when workflow execution is done."""
+        self.client.close()
+
     def download(self, src: str, dst: str):
         """Download the file or folder at the source path to the given
         destination.
@@ -102,8 +106,6 @@ class SSHEnvironment(RunEnvironment):
             sftp.rmdir(os.path.join(self.remotedir, dirpath))
         # Delete the remote base directory itself.
         sftp.rmdir(self.remotedir)
-        # Close the client.
-        self.client.close()
 
     def upload(self, src: Tuple[IOHandle, str], dst: str):
         """Upload a file or folder to the run environment.
