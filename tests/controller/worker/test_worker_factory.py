@@ -62,7 +62,7 @@ def test_eval_arg_func():
         },
         'dummy': {'image': 'dummy', 'worker': {'className': 'a', 'moduleName': 'b'}}
     }
-    factory = WorkerFactory(config=doc, validate=True)
+    factory = WorkerFactory(config=doc)
     assert factory.config['test']['args'] == {'a': 'called', 'b': 1}
     assert factory.config['dummy'].get('args') is None
 
@@ -94,28 +94,10 @@ def test_get_worker_instance(doc, cls):
     assert factory.get('test') == worker
 
 
-@pytest.mark.parametrize('validate', [True, False])
-def test_init_empty(validate):
+def test_init_empty():
     """Test creating a worker factory from an empty dictionary."""
-    factory = WorkerFactory(config=dict(), validate=validate)
+    factory = WorkerFactory(config=dict())
     assert len(factory.config) == 0
-
-
-@pytest.mark.parametrize(
-    'config',
-    [
-        {'test': {}},
-        {'test': {'image': 'test'}},
-        {'test': {'image': 'test', 'worker': {'className': 'a'}}},
-        {'test': {'image': 'test', 'worker': 'dummy'}},
-    ]
-)
-def test_invalid_config(config):
-    """Test errors when creating factory from invalid worker specifications."""
-    # No error when validate is False
-    WorkerFactory(config=config)
-    with pytest.raises(ValidationError):
-        WorkerFactory(config=config, validate=True)
 
 
 def test_load_config_from_file():

@@ -82,9 +82,6 @@ class WorkerFactory(object):
         If the configuration is a list of worker specification objects it will
         be converted into a dictionary.
 
-        If the validate flag is True the given worker specifications are
-        validated against the `workerSpec` schema.
-
         Parameters
         ----------
         config: list or dict, default=None
@@ -150,63 +147,52 @@ class WorkerFactory(object):
         return worker
 
     @staticmethod
-    def load(doc: List[Dict], validate: Optional[bool] = False) -> WorkerFactory:
+    def load(doc: List[Dict]) -> WorkerFactory:
         """Create an instance of the worker factory from a list of worker
         specifications.
 
-        Convertes the list of specifications into a dictionary where the
-        specifications are mapped to their image identifier. Validates the
-        documents against the `workerConfig` schema if the `validate` flag is
-        True.
+        Converts the list of specifications into a dictionary where the
+        specifications are mapped to their image identifier.
 
         Parameters
         ----------
         doc: list of dict
             List of dictionaries that follow the `workerSpec` schema.
-        validate: bool, default=False
-            Validate the given worker specifications against the `workerSpec`
-            schema if True.
 
         Returns
         -------
         flowserv.controller.worker.factory.WorkerFactory
         """
-        return WorkerFactory(config=convert_config(doc=doc, validate=validate))
+        return WorkerFactory(config=convert_config(doc=doc))
 
-    def load_json(filename: str, validate: Optional[bool] = False) -> WorkerFactory:
+    def load_json(filename: str) -> WorkerFactory:
         """Shortcut to load a worker configuration from a Json file.
 
         Parameters
         ----------
         filename: string
             Path to a Json file that contains the worker configuration.
-        validate: bool, default=False
-            Validate the given worker specifications against the `workerSpec`
-            schema if True.
 
         Returns
         -------
         flowserv.controller.worker.factory.WorkerFactory
         """
-        doc = read_config(filename=filename, format=util.FORMAT_JSON, validate=validate)
+        doc = read_config(filename=filename, format=util.FORMAT_JSON)
         return WorkerFactory(config=doc)
 
-    def load_yaml(filename: str, validate: Optional[bool] = False) -> WorkerFactory:
+    def load_yaml(filename: str) -> WorkerFactory:
         """Shortcut to load a worker configuration from a Yaml file.
 
         Parameters
         ----------
         filename: string
             Path to a Yaml file that contains the worker configuration.
-        validate: bool, default=False
-            Validate the given worker specifications against the `workerSpec`
-            schema if True.
 
         Returns
         -------
         flowserv.controller.worker.factory.WorkerFactory
         """
-        doc = read_config(filename=filename, format=util.FORMAT_YAML, validate=validate)
+        doc = read_config(filename=filename, format=util.FORMAT_YAML)
         return WorkerFactory(config=doc)
 
 
@@ -303,9 +289,7 @@ def convert_config(doc: List[Dict]) -> Dict:
     return config
 
 
-def read_config(
-    filename: str, format: Optional[str] = None, validate: Optional[bool] = False
-) -> Dict:
+def read_config(filename: str, format: Optional[str] = None) -> Dict:
     """Read worker configuration object from a given file.
 
     Parameters
@@ -314,12 +298,9 @@ def read_config(
         Input file name
     format: string, optional
         Optional file format identifier.
-    validate: bool, default=True
-        Validate the given worker specifications against the `workerSpec`
-        schema if True.
 
     Returns
     -------
     dict
     """
-    return convert_config(doc=util.read_object(filename, format=format), validate=validate)
+    return convert_config(doc=util.read_object(filename, format=format))
