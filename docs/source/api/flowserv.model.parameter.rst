@@ -12,6 +12,7 @@ Submodules
 .. toctree::
    :maxdepth: 3
 
+   flowserv.model.parameter.actor
    flowserv.model.parameter.base
    flowserv.model.parameter.boolean
    flowserv.model.parameter.enum
@@ -20,5 +21,4 @@ Submodules
    flowserv.model.parameter.list
    flowserv.model.parameter.numeric
    flowserv.model.parameter.record
-   flowserv.model.parameter.step
    flowserv.model.parameter.string

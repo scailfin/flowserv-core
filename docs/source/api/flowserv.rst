@@ -17,6 +17,7 @@ Subpackages
    flowserv.model
    flowserv.service
    flowserv.tests
+   flowserv.util
    flowserv.view
 
 Submodules
@@ -28,5 +29,5 @@ Submodules
    flowserv.config
    flowserv.error
    flowserv.scanner
-   flowserv.util
+   flowserv.validate
    flowserv.version

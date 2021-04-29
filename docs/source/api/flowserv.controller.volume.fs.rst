@@ -1,7 +1,7 @@
-flowserv.model.parameter.step module
+flowserv.controller.volume.fs module
 ====================================
 
-.. automodule:: flowserv.model.parameter.step
+.. automodule:: flowserv.controller.volume.fs
    :members:
    :undoc-members:
    :show-inheritance:
