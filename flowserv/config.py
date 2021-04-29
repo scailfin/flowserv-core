@@ -14,7 +14,7 @@ variables and to customize the configuration settings.
 
 from __future__ import annotations
 from appdirs import user_cache_dir
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Optional
 
 import os
 
