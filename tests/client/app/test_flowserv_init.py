@@ -24,7 +24,7 @@ def test_install_app(tmpdir):
     Flowserv(
         basedir=basedir,
         database=TEST_URL,
-        workers={'python': {}},
+        engine_config={'python': {}},
         open_access=True,
         run_async=True,
         s3bucket='test',

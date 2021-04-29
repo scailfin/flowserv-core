@@ -22,7 +22,7 @@ from typing import Dict, List, Optional, Tuple
 import logging
 import os
 
-from flowserv.config import FLOWSERV_ASYNC, FLOWSERV_BASEDIR, RUNSDIR
+from flowserv.config import FLOWSERV_ASYNC, FLOWSERV_BASEDIR, FLOWSERV_ENGINECONFIG, RUNSDIR
 from flowserv.controller.base import WorkflowController
 from flowserv.controller.serial.engine.runner import exec_workflow
 from flowserv.controller.worker.factory import WorkerFactory
@@ -63,7 +63,7 @@ class SerialWorkflowEngine(WorkflowController):
         """
         self.fs = FS(env=service)
         self.service = service
-        self.config = config if config else service.engine_config()
+        self.config = config if config else service.get(FLOWSERV_ENGINECONFIG, dict())
         validator.validate(self.config)
         logging.info("config {}".format(self.config))
         # The is_async flag controlls the default setting for asynchronous

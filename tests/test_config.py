@@ -124,12 +124,17 @@ def test_config_url():
 
 def test_engine_config(tmpdir):
     """Test worker configuration for the serial workflow controller."""
-    conf = config.Config()
-    assert conf.engine_config() == dict()
+    conf = config.env()
+    assert conf.get(config.FLOWSERV_ENGINECONFIG) is None
+    doc = {'volumes': []}
+    conf.engine_config(doc=doc)
+    assert conf.get(config.FLOWSERV_ENGINECONFIG) == doc
     filename = os.path.join(tmpdir, 'config.json')
-    util.write_object(filename=filename, obj={'volumes': []})
-    conf = config.Config({config.FLOWSERV_ENGINECONFIG: filename})
-    assert conf.engine_config() == {'volumes': []}
+    util.write_object(filename=filename, obj=doc)
+    os.environ[config.FLOWSERV_ENGINECONFIG] = filename
+    conf = config.env()
+    assert conf.get(config.FLOWSERV_ENGINECONFIG) == doc
+    del os.environ[config.FLOWSERV_ENGINECONFIG]
 
 
 def test_engine_rundirectory():

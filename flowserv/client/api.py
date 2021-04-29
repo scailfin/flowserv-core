@@ -24,7 +24,7 @@ import flowserv.config as config
 
 def ClientAPI(
     env: Optional[Dict] = None, basedir: Optional[str] = None,
-    database: Optional[str] = None, workers: Optional[Dict] = None,
+    database: Optional[str] = None, engine_config: Optional[Dict] = None,
     open_access: Optional[bool] = None, run_async: Optional[bool] = None,
     s3bucket: Optional[str] = None, user_id: Optional[str] = None
 ) -> APIFactory:
@@ -47,9 +47,8 @@ def ClientAPI(
         specified in the environment a temporary directory will be created.
     database: string, default=None
         Optional database connect url.
-    workers: dict, default=None
-        Mapping of container image identifier to worker specifications that
-        are used to create an instance of a :class:`flowserv.controller.worker.base.ContainerStep` worker.
+    engine_config: dict, default=None
+        Configuration settings for the workflow engine.
     open_access: bool, default=None
         Use an open access policy if set to True.
     run_async: bool, default=False
@@ -73,8 +72,8 @@ def ClientAPI(
         env.basedir(basedir)
     if database is not None:
         env.database(database)
-    if workers is not None:
-        env.workers(workers)
+    if engine_config is not None:
+        env.engine_config(doc=engine_config)
     if open_access is not None and open_access:
         env.open_access()
     # By default, the client runs all workflows synchronously.

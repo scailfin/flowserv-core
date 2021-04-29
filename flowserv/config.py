@@ -282,20 +282,20 @@ class Config(dict):
         self[FLOWSERV_DB] = url
         return self
 
-    def engine_config(self) -> Union[Dict, List]:
-        """Get the configuration settings for workers that are used by the
-        serial workflow controller.
+    def engine_config(self, doc: Dict) -> Config:
+        """Set the configuration dictionary for the workflow engine.
 
-        If the configuration is not set an empty dictionary is returned.
+        Parameters
+        ----------
+        doc: dict
+            Dictionary with engine configuration settings.
 
         Returns
         -------
-        dict of list
+        flowserv.config.Config
         """
-        engine_conf = self.get(FLOWSERV_ENGINECONFIG, dict())
-        if engine_conf and isinstance(engine_conf, str):
-            engine_conf = util.read_object(filename=engine_conf)
-        return engine_conf if engine_conf else dict()
+        self[FLOWSERV_ENGINECONFIG] = doc
+        return self
 
     def multiprocess_engine(self) -> Config:
         """Set configuration to use the serial multi-porcess workflow controller
@@ -435,6 +435,21 @@ def to_int(value: Any) -> int:
         return None
 
 
+def read_config_obj(filename: str) -> Dict:
+    """Read configuration object from a file.
+
+    Parameters
+    ----------
+    filename: str
+        Path to file on disk.
+
+    Returns
+    -------
+    dict
+    """
+    return util.read_object(filename=filename)
+
+
 """List of environment variables and their default settings and an optional
 value case function.
 """
@@ -451,7 +466,7 @@ ENV = [
     (FLOWSERV_AUTH, AUTH_DEFAULT, None),
     (FLOWSERV_BACKEND_CLASS, None, None),
     (FLOWSERV_BACKEND_MODULE, None, None),
-    (FLOWSERV_ENGINECONFIG, None, None),
+    (FLOWSERV_ENGINECONFIG, None, read_config_obj),
     (FLOWSERV_RUNSDIR, None, None),
     (FLOWSERV_POLL_INTERVAL, DEFAULT_POLL_INTERVAL, to_float),
     (FLOWSERV_ACCESS_TOKEN, None, None),

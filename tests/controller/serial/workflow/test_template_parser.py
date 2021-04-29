@@ -41,10 +41,8 @@ def test_parse_top_tagger_template():
     as workflow steps.
     """
     template = WorkflowTemplate.from_dict(doc=util.read_object(TEMPLATE_TOPTAGGER))
-    args = {'tagger': ('container', {'image': 'test', 'commands': ['python analyze']})}
+    doc = {'image': 'test', 'commands': ['python analyze']}
+    args = {'tagger': doc}
     steps, _, _ = parser.parse_template(template=template, arguments=args)
     assert len(steps) == 2
-    step = steps[0]
-    assert step.image == 'test'
-    assert len(step.commands) == 1
-    assert step.commands[0] == 'python analyze'
+    assert steps[0] == doc
