@@ -22,7 +22,7 @@ class StorageVolume(metaclass=ABCMeta):
     by a workflow step.
 
     Storage volumes are used to provide a copy of the required run files for
-    a workflow step. Each valume has a unique identifier that is used to
+    a workflow step. Each volume has a unique identifier that is used to
     keep track which files and file versions are available in the volume.
     """
     def __init__(self, identifier: Optional[str] = None):
