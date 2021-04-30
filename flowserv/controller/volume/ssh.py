@@ -58,7 +58,7 @@ class RemoteStorage(StorageVolume):
         -------
         str
         """
-        return os.path.abspath(os.path.join(self.remotedir, src))
+        return Path(os.path.join(self.remotedir, src)).absolute()
 
     def close(self):
         """Close the SSH connection when workflow execution is done."""
