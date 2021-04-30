@@ -25,6 +25,15 @@ HELLOWORLD_DIR = os.path.join(BENCHMARK_DIR, 'helloworld')
 PREDICTOR_FILE = os.path.join(BENCHMARK_DIR, 'predictor.yaml')
 
 
+def test_ssh_volume_abspath(mock_ssh, tmpdir):
+    """Test the absolute path method from the storage volume."""
+    with ssh.ssh_client('test') as client:
+        env = RemoteStorage(remotedir=tmpdir, client=client)
+        filename = env.abspath(src='predictor.yaml')
+        env.close()
+    assert os.path.isabs(filename)
+
+
 def test_ssh_volume_download(mock_ssh, tmpdir):
     """Test downloading files from the storage volume."""
     with ssh.ssh_client('test') as client:

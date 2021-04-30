@@ -38,6 +38,24 @@ class StorageVolume(metaclass=ABCMeta):
         self.identifier = identifier if identifier is not None else util.get_unique_identifier()
 
     @abstractmethod
+    def abspath(self, src: str) -> str:
+        """Get the absolute path name for a file with the given key.
+
+        This method is particularly important for file storage volumes that
+        maintain files relative to a base directory.
+
+        Parameters
+        ----------
+        key: str
+            Relative path to a file in the storage volume.
+
+        Returns
+        -------
+        str
+        """
+        raise NotImplementedError()  # pragma: no cover
+
+    @abstractmethod
     def close(self):
         """Close any open connection and release all resources when workflow
         execution is done.

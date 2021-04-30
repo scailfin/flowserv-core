@@ -46,6 +46,20 @@ class RemoteStorage(StorageVolume):
         # Create the remote directory if it does not exists.
         sftp_mkdir(client=client.sftp(), dirpath=self.remotedir)
 
+    def abspath(self, src: str) -> str:
+        """Get the absolute path name for a file with the given key.
+
+        Parameters
+        ----------
+        key: str
+            Relative path to a file in the storage volume.
+
+        Returns
+        -------
+        str
+        """
+        return os.path.abspath(os.path.join(self.remotedir, src))
+
     def close(self):
         """Close the SSH connection when workflow execution is done."""
         self.client.close()

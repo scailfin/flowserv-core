@@ -21,6 +21,13 @@ HELLOWORLD_DIR = os.path.join(BENCHMARK_DIR, 'helloworld')
 PREDICTOR_FILE = os.path.join(BENCHMARK_DIR, 'predictor.yaml')
 
 
+def test_fs_volume_abspath(tmpdir):
+    """Test the absolute path method for files from the storage volume."""
+    env = FileSystemStorage(basedir=tmpdir)
+    filename = env.abspath(src='predictor.yaml')
+    assert os.path.isabs(filename)
+
+
 def test_fs_volume_download(tmpdir):
     """Test downloading files from the storage volume."""
     env = FileSystemStorage(basedir=BENCHMARK_DIR)

@@ -43,6 +43,20 @@ class FileSystemStorage(StorageVolume):
         self.basedir = basedir
         os.makedirs(self.basedir, exist_ok=True)
 
+    def abspath(self, src: str) -> str:
+        """Get the absolute path name for a file with the given key.
+
+        Parameters
+        ----------
+        key: str
+            Relative path to a file in the storage volume.
+
+        Returns
+        -------
+        str
+        """
+        return Path(os.path.join(self.basedir, src)).absolute()
+
     def close(self):
         """The file system runtime manager has no connections to close or
         resources to release.
