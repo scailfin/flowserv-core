@@ -130,3 +130,4 @@
 
 * Fix issue when creating database object using TEST_URL on Windows.
 * Fix issue with schema validator on Windows.
+* Fix issue with bucket store unit tests on Windows.
