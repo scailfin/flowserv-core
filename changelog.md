@@ -126,7 +126,7 @@
 * Remove separate Docker workflow controller
 
 
-## 0.8.1 - TBD
+## 0.8.1 - 2021-05-03
 
 * Fix issue when creating database object on Windows.
 * Fix issue with schema validator on Windows.
