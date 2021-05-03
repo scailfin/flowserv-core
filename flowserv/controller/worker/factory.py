@@ -75,7 +75,10 @@ default_engine = SubprocessWorker(variables={'python': python_interpreter(), 'ja
 
 
 """Create schema validator for API requests."""
-schemafile = os.path.abspath(os.path.join(__file__, 'schema.json'))
+# Make sure that the path to the schema file is a valid URI. Otherwise, errors
+# occur (at least on MS Windows environments). Changed based on:
+# https://github.com/Julian/jsonschema/issues/398#issuecomment-385130094
+schemafile = 'file:///{}'.format(os.path.abspath(os.path.join(__file__, 'schema.json')))
 schema = json.load(pkg_resources.open_text(__package__, 'schema.json'))
 resolver = RefResolver(schemafile, schema)
 validator = Draft7Validator(schema=schema['definitions']['workerSpec'], resolver=resolver)
