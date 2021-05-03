@@ -128,6 +128,6 @@
 
 ## 0.8.1 - TBD
 
-* Fix issue when creating database object using TEST_URL on Windows.
+* Fix issue when creating database object on Windows.
 * Fix issue with schema validator on Windows.
 * Fix issue with bucket store unit tests on Windows.
