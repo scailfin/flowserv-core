@@ -13,6 +13,7 @@ execute a given list of commands in a container environment.
 from typing import Dict, List, Optional
 
 import logging
+import os
 import subprocess
 
 from flowserv.controller.serial.workflow.result import ExecResult
@@ -65,6 +66,10 @@ class SubprocessWorker(ContainerEngine):
         # Keep output to STDOUT and STDERR for all executed commands in the
         # respective attributes of the returned execution result.
         result = ExecResult(step=step)
+        # Windows-specific fix. Based on https://github.com/appveyor/ci/issues/1995
+        if 'SYSTEMROOT' in os.environ:
+            env = dict(env) if env else dict()
+            env['SYSTEMROOT'] = os.environ.get('SYSTEMROOT')
         try:
             # Run each command in the the workflow step. Each command is
             # expected to be a shell command that is executed using the

@@ -52,7 +52,7 @@ def test_run_steps_with_error():
     result = SubprocessWorker().run(step=step, env=env, rundir=RUN_DIR)
     assert result.returncode == 1
     assert result.exception is None
-    assert result.stdout == ['Hello\n']
+    assert ' '.join([s.strip() for s in result.stdout]) == 'Hello'
     assert 'there was an error' in ''.join(result.stderr)
 
 
@@ -80,8 +80,7 @@ def test_run_successful_steps():
     result = SubprocessWorker().run(step=step, env=env, rundir=RUN_DIR)
     assert result.returncode == 0
     assert result.exception is None
-    assert result.stdout == ['Hello\n', 'World\n']
-    assert result.stderr == []
+    assert ' '.join([s.strip() for s in result.stdout]) == 'Hello World'
     step = ContainerStep(image='test', commands=commands)
 
 
@@ -100,5 +99,4 @@ def test_run_successful_steps_splitenv():
     result = worker.exec(step=step, arguments=dict(), rundir=RUN_DIR)
     assert result.returncode == 0
     assert result.exception is None
-    assert result.stdout == ['Hello\n', 'World\n']
-    assert result.stderr == []
+    assert ' '.join([s.strip() for s in result.stdout]) == 'Hello World'

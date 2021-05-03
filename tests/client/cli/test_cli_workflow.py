@@ -15,8 +15,8 @@ from flowserv.client.cli.workflow import read_instructions
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))
-TEMPLATE_DIR = os.path.join(DIR, '../../.files/benchmark/helloworld')
-BENCHMARK_FILE = os.path.join(DIR, '../../.files/benchmark/postproc/benchmark-no-params.yaml')
+TEMPLATE_DIR = os.path.join(DIR, '..', '..', '.files', 'benchmark', 'helloworld')
+BENCHMARK_FILE = os.path.join(DIR, '..', '..', '.files', 'benchmark', 'postproc', 'benchmark-no-params.yaml')
 
 
 def test_list_workflows(flowserv_cli):

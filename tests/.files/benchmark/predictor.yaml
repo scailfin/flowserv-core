@@ -15,10 +15,10 @@ workflow:
         steps:
           - environment: 'python:3.7'
             commands:
-              - python "${codefile}"
+              - ${python} "${codefile}"
                   --inputfile "${inputfile}"
                   --outputfile "${outputfile}"
-              - python code/analyze.py
+              - ${python} code/analyze.py
                   --inputfile "${outputfile}"
                   --outputfile results/eval.json
     outputs:

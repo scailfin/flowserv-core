@@ -124,3 +124,12 @@
 * New workflow template parameter type `actor` to support complete workflow steps as argument values.
 * Serial engine workers to support execution of individual workflow steps using different backends.
 * Remove separate Docker workflow controller
+
+
+## 0.8.1 - TBD
+
+* Fix issue when creating database object on Windows.
+* Fix issue with schema validator on Windows.
+* Fix issue with bucket store unit tests on Windows.
+* Fix unit test issues for Windows.
+* Fix issue with subprocess worker on Windows.
