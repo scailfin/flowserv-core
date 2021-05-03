@@ -292,11 +292,11 @@ def validate_doc(
     labels = mandatory if mandatory is not None else list()
     for key in labels:
         if key not in doc:
-            raise exception("missing element '{}'".format(key))
+            raise exception("missing element '{}' in:\n{}".format(key, json.dumps(doc, indent=4)))
     # Raise error if additional elements are present in the dictionary
     if optional is not None:
         labels = labels + optional
     for key in doc:
         if key not in labels:
-            raise exception("unknown element '{}'".format(key))
+            raise exception("unknown element '{}' in:\n{}".format(key, json.dumps(doc, indent=4)))
     return doc
