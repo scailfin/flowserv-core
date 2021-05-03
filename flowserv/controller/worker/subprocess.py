@@ -67,7 +67,7 @@ class SubprocessWorker(ContainerEngine):
         # respective attributes of the returned execution result.
         result = ExecResult(step=step)
         # Windows-specific fix. Based on https://github.com/appveyor/ci/issues/1995
-        env = dict(env)
+        env = dict(env) if env else dict()
         env["SYSTEMROOT"] = os.environ.get("SYSTEMROOT")
         try:
             # Run each command in the the workflow step. Each command is

@@ -23,11 +23,10 @@ import flowserv.tests.serialize as serialize
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))
-TEMPLATE_DIR = os.path.join(DIR, '../../../.files/template')
+TEMPLATE_DIR = os.path.join(DIR, '..', '..', '..', '.files', 'template')
 # Workflow templates
-TEMPLATE_HELLOWORLD = os.path.join(TEMPLATE_DIR, './hello-world.yaml')
-INVALID_TEMPLATE = './template-invalid-cmd.yaml'
-TEMPLATE_WITH_INVALID_CMD = os.path.join(TEMPLATE_DIR, INVALID_TEMPLATE)
+TEMPLATE_HELLOWORLD = os.path.join(TEMPLATE_DIR, 'hello-world.yaml')
+TEMPLATE_WITH_INVALID_CMD = os.path.join(TEMPLATE_DIR, 'template-invalid-cmd.yaml')
 
 
 @pytest.mark.parametrize(
@@ -73,4 +72,5 @@ def test_run_helloworld_sync(sync_service, specfile, state):
                 file_id=files['results/greetings.txt']
             )
             value = fh.open().read().decode('utf-8').strip()
-            assert value == 'Hello Alice!\nHello Bob!'
+            assert 'Hello Alice!' in value
+            assert 'Hello Bob!' in value

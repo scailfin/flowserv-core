@@ -15,12 +15,12 @@ workflow:
         steps:
           - environment: 'python:3.7'
             commands:
-              - python code/helloworld.py
+              - ${python} code/helloworld.py
                   --inputfile "${inputfile}"
                   --outputfile "${outputfile}"
                   --sleeptime 0
                   --greeting ${greeting}
-              - python code/analyze.py
+              - ${python} code/analyze.py
                   --inputfile "${outputfile}"
                   --outputfile results/analytics.json
     outputs:

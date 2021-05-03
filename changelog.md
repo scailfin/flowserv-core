@@ -132,3 +132,4 @@
 * Fix issue with schema validator on Windows.
 * Fix issue with bucket store unit tests on Windows.
 * Fix unit test issues for Windows.
+* Fix issue with subprocess worker on Windows.

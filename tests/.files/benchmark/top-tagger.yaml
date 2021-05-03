@@ -12,7 +12,7 @@ workflow:
           - $[[tagger]]
           - environment: 'toptagger:1.0'
             commands:
-              - 'python code/save-probabilities.py data/evaluate/ results/'
+              - '${python} code/save-probabilities.py data/evaluate/ results/'
     outputs:
       files:
        - 'results/yProbBest.pkl'
@@ -25,7 +25,7 @@ postproc:
         steps:
         - environment: 'toptagger:1.0'
           commands:
-            - 'python code/plot-roc.py ${in} data/evaluate/labels.pkl ${out}'
+            - '${python} code/plot-roc.py ${in} data/evaluate/labels.pkl ${out}'
     inputs:
         files:
             - 'results/yProbBest.pkl'
