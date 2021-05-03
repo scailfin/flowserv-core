@@ -42,7 +42,7 @@ postproc:
             steps:
               - environment: 'python:3.7'
                 commands:
-                  - python code/postproc.py
+                  - ${python} code/postproc.py
                       --runs "${rundir}"
                       --outputfile results/compare.json
         outputs:

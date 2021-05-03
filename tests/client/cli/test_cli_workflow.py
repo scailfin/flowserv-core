@@ -15,8 +15,8 @@ from flowserv.client.cli.workflow import read_instructions
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))
-TEMPLATE_DIR = os.path.join(DIR, '../../.files/benchmark/helloworld')
-BENCHMARK_FILE = os.path.join(DIR, '../../.files/benchmark/postproc/benchmark-no-params.yaml')
+TEMPLATE_DIR = os.path.join(DIR, '..', '..', '.files', 'benchmark', 'helloworld')
+BENCHMARK_FILE = os.path.join(DIR, '..', '..', '.files', 'benchmark', 'postproc', 'benchmark-no-params.yaml')
 
 
 def test_list_workflows(flowserv_cli):
@@ -118,6 +118,7 @@ def test_workflow_result_files(flowserv_cli, tmpdir):
     result = flowserv_cli.invoke(cli, cmd)
     assert result.exit_code == 0
     assert 'Post-processing' in result.output
+    print(result.output)
     for line in result.output.split('\n'):
         if '(results/compare.json)' in line:
             file_id = line.split()[0]
