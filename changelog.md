@@ -124,3 +124,8 @@
 * New workflow template parameter type `actor` to support complete workflow steps as argument values.
 * Serial engine workers to support execution of individual workflow steps using different backends.
 * Remove separate Docker workflow controller
+
+
+## 0.8.1 - TBD
+
+* Fix issue when creating database object using TEST_URL on Windows.

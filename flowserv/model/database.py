@@ -56,7 +56,7 @@ class DB(object):
         """
         # If the URL references a SQLite database ensure that the directory for
         # the database file exists (Issue #68).
-        if connect_url.startswith('sqlite://'):
+        if connect_url.startswith('sqlite://') and connect_url != TEST_URL:
             dbdir = os.path.dirname(connect_url[9:])
             if dbdir:
                 os.makedirs(dbdir, exist_ok=True)
