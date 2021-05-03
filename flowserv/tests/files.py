@@ -71,14 +71,14 @@ class DiskBucket(object):
         object that is being deleted.
         """
         for obj in Delete.get('Objects'):
-            filename = os.path.join(self.basedir, obj.get('Key'))
+            filename = os.path.join(self.basedir, filekey(obj.get('Key')))
             os.remove(filename)
 
     def download_fileobj(self, key: str, data: IO):
         """Copy the buffer for the identified object into the given data
         buffer.
         """
-        filename = os.path.join(self.basedir, key)
+        filename = os.path.join(self.basedir, filekey(key))
         if os.path.isfile(filename):
             with open(filename, 'rb') as f:
                 data.write(f.read())
@@ -94,6 +94,7 @@ class DiskBucket(object):
         given prefix.
         """
         result = list()
+        Prefix = filekey(Prefix)
         for key in parse_dir(self.basedir, ''):
             if key.startswith(Prefix):
                 result.append(ObjectSummary(key))
@@ -143,6 +144,24 @@ def parse_dir(dirname, prefix, result=None):
 
 
 # -- Helper Functions ---------------------------------------------------------
+
+
+def filekey(key: str) -> str:
+    """Replace '/' as key separator when using the DiskBucket on a Windows
+    system.
+
+    Parameters
+    ----------
+    key: str
+        Relative file path.
+
+    Returns
+    -------
+    str
+    """
+    if os.sep != '/':
+        key = key.replace('/', os.sep)
+    return key
 
 
 def io_file(data: Union[List, Dict], format: Optional[str] = None) -> IOBuffer:
