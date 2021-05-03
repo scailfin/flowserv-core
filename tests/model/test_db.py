@@ -21,10 +21,10 @@ def test_create_sqlite_dir(tmpdir):
     """Test function that creates the SQLite databse directory when creating
     an instance of the database object for a SQLite database.
     """
-    DB(connect_url=TEST_DB(os.path.join(tmpdir, 'db', 'db.sql')))
+    DB(connect_url=TEST_DB(os.path.join(tmpdir, 'db')))
     assert os.path.isdir(os.path.join(tmpdir, 'db'))
     # Special case for file path without parent directory.
-    DB(connect_url=TEST_DB('db.sql'))
+    DB(connect_url=TEST_DB(''))
 
 
 @pytest.mark.parametrize(
