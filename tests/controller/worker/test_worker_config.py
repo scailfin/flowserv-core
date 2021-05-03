@@ -16,8 +16,8 @@ from flowserv.controller.worker.config import java_jvm, python_interpreter
 
 def test_get_java_jvm():
     """Test getting the path to the Java virtual machine."""
-    os.environ['JAVA_HOME'] = '/usr/bin/java'
-    assert java_jvm() == '/usr/bin/java/bin/java'
+    os.environ['JAVA_HOME'] = os.path.abspath('/usr/bin/java')
+    assert java_jvm() == os.path.abspath('/usr/bin/java/bin/java')
     del os.environ['JAVA_HOME']
     assert java_jvm() == 'java'
 

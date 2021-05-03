@@ -131,3 +131,4 @@
 * Fix issue when creating database object on Windows.
 * Fix issue with schema validator on Windows.
 * Fix issue with bucket store unit tests on Windows.
+* Fix unit test issues for Windows.

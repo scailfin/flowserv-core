@@ -71,7 +71,7 @@ def test_config_setter():
     assert conf[config.FLOWSERV_AUTH] == config.AUTH_DEFAULT
     # base directory
     conf = conf.basedir('/dev/null')
-    assert conf[config.FLOWSERV_BASEDIR] == '/dev/null'
+    assert conf[config.FLOWSERV_BASEDIR] == os.path.abspath('/dev/null')
     # Database
     conf.database('mysql')
     assert conf[config.FLOWSERV_DB] == 'mysql'

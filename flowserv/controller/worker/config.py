@@ -32,4 +32,4 @@ def java_jvm() -> str:
     """
     # Get path to Java Runtime (if specified in the environment variable).
     jre = os.environ.get('JAVA_HOME')
-    return os.path.join(jre, 'bin/java') if jre else 'java'
+    return os.path.join(jre, 'bin', 'java') if jre else 'java'
