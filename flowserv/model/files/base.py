@@ -32,7 +32,7 @@ from abc import ABCMeta, abstractmethod
 from io import BytesIO
 from typing import IO, List, Tuple
 
-import os
+import flowserv.util as util
 
 
 # -- File objects for file stores ---------------------------------------------
@@ -289,7 +289,7 @@ class FileStore(metaclass=ABCMeta):
         string
         """
         groupdir = self.workflow_groupdir(workflow_id, group_id)
-        return os.path.join(groupdir, 'files')
+        return util.join(groupdir, 'files')
 
     @abstractmethod
     def load_file(self, key: str) -> IOHandle:
@@ -323,7 +323,7 @@ class FileStore(metaclass=ABCMeta):
         string
         """
         workflowdir = self.workflow_basedir(workflow_id)
-        return os.path.join(workflowdir, 'runs', run_id)
+        return util.join(workflowdir, 'runs', run_id)
 
     @abstractmethod
     def store_files(self, files: List[Tuple[IOHandle, str]], dst: str):
@@ -372,7 +372,7 @@ class FileStore(metaclass=ABCMeta):
         string
         """
         workflowdir = self.workflow_basedir(workflow_id)
-        return os.path.join(workflowdir, 'groups', group_id)
+        return util.join(workflowdir, 'groups', group_id)
 
     def workflow_staticdir(self, workflow_id: str) -> str:
         """Get base directory containing static files that are associated with
@@ -387,4 +387,4 @@ class FileStore(metaclass=ABCMeta):
         -------
         string
         """
-        return os.path.join(self.workflow_basedir(workflow_id), 'static')
+        return util.join(self.workflow_basedir(workflow_id), 'static')

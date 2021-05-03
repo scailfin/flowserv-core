@@ -8,10 +8,10 @@
 
 """Definitions of constants for post=processing workflows."""
 
-import os
-
 from flowserv.model.parameter.files import File
 from flowserv.model.template.parameter import ParameterIndex
+
+import flowserv.util as util
 
 
 """Names for files and folders that contain run result files and run metadata.
@@ -33,7 +33,7 @@ PARA_RUNS = 'runs'
 PARAMETER = File(
     name=PARA_RUNS,
     index=0,
-    target=os.path.join(RUNS_DIR, RUNS_FILE)
+    target=util.join(RUNS_DIR, RUNS_FILE)
 )
 PARAMETERS = ParameterIndex()
 PARAMETERS[PARAMETER.name] = PARAMETER

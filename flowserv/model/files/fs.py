@@ -104,7 +104,7 @@ class FileSystemStore(FileStore):
         dst: string
             Path on the file system to the target folder.
         """
-        copy_folder(src=os.path.join(self.basedir, key), dst=dst)
+        copy_folder(src=filepath(self.basedir, key), dst=filepath(dst))
 
     def delete_file(self, key: str):
         """Delete the file with the given key.
@@ -114,7 +114,7 @@ class FileSystemStore(FileStore):
         key: string
             Unique file key.
         """
-        filename = os.path.join(self.basedir, key)
+        filename = filepath(self.basedir, key)
         # Only attempt to delete the file if it exists.
         if os.path.exists(filename):
             os.remove(filename)
@@ -127,7 +127,7 @@ class FileSystemStore(FileStore):
         key: string
             Unique file key.
         """
-        filename = os.path.join(self.basedir, key)
+        filename = filepath(self.basedir, key)
         # Only attempt to delete the folder if it exists.
         if os.path.exists(filename):
             shutil.rmtree(filename)
@@ -145,7 +145,7 @@ class FileSystemStore(FileStore):
         -------
         flowserv.model.files.fs.FSFile
         """
-        return FSFile(os.path.join(self.basedir, key))
+        return FSFile(filepath(self.basedir, key))
 
     def store_files(self, files: List[Tuple[IOHandle, str]], dst: str):
         """Store a given list of file objects in the file store. The file
@@ -161,12 +161,12 @@ class FileSystemStore(FileStore):
             Relative target path for the stored file.
         """
         # Ensure that the target directory exists.
-        target = os.path.join(self.basedir, dst)
+        target = filepath(self.basedir, dst)
         os.makedirs(target, exist_ok=True)
         # Use the file object's store method to store the file at the target
         # destination.
         for file, filename in files:
-            file.store(os.path.join(target, filename))
+            file.store(filepath(target, filename))
 
 
 # -- Bucket -------------------------------------------------------------------
@@ -196,7 +196,7 @@ class DiskBucket(Bucket):
             Unique identifier for objects that are being deleted.
         """
         for obj in keys:
-            filename = os.path.join(self.basedir, obj)
+            filename = filepath(self.basedir, obj)
             if os.path.exists(filename):
                 os.remove(filename)
 
@@ -213,7 +213,7 @@ class DiskBucket(Bucket):
         io.BytesIO
         """
         data = BytesIO()
-        filename = os.path.join(self.basedir, key)
+        filename = filepath(self.basedir, key)
         if os.path.isfile(filename):
             with open(filename, 'rb') as f:
                 data.write(f.read())
@@ -247,7 +247,7 @@ class DiskBucket(Bucket):
         key: string
             Unique object identifier.
         """
-        filename = os.path.join(self.basedir, key)
+        filename = filepath(self.basedir, key)
         os.makedirs(os.path.dirname(filename), exist_ok=True)
         with open(filename, 'wb') as f:
             f.write(file.open().read())
@@ -300,6 +300,31 @@ def copy_folder(src: str, dst: str):
             shutil.copytree(src=source, dst=target)
         else:
             shutil.copy(src=source, dst=target)
+
+
+def filepath(*args) -> str:
+    """Create a file path for a given list of path components.
+
+    The path separator that is used in the individual components is '/'. If
+    the system-specific path separator is not '/', all occurrences of '/' in
+    the path components are replaced with the system-specific ones.
+
+    Parameters
+    ----------
+    args: list
+        List of path components.
+
+    Returns
+    -------
+    str
+    """
+
+    def stdsep(value: str) -> str:
+        if os.sep != '/':
+            value = value.replace('/', os.sep)
+        return value
+
+    return os.sep.join([stdsep(v) for v in args])
 
 
 def parse_dir(

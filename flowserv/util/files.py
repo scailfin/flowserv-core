@@ -63,6 +63,21 @@ def create_directories(basedir: str, files: List[str]):
         os.makedirs(os.path.join(basedir, dirname), exist_ok=True)
 
 
+def join(*args) -> str:
+    """Concatenate a list of values using the key path separator '/'.
+
+    Parameters
+    ----------
+    args: list
+        List of argument values.
+
+    Returns
+    -------
+    str
+    """
+    return '/'.join([str(v) for v in args])
+
+
 def read_buffer(filename: str) -> IO:
     """Read content from specified file into a BytesIO buffer.
 

@@ -165,8 +165,6 @@ class BucketStore(FileStore):
         os.makedirs(dst, exist_ok=True)
         # Get list of all files in the folder.
         for filekey, target in downloads(key=key, bucket=self.bucket):
-            if os.sep != '/':
-                filekey = filekey.replace('/', os.sep)
             outfile = os.path.join(dst, target)
             # Create parent folder for the target file exist.
             os.makedirs(os.path.dirname(outfile), exist_ok=True)

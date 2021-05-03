@@ -73,7 +73,7 @@ class WorkflowManifest(object):
 
     def copyfiles(self) -> List[Tuple[FSFile, str]]:
         """Get list of all template files from the base folder that need to be
-        copied to the template folder a workflow repository. If the list of
+        copied to the template folder of a workflow repository. If the list of
         files in the manifest was None, the complete base directory is copied.
 
         Returns

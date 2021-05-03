@@ -218,7 +218,7 @@ class RunManager(object):
         workflow_id = run.workflow.workflow_id
         rundir = self.fs.run_basedir(workflow_id=workflow_id, run_id=run_id)
         for f in run.files:
-            file = self.fs.load_file(os.path.join(rundir, f.key)).open()
+            file = self.fs.load_file(util.join(rundir, f.key)).open()
             info = tarfile.TarInfo(name=f.key)
             info.size = file.getbuffer().nbytes
             tar_handle.addfile(tarinfo=info, fileobj=file)
@@ -274,7 +274,7 @@ class RunManager(object):
         return FileHandle(
             name=fh.name,
             mime_type=fh.mime_type,
-            fileobj=self.fs.load_file(os.path.join(rundir, fh.key))
+            fileobj=self.fs.load_file(util.join(rundir, fh.key))
         )
 
     def list_runs(self, group_id, state=None):
@@ -478,7 +478,7 @@ def get_run_files(run: RunObject, state: WorkflowState, rundir: str) -> Tuple[Li
     # get a list of all files that need to be retained for a run.
     walklist = list()
     for filekey in filekeys:
-        filename = os.path.join(rundir, filekey)
+        filename = util.join(rundir, filekey)
         if not os.path.exists(filename):
             continue
         walklist.append((filename, filekey))
@@ -511,7 +511,7 @@ def read_run_results(run: RunObject, schema: ResultSchema, rundir: str):
     rundir: string
         Directory containing run result files.
     """
-    filename = os.path.join(rundir, schema.result_file)
+    filename = util.join(rundir, schema.result_file)
     if os.path.exists(filename):
         results = util.read_object(filename)
         # Create a dictionary of result values.

@@ -12,7 +12,6 @@ database.
 """
 
 import mimetypes
-import os
 
 from sqlalchemy.orm.session import Session
 from typing import Dict, List, Optional
@@ -391,7 +390,7 @@ class WorkflowGroupManager(object):
         fileobj = UploadFile(
             file_id=file_id,
             created_at=util.utc_now(),
-            key=os.path.join(uploaddir, file_id),
+            key=util.join(uploaddir, file_id),
             name=name,
             mime_type=mime_type,
             size=file_size
