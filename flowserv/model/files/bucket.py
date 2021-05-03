@@ -165,6 +165,8 @@ class BucketStore(FileStore):
         os.makedirs(dst, exist_ok=True)
         # Get list of all files in the folder.
         for filekey, target in downloads(key=key, bucket=self.bucket):
+            if os.sep != '/':
+                filekey = filekey.replace('/', os.sep)
             outfile = os.path.join(dst, target)
             # Create parent folder for the target file exist.
             os.makedirs(os.path.dirname(outfile), exist_ok=True)
@@ -236,7 +238,7 @@ class BucketStore(FileStore):
         # Use the file object's store method to store the file at the target
         # destination.
         for file, filename in files:
-            key = os.path.join(dst, filename)
+            key = '{}/{}'.format(dst, filename)
             self.bucket.upload(file=file, key=key)
 
 
@@ -260,7 +262,7 @@ def downloads(key: str, bucket: Bucket) -> List[Tuple[str, str]]:
     """
     result = list()
     # Ensure that if the key ends with a path separator.
-    key = key if key[-1] == os.path.sep else '{}{}'.format(key, os.path.sep)
+    key = key if key[-1] == '/' else '{}/'.format(key)
     for filekey in folder(key=key, bucket=bucket):
         # Remove the src key prefix from the file key to generate a target
         # name (i.e., relative file path) for the downloaded file.
@@ -284,5 +286,5 @@ def folder(key: str, bucket: Bucket) -> Set[str]:
     set
     """
     # Prefix for objects if the query references a directory.
-    prefix = key if key[-1] == os.path.sep else '{}{}'.format(key, os.path.sep)
+    prefix = key if key[-1] == '/' else '{}/'.format(key)
     return bucket.query(filter=prefix)

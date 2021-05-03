@@ -31,7 +31,7 @@ def test_parse_hello_world_template():
     step = steps[0]
     assert step.image == 'python:2.7'
     assert len(step.commands) == 1
-    assert step.commands[0] == 'python "${helloworld}" --inputfile "${inputfile}" --outputfile "${outputfile}" --sleeptime ${sleeptime}'  # noqa: E501
+    assert step.commands[0] == '${python} "${helloworld}" --inputfile "${inputfile}" --outputfile "${outputfile}" --sleeptime ${sleeptime}'  # noqa: E501
     assert output_files == ['results/greetings.txt']
     assert args == {'helloworld': 'code/helloworld.py', 'inputfile': 'names.txt', 'outputfile': 'results/greetings.txt', 'sleeptime': '10'}  # noqa: E501
 

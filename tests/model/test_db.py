@@ -8,12 +8,23 @@
 
 """Unit tests for the database manager."""
 
+import os
 import pytest
 
 from sqlalchemy.exc import IntegrityError
 
 from flowserv.model.base import User
-from flowserv.model.database import DB, TEST_URL
+from flowserv.model.database import DB, TEST_DB, TEST_URL
+
+
+def test_create_sqlite_dir(tmpdir):
+    """Test function that creates the SQLite databse directory when creating
+    an instance of the database object for a SQLite database.
+    """
+    DB(connect_url=TEST_DB(os.path.join(tmpdir, 'db')))
+    assert os.path.isdir(os.path.join(tmpdir, 'db'))
+    # Special case for file path without parent directory.
+    DB(connect_url=TEST_DB(''))
 
 
 @pytest.mark.parametrize(

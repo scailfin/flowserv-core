@@ -11,7 +11,6 @@
 import pytest
 import time
 
-from flowserv.config import Config
 from flowserv.model.auth import OpenAccessAuth
 from flowserv.model.user import UserManager
 

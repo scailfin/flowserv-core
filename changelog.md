@@ -126,7 +126,16 @@
 * Remove separate Docker workflow controller
 
 
-### 0.?.? - 2021-03-??
+### 0.8.1 - 2021-05-03
+
+* Fix issue when creating database object on Windows.
+* Fix issue with schema validator on Windows.
+* Fix issue with bucket store unit tests on Windows.
+* Fix unit test issues for Windows.
+* Fix issue with subprocess worker on Windows.
+
+
+### 0.9.0 - TDB
 
 * Make `BucketStore` generic for storing workflow files in different types of cloud storage buckets (\#80).
 * Add Google Cloud File Storage bucket implementation (\#80).

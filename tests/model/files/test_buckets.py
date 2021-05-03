@@ -137,7 +137,7 @@ def mock_gcstore(monkeypatch):
     monkeypatch.setattr(gc, "get_google_client", mock_gc_client)
 
 
-# -- UNit tests ---------------------------------------------------------------
+# -- Unit tests ---------------------------------------------------------------
 
 def test_disk_bucket(tmpdir):
     """Test functionality of the DiskBucket via the BucketStore."""

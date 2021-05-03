@@ -15,7 +15,7 @@ workflow:
         steps:
           - environment: 'python:2.7'
             commands:
-              - python "${helloworld}"
+              - ${python} "${helloworld}"
                   --inputfile "${inputfile}"
                   --outputfile "${outputfile}"
                   --sleeptime ${sleeptime}
