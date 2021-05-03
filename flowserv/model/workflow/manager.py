@@ -13,7 +13,6 @@ underlying database.
 
 import git
 import os
-import shutil
 import tempfile
 
 from contextlib import contextmanager

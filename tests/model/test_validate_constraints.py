@@ -42,7 +42,7 @@ def test_valid_workflow_identifier(identifier, valid):
         assert validate_identifier(identifier)
 
 
-@pytest.mark.parametrize('name', [None, '', ' ', '\t', 'X'*600])
+@pytest.mark.parametrize('name', [None, '', ' ', '\t', 'X' * 600])
 def test_invalid_names(name):
     """Test exception for invalid names."""
     with pytest.raises(err.ConstraintViolationError):

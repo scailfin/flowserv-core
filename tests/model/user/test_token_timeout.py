@@ -13,7 +13,6 @@ period.
 import pytest
 import time
 
-from flowserv.config import Config
 from flowserv.model.auth import DefaultAuthPolicy, OpenAccessAuth
 from flowserv.model.user import UserManager
 

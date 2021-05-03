@@ -118,7 +118,6 @@ def test_workflow_result_files(flowserv_cli, tmpdir):
     result = flowserv_cli.invoke(cli, cmd)
     assert result.exit_code == 0
     assert 'Post-processing' in result.output
-    print(result.output)
     for line in result.output.split('\n'):
         if '(results/compare.json)' in line:
             file_id = line.split()[0]
