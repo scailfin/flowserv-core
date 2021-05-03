@@ -311,6 +311,7 @@ def clone(source, repository=None):
             repository = WorkflowRepository()
         repourl, manifestpath = repository.get(source)
         sourcedir = tempfile.mkdtemp()
+        print('cloning into {}'.format(sourcedir))
         if manifestpath is not None:
             manifestpath = os.path.join(sourcedir, manifestpath)
         try:
@@ -320,4 +321,6 @@ def clone(source, repository=None):
             raise ex
         finally:
             # Make sure to cleanup by removing the created teporary folder.
-            shutil.rmtree(sourcedir)
+            # Avoid permission errors for read-only files on Windows based on
+            # https://stackoverflow.com/questions/58878089
+            git.rmtree(sourcedir)
