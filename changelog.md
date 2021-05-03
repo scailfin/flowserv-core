@@ -129,3 +129,4 @@
 ## 0.8.1 - TBD
 
 * Fix issue when creating database object using TEST_URL on Windows.
+* Fix issue with schema validator on Windows.

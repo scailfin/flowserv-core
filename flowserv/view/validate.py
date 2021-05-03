@@ -14,7 +14,10 @@ import os
 
 
 """Create schema validator for API requests."""
-schemafile = os.path.abspath(os.path.join(__file__, 'flowserv.yaml'))
+# Make sure that the path to the schema file is a valid URI. Otherwise, errors
+# occur (at least on MS Windows environments). Changed based on:
+# https://github.com/Julian/jsonschema/issues/398#issuecomment-385130094
+schemafile = 'file:///{}'.format(os.path.abspath(os.path.join(__file__, 'flowserv.yaml')))
 schema = yaml.load(pkg_resources.open_text(__package__, 'flowserv.yaml'), Loader=yaml.FullLoader)
 resolver = RefResolver(schemafile, schema)
 
