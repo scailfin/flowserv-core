@@ -11,7 +11,7 @@ package.
 """
 
 from contextlib import contextmanager
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
 import paramiko
 import flowserv.util.files as util
@@ -94,17 +94,14 @@ class SSHClient:
                 hostname=self.hostname,
                 port=self.port,
                 timeout=self.timeout,
-                look_for_keys=self.look_for_keys,
-                sep=self.sep,
+                look_for_keys=self.look_for_keys
             )
         return self._client
 
-    def walk(self, dirpath: str) -> List[Tuple[str, str]]:
+    def walk(self, dirpath: str) -> List[str]:
         """Get recursive listing of all files in a given directory.
 
-        Returns a list of tuples that contain the relative sub-directory path
-        and the file name for all files. The sub-directory path for files in
-        the ``dirpath`` is None.
+        Returns a list of relative path expressions for files in the directory.
 
         If ``dirpath`` does not reference a directory the result is None.
 
@@ -115,7 +112,7 @@ class SSHClient:
 
         Returns
         -------
-        list of tuples of (string, string)
+        list of string
         """
         # Get a new SFTP client.
         sftp = self.sftp()
@@ -205,7 +202,7 @@ def ssh_client(
 def walk(
     client: paramiko.SFTPClient, dirpath: str, prefix: Optional[str] = None,
     sep: Optional[str] = '/'
-) -> List[Tuple[str, str]]:
+) -> List[str]:
     """Recursively scan contents of a remote directory.
 
     Returns a list of tuples that contain the relative sub-directory path
@@ -243,7 +240,7 @@ def walk(
             else:
                 # Couldn't recursively explore the filename, i.e., it is not a
                 # directory but a file.
-                result.append((prefix, f.filename))
+                result.append(util.join(prefix, f.filename) if prefix else f.filename)
     except IOError:
         # An error is raised if the dirpath does not reference a valid
         # directory.

@@ -110,7 +110,7 @@ class StorageVolume(metaclass=ABCMeta):
         raise NotImplementedError()  # pragma: no cover
 
     def download(self, src: str, store: StorageVolume):
-        """Download the file or folder at the source path from this storage
+        """Download the file or folder at the source path of this storage
         volume to the given storage volume.
 
         The source path is relative to the base directory for the workflow run.
@@ -157,8 +157,8 @@ class StorageVolume(metaclass=ABCMeta):
         raise NotImplementedError()  # pragma: no cover
 
     def upload(self, src: str, store: StorageVolume):
-        """Upload a file or folder from the src path of the given storage volume
-        to the dst path of this storage volume.
+        """Upload a file or folder from the src path of the given storage
+        volume to this storage volume.
 
         Parameters
         ----------

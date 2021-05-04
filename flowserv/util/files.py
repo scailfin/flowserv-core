@@ -63,7 +63,7 @@ def create_directories(basedir: str, files: List[str]):
         os.makedirs(os.path.join(basedir, dirname), exist_ok=True)
 
 
-def filepath(value: str, sep: Optional[str] = os.sep) -> str:
+def filepath(key: str, sep: Optional[str] = os.sep) -> str:
     """Convert a given file path to a local path.
 
     Replaces the default path separator '/' with the OS-specific separator if
@@ -71,7 +71,7 @@ def filepath(value: str, sep: Optional[str] = os.sep) -> str:
 
     Parameters
     ----------
-    src: str
+    key: str
         Relative file path expression.
     sep: string, default=OS file path separator
         OS-specific file path separator.
@@ -80,9 +80,9 @@ def filepath(value: str, sep: Optional[str] = os.sep) -> str:
     -------
     str
     """
-    if value and sep != '/':
-        value = value.replace('/', sep)
-    return value
+    if key and sep != '/':
+        key = key.replace('/', sep)
+    return key
 
 
 def join(*args) -> str:

@@ -12,13 +12,14 @@ from typing import List
 
 from flowserv.controller.serial.workflow.result import RunResult
 from flowserv.model.workflow.step import WorkflowStep
+from flowserv.controller.volume.manager import VolumeManager
 from flowserv.controller.worker.code import CodeWorker
 from flowserv.controller.worker.factory import WorkerFactory
 
 
 def exec_workflow(
-    steps: List[WorkflowStep], workers: WorkerFactory, rundir: str,
-    result: RunResult
+    steps: List[WorkflowStep], workers: WorkerFactory, volumes: VolumeManager,
+    rundir: str, result: RunResult
 ) -> RunResult:
     """Execute steps in a serial workflow.
 
@@ -37,6 +38,8 @@ def exec_workflow(
         Steps in the serial workflow that are executed in the given context.
     workers: flowserv.controller.worker.factory.WorkerFactory, default=None
         Factory for :class:`flowserv.model.workflow.step.ContainerStep` steps.
+    volumes: flowserv.controller.volume.manager.VolumeManager
+        Manager for storage volumes that are used by the different workers.
     rundir: str, default=None
         Working directory for all executed workflow steps.
     result: flowserv.controller.worker.result.RunResult
@@ -52,13 +55,26 @@ def exec_workflow(
             worker = CodeWorker()
         else:
             worker = workers.get(step.image)
+        # Prepare volume store that is associated with the worker.
+        files = volumes.prepare(
+            files=worker.inputfiles,
+            stores=worker.stores,
+            default_store=worker.default_store
+        )
+        # The volume store should provide the base directory that is being
+        # passed to the worker's exec method.
+        pass
+        # Execute the workflow step.
         r = worker.exec(
             step=step,
             context=result.context,
+            files=files,
             rundir=rundir
         )
         result.add(r)
         # Terminate if the step execution was not successful.
         if r.returncode != 0:
             break
+        # Update volume manager with output files for the workflow step.
+        volumes.update(files.worker.outputfiles, store=worker.default_store)
     return result

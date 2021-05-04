@@ -14,8 +14,7 @@ from typing import IO, List, Optional, Tuple
 
 import paramiko
 
-from flowserv.controller.volume.base import StorageVolume
-from flowserv.model.files.base import IOHandle
+from flowserv.volume.base import IOHandle, StorageVolume
 from flowserv.util.ssh import SSHClient
 
 import flowserv.util as util
@@ -52,20 +51,20 @@ class SFTPFile(IOHandle):
         ------
         flowserv.error.UnknownFileError
         """
-        sftp = self.sftp()
-        try:
-            return sftp.open(self.filename, 'rb')
-        finally:
-            sftp.close()
+        return self.client.sftp().open(self.filename, 'rb')
 
     def size(self) -> int:
-        """The size of a remote file is unknown.
+        """Get size of the file in the number of bytes.
 
         Returns
         -------
         int
         """
-        return None
+        sftp = self.client.sftp()
+        try:
+            return sftp.stat(self.filename).st_size
+        finally:
+            sftp.close()
 
 
 class RemoteStorage(StorageVolume):
@@ -105,7 +104,7 @@ class RemoteStorage(StorageVolume):
         sftp = self.client.sftp()
         # Get recursive list of all files in the base folder and delete them.
         for key, filename in self.client.walk(self.remotedir):
-            dirname = util.filepath(filename=key, sep=self.client.sep) if key else None
+            dirname = util.filepath(key=key, sep=self.client.sep) if key else None
             if dirname is not None:
                 directories.add(dirname)
                 f = self.client.sep.join([dirname, filename])
@@ -129,7 +128,7 @@ class RemoteStorage(StorageVolume):
         """
         # The file key is a path expression that uses '/' as the path separator.
         # If the local OS uses a different separator we need to replace it.
-        filename = util.filepath(filename=src, sep=self.client.sep)
+        filename = util.filepath(key=src, sep=self.client.sep)
         filename = self.client.sep.join([self.remotedir, filename])
         return SFTPFile(filename=filename, client=self.client)
 
@@ -146,7 +145,7 @@ class RemoteStorage(StorageVolume):
         """
         # The file key is a path expression that uses '/' as the path separator.
         # If the local OS uses a different separator we need to replace it.
-        filename = util.filepath(filename=dst, sep=self.client.sep)
+        filename = util.filepath(key=dst, sep=self.client.sep)
         filename = self.client.sep.join([self.remotedir, filename])
         dirname = self.client.sep.join(filename.split(self.client.sep)[:-1])
         sftp = self.client.sftp()
@@ -174,15 +173,22 @@ class RemoteStorage(StorageVolume):
         -------
         list of tuples (str, flowserv.volume.base.IOHandle)
         """
-        files = self.client.walk()
+        dirpath = util.filepath(key=src, sep=self.client.sep)
+        dirpath = self.client.sep.join([self.remotedir, dirpath]) if dirpath else self.remotedir
+        files = self.client.walk(dirpath=dirpath)
         if files is None:
             # The source path references a single file.
-            filename = util.filepath(filename=src, sep=self.client.sep)
+            filename = util.filepath(key=src, sep=self.client.sep)
             filename = self.client.sep.join([self.remotedir, filename])
             return [(src, SFTPFile(filename=filename, client=self.client))]
         else:
             # The source path references a directory.
-            return [(key, SFTPFile(filename=filename, client=self.client)) for filename, key in files]
+            result = list()
+            for key in files:
+                filename = util.filepath(key=key, sep=self.client.sep)
+                filename = self.client.sep.join([self.remotedir, filename])
+                result.append((key, SFTPFile(filename=filename, client=self.client)))
+            return result
 
 
 # -- Helper functions ---------------------------------------------------------

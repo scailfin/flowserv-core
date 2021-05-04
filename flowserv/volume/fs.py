@@ -108,7 +108,7 @@ class FileSystemStorage(StorageVolume):
         """
         # The file key is a path expression that uses '/' as the path separator.
         # If the local OS uses a different separator we need to replace it.
-        filename = os.path.join(self.basedir, util.filepath(src))
+        filename = os.path.join(self.basedir, util.filepath(key=src))
         if not os.path.isfile(filename):
             raise err.UnknownFileError(filename)
         return FSFile(filename=filename)
@@ -126,7 +126,7 @@ class FileSystemStorage(StorageVolume):
         """
         # The file key is a path expression that uses '/' as the path separator.
         # If the local OS uses a different separator we need to replace it.
-        filename = os.path.join(self.basedir, util.filepath(dst))
+        filename = os.path.join(self.basedir, util.filepath(key=dst))
         os.makedirs(os.path.dirname(filename), exist_ok=True)
         with open(filename, 'wb') as fout:
             with file.open() as fin:
@@ -150,7 +150,7 @@ class FileSystemStorage(StorageVolume):
         """
         # The file key is a path expression that uses '/' as the path separator.
         # If the local OS uses a different separator we need to replace it.
-        filename = os.path.join(self.basedir, util.filepath(src)) if src else self.basedir
+        filename = os.path.join(self.basedir, util.filepath(key=src)) if src else self.basedir
         # The result is a list of file keys.
         result = list()
         if os.path.isfile(filename):
