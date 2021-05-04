@@ -13,15 +13,15 @@ package.
 from contextlib import contextmanager
 from typing import List, Optional, Tuple
 
-import os
 import paramiko
+import flowserv.util.files as util
 
 
 class SSHClient:
     """SSH client that allows to run remote commands and access files."""
     def __init__(
         self, hostname: str, port: Optional[int] = None, timeout: Optional[float] = None,
-        look_for_keys: Optional[bool] = False
+        look_for_keys: Optional[bool] = False, sep: Optional[str] = '/'
     ):
         """Create SSH client.
 
@@ -36,11 +36,14 @@ class SSHClient:
         look_for_keys: bool, default=False
             Set to True to enable searching for discoverable private key files
             in ``~/.ssh/``.
+        sep: string, default='/'
+            Path separator used by the remote file system.
         """
         self.hostname = hostname
         self.port = port
         self.timeout = timeout
         self.look_for_keys = look_for_keys
+        self.sep = sep
         # Create the SSH client.
         self._client = None
         self.ssh_client
@@ -48,23 +51,6 @@ class SSHClient:
     def close(self):
         """Close the SSH client."""
         self._client.close()
-
-    def download(self, src: str, dst: str):
-        """Download the specified source file to a given target path.
-
-        Parameters
-        ----------
-        src: string
-            Path to source file on the remote server.
-        dst: string
-            Destination path for the downloaded file.
-        """
-        # Get a new SFTP client.
-        sftp = self.sftp()
-        try:
-            sftp.get(src, dst)
-        finally:
-            sftp.close()
 
     def exec_cmd(self, command) -> str:
         """Execute command on the remote server.
@@ -108,42 +94,10 @@ class SSHClient:
                 hostname=self.hostname,
                 port=self.port,
                 timeout=self.timeout,
-                look_for_keys=self.look_for_keys
+                look_for_keys=self.look_for_keys,
+                sep=self.sep,
             )
         return self._client
-
-    def upload(self, files: List[Tuple[str, str]], directories: List[str]):
-        """Upload a given list of files.
-
-        Files are given as pairs of source and target path. The list of unique
-        target directories contains the list of all directories that need to
-        exist on the remote server for the uploaded files. These directories
-        are created in advance before attempting to upload the files.
-
-        Parameters
-        ----------
-        files: list of tuples of (string, string)
-            Source and target path for uploaded files. All path expressions
-            should be absolute paths expressions.
-        directories: list of string
-            List of target directories that need to exist on the remove server.
-            These directories will be created if they don't exist.
-        """
-        # Get a new SFTP client.
-        sftp = self.sftp()
-        try:
-            # Attempt to create all required target directories on the remote
-            # server first.
-            for dirpath in directories:
-                try:
-                    sftp.mkdir(dirpath)
-                except Exception:
-                    pass
-            # Upload the files.
-            for src, dst in files:
-                sftp.put(src, dst, confirm=True)
-        finally:
-            sftp.close()
 
     def walk(self, dirpath: str) -> List[Tuple[str, str]]:
         """Get recursive listing of all files in a given directory.
@@ -167,7 +121,7 @@ class SSHClient:
         sftp = self.sftp()
         try:
             # Recursively walk the directory path.
-            return walk(client=sftp, dirpath=dirpath)
+            return walk(client=sftp, dirpath=dirpath, sep=self.sep)
         finally:
             sftp.close()
 
@@ -180,7 +134,7 @@ def paramiko_ssh_client(
 ) -> paramiko.SSHClient:  # pragma: no cover
     """Helper function to create a paramiko SSH Client.
 
-    This separate function is primarily intended to make pathcing easier for
+    This separate function is primarily intended to make patching easier for
     unit testing.
 
     Parameters
@@ -213,7 +167,7 @@ def paramiko_ssh_client(
 @contextmanager
 def ssh_client(
     hostname: str, port: Optional[int] = None, timeout: Optional[float] = None,
-    look_for_keys: Optional[bool] = False
+    look_for_keys: Optional[bool] = False, sep: Optional[str] = '/'
 ) -> SSHClient:
     """Context manager for the flowserv SSHCilent.
 
@@ -228,6 +182,8 @@ def ssh_client(
     look_for_keys: bool, default=False
         Set to True to enable searching for discoverable private key files
         in ``~/.ssh/``.
+    sep: string, default='/'
+        Path separator used by the remote file system.
 
     Returns
     -------
@@ -237,7 +193,8 @@ def ssh_client(
         hostname=hostname,
         port=port,
         timeout=timeout,
-        look_for_keys=look_for_keys
+        look_for_keys=look_for_keys,
+        sep=sep
     )
     try:
         yield client
@@ -246,7 +203,8 @@ def ssh_client(
 
 
 def walk(
-    client: paramiko.SFTPClient, dirpath: str, prefix: Optional[str] = None
+    client: paramiko.SFTPClient, dirpath: str, prefix: Optional[str] = None,
+    sep: Optional[str] = '/'
 ) -> List[Tuple[str, str]]:
     """Recursively scan contents of a remote directory.
 
@@ -264,6 +222,8 @@ def walk(
         Path to a directory on the remote server.
     prefix: string, default=None
         Prefix path for the current (sub-)directory.
+    sep: string, default='/'
+        Path separator used by the remote file system.
 
     Returns
     -------
@@ -274,8 +234,8 @@ def walk(
         for f in client.listdir_attr(dirpath):
             children = walk(
                 client=client,
-                dirpath=os.path.join(dirpath, f.filename),
-                prefix=os.path.join(prefix, f.filename) if prefix else f.filename
+                dirpath=sep.join([dirpath, f.filename]),
+                prefix=util.join(prefix, f.filename) if prefix else f.filename
             )
             if children is not None:
                 # The file is a directory.

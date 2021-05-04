@@ -27,19 +27,6 @@ def test_ssh_execute_command(mock_ssh):
             client.exec_cmd('ls')
 
 
-def test_ssh_upload_download(mock_ssh, tmpdir):
-    """Test file uploads and downloads via the SSH client."""
-    dirpath = os.path.join(tmpdir, 'test')
-    file_a = os.path.join(tmpdir, 'a.txt')
-    file_b = os.path.join(dirpath, 'b.txt')
-    file_c = os.path.join(tmpdir, 'c.txt')
-    Path(file_a).touch()
-    with ssh.ssh_client('test') as client:
-        client.upload(files=[], directories=[])
-        client.upload(files=[(file_a, file_b)], directories=[dirpath, dirpath])
-        client.download(file_b, file_c)
-
-
 def test_ssh_walk(mock_ssh, tmpdir):
     """Test the remote directory walk method."""
     # -- Setup ----------------------------------------------------------------
@@ -60,10 +47,10 @@ def test_ssh_walk(mock_ssh, tmpdir):
     Path(os.path.join(tmpdir, 'b', 'e', 'f.txt')).touch()
     Path(os.path.join(tmpdir, 'a.txt')).touch()
     # -- Test -----------------------------------------------------------------
-    with ssh.ssh_client('test') as client:
-        files = client.walk(tmpdir)
+    with ssh.ssh_client('test', sep=os.sep) as client:
+        files = client.walk(str(tmpdir))
     assert len(files) == 4
     assert (None, 'a.txt') in files
     assert ('b', 'c.txt') in files
     assert ('b', 'd.txt') in files
-    assert ('b{}e'.format(os.sep), 'f.txt') in files
+    assert ('b/e', 'f.txt') in files

@@ -20,7 +20,7 @@ import flowserv.util.ssh as ssh
 
 # Template directory
 DIR = os.path.dirname(os.path.realpath(__file__))
-BENCHMARK_DIR = os.path.join(DIR, '../../.files/benchmark')
+BENCHMARK_DIR = os.path.join(DIR, '..', '.files/benchmark')
 HELLOWORLD_DIR = os.path.join(BENCHMARK_DIR, 'helloworld')
 PREDICTOR_FILE = os.path.join(BENCHMARK_DIR, 'predictor.yaml')
 

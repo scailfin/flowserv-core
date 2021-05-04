@@ -92,6 +92,15 @@ def test_jquery():
     assert util.jquery(doc=doc, path=['Z']) is None
 
 
+@pytest.mark.parametrize(
+    'value,sep,result',
+    [(None, '#', None), ('a', '#', 'a'), ('a/b/c', '#', 'a#b#c')]
+)
+def test_filepath(value, sep, result):
+    """Test the file path transformation function."""
+    assert util.filepath(value=value, sep=sep) == result
+
+
 def test_read_write_object(tmpdir):
     """Test reading and writing dictionary objects to file in Json format
     and in Yaml format.
