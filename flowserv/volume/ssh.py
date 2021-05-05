@@ -83,8 +83,8 @@ class RemoteStorage(StorageVolume):
             SSH client for accessing the remote server.
         remotedir: string
             Base directory for all run files on the remote file system.
-        identifier: string
-            Unique identifier.
+        identifier: string, default=None
+            Unique volume identifier.
         """
         super(RemoteStorage, self).__init__(identifier=identifier)
         self.client = client

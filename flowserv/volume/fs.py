@@ -79,8 +79,8 @@ class FileSystemStorage(StorageVolume):
         ----------
         basedir: string
             Base directory for all run files on the local file system.
-        identifier: string
-            Unique identifier.
+        identifier: string, default=None
+            Unique volume identifier.
         """
         super(FileSystemStorage, self).__init__(identifier=identifier)
         self.basedir = basedir

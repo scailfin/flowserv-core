@@ -16,7 +16,7 @@ https://cloud.google.com/storage/docs/reference/libraries#setting_up_authenticat
 """
 
 from io import BytesIO
-from typing import Dict, IO, Iterable, List, Tuple, TypeVar
+from typing import Dict, IO, Iterable, List, Optional, Tuple, TypeVar
 
 from google.cloud import exceptions
 
@@ -82,7 +82,7 @@ class GCVolume(StorageVolume):
     """Implementation of the storage volume class for Google Cloud File Store
     buckets.
     """
-    def __init__(self, env: Dict):
+    def __init__(self, env: Dict, identifier: Optional[str] = None):
         """Initialize the storage bucket from the environment settings.
 
         Expects the bucket name in the environment variable FLOWSERV_BUCKET.
@@ -92,7 +92,10 @@ class GCVolume(StorageVolume):
         env: dict
             Configuration object that provides access to configuration
             parameters in the environment.
+        identifier: string, default=None
+            Unique volume identifier.
         """
+        super(GCVolume, self).__init__(identifier=identifier)
         self.bucket_name = env.get(config.FLOWSERV_BUCKET)
         if self.bucket_name is None:
             raise err.MissingConfigurationError('bucket name')

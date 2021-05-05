@@ -27,7 +27,8 @@ FILES = [
 
 @pytest.fixture
 def store(mock_boto):
-    volume = S3Volume(env={config.FLOWSERV_BUCKET: '0000'})
+    volume = S3Volume(env={config.FLOWSERV_BUCKET: '0000'}, identifier='V0001')
+    assert volume.identifier == 'V0001'
     for buf, key in FILES:
         volume.store(dst=key, file=buf)
     return volume

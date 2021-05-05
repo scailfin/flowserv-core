@@ -17,7 +17,7 @@ https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html
 import botocore
 
 from io import BytesIO
-from typing import Dict, IO, Iterable, List, Tuple, TypeVar
+from typing import Dict, IO, Iterable, List, Optional, Tuple, TypeVar
 
 from flowserv.config import FLOWSERV_BUCKET
 from flowserv.volume.base import IOHandle, StorageVolume
@@ -77,7 +77,7 @@ class S3File(IOHandle):
 
 class S3Volume(StorageVolume):
     """Implementation of the bucket interface for AWS S3 buckets."""
-    def __init__(self, env: Dict):
+    def __init__(self, env: Dict, identifier: Optional[str] = None):
         """Initialize the storage bucket.
 
         Parameters
@@ -85,7 +85,10 @@ class S3Volume(StorageVolume):
         env: dict
             Configuration object that provides access to configuration
             parameters in the environment.
+        identifier: string, default=None
+            Unique volume identifier.
         """
+        super(S3Volume, self).__init__(identifier=identifier)
         bucket_id = env.get(FLOWSERV_BUCKET)
         if bucket_id is None:
             raise err.MissingConfigurationError('bucket identifier')
