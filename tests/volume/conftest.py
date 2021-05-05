@@ -8,6 +8,8 @@
 
 """Fixtures for volume storage unit tests."""
 
+import boto3
+import botocore
 import os
 import pytest
 
@@ -88,3 +90,121 @@ def emptydir(tmpdir):
 def filenames_all():
     """Set of names for all files in the created base directory."""
     return {'A.json', 'examples/B.json', 'examples/C.json', 'docs/D.json', 'examples/data/data.json'}
+
+
+class BlobObject:
+    def __init__(self, key, bucket=None):
+        self.key = key
+        self.name = key
+        self.bucket = bucket
+
+    def download_as_bytes(self):
+        if self.key not in self.bucket.objects:
+            from google.cloud.exceptions import NotFound
+            raise NotFound(self.key)
+        buf = self.bucket.objects[self.key]
+        buf.seek(0)
+        return buf.read()
+
+    def upload_from_file(self, fh):
+        self.bucket.objects[self.key] = fh
+
+
+# -- AWS S3 -------------------------------------------------------------------
+
+class MockS3Bucket:
+    def __init__(self):
+        self.bucket = dict()
+
+    def Bucket(self, identifier):
+        return self
+
+    def delete_objects(self, Delete):
+        for obj in Delete.get('Objects', []):
+            del self.bucket[obj['Key']]
+
+    def download_fileobj(self, key, data):
+        try:
+            buf = self.bucket[key]
+        except KeyError:
+            raise botocore.exceptions.ClientError(error_response={}, operation_name='mock')
+        buf.seek(0)
+        data.write(buf.read())
+
+    def filter(self, Prefix):
+        if Prefix:
+            keys = [k for k in self.bucket if k.startswith(Prefix)]
+        else:
+            keys = list(self.bucket.keys())
+        return [BlobObject(k) for k in keys]
+
+    @property
+    def objects(self):
+        return self
+
+    def upload_fileobj(self, buf, key):
+        self.bucket[key] = buf
+
+
+@pytest.fixture
+def mock_boto(monkeypatch):
+    """Replace boto3.resource with test resource object."""
+
+    def mock_s3_bucket(*args, **kwargs):
+        return MockS3Bucket()
+
+    monkeypatch.setattr(boto3, "resource", mock_s3_bucket)
+
+
+# -- Google Cloud File Storage ------------------------------------------------
+
+class BlobBucket:
+    def __init__(self, name):
+        self.name = name
+        self.objects = dict()
+
+    def blob(self, key):
+        return BlobObject(key, bucket=self)
+
+    def delete_blobs(self, keys):
+        for key in keys:
+            if key not in self.objects:
+                from google.cloud.exceptions import NotFound
+                raise NotFound(key)
+            del self.objects[key]
+
+    def query(self, prefix):
+        if prefix:
+            keys = [k for k in self.objects if k.startswith(prefix)]
+        else:
+            keys = list(self.objects.keys())
+        return keys
+
+
+class GCClient:
+    def __init__(self):
+        self.buckets = dict({'test_exists': BlobBucket('test_exists')})
+
+    def bucket(self, name):
+        return self.buckets[name]
+
+    def create_bucket(self, name):
+        if name not in self.buckets:
+            self.buckets[name] = BlobBucket(name)
+
+    def list_blobs(self, name, prefix):
+        return [BlobObject(b) for b in self.bucket(name).query(prefix)]
+
+    def list_buckets(self):
+        return self.buckets.values()
+
+
+@pytest.fixture
+def mock_gcstore(monkeypatch):
+    """Replace storage.Client with test Client object."""
+
+    def mock_gc_client(*args, **kwargs):
+        return GCClient()
+
+    from flowserv.volume import gc
+    monkeypatch.setattr(gc, "get_google_client", mock_gc_client)

@@ -13,7 +13,7 @@ import json
 from io import BytesIO
 from typing import Dict, List, Optional, Union
 
-from flowserv.model.files.base import IOHandle, IOBuffer
+from flowserv.volume.base import IOHandle, IOBuffer
 
 import flowserv.util as util
 

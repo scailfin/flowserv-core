@@ -8,6 +8,8 @@
 
 """Unit tests for different implementations of the bucket interface."""
 
+from typing import Iterable, IO, List
+
 import boto3
 import botocore
 import os
@@ -16,7 +18,6 @@ import json
 
 from flowserv.model.files.bucket import BucketStore
 from flowserv.model.files.fs import DiskBucket
-from flowserv.model.files.mem import MemBucket
 from flowserv.tests.files import io_file
 
 import flowserv.config as config
@@ -48,6 +49,29 @@ class BlobObject:
 
     def upload_from_file(self, fh):
         self.bucket.objects[self.key] = fh
+
+
+class MemBucket(object):
+    def __init__(self):
+        self.objects = dict()
+
+    def delete(self, keys: Iterable[str]):
+        for key in keys:
+            if key in self.objects:
+                del self.objects[key]
+
+    def download(self, key: str) -> IO:
+        if key in self.objects:
+            data = self.objects[key]
+            data.seek(0)
+            return data
+        raise err.UnknownFileError(key)
+
+    def query(self, filter: str) -> List[str]:
+        return [key for key in self.objects if key.startswith(filter)]
+
+    def upload(self, file: IO, key: str):
+        self.objects[key] = file.open()
 
 
 # -- AWS S3 -------------------------------------------------------------------
