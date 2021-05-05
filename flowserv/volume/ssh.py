@@ -103,32 +103,37 @@ class RemoteStorage(StorageVolume):
         directories = set()
         sftp = self.client.sftp()
         # Get recursive list of all files in the base folder and delete them.
-        for key, filename in self.client.walk(self.remotedir):
-            dirname = util.filepath(key=key, sep=self.client.sep) if key else None
-            if dirname is not None:
+        for key in self.client.walk(self.remotedir):
+            filename = util.filepath(key=key, sep=self.client.sep)
+            filename = self.client.sep.join([self.remotedir, filename])
+            dirname = util.dirname(key)
+            if dirname:
                 directories.add(dirname)
-                f = self.client.sep.join([dirname, filename])
-            else:
-                f = filename
-            sftp.remove(self.client.sep.join([self.remotedir, f]))
+            sftp.remove(filename)
         for dirpath in sorted(directories, reverse=True):
-            sftp.rmdir(self.client.sep.join([self.remotedir, dirpath]))
+            dirname = util.filepath(key=dirpath, sep=self.client.sep)
+            dirname = self.client.sep.join([self.remotedir, dirname]) if dirname else self.remotedir
+            sftp.rmdir(dirname)
         # Delete the remote base directory itself.
         sftp.rmdir(self.remotedir)
 
-    def load(self, src: str) -> IOHandle:
+    def load(self, key: str) -> IOHandle:
         """Load a file object at the source path of this volume store.
 
         Returns a file handle that can be used to open and read the file.
 
         Parameters
         ----------
-        src: str
+        key: str
             Path to a file object in the storage volume.
+
+        Returns
+        --------
+        flowserv.volume.base.IOHandle
         """
         # The file key is a path expression that uses '/' as the path separator.
         # If the local OS uses a different separator we need to replace it.
-        filename = util.filepath(key=src, sep=self.client.sep)
+        filename = util.filepath(key=key, sep=self.client.sep)
         filename = self.client.sep.join([self.remotedir, filename])
         return SFTPFile(filename=filename, client=self.client)
 

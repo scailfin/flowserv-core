@@ -96,19 +96,23 @@ class FileSystemStorage(StorageVolume):
         """Erase the storage volume base directory and all its contents."""
         shutil.rmtree(self.basedir)
 
-    def load(self, src: str) -> IOHandle:
+    def load(self, key: str) -> IOHandle:
         """Load a file object at the source path of this volume store.
 
         Returns a file handle that can be used to open and read the file.
 
         Parameters
         ----------
-        src: str
+        key: str
             Path to a file object in the storage volume.
+
+        Returns
+        --------
+        flowserv.volume.base.IOHandle
         """
         # The file key is a path expression that uses '/' as the path separator.
         # If the local OS uses a different separator we need to replace it.
-        filename = os.path.join(self.basedir, util.filepath(key=src))
+        filename = os.path.join(self.basedir, util.filepath(key=key))
         if not os.path.isfile(filename):
             raise err.UnknownFileError(filename)
         return FSFile(filename=filename)

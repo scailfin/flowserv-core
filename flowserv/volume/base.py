@@ -130,15 +130,19 @@ class StorageVolume(metaclass=ABCMeta):
         raise NotImplementedError()  # pragma: no cover
 
     @abstractmethod
-    def load(self, src: str) -> IOHandle:
+    def load(self, key: str) -> IOHandle:
         """Load a file object at the source path of this volume store.
 
         Returns a file handle that can be used to open and read the file.
 
         Parameters
         ----------
-        src: str
+        key: str
             Path to a file object in the storage volume.
+
+        Returns
+        --------
+        flowserv.volume.base.IOHandle
         """
         raise NotImplementedError()  # pragma: no cover
 

@@ -63,6 +63,21 @@ def create_directories(basedir: str, files: List[str]):
         os.makedirs(os.path.join(basedir, dirname), exist_ok=True)
 
 
+def dirname(key: str) -> str:
+    """Get the parent directory for a given file identifier.
+
+    Parameters
+    ----------
+    key: str
+        Relative file path expression.
+
+    Returns
+    -------
+    str
+    """
+    return '/'.join(key.split('/')[:-1]) if key else None
+
+
 def filepath(key: str, sep: Optional[str] = os.sep) -> str:
     """Convert a given file path to a local path.
 

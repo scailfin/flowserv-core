@@ -60,6 +60,24 @@ def test_datetime():
         assert dt.second == 19
 
 
+@pytest.mark.parametrize(
+    'key,result',
+    [(None, None), ('a', ''), ('a/b/c', 'a/b')]
+)
+def test_dirname(key, result):
+    """Test the directory name extration function."""
+    assert util.dirname(key=key) == result
+
+
+@pytest.mark.parametrize(
+    'key,sep,result',
+    [(None, '#', None), ('a', '#', 'a'), ('a/b/c', '#', 'a#b#c')]
+)
+def test_filepath(key, sep, result):
+    """Test the file path transformation function."""
+    assert util.filepath(key=key, sep=sep) == result
+
+
 def test_jquery():
     """Test the Json query function."""
     doc = {
@@ -90,15 +108,6 @@ def test_jquery():
     assert util.jquery(doc=doc, path=['C', 'E', 'Z']) is None
     assert util.jquery(doc=doc, path=['I', 'K', 'K']) is None
     assert util.jquery(doc=doc, path=['Z']) is None
-
-
-@pytest.mark.parametrize(
-    'value,sep,result',
-    [(None, '#', None), ('a', '#', 'a'), ('a/b/c', '#', 'a#b#c')]
-)
-def test_filepath(value, sep, result):
-    """Test the file path transformation function."""
-    assert util.filepath(value=value, sep=sep) == result
 
 
 def test_read_write_object(tmpdir):

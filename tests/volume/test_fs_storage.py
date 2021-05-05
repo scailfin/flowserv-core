@@ -10,27 +10,12 @@
 
 import json
 import os
+import pytest
 
 from flowserv.volume.fs import FileSystemStorage, walkdir
 
+import flowserv.error as err
 import flowserv.util as util
-
-
-def test_fs_volume_init(basedir):
-    """Test initializing the file system storage volume."""
-    store = FileSystemStorage(basedir=basedir)
-    assert store.identifier is not None
-    store.close()
-    store = FileSystemStorage(basedir=basedir, identifier='0000')
-    assert store.identifier == '0000'
-    store.close()
-
-
-def test_fs_volume_erase(basedir):
-    """Test erasing the file system storage volume."""
-    store = FileSystemStorage(basedir=basedir)
-    store.erase()
-    assert not os.path.isdir(basedir)
 
 
 def test_fs_volume_download_all(basedir, emptydir, filenames_all, data_a):
@@ -53,6 +38,34 @@ def test_fs_volume_download_file(basedir, emptydir, data_e):
     assert set(files.keys()) == {'examples/data/data.json'}
     with files['examples/data/data.json'].open() as f:
         assert json.load(f) == data_e
+
+
+def test_fs_volume_erase(basedir):
+    """Test erasing the file system storage volume."""
+    store = FileSystemStorage(basedir=basedir)
+    store.erase()
+    assert not os.path.isdir(basedir)
+
+
+def test_fs_volume_init(basedir):
+    """Test initializing the file system storage volume."""
+    store = FileSystemStorage(basedir=basedir)
+    assert store.identifier is not None
+    store.close()
+    store = FileSystemStorage(basedir=basedir, identifier='0000')
+    assert store.identifier == '0000'
+    store.close()
+
+
+def test_fs_volume_load_file(basedir, data_e):
+    """Test loading a file from a file system storage volume."""
+    store = FileSystemStorage(basedir=basedir)
+    with store.load(key='examples/data/data.json').open() as f:
+        doc = json.load(f)
+    assert doc == data_e
+    # -- Error case for unknown file.
+    with pytest.raises(err.UnknownFileError):
+        store.load(key='examples/data/unknown.json')
 
 
 def test_fs_volume_upload_all(basedir, emptydir, filenames_all, data_a):

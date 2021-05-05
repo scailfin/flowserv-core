@@ -60,9 +60,6 @@ class SSHTestClient:
         output = Channel(command, exit_status=self.exit_status)
         return None, output, output
 
-    def get(self, src, dst):
-        return self.put(src, dst)
-
     def get_transport(self):
         self._active -= 1
         return self
@@ -74,7 +71,9 @@ class SSHTestClient:
         os.makedirs(dirpath, exist_ok=False)
 
     def open(self, filename, mode):
-        return open(filename, mode + 'b')
+        if mode[-1] != 'b':
+            mode += 'b'
+        return open(filename, mode)
 
     def open_sftp(self):
         return self
@@ -87,6 +86,9 @@ class SSHTestClient:
 
     def rmdir(self, dirpath):
         os.rmdir(dirpath)
+
+    def stat(self, filename):
+        return os.stat(filename)
 
 
 @pytest.fixture

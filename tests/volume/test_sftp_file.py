@@ -8,26 +8,19 @@
 
 """Unit tests for the SFTP file system IO Handle."""
 
+import json
 import os
-import pytest
 
 from flowserv.volume.ssh import SFTPFile
 
-import flowserv.error as err
+import flowserv.util.ssh as ssh
 
 
-def test_sftp_handle_init(basedir):
-    """Test initializing FSFile objects."""
-    # -- Valid file -----------------------------------------------------------
-    FSFile(os.path.join(basedir, 'A.json'))
-    # -- Error for unknown file -----------------------------------------------
-    with pytest.raises(err.UnknownFileError):
-        FSFile(filename=os.path.join(basedir, 'unknown.json'))
-    # -- Error for directory --------------------------------------------------
-    with pytest.raises(err.UnknownFileError):
-        FSFile(filename=os.path.join(basedir, 'docs'))
-
-
-def test_fs_handle_size(basedir):
-    """Test size property of FSFile objects."""
-    assert FSFile(os.path.join(basedir, 'A.json')).size() > 0
+def test_sftp_file_handle(mock_ssh, basedir, data_a):
+    """Test methods of the SFTPFile handle object."""
+    with ssh.ssh_client('test') as client:
+        f = SFTPFile(filename=os.path.join(basedir, 'A.json'), client=client)
+        with f.open() as b:
+            doc = json.load(b)
+        assert doc == data_a
+        assert f.size() > 0
