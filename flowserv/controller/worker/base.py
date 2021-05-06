@@ -16,14 +16,14 @@ from string import Template
 from typing import Dict, Optional
 
 from flowserv.controller.serial.workflow.result import ExecResult
-from flowserv.model.workflow.step import ContainerStep
+from flowserv.model.workflow.step import ContainerStep, NotebookStep
 
 import flowserv.model.template.parameter as tp
 
 
 class ContainerEngine(metaclass=ABCMeta):
     """Execution engine for container steps in a serial workflow. Provides the
-    functionality to expand arguments in the individual command statements.
+    functionality to expand arguments in the individual c   ommand statements.
     Implementations may differ in the run method that executes the expanded
     commands.
     """
@@ -104,3 +104,15 @@ class ContainerEngine(metaclass=ABCMeta):
         flowserv.controller.serial.workflow.result.ExecResult
         """
         raise NotImplementedError()  # pragma: no cover
+
+class NotebookEngine(metaclass=ABCMeta):
+    """Execution engine for notebook steps in a serial workflow.
+    """
+    def __init__(self,):
+        """
+
+        """
+
+    def exec(self, step: NotebookStep) -> ExecResult:
+
+        result = ExecResult(step=step)
