@@ -112,6 +112,16 @@ class GCVolume(StorageVolume):
         """The Google Cloud client resource does not need to be closed."""
         pass
 
+    def describe(self) -> str:
+        """Get short descriptive string about the storage volume for display
+        purposes.
+
+        Returns
+        -------
+        str
+        """
+        return 'Google Cloud Storage bucket {}'.format(self.bucket_name)
+        
     def delete(self, keys: Iterable[str]):
         """Delete objects with the given identifier.
 

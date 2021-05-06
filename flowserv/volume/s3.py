@@ -89,15 +89,25 @@ class S3Volume(StorageVolume):
             Unique volume identifier.
         """
         super(S3Volume, self).__init__(identifier=identifier)
-        bucket_id = env.get(FLOWSERV_BUCKET)
-        if bucket_id is None:
+        self.bucket_id = env.get(FLOWSERV_BUCKET)
+        if self.bucket_id is None:
             raise err.MissingConfigurationError('bucket identifier')
         import boto3
-        self.bucket = boto3.resource('s3').Bucket(bucket_id)
+        self.bucket = boto3.resource('s3').Bucket(self.bucket_id)
 
     def close(self):
         """The AWS S3 bucket resource does not need to be closed."""
         pass
+
+    def describe(self) -> str:
+        """Get short descriptive string about the storage volume for display
+        purposes.
+
+        Returns
+        -------
+        str
+        """
+        return 'AWS S3 storage bucket {}'.format(self.bucket_id)
 
     def erase(self):
         """Erase the storage volume base directory and all its contents."""

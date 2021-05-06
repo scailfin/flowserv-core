@@ -16,7 +16,7 @@ import flowserv.config as config
 import flowserv.error as err
 
 
-def FS(env: Dict) -> FileStore:
+def Volume(env: Dict) -> FileStore:
     """Factory pattern to create file store instances for the service API. Uses
     the environment variables FLOWSERV_FILESTORE to create an instance of the
     file store. If the environment variable is not set the FileSystemStore is
@@ -43,8 +43,8 @@ def FS(env: Dict) -> FileStore:
     # controller class. An error is raised if only one of the two environment
     # variables is set.
     if class_name == config.FILESTORE_FS:
-        from flowserv.model.files.fs import FileSystemStore
-        return FileSystemStore(env=env)
+        from flowserv.volume.fs import FileSystemStorage
+        return FileSystemStorage(env=env)
     elif class_name == config.FILESTORE_BUCKET:
         from flowserv.model.files.bucket import BucketStore
         bucket_type = env.get(config.FLOWSERV_FILESTORE_BUCKETTYPE)

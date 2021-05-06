@@ -51,6 +51,7 @@ def test_fs_volume_init(basedir):
     """Test initializing the file system storage volume."""
     store = FileSystemStorage(basedir=basedir)
     assert store.identifier is not None
+    assert basedir in store.describe()
     store.close()
     store = FileSystemStorage(basedir=basedir, identifier='0000')
     assert store.identifier == '0000'

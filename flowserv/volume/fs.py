@@ -92,6 +92,16 @@ class FileSystemStorage(StorageVolume):
         """
         pass
 
+    def describe(self) -> str:
+        """Get short descriptive string about the storage volume for display
+        purposes.
+
+        Returns
+        -------
+        str
+        """
+        return "local file system at {}".format(os.path.abspath(self.basedir))
+
     def erase(self):
         """Erase the storage volume base directory and all its contents."""
         shutil.rmtree(self.basedir)

@@ -45,6 +45,7 @@ def test_remote_volume_erase(mock_ssh, basedir):
     """Test erasing the remote storage volume base directory."""
     with ssh.ssh_client('test', sep=os.sep) as client:
         store = RemoteStorage(remotedir=basedir, client=client)
+        assert basedir in store.describe()
         store.erase()
         store.close()
     assert not os.path.isdir(basedir)

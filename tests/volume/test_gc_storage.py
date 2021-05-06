@@ -27,8 +27,9 @@ FILES = [
 
 @pytest.fixture
 def store(mock_gcstore):
-    volume = GCVolume(env={config.FLOWSERV_BUCKET: '0000'}, identifier='V0001')
+    volume = GCVolume(env={config.FLOWSERV_BUCKET: 'GCB01'}, identifier='V0001')
     assert volume.identifier == 'V0001'
+    assert 'GCB01' in volume.describe()
     for buf, key in FILES:
         volume.store(dst=key, file=buf)
     return volume

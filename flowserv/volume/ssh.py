@@ -96,6 +96,16 @@ class RemoteStorage(StorageVolume):
         """Close the SSH connection when workflow execution is done."""
         self.client.close()
 
+    def describe(self) -> str:
+        """Get short descriptive string about the storage volume for display
+        purposes.
+
+        Returns
+        -------
+        str
+        """
+        return "remote server {}:{}".format(self.client.hostname, self.remotedir)
+
     def erase(self):
         """Erase the storage volume base directory and all its contents."""
         # Collect sub-directories that need to be removed separately after
