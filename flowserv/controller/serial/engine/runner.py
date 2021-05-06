@@ -12,7 +12,7 @@ from typing import List
 
 from flowserv.controller.serial.workflow.result import RunResult
 from flowserv.model.workflow.step import WorkflowStep
-from flowserv.controller.worker.code import exec_func
+from flowserv.controller.wo  rker.code import exec_func
 from flowserv.controller.worker.factory import WorkerFactory
 
 
@@ -50,13 +50,17 @@ def exec_workflow(
     for step in steps:
         if step.is_function_step():
             r = exec_func(step=step, context=result.context, rundir=rundir)
-        else:
+        elif step.is_container_step():
             worker = workers.get(step.image)
             r = worker.exec(
                 step=step,
                 arguments=result.context,
                 rundir=rundir
             )
+        elif step.is_notebook_step():
+            r = worker.exec(step=step, context=result.context, rundir=rundir)
+
+
         result.add(r)
         # Terminate if the step execution was not successful.
         if r.returncode != 0:
