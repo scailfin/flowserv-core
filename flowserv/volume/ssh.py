@@ -96,6 +96,39 @@ class RemoteStorage(StorageVolume):
         """Close the SSH connection when workflow execution is done."""
         self.client.close()
 
+    def delete(self, key: str):
+        """Delete file or folder with the given key.
+
+        Parameters
+        ----------
+        key: str
+            Path to a file object in the storage volume.
+        """
+        sftp = self.client.sftp()
+        # Get recursive list of all files in the base folder and delete them.
+        dirpath = util.filepath(key=key, sep=self.client.sep)
+        dirpath = self.client.sep.join([self.remotedir, dirpath]) if dirpath else self.remotedir
+        files = self.client.walk(dirpath=dirpath)
+        if files is None:
+            filename = util.filepath(key=key, sep=self.client.sep)
+            filename = self.client.sep.join([self.remotedir, filename])
+            sftp.remove(filename)
+        else:
+            # Collect sub-directories that need to be removed separately after
+            # the directories are empty.
+            directories = set()
+            for src in files:
+                filename = util.filepath(key=src, sep=self.client.sep)
+                filename = self.client.sep.join([self.remotedir, filename])
+                dirname = util.dirname(src)
+                if dirname:
+                    directories.add(dirname)
+                sftp.remove(filename)
+            for dirpath in sorted(directories, reverse=True):
+                dirname = util.filepath(key=dirpath, sep=self.client.sep)
+                dirname = self.client.sep.join([self.remotedir, dirname]) if dirname else self.remotedir
+                sftp.rmdir(dirname)
+
     def describe(self) -> str:
         """Get short descriptive string about the storage volume for display
         purposes.
@@ -108,24 +141,11 @@ class RemoteStorage(StorageVolume):
 
     def erase(self):
         """Erase the storage volume base directory and all its contents."""
-        # Collect sub-directories that need to be removed separately after
-        # the directories are empty.
-        directories = set()
-        sftp = self.client.sftp()
-        # Get recursive list of all files in the base folder and delete them.
-        for key in self.client.walk(self.remotedir):
-            filename = util.filepath(key=key, sep=self.client.sep)
-            filename = self.client.sep.join([self.remotedir, filename])
-            dirname = util.dirname(key)
-            if dirname:
-                directories.add(dirname)
-            sftp.remove(filename)
-        for dirpath in sorted(directories, reverse=True):
-            dirname = util.filepath(key=dirpath, sep=self.client.sep)
-            dirname = self.client.sep.join([self.remotedir, dirname]) if dirname else self.remotedir
-            sftp.rmdir(dirname)
+        # Delete all files and folders that are reachable from the remote base
+        # directory.
+        self.delete(key=None)
         # Delete the remote base directory itself.
-        sftp.rmdir(self.remotedir)
+        self.client.sftp().rmdir(self.remotedir)
 
     def load(self, key: str) -> IOHandle:
         """Load a file object at the source path of this volume store.

@@ -92,6 +92,20 @@ class FileSystemStorage(StorageVolume):
         """
         pass
 
+    def delete(self, key: str):
+        """Delete file or folder with the given key.
+
+        Parameters
+        ----------
+        key: str
+            Path to a file object in the storage volume.
+        """
+        filename = os.path.join(self.basedir, key)
+        if os.path.isfile(filename):
+            os.remove(filename)
+        elif os.path.isdir(filename):
+            shutil.rmtree(filename)
+
     def describe(self) -> str:
         """Get short descriptive string about the storage volume for display
         purposes.

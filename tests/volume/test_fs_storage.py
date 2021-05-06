@@ -18,6 +18,17 @@ import flowserv.error as err
 import flowserv.util as util
 
 
+def test_fs_volume_delete_files(basedir):
+    """Test deleting files and folders from the file system storage volume."""
+    store = FileSystemStorage(basedir=basedir)
+    store.delete(key='examples/data/data.json')
+    store.delete(key='examples/data/data.json')
+    store.delete(key='examples')
+    store.delete(key='examples')
+    assert not os.path.isdir(os.path.join(basedir, 'examples'))
+    assert os.path.isdir(basedir)
+
+
 def test_fs_volume_download_all(basedir, emptydir, filenames_all, data_a):
     """Test downloading the full directory of a storage volume."""
     source = FileSystemStorage(basedir=basedir)

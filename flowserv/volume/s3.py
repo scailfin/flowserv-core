@@ -106,10 +106,20 @@ class S3Volume(StorageVolume):
         """
         return 'AWS S3 storage bucket {}'.format(self.bucket_id)
 
+    def delete(self, key: str):
+        """Delete file or folder with the given key.
+
+        Parameters
+        ----------
+        key: str
+            Path to a file object in the storage volume.
+        """
+        keys = self.query(filter=key)
+        self.bucket.delete_objects(Delete={'Objects': [{'Key': k} for k in keys]})
+
     def erase(self):
         """Erase the storage volume base directory and all its contents."""
-        keys = self.query(filter=None)
-        self.bucket.delete_objects(Delete={'Objects': [{'Key': k} for k in keys]})
+        self.delete(key=None)
 
     def load(self, key: str) -> IOHandle:
         """Load a file object at the source path of this volume store.

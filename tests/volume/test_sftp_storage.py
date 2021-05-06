@@ -17,6 +17,15 @@ from flowserv.volume.ssh import RemoteStorage
 import flowserv.util.ssh as ssh
 
 
+def test_remote_volume_delete_file(mock_ssh, basedir):
+    """Test downloading a file from a storage volume."""
+    with ssh.ssh_client('test', sep=os.sep) as client:
+        store = RemoteStorage(remotedir=basedir, client=client)
+        store.delete(key='examples/data/data.json')
+    assert os.path.isdir(os.path.join(basedir, 'examples', 'data'))
+    assert not os.path.isfile(os.path.join(basedir, 'examples', 'data', 'data.json'))
+
+
 def test_remote_volume_download_all(mock_ssh, basedir, emptydir, filenames_all, data_a):
     """Test downloading the full directory of a storage volume."""
     source = FileSystemStorage(basedir=basedir)

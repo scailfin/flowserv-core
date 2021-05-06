@@ -110,6 +110,17 @@ class StorageVolume(metaclass=ABCMeta):
         raise NotImplementedError()  # pragma: no cover
 
     @abstractmethod
+    def delete(self, key: str) -> int:
+        """Delete file or folder with the given key.
+
+        Parameters
+        ----------
+        key: str
+            Path to a file object in the storage volume.
+        """
+        raise NotImplementedError()  # pragma: no cover
+
+    @abstractmethod
     def describe(self) -> str:
         """Get short descriptive string about the storage volume for display
         purposes.

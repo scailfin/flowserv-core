@@ -37,12 +37,12 @@ def store(mock_gcstore):
 
 def test_gc_delete_file(store):
     """Test deleting existing files."""
-    store.delete(keys=['data/names.txt'])
+    store.delete(key='data/names.txt')
     f = GCFile(key='data/names.txt', client=store.client, bucket_name=store.bucket_name)
     with pytest.raises(err.UnknownFileError):
         f.open()
     # Ensure that there is no error when deleting a non-existing file.
-    store.delete(keys=['data/names.txt'])
+    store.delete_objects(keys=['data/names.txt'])
 
 
 def test_gc_erase_bucket(store):

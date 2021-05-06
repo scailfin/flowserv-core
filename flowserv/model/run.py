@@ -15,7 +15,6 @@ from typing import List, Optional, Tuple
 import io
 import mimetypes
 import os
-import shutil
 import tarfile
 
 from flowserv.model.base import RunFile, RunObject, RunMessage, WorkflowRankingRun
@@ -26,6 +25,7 @@ from flowserv.model.workflow.state import WorkflowState
 from flowserv.volume.base import IOBuffer
 
 import flowserv.error as err
+import flowserv.model.files as dirs
 import flowserv.model.workflow.state as st
 import flowserv.util as util
 
@@ -130,12 +130,12 @@ class RunManager(object):
         run = self.get_run(run_id)
         # Get base directory for run files
         workflow_id = run.workflow_id
-        rundir = self.fs.run_basedir(workflow_id, run_id)
+        rundir = dirs.run_basedir(workflow_id, run_id)
         # Delete run and the base directory containing run files. Commit
         # changes before deleting the directory.
         self.session.delete(run)
         self.session.commit()
-        self.fs.delete_folder(key=rundir)
+        self.fs.delete(key=rundir)
 
     def delete_obsolete_runs(
         self, date: str, state: Optional[str] = None
@@ -217,7 +217,7 @@ class RunManager(object):
         tar_handle = tarfile.open(fileobj=io_buffer, mode='w:gz')
         # Get file objects for all run result files.
         workflow_id = run.workflow.workflow_id
-        rundir = self.fs.run_basedir(workflow_id=workflow_id, run_id=run_id)
+        rundir = dirs.run_basedir(workflow_id=workflow_id, run_id=run_id)
         for f in run.files:
             file = self.fs.load(util.join(rundir, f.key)).open()
             info = tarfile.TarInfo(name=f.key)
@@ -271,7 +271,7 @@ class RunManager(object):
             raise err.UnknownFileError(file_id)
         # Return file handle for resource file
         workflow_id = run.workflow.workflow_id
-        rundir = self.fs.run_basedir(workflow_id=workflow_id, run_id=run_id)
+        rundir = dirs.run_basedir(workflow_id=workflow_id, run_id=run_id)
         return FileHandle(
             name=fh.name,
             mime_type=fh.mime_type,
@@ -392,8 +392,7 @@ class RunManager(object):
             run.started_at = state.started_at
             run.ended_at = state.stopped_at
             # Delete all run files.
-            if rundir is not None and os.path.exists(rundir):
-                delete_run_dir(rundir)
+            self.fs.delete(rundir)
         # -- SUCCESS ----------------------------------------------------------
         elif state.is_success():
             validate_state_transition(current_state, state.type_id, st.ACTIVE_STATES)
@@ -408,13 +407,13 @@ class RunManager(object):
                 read_run_results(run, result_schema, rundir)
             # Archive run files (and remove all other files from the run
             # directory).
-            storedir = self.fs.run_basedir(
+            storedir = dirs.run_basedir(
                 workflow_id=run.workflow.workflow_id,
                 run_id=run_id
             )
-            self.fs.store_files(files=storefiles, dst=storedir)
-            if os.path.exists(rundir):
-                delete_run_dir(rundir)
+            for file, key in runfiles:
+                self.fs.store(file=file, dst=util.join(storedir, key))
+            self.fs.delete(rundir)
         # -- PENDING ----------------------------------------------------------
         else:
             validate_state_transition(current_state, state.type_id, [st.STATE_PENDING])
@@ -425,23 +424,6 @@ class RunManager(object):
 
 
 # -- Helper Functions ---------------------------------------------------------
-
-def delete_run_dir(rundir: str):
-    """Delete the run directory for a workflow run. The directory does not have
-    to exist if the workflow does not access and files or create any files. If
-    the workflow is running in a docker container we may also not have the
-    permissions to delete the directory.
-
-    Parameters
-    ----------
-    rundir: string
-        Workflow run directory
-    """
-    try:
-        shutil.rmtree(rundir)
-    except PermissionError:
-        pass
-
 
 def get_run_files(run: RunObject, state: WorkflowState, rundir: str) -> Tuple[List[RunFile], List[str]]:
     """Create list of output files for a successful run. The list of files

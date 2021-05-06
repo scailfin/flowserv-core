@@ -111,17 +111,17 @@ class GCVolume(StorageVolume):
         """The Google Cloud client resource does not need to be closed."""
         pass
 
-    def describe(self) -> str:
-        """Get short descriptive string about the storage volume for display
-        purposes.
+    def delete(self, key: str):
+        """Delete file or folder with the given key.
 
-        Returns
-        -------
-        str
+        Parameters
+        ----------
+        key: str
+            Path to a file object in the storage volume.
         """
-        return 'Google Cloud Storage bucket {}'.format(self.bucket_name)
+        self.delete_objects(keys=self.query(filter=key))
 
-    def delete(self, keys: Iterable[str]):
+    def delete_objects(self, keys: Iterable[str]):
         """Delete objects with the given identifier.
 
         Parameters
@@ -134,9 +134,19 @@ class GCVolume(StorageVolume):
         except exceptions.NotFound:
             pass
 
+    def describe(self) -> str:
+        """Get short descriptive string about the storage volume for display
+        purposes.
+
+        Returns
+        -------
+        str
+        """
+        return 'Google Cloud Storage bucket {}'.format(self.bucket_name)
+
     def erase(self):
         """Erase the storage volume base directory and all its contents."""
-        self.delete(keys=self.query(filter=None))
+        self.delete(key=None)
 
     def load(self, key: str) -> IOHandle:
         """Load a file object at the source path of this volume store.
