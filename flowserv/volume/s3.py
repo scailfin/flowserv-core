@@ -17,7 +17,7 @@ https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html
 import botocore
 
 from io import BytesIO
-from typing import Dict, IO, Iterable, List, Optional, Tuple, TypeVar
+from typing import IO, Iterable, List, Optional, Tuple, TypeVar
 
 from flowserv.volume.base import IOHandle, StorageVolume
 
@@ -25,10 +25,6 @@ import flowserv.error as err
 
 """Type alias for S3 bucket objects."""
 S3Bucket = TypeVar('S3Bucket')
-
-"""Configuration parameters."""
-# Bucket identifier.
-S3_BUCKET_ID = 'bucket'
 
 
 # -- File handle --------------------------------------------------------------
@@ -81,21 +77,18 @@ class S3File(IOHandle):
 
 class S3Volume(StorageVolume):
     """Implementation of the bucket interface for AWS S3 buckets."""
-    def __init__(self, env: Dict, identifier: Optional[str] = None):
+    def __init__(self, bucket_id: str, identifier: Optional[str] = None):
         """Initialize the storage bucket.
 
         Parameters
         ----------
-        env: dict
-            Configuration object that provides access to configuration
-            parameters in the environment.
+        bucket_id: string
+            Unique bucket identifier.
         identifier: string, default=None
             Unique volume identifier.
         """
         super(S3Volume, self).__init__(identifier=identifier)
-        self.bucket_id = env.get(S3_BUCKET_ID)
-        if self.bucket_id is None:
-            raise err.MissingConfigurationError('bucket identifier')
+        self.bucket_id = bucket_id
         import boto3
         self.bucket = boto3.resource('s3').Bucket(self.bucket_id)
 

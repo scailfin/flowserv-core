@@ -12,7 +12,7 @@ import json
 import pytest
 
 from flowserv.tests.files import io_file
-from flowserv.volume.gc import GCFile, GCVolume, GC_BUCKET_ID
+from flowserv.volume.gc import GCFile, GCVolume
 
 import flowserv.error as err
 
@@ -26,8 +26,9 @@ FILES = [
 
 @pytest.fixture
 def store(mock_gcstore):
-    volume = GCVolume(env={GC_BUCKET_ID: 'GCB01'}, identifier='V0001')
+    volume = GCVolume(bucket_name='GCB01', identifier='V0001')
     assert volume.identifier == 'V0001'
+    assert volume.bucket_name == 'GCB01'
     assert 'GCB01' in volume.describe()
     for buf, key in FILES:
         volume.store(dst=key, file=buf)
@@ -79,7 +80,5 @@ def test_gc_store_init(mock_gcstore):
     identifier.
     """
     # Initialize with existing bucket.
-    GCVolume(env={GC_BUCKET_ID: 'test_exists'})
-    # Error when bucket identifier is missing.
-    with pytest.raises(err.MissingConfigurationError):
-        GCVolume(env={})
+    volume = GCVolume(bucket_name='test_exists')
+    assert volume.bucket_name == 'test_exists'

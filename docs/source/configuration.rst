@@ -189,3 +189,18 @@ The **S3 Bucket Store** allows storage of all files using `AWS Simple Cloud Stor
 
 
 When using the S3 storage volume the AWS credentials have to be configured. See the `AWS S3 CLI configuration documentation <https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html>`_ for more details.
+
+
+SFTP File System Store
+----------------------
+
+**flowServ** also provides the option to store files on a remote file system and access them via ``sftp``. This storage volume is not recommended for storing workflow files. It's main purpose is to serve as a storage manager for copying files when executing workflow steps that run on remote maches (e.g., a HPC cluster). To configure the remote storage volume use the following configuration template.
+
+.. code-block:: yaml
+
+    "type": "sftp"
+    "args":
+        "hostname": "Name of the remote host"
+        "port": post-number
+        "sep": "path separator used by the remote file system [default: '/']"
+        "look_for_keys": Boolean flag to enable searching for private key files [default=False]

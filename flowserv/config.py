@@ -458,7 +458,7 @@ ENV = [
     (FLOWSERV_CLIENT, LOCAL_CLIENT, None),
     (FLOWSERV_DB, None, None),
     (FLOWSERV_WEBAPP, 'False', to_bool),
-    (FLOWSERV_FILESTORE, None, None)
+    (FLOWSERV_FILESTORE, None, read_config_obj)
 ]
 
 

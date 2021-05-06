@@ -12,7 +12,7 @@ import json
 import pytest
 
 from flowserv.tests.files import io_file
-from flowserv.volume.s3 import S3File, S3Volume, S3_BUCKET_ID
+from flowserv.volume.s3 import S3File, S3Volume
 
 import flowserv.error as err
 
@@ -26,7 +26,8 @@ FILES = [
 
 @pytest.fixture
 def store(mock_boto):
-    volume = S3Volume(env={S3_BUCKET_ID: 'S3B01'}, identifier='V0001')
+    volume = S3Volume(bucket_id='S3B01', identifier='V0001')
+    assert volume.bucket_id == 'S3B01'
     assert volume.identifier == 'V0001'
     assert 'S3B01' in volume.describe()
     for buf, key in FILES:
@@ -62,11 +63,3 @@ def test_s3_open_file(store):
     f = S3File(key='unknown', bucket=store.bucket)
     with pytest.raises(err.UnknownFileError):
         f.open()
-
-
-def test_s3_store_init(mock_boto):
-    """Error case when initializing the S3 bucket store without a bucket
-    identifier.
-    """
-    with pytest.raises(err.MissingConfigurationError):
-        S3Volume(env={})

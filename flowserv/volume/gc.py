@@ -16,7 +16,7 @@ https://cloud.google.com/storage/docs/reference/libraries#setting_up_authenticat
 """
 
 from io import BytesIO
-from typing import Dict, IO, Iterable, List, Optional, Tuple, TypeVar
+from typing import IO, Iterable, List, Optional, Tuple, TypeVar
 
 from google.cloud import exceptions
 
@@ -27,10 +27,6 @@ import flowserv.error as err
 
 """Type alias for Google Cloud storage bucket objects."""
 GCClient = TypeVar('GCClient')
-
-"""Configuration parameters."""
-# Bucket identifier.
-GC_BUCKET_ID = 'bucket'
 
 
 # -- File handle --------------------------------------------------------------
@@ -82,27 +78,26 @@ class GCFile(IOHandle):
         return self.open().getbuffer().nbytes
 
 
+# -- Storage volume -----------------------------------------------------------
+
 class GCVolume(StorageVolume):
     """Implementation of the storage volume class for Google Cloud File Store
     buckets.
     """
-    def __init__(self, env: Dict, identifier: Optional[str] = None):
+    def __init__(self, bucket_name: str, identifier: Optional[str] = None):
         """Initialize the storage bucket from the environment settings.
 
         Expects the bucket name in the environment variable FLOWSERV_BUCKET.
 
         Parameters
         ----------
-        env: dict
-            Configuration object that provides access to configuration
-            parameters in the environment.
+        bucket_name: string
+            Unique bucket identifier.
         identifier: string, default=None
             Unique volume identifier.
         """
         super(GCVolume, self).__init__(identifier=identifier)
-        self.bucket_name = env.get(GC_BUCKET_ID)
-        if self.bucket_name is None:
-            raise err.MissingConfigurationError('bucket name')
+        self.bucket_name = bucket_name
         # Instantiates a client. Use helper method to better support mocking
         # for unit tests.
         self.client = get_google_client()

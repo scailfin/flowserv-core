@@ -43,8 +43,7 @@ import flowserv.util as util
         (config.FLOWSERV_WEBAPP, 'TruE', True),
         (config.FLOWSERV_WEBAPP, 'False', False),
         (config.FLOWSERV_WEBAPP, 'ABC', False),
-        (config.FLOWSERV_WEBAPP, '1', False),
-        (config.FLOWSERV_FILESTORE, 'CLASS', 'CLASS'),
+        (config.FLOWSERV_WEBAPP, '1', False)
     ]
 )
 def test_config_env(var, value, result):
@@ -131,6 +130,20 @@ def test_engine_config(tmpdir):
     conf = config.env()
     assert conf.get(config.FLOWSERV_ENGINECONFIG) == doc
     del os.environ[config.FLOWSERV_ENGINECONFIG]
+
+
+def test_storage_volume_config(tmpdir):
+    """Test storage volume configuration objects."""
+    conf = config.env()
+    assert conf.get(config.FLOWSERV_FILESTORE) is None
+    doc = {'type': 'fs'}
+    conf.volume(config=doc)
+    assert conf.get(config.FLOWSERV_FILESTORE) == doc
+    filename = os.path.join(tmpdir, 'config.json')
+    util.write_object(filename=filename, obj=doc)
+    os.environ[config.FLOWSERV_FILESTORE] = filename
+    conf = config.env()
+    assert conf.get(config.FLOWSERV_FILESTORE) == doc
 
 
 def test_engine_rundirectory():

@@ -22,7 +22,7 @@ from typing import Dict, List, Optional, Tuple
 import logging
 import os
 
-from flowserv.config import FLOWSERV_ASYNC, FLOWSERV_BASEDIR, FLOWSERV_ENGINECONFIG, RUNSDIR
+from flowserv.config import FLOWSERV_ASYNC, FLOWSERV_BASEDIR, FLOWSERV_ENGINECONFIG, FLOWSERV_FILESTORE, RUNSDIR
 from flowserv.controller.base import WorkflowController
 from flowserv.controller.serial.engine.runner import exec_workflow
 from flowserv.controller.worker.factory import WorkerFactory
@@ -61,7 +61,7 @@ class SerialWorkflowEngine(WorkflowController):
             Configuration settings for the engine. Overrides the engine
             configuration that is contained in the service API object.
         """
-        self.fs = FS(env=service)
+        self.fs = Volume(config=service.get(FLOWSERV_FILESTORE), env=service)
         self.service = service
         self.config = config if config else service.get(FLOWSERV_ENGINECONFIG, dict())
         validator.validate(self.config)
