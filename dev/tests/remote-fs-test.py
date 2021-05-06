@@ -22,7 +22,7 @@ def download(sourcedir, host, targetdir):
     try:
         source = RemoteStorage(client=ssh_client, remotedir=sourcedir)
         target = FileSystemStorage(basedir=targetdir)
-        source.download(src=None, store=target)
+        source.download(src=None, store=target, verbose=True)
     finally:
         ssh_client.close()
 
@@ -32,7 +32,7 @@ def upload(sourcedir, host, targetdir):
     try:
         source = FileSystemStorage(basedir=sourcedir)
         target = RemoteStorage(client=ssh_client, remotedir=targetdir)
-        target.upload(src=None, store=source)
+        target.upload(src=None, store=source, verbose=True)
     finally:
         ssh_client.close()
 

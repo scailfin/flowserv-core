@@ -120,7 +120,7 @@ class StorageVolume(metaclass=ABCMeta):
         """
         raise NotImplementedError()  # pragma: no cover
 
-    def download(self, src: str, store: StorageVolume):
+    def download(self, src: str, store: StorageVolume, verbose: Optional[bool] = False):
         """Download the file or folder at the source path of this storage
         volume to the given storage volume.
 
@@ -132,8 +132,11 @@ class StorageVolume(metaclass=ABCMeta):
             Relative source path on the environment run directory.
         store: flowserv.volume.base.StorageValue
             Storage volume for destination files.
+        verbose: bool, default=False
+            Print information about source and target volume and the files that
+            are being copied.
         """
-        copy_files(path=src, source=self, target=store)
+        copy_files(path=src, source=self, target=store, verbose=verbose)
 
     @abstractmethod
     def erase(self):
@@ -171,7 +174,7 @@ class StorageVolume(metaclass=ABCMeta):
         """
         raise NotImplementedError()  # pragma: no cover
 
-    def upload(self, src: str, store: StorageVolume):
+    def upload(self, src: str, store: StorageVolume, verbose: Optional[bool] = False):
         """Upload a file or folder from the src path of the given storage
         volume to this storage volume.
 
@@ -181,8 +184,11 @@ class StorageVolume(metaclass=ABCMeta):
             Source file or folder that is being uploaded to the storage volume.
         store: flowserv.volume.base.StorageValue
             Storage volume for source files.
+        verbose: bool, default=False
+            Print information about source and target volume and the files that
+            are being copied.
         """
-        copy_files(path=src, source=store, target=self)
+        copy_files(path=src, source=store, target=self, verbose=verbose)
 
     @abstractmethod
     def walk(self, src: str) -> List[Tuple[str, IOHandle]]:
@@ -206,7 +212,10 @@ class StorageVolume(metaclass=ABCMeta):
 
 # -- Helper Functions ---------------------------------------------------------
 
-def copy_files(path: str, source: StorageVolume, target: StorageVolume, verbose: Optional[bool] = True):
+def copy_files(
+    path: str, source: StorageVolume, target: StorageVolume,
+    verbose: Optional[bool] = False
+):
     """Copy files and folders at the source path (path) of a given source
     storage volume to the destination path (path) of a target storage volume.
 
@@ -219,7 +228,7 @@ def copy_files(path: str, source: StorageVolume, target: StorageVolume, verbose:
         Storage volume for source files.
     target: flowserv.volume.base.StorageValue
         Storage volume for destination files.
-    verbose: bool, default=True
+    verbose: bool, default=False
         Print information about source and target volume and the files that are
         being copied.
     """
@@ -227,3 +236,5 @@ def copy_files(path: str, source: StorageVolume, target: StorageVolume, verbose:
         print('Copy files from {} to {}'.format(source.describe(), target.describe()))
     for key, file in source.walk(src=path):
         target.store(file=file, dst=key)
+        if verbose:
+            print('copied {}'.format(key))
