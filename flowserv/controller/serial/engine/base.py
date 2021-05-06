@@ -29,11 +29,11 @@ from flowserv.controller.worker.factory import WorkerFactory
 from flowserv.controller.serial.workflow.result import RunResult
 from flowserv.model.workflow.step import ContainerStep
 from flowserv.model.base import RunObject
-from flowserv.model.files.factory import FS
 from flowserv.model.template.base import WorkflowTemplate
 from flowserv.model.workflow.state import WorkflowState
 from flowserv.service.api import APIFactory
 from flowserv.validate import validator
+from flowserv.volume.factory import Volume
 
 import flowserv.controller.serial.workflow.parser as parser
 import flowserv.error as err

@@ -14,7 +14,7 @@ Submodules
 
    flowserv.model.files
    flowserv.model.files.bucket
-   flowserv.model.files.factory
+   flowserv.volume.factory
    flowserv.model.files.fs
    flowserv.model.files.gc
    flowserv.model.files.mem

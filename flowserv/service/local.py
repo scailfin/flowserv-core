@@ -25,7 +25,6 @@ from flowserv.controller.base import WorkflowController
 from flowserv.model.auth import DefaultAuthPolicy, OpenAccessAuth
 from flowserv.model.base import RunObject
 from flowserv.model.database import DB
-from flowserv.model.files.factory import FS
 from flowserv.model.group import WorkflowGroupManager
 from flowserv.model.ranking import RankingManager
 from flowserv.model.run import RunManager
@@ -40,6 +39,7 @@ from flowserv.service.run.local import LocalRunService
 from flowserv.service.user.local import LocalUserService
 from flowserv.service.workflow.local import LocalWorkflowService
 from flowserv.volume.base import StorageVolume
+from flowserv.volume.factory import Volume
 
 from flowserv.model.user import UserManager
 

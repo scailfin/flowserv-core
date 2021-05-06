@@ -10,7 +10,7 @@
 
 import pytest
 
-from flowserv.model.files.factory import FS
+from flowserv.volume.factory import Volume
 
 import flowserv.config as config
 import flowserv.error as err

@@ -19,12 +19,16 @@ import botocore
 from io import BytesIO
 from typing import Dict, IO, Iterable, List, Optional, Tuple, TypeVar
 
-from flowserv.config import FLOWSERV_BUCKET
 from flowserv.volume.base import IOHandle, StorageVolume
 
 import flowserv.error as err
 
+"""Type alias for S3 bucket objects."""
 S3Bucket = TypeVar('S3Bucket')
+
+"""Configuration parameters."""
+# Bucket identifier.
+S3_BUCKET_ID = 'bucket'
 
 
 # -- File handle --------------------------------------------------------------
@@ -89,7 +93,7 @@ class S3Volume(StorageVolume):
             Unique volume identifier.
         """
         super(S3Volume, self).__init__(identifier=identifier)
-        self.bucket_id = env.get(FLOWSERV_BUCKET)
+        self.bucket_id = env.get(S3_BUCKET_ID)
         if self.bucket_id is None:
             raise err.MissingConfigurationError('bucket identifier')
         import boto3

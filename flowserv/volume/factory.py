@@ -10,13 +10,13 @@
 
 from typing import Dict
 
-from flowserv.model.files import FileStore
+from flowserv.volume.base import StorageVolume
 
 import flowserv.config as config
 import flowserv.error as err
 
 
-def Volume(env: Dict) -> FileStore:
+def Volume(env: Dict) -> StorageVolume:
     """Factory pattern to create file store instances for the service API. Uses
     the environment variables FLOWSERV_FILESTORE to create an instance of the
     file store. If the environment variable is not set the FileSystemStore is

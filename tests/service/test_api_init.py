@@ -11,9 +11,9 @@
 import pytest
 
 from flowserv.config import Config
-from flowserv.model.files.factory import FS
 from flowserv.model.files.bucket import BucketStore
 from flowserv.model.files.mem import MemBucket
+from flowserv.volume.factory import Volume
 
 import flowserv.config as config
 import flowserv.error as err

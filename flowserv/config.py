@@ -202,19 +202,6 @@ to maintain files for workflow templates, user group uploads, and workflow runs.
 """
 # Identifier of the file store class.
 FLOWSERV_FILESTORE = 'FLOWSERV_FILESTORE'
-# Identifier of the bucket type if the BucketStore is used.
-FLOWSERV_FILESTORE_BUCKETTYPE = 'FLOWSERV_FILESTORE_BUCKETTYPE'
-# Accepted values for the file store class.
-FILESTORE_BUCKET = 'bucket'
-FILESTORE_FS = 'fs'
-# Accepted values for bucket type.
-BUCKET_FS = 'fs'  # Disk bucket for test purposes
-BUCKET_GC = 'gc'  # Google Cloud File Store
-BUCKET_MEM = 'mem'  # In-memory bucket for test purposes.
-BUCKET_S3 = 's3'  # AWS S3
-
-"""Environment variable for unique bucket identifier."""
-FLOWSERV_BUCKET = 'FLOWSERV_BUCKET'
 
 
 # --
@@ -339,23 +326,6 @@ class Config(dict):
         self[FLOWSERV_ASYNC] = False
         return self
 
-    def s3(self, bucket: str) -> Config:
-        """Use an S3 bucket to store workflow files.
-
-        Parameters
-        ----------
-        bucket: string
-            S3 bucket identifier
-
-        Returns
-        -------
-        flowserv.config.Config
-        """
-        self[FLOWSERV_FILESTORE] = FILESTORE_BUCKET
-        self[FLOWSERV_FILESTORE_BUCKETTYPE] = BUCKET_S3
-        self[FLOWSERV_BUCKET] = bucket
-        return self
-
     def token_timeout(self, timeout: int) -> Config:
         """Set the authentication token timeout interval.
 
@@ -364,6 +334,21 @@ class Config(dict):
         flowserv.config.Config
         """
         self[FLOWSERV_AUTH_LOGINTTL] = timeout
+        return self
+
+    def volume(self, config: dict) -> Config:
+        """Set configuration object for the file storage volume.
+
+        Parameters
+        ----------
+        config: dict
+            Volume configuration information for the storage volume factory.
+
+        Returns
+        -------
+        flowserv.config.Config
+        """
+        self[FLOWSERV_FILESTORE] = config
         return self
 
     def webapp(self) -> Config:
@@ -473,9 +458,7 @@ ENV = [
     (FLOWSERV_CLIENT, LOCAL_CLIENT, None),
     (FLOWSERV_DB, None, None),
     (FLOWSERV_WEBAPP, 'False', to_bool),
-    (FLOWSERV_FILESTORE, None, None),
-    (FLOWSERV_FILESTORE_BUCKETTYPE, None, None),
-    (FLOWSERV_BUCKET, None, None)
+    (FLOWSERV_FILESTORE, None, None)
 ]
 
 

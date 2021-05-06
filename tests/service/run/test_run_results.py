@@ -12,10 +12,10 @@ import pytest
 import tarfile
 
 from flowserv.config import Config
-from flowserv.model.files.factory import FS
 from flowserv.tests.controller import StateEngine
 from flowserv.tests.model import create_user, success_run
 from flowserv.service.local import LocalAPIFactory
+from flowserv.volume.factory import Volume
 
 import flowserv.error as err
 import flowserv.util as util

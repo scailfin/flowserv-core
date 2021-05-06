@@ -12,9 +12,8 @@ import json
 import pytest
 
 from flowserv.tests.files import io_file
-from flowserv.volume.s3 import S3File, S3Volume
+from flowserv.volume.s3 import S3File, S3Volume, S3_BUCKET_ID
 
-import flowserv.config as config
 import flowserv.error as err
 
 
@@ -27,7 +26,7 @@ FILES = [
 
 @pytest.fixture
 def store(mock_boto):
-    volume = S3Volume(env={config.FLOWSERV_BUCKET: 'S3B01'}, identifier='V0001')
+    volume = S3Volume(env={S3_BUCKET_ID: 'S3B01'}, identifier='V0001')
     assert volume.identifier == 'V0001'
     assert 'S3B01' in volume.describe()
     for buf, key in FILES:

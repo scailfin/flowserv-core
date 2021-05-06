@@ -22,11 +22,15 @@ from google.cloud import exceptions
 
 from flowserv.volume.base import IOHandle, StorageVolume
 
-import flowserv.config as config
 import flowserv.error as err
 
 
+"""Type alias for Google Cloud storage bucket objects."""
 GCClient = TypeVar('GCClient')
+
+"""Configuration parameters."""
+# Bucket identifier.
+GC_BUCKET_ID = 'bucket'
 
 
 # -- File handle --------------------------------------------------------------
@@ -96,7 +100,7 @@ class GCVolume(StorageVolume):
             Unique volume identifier.
         """
         super(GCVolume, self).__init__(identifier=identifier)
-        self.bucket_name = env.get(config.FLOWSERV_BUCKET)
+        self.bucket_name = env.get(GC_BUCKET_ID)
         if self.bucket_name is None:
             raise err.MissingConfigurationError('bucket name')
         # Instantiates a client. Use helper method to better support mocking
