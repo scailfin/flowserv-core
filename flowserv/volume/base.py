@@ -180,7 +180,7 @@ class StorageVolume(metaclass=ABCMeta):
 
         Parameters
         ----------
-        src: string or flowserv.model.files.base.IOHandle
+        src: string or flowserv.volume.base.IOHandle
             Source file or folder that is being uploaded to the storage volume.
         store: flowserv.volume.base.StorageValue
             Storage volume for source files.

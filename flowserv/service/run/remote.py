@@ -120,7 +120,7 @@ class RemoteRunService(RunService):
 
         Returns
         -------
-        flowserv.model.files.base.FileHandle
+        flowserv.model.files.FileHandle
         """
         url = self.urls(route.RUNS_DOWNLOAD_FILE, runId=run_id, fileId=file_id)
         return download_file(url=url)

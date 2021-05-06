@@ -47,7 +47,7 @@ class WorkflowManager(object):
         ----------
         session: sqlalchemy.orm.session.Session
             Database session.
-        fs: flowserv.model.files.FileStore
+        fs: flowserv.volume.base.StorageVolume
             File store for workflow files.
         """
         self.session = session

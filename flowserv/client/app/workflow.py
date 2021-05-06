@@ -14,12 +14,13 @@ from typing import Dict, List, Optional
 import time
 
 from flowserv.client.app.run import Run
-from flowserv.model.files.base import FileHandle, IOHandle, IOBuffer
+from flowserv.model.files import FileHandle
 from flowserv.model.files.fs import FSFile
 from flowserv.model.parameter.files import InputFile
 from flowserv.model.template.parameter import ParameterIndex
 from flowserv.service.api import APIFactory
 from flowserv.service.run.argument import serialize_arg, serialize_fh
+from flowserv.volume.base import IOHandle, IOBuffer
 
 import flowserv.error as err
 import flowserv.view.files as filelbls
@@ -111,7 +112,7 @@ class Workflow(object):
 
         Returns
         -------
-        flowserv.model.files.base.FileHandle
+        flowserv.model.files.FileHandle
         """
         with self.service() as api:
             if file_id is not None:

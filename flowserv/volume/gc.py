@@ -121,7 +121,7 @@ class GCVolume(StorageVolume):
         str
         """
         return 'Google Cloud Storage bucket {}'.format(self.bucket_name)
-        
+
     def delete(self, keys: Iterable[str]):
         """Delete objects with the given identifier.
 

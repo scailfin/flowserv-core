@@ -19,7 +19,7 @@ import shutil
 from flowserv.controller.base import WorkflowController
 from flowserv.model.auth import Auth
 from flowserv.model.base import WorkflowObject
-from flowserv.model.files.base import FileHandle
+from flowserv.model.files import FileHandle
 from flowserv.model.files.fs import FSFile
 from flowserv.model.group import WorkflowGroupManager
 from flowserv.model.parameter.files import InputFile
@@ -164,7 +164,7 @@ class LocalRunService(RunService):
 
         Returns
         -------
-        flowserv.model.files.base.FileHandle
+        flowserv.model.files.FileHandle
 
         Raises
         ------
@@ -203,7 +203,7 @@ class LocalRunService(RunService):
 
         Returns
         -------
-        flowserv.model.files.base.FileHandle
+        flowserv.model.files.FileHandle
 
         Raises
         ------

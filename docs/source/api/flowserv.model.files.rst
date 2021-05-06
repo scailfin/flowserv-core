@@ -12,7 +12,7 @@ Submodules
 .. toctree::
    :maxdepth: 3
 
-   flowserv.model.files.base
+   flowserv.model.files
    flowserv.model.files.bucket
    flowserv.model.files.factory
    flowserv.model.files.fs

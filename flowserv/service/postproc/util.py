@@ -15,7 +15,7 @@ import tempfile
 
 from typing import List, Tuple
 
-from flowserv.model.files.base import IOHandle
+from flowserv.volume.base import IOHandle
 
 import flowserv.util as util
 import flowserv.service.postproc.base as base
@@ -36,13 +36,12 @@ def copy_postproc_files(
 
     Parameters
     ----------
-    input_files: list(string)
-        List of identifier for benchmark run output files that are copied into
-        the input directory for each submission.
+    runs: list(tuple(str, str, list))
+        List of output files from different workflow runs.
     ranking: list(flowserv.model.ranking.RunResult)
         List of runs in the current result ranking
-    run_manager: flowserv.model.run.RunManager
-        Manager for workflow runs
+    outputdir: str
+        Path to output directory.
     """
     # Create the output directory if it does not exist.
     os.makedirs(outputdir, exist_ok=True)

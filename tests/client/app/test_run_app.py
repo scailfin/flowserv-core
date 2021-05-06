@@ -14,7 +14,7 @@ import pytest
 from io import BytesIO, StringIO
 
 from flowserv.client.app.base import Flowserv
-from flowserv.model.files.base import FlaskFile
+from flowserv.model.files import FlaskFile
 from flowserv.model.files.fs import FSFile
 from flowserv.model.parameter.files import InputFile
 from flowserv.tests.files import FileStorage

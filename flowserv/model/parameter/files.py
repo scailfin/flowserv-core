@@ -14,8 +14,8 @@ storage volume.
 from __future__ import annotations
 from typing import Dict, IO, Optional, Tuple, Union
 
-from flowserv.model.files.base import IOHandle
 from flowserv.model.parameter.base import Parameter, PARA_FILE
+from flowserv.volume.base import IOHandle
 
 import flowserv.error as err
 import flowserv.model.parameter.base as pd
@@ -73,7 +73,7 @@ class File(Parameter):
 
         Parameters
         ----------
-        value: tuple of flowserv.model.files.base.IOHandle, str
+        value: tuple of flowserv.volume.base.IOHandle, str
             Handle for a file object andoptional user-provided target path. If
             the target path is None the defined target path is used or the
             defined default value. If neither is given an error is raised.
@@ -167,7 +167,7 @@ class InputFile(object):
 
         Parameters
         ----------
-        source: flowserv.model.files.base.IOHandle
+        source: flowserv.volume.base.IOHandle
             Handle for a file object.
         target: string
             Relative target path for file upload.
@@ -197,7 +197,7 @@ class InputFile(object):
 
         Returns
         -------
-        flowserv.model.files.base.IOHandle
+        flowserv.volume.base.IOHandle
         """
         return self._source
 

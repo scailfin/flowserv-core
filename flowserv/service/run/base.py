@@ -91,7 +91,7 @@ class RunService(metaclass=ABCMeta):  # pragma: no cover
 
         Returns
         -------
-        flowserv.model.files.base.FileHandle
+        flowserv.model.files.FileHandle
         """
         raise NotImplementedError()
 

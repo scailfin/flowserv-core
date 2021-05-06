@@ -15,10 +15,10 @@ import os
 
 from flowserv.model.base import GroupObject, RunObject, User, WorkflowObject
 from flowserv.model.database import DB
-from flowserv.model.files.base import FileStore
 from flowserv.model.group import WorkflowGroupManager
 from flowserv.model.run import RunManager
 from flowserv.model.template.parameter import ParameterIndex
+from flowserv.volume.base import StorageVolume
 
 import flowserv.model.workflow.state as st
 import flowserv.util as util
@@ -140,7 +140,7 @@ def create_workflow(session, workflow_spec=dict(), result_schema=None):
     return workflow_id
 
 
-def success_run(database: DB, fs: FileStore, basedir: str) -> Tuple[str, str, str, str]:
+def success_run(database: DB, fs: StorageVolume, basedir: str) -> Tuple[str, str, str, str]:
     """Create a successful run with two result files:
 
         - A.json

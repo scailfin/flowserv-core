@@ -17,11 +17,12 @@ from sqlalchemy.orm.session import Session
 from typing import Dict, List, Optional
 
 from flowserv.model.base import UploadFile, GroupObject, WorkflowObject
-from flowserv.model.files.base import FileHandle, IOHandle, FileStore
+from flowserv.model.files import FileHandle
 from flowserv.model.constraint import validate_identifier
 from flowserv.model.parameter.base import Parameter
 from flowserv.model.user import UserManager
 from flowserv.util import get_unique_identifier as unique_identifier
+from flowserv.volume.base import IOHandle, StorageVolume
 
 import flowserv.error as err
 import flowserv.model.constraint as constraint
@@ -33,7 +34,10 @@ class WorkflowGroupManager(object):
     workflow runs. The manager provides functionality to interact with the
     underlying database for creating and maintaining workflow groups.
     """
-    def __init__(self, session: Session, fs: FileStore, users: Optional[UserManager] = None):
+    def __init__(
+        self, session: Session, fs: StorageVolume,
+        users: Optional[UserManager] = None
+    ):
         """Initialize the connection to the underlying database and the file
         system helper to access group files.
 
@@ -41,7 +45,7 @@ class WorkflowGroupManager(object):
         ----------
         session: sqlalchemy.orm.session.Session
             Database session.
-        fs: flowserv.model.files.FileStore
+        fs: flowserv.volume.base.StorageVolume
             File store for uploaded group files.
         users: flowserv.model.user.UserManager, default=None
             Manager to access user objects.
@@ -233,7 +237,7 @@ class WorkflowGroupManager(object):
 
         Returns
         -------
-        flowserv.model.files.base.FileHandle
+        flowserv.model.files.FileHandle
 
         Raises
         ------
@@ -246,7 +250,7 @@ class WorkflowGroupManager(object):
                 return FileHandle(
                     name=fh.name,
                     mime_type=fh.mime_type,
-                    fileobj=self.fs.load_file(key=fh.key)
+                    fileobj=self.fs.load(key=fh.key)
                 )
         # No file with matching identifier was found.
         raise err.UnknownFileError(file_id)
@@ -355,7 +359,7 @@ class WorkflowGroupManager(object):
         ----------
         group_id: string
             Unique group identifier
-        file: flowserv.model.files.base.IOHandle
+        file: flowserv.volume.base.IOHandle
             File object (e.g., uploaded via HTTP request)
         name: string
             Name of the file

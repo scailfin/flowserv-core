@@ -15,7 +15,7 @@ from typing import Dict, List, Tuple
 import codecs
 import csv
 
-from flowserv.model.files.base import FileHandle
+from flowserv.model.files import FileHandle
 from flowserv.service.api import APIFactory
 
 
@@ -75,7 +75,7 @@ class DataFile(object):
 
         Returns
         -------
-        flowserv.model.files.base.FileHandle
+        flowserv.model.files.FileHandle
         """
         with self.service() as api:
             return api.runs().get_result_file(

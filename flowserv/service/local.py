@@ -25,7 +25,6 @@ from flowserv.controller.base import WorkflowController
 from flowserv.model.auth import DefaultAuthPolicy, OpenAccessAuth
 from flowserv.model.base import RunObject
 from flowserv.model.database import DB
-from flowserv.model.files.base import FileStore
 from flowserv.model.files.factory import FS
 from flowserv.model.group import WorkflowGroupManager
 from flowserv.model.ranking import RankingManager
@@ -40,6 +39,7 @@ from flowserv.service.group.local import LocalWorkflowGroupService
 from flowserv.service.run.local import LocalRunService
 from flowserv.service.user.local import LocalUserService
 from flowserv.service.workflow.local import LocalWorkflowService
+from flowserv.volume.base import StorageVolume
 
 from flowserv.model.user import UserManager
 
@@ -187,7 +187,7 @@ class SessionManager(object):
     session that is used by all the API components.
     """
     def __init__(
-        self, env: Dict, db: DB, engine: WorkflowController, fs: FileStore,
+        self, env: Dict, db: DB, engine: WorkflowController, fs: StorageVolume,
         user_id: str, access_token: str
     ):
         """Initialize the object.
@@ -200,7 +200,7 @@ class SessionManager(object):
             Database manager.
         engine: flowserv.controller.base.WorkflowController
             Workflow controller used by the API for workflow execution.
-        fs: flowserv.model.files.base.FileStore
+        fs: flowserv.volume.base.StorageVolume
             File store for accessing and maintaining files for workflows,
             groups and workflow runs.
         user_id: string

@@ -13,7 +13,7 @@ functions are not available via the remote service API.
 
 from typing import Dict, List, Optional
 
-from flowserv.model.files.base import FileHandle
+from flowserv.model.files import FileHandle
 from flowserv.model.group import WorkflowGroupManager
 from flowserv.model.ranking import RankingManager
 from flowserv.model.run import RunManager
@@ -197,7 +197,7 @@ class LocalWorkflowService(WorkflowService):
 
         Returns
         -------
-        flowserv.model.files.base.FileHandle
+        flowserv.model.files.FileHandle
 
         Raises
         ------
@@ -226,7 +226,7 @@ class LocalWorkflowService(WorkflowService):
 
         Returns
         -------
-        flowserv.model.files.base.FileHandle
+        flowserv.model.files.FileHandle
 
         Raises
         ------

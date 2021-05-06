@@ -19,10 +19,11 @@ import shutil
 import tarfile
 
 from flowserv.model.base import RunFile, RunObject, RunMessage, WorkflowRankingRun
-from flowserv.model.files.base import FileHandle, IOBuffer
+from flowserv.model.files import FileHandle
 from flowserv.model.files.fs import walk
 from flowserv.model.template.schema import ResultSchema
 from flowserv.model.workflow.state import WorkflowState
+from flowserv.volume.base import IOBuffer
 
 import flowserv.error as err
 import flowserv.model.workflow.state as st
@@ -42,7 +43,7 @@ class RunManager(object):
         ----------
         session: sqlalchemy.orm.session.Session
             Database session.
-        fs: flowserv.model.files.FileStore
+        fs: flowserv.volume.base.StorageVolume
             File store for run input and output files.
         """
         self.session = session
@@ -201,7 +202,7 @@ class RunManager(object):
 
         Returns
         -------
-        flowserv.model.files.base.FileHandle
+        flowserv.model.files.FileHandle
 
         Raises
         ------
@@ -218,7 +219,7 @@ class RunManager(object):
         workflow_id = run.workflow.workflow_id
         rundir = self.fs.run_basedir(workflow_id=workflow_id, run_id=run_id)
         for f in run.files:
-            file = self.fs.load_file(util.join(rundir, f.key)).open()
+            file = self.fs.load(util.join(rundir, f.key)).open()
             info = tarfile.TarInfo(name=f.key)
             info.size = file.getbuffer().nbytes
             tar_handle.addfile(tarinfo=info, fileobj=file)
@@ -249,7 +250,7 @@ class RunManager(object):
 
         Returns
         -------
-        flowserv.model.files.base.FileHandle
+        flowserv.model.files.FileHandle
 
         Raises
         ------
@@ -274,7 +275,7 @@ class RunManager(object):
         return FileHandle(
             name=fh.name,
             mime_type=fh.mime_type,
-            fileobj=self.fs.load_file(util.join(rundir, fh.key))
+            fileobj=self.fs.load(util.join(rundir, fh.key))
         )
 
     def list_runs(self, group_id, state=None):

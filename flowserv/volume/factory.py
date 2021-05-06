@@ -10,7 +10,7 @@
 
 from typing import Dict
 
-from flowserv.model.files.base import FileStore
+from flowserv.model.files import FileStore
 
 import flowserv.config as config
 import flowserv.error as err
@@ -35,7 +35,7 @@ def Volume(env: Dict) -> FileStore:
 
     Returns
     -------
-    flowserv.model.files.base.FileStore
+    flowserv.volume.base.StorageVolume
     """
     class_name = env.get(config.FLOWSERV_FILESTORE, config.FILESTORE_FS)
     # If both environment variables are None return the default file store.
