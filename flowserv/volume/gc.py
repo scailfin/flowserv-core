@@ -6,7 +6,7 @@
 # flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
-"""Implementation of the :class:`flowserv.model.files.bucket.Bucket` for the
+"""Implementation of the :class:`flowserv.volume.base.GCVolume` for the
 use of Google Cloud File Store buckets.
 
 For testing the GCBucket the Google Cloud credentials have to be configured.

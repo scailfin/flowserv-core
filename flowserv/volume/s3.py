@@ -6,7 +6,7 @@
 # flowServ is free software; you can redistribute it and/or modify it under the
 # terms of the MIT License; see LICENSE file for more details.
 
-"""Implementation of the :class:`flowserv.model.files.bucket.Bucket` for the
+"""Implementation of the :class:`flowserv.volume.base.GCVolume` for the
 use of AWS S3 buckets.
 
 When using the S3Bucket the AWS credentials have to be configured. See the
