@@ -27,15 +27,18 @@ class FSFile(IOHandle):
     """Implementation of the IO object handle interface for files that are
     stored on the file system.
     """
-    def __init__(self, filename: str):
+    def __init__(self, filename: str, raise_error: Optional[bool] = True):
         """Initialize the file name that points to a file on disk.
 
         Parameters
         ----------
         filename: string
             Path to an existing file on disk.
+        raise_error: bool, default=True
+            Raise error if the given file name does not reference an existing
+            file.
         """
-        if not os.path.isfile(filename):
+        if raise_error and not os.path.isfile(filename):
             raise err.UnknownFileError(filename)
         self.filename = filename
 

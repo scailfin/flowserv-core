@@ -23,6 +23,7 @@ def test_fs_handle_init(basedir):
     # -- Error for unknown file -----------------------------------------------
     with pytest.raises(err.UnknownFileError):
         FSFile(filename=os.path.join(basedir, 'unknown.json'))
+    FSFile(filename=os.path.join(basedir, 'unknown.json'), raise_error=False)
     # -- Error for directory --------------------------------------------------
     with pytest.raises(err.UnknownFileError):
         FSFile(filename=os.path.join(basedir, 'docs'))
