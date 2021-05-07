@@ -8,10 +8,12 @@
 
 """Unit tests for file parameter declarations."""
 
+from pathlib import Path
+
 import os
 import pytest
 
-from flowserv.model.files.fs import FSFile
+from flowserv.volume.fs import FSFile
 from flowserv.model.parameter.files import File, PARA_FILE
 
 import flowserv.error as err
@@ -80,7 +82,8 @@ def test_file_parameter_from_dict():
 
 def test_file_parameter_value(tmpdir):
     """Test getting argument value for a file parameter."""
-    filename = os.path.abspath(tmpdir)
+    filename = os.path.join(tmpdir, 'file.txt')
+    Path(filename).touch()
     # -- Parameter target value
     para = File('0000', 0, target='data/names.txt')
     file = para.cast(FSFile(filename))
@@ -100,7 +103,7 @@ def test_file_parameter_value(tmpdir):
     # -- Missing file without error
     para = File('0000', 0, target='data/names.txt')
     filename = os.path.join(filename, 'missing.txt')
-    file = para.cast(FSFile(filename))
+    file = para.cast(FSFile(filename, raise_error=False))
     assert file.source().filename == filename
     assert file.target() == 'data/names.txt'
     # Invalid argument.
