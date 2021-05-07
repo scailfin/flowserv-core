@@ -40,13 +40,15 @@ def test_fs_volume_download_all(basedir, emptydir, filenames_all, data_a):
         assert json.load(f) == data_a
 
 
-def test_fs_volume_download_file(basedir, emptydir, data_e):
-    """Test downloading a file from a storage volume."""
+def test_fs_volume_download_files(basedir, emptydir, data_a, data_e):
+    """Test downloading separate files from a storage volume."""
     source = FileSystemStorage(basedir=basedir)
     target = FileSystemStorage(basedir=emptydir)
-    source.download(src='examples/data/data.json', store=target)
+    source.download(src=['A.json', 'examples/data/data.json'], store=target)
     files = {key: file for key, file in target.walk(src='')}
-    assert set(files.keys()) == {'examples/data/data.json'}
+    assert set(files.keys()) == {'A.json', 'examples/data/data.json'}
+    with files['A.json'].open() as f:
+        assert json.load(f) == data_a
     with files['examples/data/data.json'].open() as f:
         assert json.load(f) == data_e
 

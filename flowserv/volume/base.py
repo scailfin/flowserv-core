@@ -10,7 +10,7 @@
 
 from __future__ import annotations
 from abc import ABCMeta, abstractmethod
-from typing import IO, List, Optional, Tuple
+from typing import IO, List, Optional, Tuple, Union
 
 import flowserv.util as util
 
@@ -131,7 +131,7 @@ class StorageVolume(metaclass=ABCMeta):
         """
         raise NotImplementedError()  # pragma: no cover
 
-    def download(self, src: str, store: StorageVolume, verbose: Optional[bool] = False):
+    def download(self, src: Union[str, List[str]], store: StorageVolume, verbose: Optional[bool] = False):
         """Download the file or folder at the source path of this storage
         volume to the given storage volume.
 
@@ -139,8 +139,8 @@ class StorageVolume(metaclass=ABCMeta):
 
         Parameters
         ----------
-        src: string
-            Relative source path on the environment run directory.
+        src: string or list of string
+            Relative source path(s) for downloaded files and directories.
         store: flowserv.volume.base.StorageValue
             Storage volume for destination files.
         verbose: bool, default=False
@@ -185,14 +185,18 @@ class StorageVolume(metaclass=ABCMeta):
         """
         raise NotImplementedError()  # pragma: no cover
 
-    def upload(self, src: str, store: StorageVolume, verbose: Optional[bool] = False):
+    def upload(
+        self, src: Union[str, List[str]], store: StorageVolume,
+        verbose: Optional[bool] = False
+    ):
         """Upload a file or folder from the src path of the given storage
         volume to this storage volume.
 
         Parameters
         ----------
-        src: string or flowserv.volume.base.IOHandle
-            Source file or folder that is being uploaded to the storage volume.
+        src: string or list of string
+            Source file(s) or folder(s) that is/are being uploaded to the
+            storage volume.
         store: flowserv.volume.base.StorageValue
             Storage volume for source files.
         verbose: bool, default=False
@@ -224,7 +228,7 @@ class StorageVolume(metaclass=ABCMeta):
 # -- Helper Functions ---------------------------------------------------------
 
 def copy_files(
-    path: str, source: StorageVolume, target: StorageVolume,
+    path: Union[str, List[str]], source: StorageVolume, target: StorageVolume,
     verbose: Optional[bool] = False
 ):
     """Copy files and folders at the source path (path) of a given source
@@ -232,9 +236,9 @@ def copy_files(
 
     Parameters
     ----------
-    path: str
-        Path specifying the source file or folder. This path is also the target
-        path for the copied file(s).
+    path: str or list of string
+        Path specifying the source file(s) or folder(s). This path is also the
+        target path for the copied file(s).
     source: flowserv.volume.base.StorageValue
         Storage volume for source files.
     target: flowserv.volume.base.StorageValue
@@ -245,7 +249,8 @@ def copy_files(
     """
     if verbose:
         print('Copy files from {} to {}'.format(source.describe(), target.describe()))
-    for key, file in source.walk(src=path):
-        target.store(file=file, dst=key)
-        if verbose:
-            print('copied {}'.format(key))
+    for src in path if isinstance(path, list) else [path]:
+        for key, file in source.walk(src=src):
+            target.store(file=file, dst=key)
+            if verbose:
+                print('copied {}'.format(key))
