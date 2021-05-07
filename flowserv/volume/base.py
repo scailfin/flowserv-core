@@ -131,7 +131,10 @@ class StorageVolume(metaclass=ABCMeta):
         """
         raise NotImplementedError()  # pragma: no cover
 
-    def download(self, src: Union[str, List[str]], store: StorageVolume, verbose: Optional[bool] = False):
+    def download(
+        self, src: Union[str, List[str]], dst: str, store: StorageVolume,
+        verbose: Optional[bool] = False
+    ):
         """Download the file or folder at the source path of this storage
         volume to the given storage volume.
 
@@ -141,13 +144,15 @@ class StorageVolume(metaclass=ABCMeta):
         ----------
         src: string or list of string
             Relative source path(s) for downloaded files and directories.
+        dst: string
+            Destination folder for downloaded files.
         store: flowserv.volume.base.StorageValue
             Storage volume for destination files.
         verbose: bool, default=False
             Print information about source and target volume and the files that
             are being copied.
         """
-        copy_files(path=src, source=self, target=store, verbose=verbose)
+        copy_files(src=src, source=self, dst=dst, target=store, verbose=verbose)
 
     @abstractmethod
     def erase(self):
@@ -186,7 +191,7 @@ class StorageVolume(metaclass=ABCMeta):
         raise NotImplementedError()  # pragma: no cover
 
     def upload(
-        self, src: Union[str, List[str]], store: StorageVolume,
+        self, src: Union[str, List[str]], dst: str, store: StorageVolume,
         verbose: Optional[bool] = False
     ):
         """Upload a file or folder from the src path of the given storage
@@ -197,13 +202,15 @@ class StorageVolume(metaclass=ABCMeta):
         src: string or list of string
             Source file(s) or folder(s) that is/are being uploaded to the
             storage volume.
+        dst: string
+            Destination folder for uploaded files.
         store: flowserv.volume.base.StorageValue
             Storage volume for source files.
         verbose: bool, default=False
             Print information about source and target volume and the files that
             are being copied.
         """
-        copy_files(path=src, source=store, target=self, verbose=verbose)
+        copy_files(src=src, source=store, dst=dst, target=self, verbose=verbose)
 
     @abstractmethod
     def walk(self, src: str) -> List[Tuple[str, IOHandle]]:
@@ -228,7 +235,7 @@ class StorageVolume(metaclass=ABCMeta):
 # -- Helper Functions ---------------------------------------------------------
 
 def copy_files(
-    path: Union[str, List[str]], source: StorageVolume, target: StorageVolume,
+    src: Union[str, List[str]], source: StorageVolume, dst: str, target: StorageVolume,
     verbose: Optional[bool] = False
 ):
     """Copy files and folders at the source path (path) of a given source
@@ -236,11 +243,12 @@ def copy_files(
 
     Parameters
     ----------
-    path: str or list of string
-        Path specifying the source file(s) or folder(s). This path is also the
-        target path for the copied file(s).
+    src: str or list of string
+        Path specifying the source file(s) or folder(s).
     source: flowserv.volume.base.StorageValue
         Storage volume for source files.
+    dst: string
+        Destination path for copied files.
     target: flowserv.volume.base.StorageValue
         Storage volume for destination files.
     verbose: bool, default=False
@@ -249,8 +257,9 @@ def copy_files(
     """
     if verbose:
         print('Copy files from {} to {}'.format(source.describe(), target.describe()))
-    for src in path if isinstance(path, list) else [path]:
-        for key, file in source.walk(src=src):
-            target.store(file=file, dst=key)
+    for path in src if isinstance(src, list) else [src]:
+        for key, file in source.walk(src=path):
+            dstpath = util.join(dst, key) if dst else key
+            target.store(file=file, dst=dstpath)
             if verbose:
-                print('copied {}'.format(key))
+                print('copied {} to {}'.format(key, dstpath))

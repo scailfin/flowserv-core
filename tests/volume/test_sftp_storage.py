@@ -31,7 +31,7 @@ def test_remote_volume_download_all(mock_ssh, basedir, emptydir, filenames_all, 
     source = FileSystemStorage(basedir=basedir)
     with ssh.ssh_client('test', sep=os.sep) as client:
         target = RemoteStorage(remotedir=emptydir, client=client)
-        source.download(src=None, store=target)
+        source.download(src=None, dst=None, store=target)
         files = {key: file for key, file in target.walk(src='')}
     assert set(files.keys()) == filenames_all
     with files['A.json'].open() as f:
@@ -43,10 +43,10 @@ def test_remote_volume_download_file(mock_ssh, basedir, emptydir, data_e):
     source = FileSystemStorage(basedir=basedir)
     with ssh.ssh_client('test', sep=os.sep) as client:
         target = RemoteStorage(remotedir=emptydir, client=client)
-        source.download(src='examples/data/data.json', store=target)
-        files = {key: file for key, file in target.walk(src='')}
-    assert set(files.keys()) == {'examples/data/data.json'}
-    with files['examples/data/data.json'].open() as f:
+        source.download(src='examples/data/data.json', dst='static', store=target)
+        files = {key: file for key, file in target.walk(src='static')}
+    assert set(files.keys()) == {'static/examples/data/data.json'}
+    with files['static/examples/data/data.json'].open() as f:
         assert json.load(f) == data_e
 
 
@@ -74,7 +74,7 @@ def test_remote_volume_upload_all(mock_ssh, basedir, emptydir, filenames_all, da
     with ssh.ssh_client('test', sep=os.sep) as client:
         source = RemoteStorage(remotedir=basedir, client=client)
         target = FileSystemStorage(basedir=emptydir)
-        target.upload(src=None, store=source)
+        target.upload(src=None, dst=None, store=source)
         files = {key: file for key, file in target.walk(src='')}
     assert set(files.keys()) == filenames_all
     with files['A.json'].open() as f:
@@ -86,8 +86,8 @@ def test_remote_volume_upload_file(mock_ssh, basedir, emptydir, data_e):
     with ssh.ssh_client('test', sep=os.sep) as client:
         source = RemoteStorage(remotedir=basedir, client=client)
         target = FileSystemStorage(basedir=emptydir)
-        target.upload(src='examples/data/data.json', store=source)
-        files = {key: file for key, file in target.walk(src='')}
-    assert set(files.keys()) == {'examples/data/data.json'}
-    with files['examples/data/data.json'].open() as f:
+        target.upload(src='examples/data/data.json', dst='static', store=source)
+        files = {key: file for key, file in target.walk(src='static')}
+    assert set(files.keys()) == {'static/examples/data/data.json'}
+    with files['static/examples/data/data.json'].open() as f:
         assert json.load(f) == data_e

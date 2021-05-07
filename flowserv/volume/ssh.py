@@ -220,6 +220,7 @@ class RemoteStorage(StorageVolume):
             # The source path references a directory.
             result = list()
             for key in files:
+                key = util.join(src, key) if src else key
                 filename = util.filepath(key=key, sep=self.client.sep)
                 filename = self.client.sep.join([self.remotedir, filename])
                 result.append((key, SFTPFile(filename=filename, client=self.client)))

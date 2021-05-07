@@ -33,7 +33,7 @@ def test_fs_volume_download_all(basedir, emptydir, filenames_all, data_a):
     """Test downloading the full directory of a storage volume."""
     source = FileSystemStorage(basedir=basedir)
     target = FileSystemStorage(basedir=emptydir)
-    source.download(src=None, store=target)
+    source.download(src=None, dst=None, store=target)
     files = {key: file for key, file in target.walk(src='')}
     assert set(files.keys()) == filenames_all
     with files['A.json'].open() as f:
@@ -44,12 +44,12 @@ def test_fs_volume_download_files(basedir, emptydir, data_a, data_e):
     """Test downloading separate files from a storage volume."""
     source = FileSystemStorage(basedir=basedir)
     target = FileSystemStorage(basedir=emptydir)
-    source.download(src=['A.json', 'examples/data/data.json'], store=target)
-    files = {key: file for key, file in target.walk(src='')}
-    assert set(files.keys()) == {'A.json', 'examples/data/data.json'}
-    with files['A.json'].open() as f:
+    source.download(src=['A.json', 'examples/data/data.json'], dst='static', store=target)
+    files = {key: file for key, file in target.walk(src='static')}
+    assert set(files.keys()) == {'static/A.json', 'static/examples/data/data.json'}
+    with files['static/A.json'].open() as f:
         assert json.load(f) == data_a
-    with files['examples/data/data.json'].open() as f:
+    with files['static/examples/data/data.json'].open() as f:
         assert json.load(f) == data_e
 
 
@@ -86,7 +86,7 @@ def test_fs_volume_upload_all(basedir, emptydir, filenames_all, data_a):
     """Test uploading a full directory to a storage volume."""
     source = FileSystemStorage(basedir=basedir)
     target = FileSystemStorage(basedir=emptydir)
-    target.upload(src=None, store=source)
+    target.upload(src=None, dst=None, store=source)
     files = {key: file for key, file in target.walk(src='')}
     assert set(files.keys()) == filenames_all
     with files['A.json'].open() as f:
@@ -97,10 +97,10 @@ def test_fs_volume_upload_file(basedir, emptydir, data_e):
     """Test uploading a file to a storage volume."""
     source = FileSystemStorage(basedir=basedir)
     target = FileSystemStorage(basedir=emptydir)
-    target.upload(src='examples/data/data.json', store=source)
-    files = {key: file for key, file in target.walk(src='')}
-    assert set(files.keys()) == {'examples/data/data.json'}
-    with files['examples/data/data.json'].open() as f:
+    target.upload(src='examples/data/data.json', dst='static', store=source)
+    files = {key: file for key, file in target.walk(src='static')}
+    assert set(files.keys()) == {'static/examples/data/data.json'}
+    with files['static/examples/data/data.json'].open() as f:
         assert json.load(f) == data_e
 
 

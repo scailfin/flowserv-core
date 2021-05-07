@@ -18,6 +18,6 @@ def test_copy_files(verbose, basedir, emptydir, filenames_all):
     """Ru file copye with the two options for the verbose flag."""
     source = FileSystemStorage(basedir=basedir)
     target = FileSystemStorage(basedir=emptydir)
-    source.download(src=None, store=target, verbose=verbose)
+    source.download(src=None, dst=None, store=target, verbose=verbose)
     files = {key: file for key, file in target.walk(src='')}
     assert set(files.keys()) == filenames_all
