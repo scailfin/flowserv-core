@@ -23,9 +23,11 @@ from flowserv.model.constraint import validate_identifier
 from flowserv.model.workflow.manifest import WorkflowManifest
 from flowserv.model.workflow.repository import WorkflowRepository
 from flowserv.util import get_unique_identifier as unique_identifier
+from flowserv.volume.fs import FileSystemStorage
 
 import flowserv.error as err
 import flowserv.model.constraint as constraint
+import flowserv.model.files as dirs
 
 
 class WorkflowManager(object):
@@ -139,10 +141,13 @@ class WorkflowManager(object):
             template = manifest.template()
             # Create identifier for the workflow template.
             workflow_id = identifier if identifier else unique_identifier()
-            staticdir = self.fs.workflow_staticdir(workflow_id)
+            staticdir = dirs.workflow_staticdir(workflow_id)
             # Copy files from the project folder to the template's static file
             # folder. By default all files in the project folder are copied.
-            self.fs.store_files(files=manifest.copyfiles(), dst=staticdir)
+            source = FileSystemStorage(basedir=sourcedir)
+            files = manifest.copyfiles(staticdir)
+            for src, dst in files:
+                self.fs.download(src=src, dst=dst, store=source, verbose=True)
 
         # Insert workflow into database and return the workflow handle.
         workflow = WorkflowObject(
@@ -182,7 +187,7 @@ class WorkflowManager(object):
         self.session.commit()
         # Delete all files that are associated with the workflow if the changes
         # to the database were successful.
-        self.fs.delete_folder(key=self.fs.workflow_basedir(workflow_id))
+        self.fs.delete(key=dirs.workflow_basedir(workflow_id))
 
     def get_workflow(self, workflow_id):
         """Get handle for the workflow with the given identifier. Raises

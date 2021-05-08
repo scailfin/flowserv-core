@@ -9,21 +9,17 @@
 """Unit tests for the manager that maintains workflow result rankings."""
 
 import os
-import pytest
 
 from datetime import timedelta
 
-from flowserv.config import Config
-from flowserv.model.files.fs import FileSystemStore
 from flowserv.model.parameter.numeric import PARA_FLOAT, PARA_INT
 from flowserv.model.parameter.string import PARA_STRING
 from flowserv.model.ranking import RankingManager
 from flowserv.model.workflow.manager import WorkflowManager
 from flowserv.model.run import RunManager
-from flowserv.model.template.schema import (
-    ResultSchema, ResultColumn, SortColumn
-)
-from flowserv.tests.files import MemStore
+from flowserv.model.template.schema import ResultSchema, ResultColumn, SortColumn
+from flowserv.tests.files import io_file
+from flowserv.volume.fs import FileSystemStorage
 
 import flowserv.model.workflow.state as st
 import flowserv.util as util
@@ -83,11 +79,11 @@ def init(database, basedir):
         return objects
 
 
-def run_success(run_manager, run_id, rundir, values):
+def run_success(run_manager, run_id, store, values):
     """Set given run into success state with the given result data."""
-    os.makedirs(rundir)
-    filename = os.path.join(rundir, RESULT_FILE_ID)
-    util.write_object(filename=filename, obj=values)
+    rundir, fs = store
+    filename = util.join(rundir, RESULT_FILE_ID)
+    fs.store(file=io_file(values), dst=filename)
     ts = util.utc_now()
     run_manager.update_run(
         run_id=run_id,
@@ -97,16 +93,15 @@ def run_success(run_manager, run_id, rundir, values):
             finished_at=ts,
             files=[RESULT_FILE_ID]
         ),
-        rundir=rundir
+        runstore=store
     )
 
 
-@pytest.mark.parametrize('fscls', [FileSystemStore, MemStore])
-def test_empty_ranking(fscls, database, tmpdir):
+def test_empty_ranking(database, tmpdir):
     """The rankings for workflows without completed runs are empty."""
     # -- Setup ----------------------------------------------------------------
     workflows = init(database, tmpdir)
-    fs = fscls(env=Config().basedir(tmpdir))
+    fs = FileSystemStorage(basedir=tmpdir)
     # -- Test empty listing with no successful runs ---------------------------
     with database.session() as session:
         wfrepo = WorkflowManager(session=session, fs=fs)
@@ -116,8 +111,7 @@ def test_empty_ranking(fscls, database, tmpdir):
             assert len(rankings.get_ranking(wf)) == 0
 
 
-@pytest.mark.parametrize('fscls', [FileSystemStore, MemStore])
-def test_multi_success_runs(fscls, database, tmpdir):
+def test_multi_success_runs(database, tmpdir):
     """Test rankings for workflows where each group has multiple successful
     runs.
     """
@@ -126,7 +120,7 @@ def test_multi_success_runs(fscls, database, tmpdir):
     # three active runs. Then set all runs for the first workflow into success
     # state. Increase a counter for the avg_len value as we update runs.
     workflows = init(database, tmpdir)
-    fs = fscls(env=Config().basedir(tmpdir))
+    fs = FileSystemStorage(basedir=tmpdir)
     workflow_id, groups = workflows[0]
     count = 0
     asc_order = list()
@@ -139,7 +133,7 @@ def test_multi_success_runs(fscls, database, tmpdir):
                 run_success(
                     run_manager=RunManager(session=session, fs=fs),
                     run_id=run_id,
-                    rundir=tmprundir,
+                    store=(tmprundir, fs),
                     values={'count': count, 'avg': 1.0, 'name': run_id}
                 )
                 count += 1

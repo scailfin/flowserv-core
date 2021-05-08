@@ -47,7 +47,7 @@ def test_run_serialization(database, tmpdir):
         state = run.state()
         runs.update_run(
             run_id,
-            state.start().success(files=['A.json', 'run/results/B.json']),
+            state.start().success(files=['A.json', 'results/B.json']),
             rundir=tmprundir
         )
         run = runs.get_run(run_id)

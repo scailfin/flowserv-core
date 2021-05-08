@@ -13,13 +13,11 @@ import os
 import pytest
 import time
 
-from flowserv.config import Config
-from flowserv.model.files.fs import FileSystemStore
 from flowserv.model.group import WorkflowGroupManager
 from flowserv.model.run import RunManager
 from flowserv.model.workflow.manager import WorkflowManager
-from flowserv.tests.files import MemStore
 from flowserv.tests.model import success_run
+from flowserv.volume.fs import FileSystemStorage
 
 import flowserv.error as err
 import flowserv.util as util
@@ -49,11 +47,10 @@ def error_run(database, fs, messages):
     return workflow_id, group_id, run_id
 
 
-@pytest.mark.parametrize('fscls', [FileSystemStore, MemStore])
-def test_cancel_run(fscls, database, tmpdir):
+def test_cancel_run(database, tmpdir):
     """Test setting run state to canceled."""
     # -- Setup ----------------------------------------------------------------
-    fs = fscls(env=Config().basedir(tmpdir))
+    fs = FileSystemStorage(basedir=tmpdir)
     with database.session() as session:
         user_id = model.create_user(session, active=True)
         workflow_id = model.create_workflow(session)
@@ -79,11 +76,10 @@ def test_cancel_run(fscls, database, tmpdir):
         assert len(state.messages) == 1
 
 
-@pytest.mark.parametrize('fscls', [FileSystemStore, MemStore])
-def test_create_run_errors(fscls, database, tmpdir):
+def test_create_run_errors(database, tmpdir):
     """Test error cases for create_run parameter combinations."""
     # -- Setup ----------------------------------------------------------------
-    fs = fscls(env=Config().basedir(tmpdir))
+    fs = FileSystemStorage(basedir=tmpdir)
     with database.session() as session:
         user_id = model.create_user(session, active=True)
         workflow_id = model.create_workflow(session)
@@ -103,11 +99,10 @@ def test_create_run_errors(fscls, database, tmpdir):
             runs.create_run(group=group, runs=['A'])
 
 
-@pytest.mark.parametrize('fscls', [FileSystemStore, MemStore])
-def test_delete_run(fscls, database, tmpdir):
+def test_delete_run(database, tmpdir):
     """Test deleting a run."""
     # -- Setup ----------------------------------------------------------------
-    fs = fscls(env=Config().basedir(tmpdir))
+    fs = FileSystemStorage(basedir=tmpdir)
     _, _, run_id, _ = success_run(database, fs, tmpdir)
     # -- Test delete run ------------------------------------------------------
     with database.session() as session:
@@ -121,11 +116,10 @@ def test_delete_run(fscls, database, tmpdir):
             runs.delete_run(run_id)
 
 
-@pytest.mark.parametrize('fscls', [FileSystemStore, MemStore])
-def test_error_run(fscls, database, tmpdir):
+def test_error_run(database, tmpdir):
     """Test setting run state to error."""
     # -- Setup ----------------------------------------------------------------
-    fs = fscls(env=Config().basedir(tmpdir))
+    fs = FileSystemStorage(basedir=tmpdir)
     messages = ['There', 'were', 'many errors']
     _, _, run_id = error_run(database, fs, messages)
     with database.session() as session:
@@ -141,11 +135,10 @@ def test_error_run(fscls, database, tmpdir):
         assert state.messages == messages
 
 
-@pytest.mark.parametrize('fscls', [FileSystemStore, MemStore])
-def test_invalid_state_transitions(fscls, database, tmpdir):
+def test_invalid_state_transitions(database, tmpdir):
     """Test error cases for invalid state transitions."""
     # -- Setup ----------------------------------------------------------------
-    fs = fscls(env=Config().basedir(tmpdir))
+    fs = FileSystemStorage(basedir=tmpdir)
     with database.session() as session:
         user_id = model.create_user(session, active=True)
         workflow_id = model.create_workflow(session)
@@ -175,13 +168,12 @@ def test_invalid_state_transitions(fscls, database, tmpdir):
             runs.update_run(run_id=run_id, state=state.success())
 
 
-@pytest.mark.parametrize('fscls', [FileSystemStore, MemStore])
-def test_list_runs(fscls, database, tmpdir):
+def test_list_runs(database, tmpdir):
     """Test retrieving a list of run descriptors."""
     # -- Setup ----------------------------------------------------------------
     #
     # Create two runs: one in running state and one in error state.
-    fs = fscls(env=Config().basedir(tmpdir))
+    fs = FileSystemStorage(basedir=tmpdir)
     with database.session() as session:
         user_id = model.create_user(session, active=True)
         workflow_id = model.create_workflow(session)
@@ -213,11 +205,10 @@ def test_list_runs(fscls, database, tmpdir):
         assert len(runs.list_runs(group_id, state=st.STATE_SUCCESS)) == 0
 
 
-@pytest.mark.parametrize('fscls', [FileSystemStore, MemStore])
-def test_obsolete_runs(fscls, database, tmpdir):
+def test_obsolete_runs(database, tmpdir):
     """Test deleting runs that were created before a given date."""
     # -- Setup ----------------------------------------------------------------
-    fs = fscls(env=Config().basedir(tmpdir))
+    fs = FileSystemStorage(basedir=tmpdir)
     # Create two runs (one SUCCESS and one ERROR) before a timestamp t1
     _, _, run_1, _ = success_run(database, fs, tmpdir)
     _, _, run_2 = error_run(database, fs, ['There were errors'])
@@ -244,11 +235,10 @@ def test_obsolete_runs(fscls, database, tmpdir):
         runs.get_run(run_id=run_3)
 
 
-@pytest.mark.parametrize('fscls', [FileSystemStore, MemStore])
-def test_run_parameters(fscls, database, tmpdir):
+def test_run_parameters(database, tmpdir):
     """Test creating run with template arguments."""
     # -- Setup ----------------------------------------------------------------
-    fs = fscls(env=Config().basedir(tmpdir))
+    fs = FileSystemStorage(basedir=tmpdir)
     with database.session() as session:
         user_id = model.create_user(session, active=True)
         workflow_id = model.create_workflow(session)
@@ -272,13 +262,11 @@ def test_run_parameters(fscls, database, tmpdir):
         assert run.arguments == arguments
 
 
-@pytest.mark.parametrize('fscls', [FileSystemStore, MemStore])
-def test_success_run(fscls, database, tmpdir):
+def test_success_run(database, tmpdir):
     """Test life cycle for a successful run."""
     # -- Setup ----------------------------------------------------------------
-    fs = fscls(env=Config().basedir(tmpdir))
+    fs = FileSystemStorage(basedir=tmpdir)
     workflow_id, _, run_id, _ = success_run(database, fs, tmpdir)
-    rundir = fs.run_basedir(workflow_id=workflow_id, run_id=run_id)
     with database.session() as session:
         runs = RunManager(session=session, fs=fs)
         run = runs.get_run(run_id)
@@ -290,9 +278,7 @@ def test_success_run(fscls, database, tmpdir):
         assert not state.is_error()
         assert state.is_success()
         assert len(state.files) == 2
-        key = run.get_file(by_key='A.json').key
-        f = fs.load(key=os.path.join(rundir, key)).open()
-        assert json.load(f) == {'A': 1}
-        key = run.get_file(by_key='run/results/B.json').key
-        f = fs.load(key=os.path.join(rundir, key)).open()
-        assert json.load(f) == {'B': 1}
+        with runs.get_runfile(run_id=run_id, key='A.json').open() as f:
+            assert json.load(f) == {'A': 1}
+        with runs.get_runfile(run_id=run_id, key='results/B.json').open() as f:
+            assert json.load(f) == {'B': 1}

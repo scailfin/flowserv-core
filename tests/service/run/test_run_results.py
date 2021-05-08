@@ -38,7 +38,7 @@ def test_access_run_result_files_local(database, tmpdir):
         # Read content of result files.
         fh = api.runs().get_result_file(
             run_id=run_id,
-            file_id=files['run/results/B.json']
+            file_id=files['results/B.json']
         )
         results = util.read_object(fh.open())
         assert results == {'B': 1}
@@ -49,7 +49,7 @@ def test_access_run_result_files_local(database, tmpdir):
         with pytest.raises(err.UnauthorizedAccessError):
             api.runs().get_result_file(
                 run_id=run_id,
-                file_id=files['run/results/B.json']
+                file_id=files['results/B.json']
             )
     # -- With an open access policy user 2 can read the data file -------------
     env = Config().basedir(tmpdir).open_access()
@@ -57,7 +57,7 @@ def test_access_run_result_files_local(database, tmpdir):
     with local_service(user_id=user_2) as api:
         api.runs().get_result_file(
             run_id=run_id,
-            file_id=files['run/results/B.json']
+            file_id=files['results/B.json']
         )
 
 
@@ -75,7 +75,7 @@ def test_result_archive_local(database, tmpdir):
         members = [t.name for t in tar.getmembers()]
         assert len(members) == 2
         assert 'A.json' in members
-        assert 'run/results/B.json' in members
+        assert 'results/B.json' in members
 
 
 def test_result_archive_remote(remote_service, mock_response):

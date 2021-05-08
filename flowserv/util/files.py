@@ -112,7 +112,7 @@ def join(*args) -> str:
     -------
     str
     """
-    return '/'.join([str(v) for v in args])
+    return '/'.join([str(v) for v in args if v])
 
 
 def read_buffer(filename: str) -> IO:

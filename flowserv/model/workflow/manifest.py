@@ -12,7 +12,6 @@ import os
 
 from typing import List, Tuple
 
-from flowserv.model.files.fs import FSFile, walk
 from flowserv.model.template.base import WorkflowTemplate
 
 import flowserv.error as err
@@ -71,28 +70,30 @@ class WorkflowManifest(object):
         self.instructions = instructions
         self.files = files
 
-    def copyfiles(self) -> List[Tuple[FSFile, str]]:
+    def copyfiles(self, dst: str) -> List[Tuple[str, str]]:
         """Get list of all template files from the base folder that need to be
-        copied to the template folder of a workflow repository. If the list of
-        files in the manifest was None, the complete base directory is copied.
+        copied to the template folder of a workflow repository.
+
+        The result is a list of tuples specifying the relative file source and
+        target path. The target path for each file is a concatenation of the
+        given destination base directory and the specified target path for the
+        file or folder. If the list of files is undefined in the manifest, the
+        result is a  tuple (None, dst) indicating that the full base directory
+        is to be copied to the destination.
 
         Returns
         ------
-        list of (flowserv.model.files.fs.FSFile, string)
+        list of (string, string)
         """
-        # Create a list of (source, target) pairs for the walk function that
-        # recursively adds all files in folders to the list of stored files.
-        filelist = list()
         if self.files is None:
-            # If no files listing is present in the project metadata dictionary
-            # weccopy the whole project directory to the source.
-            filelist.append((self.basedir, None))
-        else:
-            for fspec in self.files:
-                source = fspec['source']
-                target = fspec.get('target', source)
-                filelist.append((os.path.join(self.basedir, source), target))
-        return walk(files=filelist)
+            return [(None, dst)]
+        result = list()
+        for f in self.files:
+            source = f['source']
+            target = f.get('target', f['source'])
+            target = target if dst is None else util.join(dst, target)
+            result.append((source, target))
+        return result
 
     @staticmethod
     def load(

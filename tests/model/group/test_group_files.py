@@ -11,34 +11,31 @@
 import json
 import pytest
 
-from flowserv.config import Config
-from flowserv.model.files.fs import FileSystemStore
 from flowserv.model.group import WorkflowGroupManager
-from flowserv.tests.files import MemStore, io_file
+from flowserv.tests.files import io_file
+from flowserv.volume.fs import FileSystemStorage
 
 import flowserv.error as err
 import flowserv.tests.model as model
 
 
-@pytest.mark.parametrize('fscls', [FileSystemStore, MemStore])
-def test_delete_file(fscls, database, tmpdir):
+def test_delete_file(database, tmpdir):
     """Test deleting an uploaded file."""
     # -- Setup ----------------------------------------------------------------
     #
     # Create a database with two groups for a single workflow. Upload one file
     # for each group.
-    file = io_file(data={'A': 1})
     fn = 'data.json'
-    fs = fscls(env=Config().basedir(tmpdir))
+    fs = FileSystemStorage(basedir=tmpdir)
     with database.session() as session:
         user_1 = model.create_user(session, active=True)
         workflow_id = model.create_workflow(session)
         group_1 = model.create_group(session, workflow_id, users=[user_1])
         group_2 = model.create_group(session, workflow_id, users=[user_1])
         manager = WorkflowGroupManager(session=session, fs=fs)
-        fh = manager.upload_file(group_id=group_1, file=file, name=fn)
+        fh = manager.upload_file(group_id=group_1, file=io_file(data={'A': 1}), name=fn)
         file_1 = fh.file_id
-        fh = manager.upload_file(group_id=group_2, file=file, name=fn)
+        fh = manager.upload_file(group_id=group_2, file=io_file(data={'A': 1}), name=fn)
         file_2 = fh.file_id
     # -- Test delete file -----------------------------------------------------
     with database.session() as session:
@@ -57,8 +54,7 @@ def test_delete_file(fscls, database, tmpdir):
             manager.delete_file(group_id=group_1, file_id=file_1)
 
 
-@pytest.mark.parametrize('fscls', [FileSystemStore, MemStore])
-def test_get_file(fscls, database, tmpdir):
+def test_get_file(database, tmpdir):
     """Test accessing uploaded files."""
     # -- Setup ----------------------------------------------------------------
     #
@@ -69,7 +65,7 @@ def test_get_file(fscls, database, tmpdir):
     f1 = io_file(data=data_1)
     f2 = io_file(data=data_2)
     fn = 'data.json'
-    fs = fscls(env=Config().basedir(tmpdir))
+    fs = FileSystemStorage(basedir=tmpdir)
     with database.session() as session:
         user_1 = model.create_user(session, active=True)
         workflow_id = model.create_workflow(session)
@@ -98,25 +94,23 @@ def test_get_file(fscls, database, tmpdir):
             manager.get_uploaded_file(group_id=group_1, file_id='UNK').open()
 
 
-@pytest.mark.parametrize('fscls', [FileSystemStore, MemStore])
-def test_list_files(fscls, database, tmpdir):
+def test_list_files(database, tmpdir):
     """Test listing uploaded files."""
     # -- Setup ----------------------------------------------------------------
     #
     # Create a database with two groups for a single workflow. The first group
     # has one uploaded file and the second group has one file.
-    file = io_file(data={'A': 1})
     fn = 'data.json'
-    fs = fscls(env=Config().basedir(tmpdir))
+    fs = FileSystemStorage(basedir=tmpdir)
     with database.session() as session:
         user_1 = model.create_user(session, active=True)
         workflow_id = model.create_workflow(session)
         group_1 = model.create_group(session, workflow_id, users=[user_1])
         group_2 = model.create_group(session, workflow_id, users=[user_1])
         manager = WorkflowGroupManager(session=session, fs=fs)
-        manager.upload_file(group_id=group_1, file=file, name=fn)
-        manager.upload_file(group_id=group_1, file=file, name=fn)
-        manager.upload_file(group_id=group_2, file=file, name=fn)
+        manager.upload_file(group_id=group_1, file=io_file(data={'A': 1}), name=fn)
+        manager.upload_file(group_id=group_1, file=io_file(data={'A': 2}), name=fn)
+        manager.upload_file(group_id=group_2, file=io_file(data={'A': 3}), name=fn)
     # -- Test list files for groups -------------------------------------------
     with database.session() as session:
         manager = WorkflowGroupManager(session=session, fs=fs)
@@ -126,14 +120,13 @@ def test_list_files(fscls, database, tmpdir):
         assert len(files) == 1
 
 
-@pytest.mark.parametrize('fscls', [FileSystemStore, MemStore])
-def test_upload_file(fscls, database, tmpdir):
+def test_upload_file(database, tmpdir):
     """Test uploading files."""
     # -- Setup ----------------------------------------------------------------
     #
     # Create a database with two groups for a single workflow. Upload one file
     # for each group.
-    fs = fscls(env=Config().basedir(tmpdir))
+    fs = FileSystemStorage(basedir=tmpdir)
     with database.session() as session:
         user_1 = model.create_user(session, active=True)
         workflow_id = model.create_workflow(session)
