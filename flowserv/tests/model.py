@@ -15,11 +15,11 @@ import os
 
 from flowserv.model.base import GroupObject, RunObject, User, WorkflowObject
 from flowserv.model.database import DB
+from flowserv.model.files import io_file
 from flowserv.model.group import WorkflowGroupManager
 from flowserv.model.run import RunManager
 from flowserv.model.template.parameter import ParameterIndex
-from flowserv.tests.files import io_file
-from flowserv.volume.base import StorageVolume
+from flowserv.volume.base import StorageFolder, StorageVolume
 from flowserv.volume.fs import FileSystemStorage
 
 import flowserv.model.workflow.state as st
@@ -166,6 +166,6 @@ def success_run(database: DB, fs: StorageVolume, basedir: str) -> Tuple[str, str
         runs.update_run(
             run_id,
             state.start().success(files=['A.json', 'results/B.json']),
-            runstore=(None, runfs)
+            runstore=StorageFolder(basedir=None, volume=runfs)
         )
     return workflow_id, group_id, run_id, user_id

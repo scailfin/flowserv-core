@@ -12,13 +12,14 @@ import os
 
 from datetime import timedelta
 
+from flowserv.model.files import io_file
 from flowserv.model.parameter.numeric import PARA_FLOAT, PARA_INT
 from flowserv.model.parameter.string import PARA_STRING
 from flowserv.model.ranking import RankingManager
-from flowserv.model.workflow.manager import WorkflowManager
 from flowserv.model.run import RunManager
 from flowserv.model.template.schema import ResultSchema, ResultColumn, SortColumn
-from flowserv.tests.files import io_file
+from flowserv.model.workflow.manager import WorkflowManager
+from flowserv.volume.base import StorageFolder
 from flowserv.volume.fs import FileSystemStorage
 
 import flowserv.model.workflow.state as st
@@ -81,9 +82,7 @@ def init(database, basedir):
 
 def run_success(run_manager, run_id, store, values):
     """Set given run into success state with the given result data."""
-    rundir, fs = store
-    filename = util.join(rundir, RESULT_FILE_ID)
-    fs.store(file=io_file(values), dst=filename)
+    store.store(file=io_file(values), dst=RESULT_FILE_ID)
     ts = util.utc_now()
     run_manager.update_run(
         run_id=run_id,
@@ -133,7 +132,7 @@ def test_multi_success_runs(database, tmpdir):
                 run_success(
                     run_manager=RunManager(session=session, fs=fs),
                     run_id=run_id,
-                    store=(tmprundir, fs),
+                    store=StorageFolder(basedir=tmprundir, volume=fs),
                     values={'count': count, 'avg': 1.0, 'name': run_id}
                 )
                 count += 1

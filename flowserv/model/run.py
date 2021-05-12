@@ -10,7 +10,7 @@
 about workflow runs in an underlying database.
 """
 
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
 import io
 import mimetypes
@@ -20,7 +20,7 @@ from flowserv.model.base import RunFile, RunObject, RunMessage, WorkflowRankingR
 from flowserv.model.files import FileHandle
 from flowserv.model.template.schema import ResultSchema
 from flowserv.model.workflow.state import WorkflowState
-from flowserv.volume.base import IOBuffer, StorageVolume
+from flowserv.volume.base import IOBuffer, StorageFolder
 
 import flowserv.error as err
 import flowserv.model.files as dirs
@@ -338,7 +338,7 @@ class RunManager(object):
 
     def update_run(
         self, run_id: str, state: WorkflowState,
-        runstore: Optional[Tuple[str, StorageVolume]] = None
+        runstore: Optional[StorageFolder] = None
     ):
         """Update the state of the given run. This method does check if the
         state transition is valid. Transitions are valid for active workflows,
@@ -354,9 +354,9 @@ class RunManager(object):
             Unique identifier for the run
         state: flowserv.model.workflow.state.WorkflowState
             New workflow state
-        runstore: tuple of string, flowserv.volume.base.StorageVolume, default=None
-            Pair of storage volume and folder containing the run (result) files
-            for a successful workflow run.
+        runstore: flowserv.volume.base.StorageFolder, default=None
+            Storage folder containing the run (result) files for a successful
+            workflow run.
 
         Returns
         -------
@@ -405,14 +405,14 @@ class RunManager(object):
                 run=run,
                 files=state.files,
                 source=runstore,
-                target=(storedir, self.fs)
+                target=StorageFolder(basedir=storedir, volume=self.fs)
             )
             run.started_at = state.started_at
             run.ended_at = state.finished_at
             # Parse run result if the associated workflow has a result schema.
             result_schema = run.workflow.result_schema
             if result_schema is not None:
-                read_run_results(run=run, schema=result_schema, source=runstore)
+                read_run_results(run=run, schema=result_schema, runstore=runstore)
         # -- PENDING ----------------------------------------------------------
         else:
             validate_state_transition(current_state, state.type_id, [st.STATE_PENDING])
@@ -425,8 +425,7 @@ class RunManager(object):
 # -- Helper Functions ---------------------------------------------------------
 
 def store_run_files(
-    run: RunObject, files: List[str], source: Tuple[str, StorageVolume],
-    target: Tuple[str, StorageVolume]
+    run: RunObject, files: List[str], source: StorageFolder, target: StorageFolder
 ) -> List[RunFile]:
     """Create list of output files for a successful run. The list of files
     depends on whether files are specified in the workflow specification or not.
@@ -439,11 +438,11 @@ def store_run_files(
         Handle for a workflow run.
     files: list of string
         List of result files for a successful workflow run.
-    source: tuple of string, flowserv.volume.base.StorageVolume, default=None
-        Pair of storage volume and folder containing the run (result) files
-        for a successful workflow run.
-    target: tuple of string, flowserv.volume.base.StorageVolume, default=None
-        Pair of storage volume and folder for storing run result files.
+    source: flowserv.volume.base.StorageFolder
+        Storage folder containing the run (result) files for a successful
+        workflow run.
+    target: flowserv.volume.base.StorageFolder
+        Storage folder for persiting run result files.
 
     Returns
     -------
@@ -457,12 +456,10 @@ def store_run_files(
         # dictionary are not necessary equal to the file sources.
         files = [f.source for f in run.outputs().values()]
     # Copy files to the target volume.
-    rundir, runstore = source
-    storedir, store = target
     runfiles = list()
     for key in files:
-        f = runstore.load(util.join(rundir, key))
-        store.store(file=f, dst=util.join(storedir, key))
+        f = source.load(key)
+        target.store(file=f, dst=key)
         mime_type, _ = mimetypes.guess_type(url=key)
         runfile = RunFile(
             key=key,
@@ -474,7 +471,7 @@ def store_run_files(
     return runfiles
 
 
-def read_run_results(run: RunObject, schema: ResultSchema, source: Tuple[str, StorageVolume]):
+def read_run_results(run: RunObject, schema: ResultSchema, runstore: StorageFolder):
     """Read the run results from the result file that is specified in the workflow
     result schema. If the file is not found we currently do not raise an error.
 
@@ -485,13 +482,11 @@ def read_run_results(run: RunObject, schema: ResultSchema, source: Tuple[str, St
     schema: flowserv.model.template.schema.ResultSchema
         Workflow result schema specification that contains the reference to the
         result file key.
-    source: tuple of string, flowserv.volume.base.StorageVolume, default=None
-        Pair of storage volume and folder containing the run (result) files
-        for a successful workflow run.
+    runstore: flowserv.volume.base.StorageFolder
+        Storage folder containing the run (result) files for a successful
+        workflow run.
     """
-    rundir, runstore = source
-    filename = util.join(rundir, schema.result_file)
-    with runstore.load(filename).open() as f:
+    with runstore.load(schema.result_file).open() as f:
         results = util.read_object(f)
     # Create a dictionary of result values.
     values = dict()
