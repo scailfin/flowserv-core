@@ -73,7 +73,7 @@ def create_ranking(api, workflow_id, count):
         run_id, file_id = start_hello_world(api, group_id)
         data = {'avg_count': i, 'max_len': 100 - i, 'max_line': 'A' * i}
         write_results(
-            runstore=(None, fs),
+            runstore=StorageFolder(basedir=None, volume=fs),
             files=[(data, None, 'results/analytics.json')]
         )
         api.runs().update_run(
@@ -82,7 +82,7 @@ def create_ranking(api, workflow_id, count):
                 run_id,
                 files=['results/analytics.json']
             ),
-            runstore=(None, fs)
+            runstore=StorageFolder(basedir=None, volume=fs)
         )
         groups.append(group_id)
     return groups
