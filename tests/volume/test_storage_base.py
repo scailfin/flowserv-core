@@ -8,8 +8,12 @@
 
 """Unit tests for helper methods of the storage volume base module."""
 
+import json
+import os
 import pytest
 
+from flowserv.model.files import io_file
+from flowserv.volume.base import StorageFolder
 from flowserv.volume.fs import FileSystemStorage
 
 
@@ -21,3 +25,13 @@ def test_copy_files(verbose, basedir, emptydir, filenames_all):
     source.download(src=None, dst=None, store=target, verbose=verbose)
     files = {key: file for key, file in target.walk(src='')}
     assert set(files.keys()) == filenames_all
+
+
+def test_storage_folder(tmpdir):
+    """Test the storage folder helper class."""
+    folder = StorageFolder(volume=FileSystemStorage(basedir=tmpdir), basedir='data')
+    folder.store(file=io_file({'a': 1}), dst='a.json')
+    assert os.path.isfile(os.path.join(tmpdir, 'data', 'a.json'))
+    with folder.load('a.json').open() as f:
+        doc = json.load(f)
+    assert doc == {'a': 1}
