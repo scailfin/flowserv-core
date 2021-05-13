@@ -19,23 +19,21 @@ import shutil
 from flowserv.controller.base import WorkflowController
 from flowserv.model.auth import Auth
 from flowserv.model.base import WorkflowObject
-from flowserv.model.files import FileHandle
+from flowserv.model.files import FileHandle, run_tmpdir
 from flowserv.model.group import WorkflowGroupManager
-from flowserv.model.parameter.files import InputFile
-from flowserv.model.ranking import RankingManager
+from flowserv.model.ranking import RankingManager, RunResult
 from flowserv.model.run import RunManager
 from flowserv.model.template.base import WorkflowTemplate
 from flowserv.model.workflow.state import WorkflowState
-from flowserv.service.postproc.base import prepare_postproc_data
-from flowserv.service.run.argument import serialize_arg, serialize_fh
+from flowserv.service.postproc.base import PARAMETERS, PARA_RUNS, RUNS_DIR, prepare_postproc_data
+from flowserv.service.run.argument import serialize_arg
 from flowserv.service.run.argument import deserialize_arg, deserialize_fh, is_fh
 from flowserv.service.run.base import RunService
 from flowserv.view.run import RunSerializer
-from flowserv.volume.base import StorageFolder
+from flowserv.volume.base import StorageFolder, StorageVolume
 
 import flowserv.error as err
 import flowserv.util as util
-import flowserv.service.postproc.base as postbase
 
 
 class LocalRunService(RunService):
@@ -45,8 +43,9 @@ class LocalRunService(RunService):
     """
     def __init__(
         self, run_manager: RunManager, group_manager: WorkflowGroupManager,
-        ranking_manager: RankingManager, backend: WorkflowController, auth: Auth,
-        user_id: Optional[str] = None, serializer: Optional[RunSerializer] = None
+        ranking_manager: RankingManager, backend: WorkflowController,
+        fs: StorageVolume, auth: Auth, user_id: Optional[str] = None,
+        serializer: Optional[RunSerializer] = None
     ):
         """Initialize the internal reference to the workflow controller, the
         runa and group managers, and to the serializer.
@@ -61,6 +60,8 @@ class LocalRunService(RunService):
             Manager for workflow evaluation rankings
         backend: flowserv.controller.base.WorkflowController
             Workflow engine controller
+        fs: flowserv.volume.base.StorageVolume
+            File store for run input and output files.
         auth: flowserv.model.auth.Auth
             Implementation of the authorization policy for the API
         user_id: string, default=None
@@ -72,6 +73,7 @@ class LocalRunService(RunService):
         self.group_manager = group_manager
         self.ranking_manager = ranking_manager
         self.backend = backend
+        self.fs = fs
         self.auth = auth
         self.user_id = user_id
         self.serialize = serializer if serializer is not None else RunSerializer()
@@ -439,11 +441,11 @@ class LocalRunService(RunService):
                     msg = 'Run post-processing workflow for {}'
                     logging.info(msg.format(workflow.workflow_id))
                     run_postproc_workflow(
-                        postproc_spec=workflow.postproc_spec,
                         workflow=workflow,
                         ranking=ranking,
-                        runs=runs,
+                        keys=runs,
                         run_manager=self.run_manager,
+                        store=StorageFolder(volume=self.fs, basedir=run_tmpdir()),
                         backend=self.backend
                     )
 
@@ -451,10 +453,31 @@ class LocalRunService(RunService):
 # -- Helper functions ---------------------------------------------------------
 
 def run_postproc_workflow(
-    postproc_spec: Dict, workflow: WorkflowObject, ranking: List, runs: List,
-    run_manager: RunManager, backend: WorkflowController
+    workflow: WorkflowObject, ranking: List[RunResult],
+    keys: List[str], run_manager: RunManager, store: StorageFolder,
+    backend: WorkflowController
 ):
-    """Run post-processing workflow for a workflow template."""
+    """Run post-processing workflow for a workflow template.
+
+    Parameters
+    ----------
+    workflow: flowserv.model.base.WorkflowObject
+        Handle for the workflow that triggered the post-processing workflow run.
+    ranking: list(flowserv.model.ranking.RunResult)
+        List of runs in the current result ranking.
+    keys: list of string
+        Sorted list of run identifier for runs in the ranking.
+    run_manager: flowserv.model.run.RunManager
+        Manager for workflow runs
+    store: flowserv.volume.base.StorageFolder
+        Target storage volume where the created post-processing files are
+        stored.
+    backend: flowserv.controller.base.WorkflowController
+        Backend that is used to execute the post-processing workflow.
+    """
+    # Get workflow specification and the list of input files from the
+    # post-processing statement.
+    postproc_spec = workflow.postproc_spec
     workflow_spec = postproc_spec.get('workflow')
     pp_inputs = postproc_spec.get('inputs', {})
     pp_files = pp_inputs.get('files', [])
@@ -466,16 +489,12 @@ def run_postproc_workflow(
         datadir = prepare_postproc_data(
             input_files=pp_files,
             ranking=ranking,
-            run_manager=run_manager
+            run_manager=run_manager,
+            store=store
         )
-        dst = pp_inputs.get('runs', postbase.RUNS_DIR)
-        run_args = {
-            postbase.PARA_RUNS: InputFile(
-                source=FSFile(datadir),
-                target=dst
-            )
-        }
-        arg_list = [serialize_arg(postbase.PARA_RUNS, serialize_fh(datadir, dst))]
+        dst = pp_inputs.get('runs', RUNS_DIR)
+        run_args = {PARA_RUNS: dst}
+        arg_list = [serialize_arg(PARA_RUNS, dst)]
     except Exception as ex:
         logging.error(ex, exc_info=True)
         strace = util.stacktrace(ex)
@@ -486,7 +505,7 @@ def run_postproc_workflow(
     run = run_manager.create_run(
         workflow=workflow,
         arguments=arg_list,
-        runs=runs
+        runs=keys
     )
     if strace is not None:
         # If there were data preparation errors set the created run into an
@@ -502,7 +521,7 @@ def run_postproc_workflow(
             run=run,
             template=WorkflowTemplate(
                 workflow_spec=workflow_spec,
-                parameters=postbase.PARAMETERS
+                parameters=PARAMETERS
             ),
             arguments=run_args,
             config=workflow.engine_config

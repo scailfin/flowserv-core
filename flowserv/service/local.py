@@ -291,6 +291,7 @@ class SessionManager(object):
                 group_manager=group_manager,
                 ranking_manager=ranking_manager,
                 backend=engine,
+                fs=fs,
                 auth=auth,
                 user_id=user_id
             ),

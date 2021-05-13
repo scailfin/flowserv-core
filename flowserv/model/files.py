@@ -200,6 +200,16 @@ def run_basedir(workflow_id: str, run_id: str) -> str:
     return util.join(workflowdir, 'runs', run_id)
 
 
+def run_tmpdir() -> str:
+    """Get path to a temporary workflow run directory.
+
+    Returns
+    -------
+    string
+    """
+    return util.join('tmp', util.get_unique_identifier())
+
+
 def workflow_basedir(workflow_id: str) -> str:
     """Get base directory containing associated files for the workflow with
     the given identifier.

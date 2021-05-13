@@ -19,6 +19,8 @@ def test_file_path_structure():
     rundir = files.run_basedir('WF01', 'R01')
     assert 'WF01' in rundir
     assert 'R01' in rundir
+    tmpdir = files.run_tempdir()
+    assert tmpdir.startswith('tmp')
     assert 'WF01' in files.workflow_basedir('WF01')
     groupdir = files.workflow_groupdir('WF01', 'G01')
     assert 'WF01' in groupdir
