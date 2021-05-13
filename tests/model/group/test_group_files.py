@@ -11,8 +11,8 @@
 import json
 import pytest
 
+from flowserv.model.files import io_file
 from flowserv.model.group import WorkflowGroupManager
-from flowserv.tests.files import io_file
 from flowserv.volume.fs import FileSystemStorage
 
 import flowserv.error as err

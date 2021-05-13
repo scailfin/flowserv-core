@@ -8,7 +8,7 @@
 
 """Unit tests for the file IO buffer."""
 
-from flowserv.tests.files import io_file
+from flowserv.model.files import io_file
 
 
 def test_io_buffer_size():

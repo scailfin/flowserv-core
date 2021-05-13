@@ -10,30 +10,26 @@
 
 import os
 
-from flowserv.config import Config
-from flowserv.model.files.fs import FileSystemStore
+from flowserv.model.files import io_file
 from flowserv.model.group import WorkflowGroupManager
 from flowserv.model.run import RunManager
 from flowserv.view.run import RunSerializer
 from flowserv.view.validate import validator
+from flowserv.volume.base import StorageFolder
+from flowserv.volume.fs import FileSystemStorage
 
 import flowserv.tests.model as model
-import flowserv.util as util
 import flowserv.view.run as labels
 
 
 def test_run_serialization(database, tmpdir):
     """Test serialization of run handles and run listings."""
-    config = Config().basedir(tmpdir)
     view = RunSerializer()
-    fs = FileSystemStore(config)
+    fs = FileSystemStorage(basedir=tmpdir)
     # Setup temporary run folder.
-    tmprundir = os.path.join(tmpdir, 'tmprun')
-    tmpresultsdir = os.path.join(tmprundir, 'run', 'results')
-    os.makedirs(tmprundir)
-    os.makedirs(tmpresultsdir)
-    f1 = os.path.join(tmprundir, 'A.json')
-    util.write_object(f1, {'A': 1})
+    runfs = FileSystemStorage(basedir=os.path.join(tmpdir, 'tmprun'))
+    runfs.store(file=io_file({'A': 1}), dst='A.json')
+    runfs.store(file=io_file({'B': 2}), dst='results/B.json')
     # Create runs.
     with database.session() as session:
         user_id = model.create_user(session, active=True)
@@ -48,7 +44,7 @@ def test_run_serialization(database, tmpdir):
         runs.update_run(
             run_id,
             state.start().success(files=['A.json', 'results/B.json']),
-            rundir=tmprundir
+            runstore=StorageFolder(basedir=None, volume=runfs)
         )
         run = runs.get_run(run_id)
         doc = view.run_handle(run)

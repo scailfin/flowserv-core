@@ -13,8 +13,8 @@ import os
 import pytest
 import time
 
+from flowserv.model.files import io_file
 from flowserv.service.run.argument import serialize_arg, serialize_fh
-from flowserv.tests.files import io_file
 from flowserv.tests.service import (
     create_group, create_user, create_workflow, start_run, upload_file
 )

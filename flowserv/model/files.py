@@ -29,9 +29,11 @@ The folder structure is currently as follows:
 """
 
 from io import BytesIO
-from typing import IO
+from typing import Dict, IO, List, Union, Optional
 
-from flowserv.volume.base import IOHandle
+import json
+
+from flowserv.volume.base import IOHandle, IOBuffer
 
 import flowserv.util as util
 
@@ -153,6 +155,30 @@ def group_uploaddir(workflow_id: str, group_id: str) -> str:
     """
     groupdir = workflow_groupdir(workflow_id, group_id)
     return util.join(groupdir, 'files')
+
+
+def io_file(data: Union[List, Dict], format: Optional[str] = None) -> IOBuffer:
+    """Write simple text to given bytes buffer.
+
+    Parameters
+    ----------
+    data: list or dict
+        List of strings or dictionary.
+    format: string, default=None
+        Format identifier.
+
+    Returns
+    -------
+    flowserv.volume.base.IOBuffer
+    """
+    buf = BytesIO()
+    buf.seek(0)
+    if format is None or format == util.FORMAT_JSON:
+        buf.write(str.encode(json.dumps(data)))
+    else:
+        for line in data:
+            buf.write(str.encode('{}\n'.format(line)))
+    return IOBuffer(buf)
 
 
 def run_basedir(workflow_id: str, run_id: str) -> str:

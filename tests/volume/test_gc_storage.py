@@ -11,7 +11,7 @@
 import json
 import pytest
 
-from flowserv.tests.files import io_file
+from flowserv.model.files import io_file
 from flowserv.volume.gc import GCFile, GCVolume
 
 import flowserv.error as err

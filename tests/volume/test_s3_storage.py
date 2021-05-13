@@ -11,7 +11,7 @@
 import json
 import pytest
 
-from flowserv.tests.files import io_file
+from flowserv.model.files import io_file
 from flowserv.volume.s3 import S3File, S3Volume
 
 import flowserv.error as err

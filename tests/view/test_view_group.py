@@ -8,12 +8,11 @@
 
 """Unit tests for the workflow group resources view."""
 
-from flowserv.config import Config
-from flowserv.model.files.fs import FileSystemStore
+from flowserv.model.files import io_file
 from flowserv.model.group import WorkflowGroupManager
-from flowserv.tests.files import io_file
 from flowserv.view.group import WorkflowGroupSerializer
 from flowserv.view.validate import validator
+from flowserv.volume.fs import FileSystemStorage
 
 import flowserv.tests.model as model
 import flowserv.view.group as labels
@@ -21,10 +20,9 @@ import flowserv.view.group as labels
 
 def test_group_handle_serialization(database, tmpdir):
     """Test serialization of workflow group handles."""
-    config = Config().basedir(tmpdir)
     view = WorkflowGroupSerializer()
     with database.session() as session:
-        manager = WorkflowGroupManager(session=session, fs=FileSystemStore(config))
+        manager = WorkflowGroupManager(session=session, fs=FileSystemStorage(basedir=tmpdir))
         user_id = model.create_user(session, active=True)
         workflow_id = model.create_workflow(session)
         group_id = model.create_group(session, workflow_id, users=[user_id])
@@ -37,10 +35,9 @@ def test_group_handle_serialization(database, tmpdir):
 
 def test_group_listing_serialization(database, tmpdir):
     """Test serialization of workflow group listing."""
-    config = Config().basedir(tmpdir)
     view = WorkflowGroupSerializer()
     with database.session() as session:
-        manager = WorkflowGroupManager(session=session, fs=FileSystemStore(config))
+        manager = WorkflowGroupManager(session=session, fs=FileSystemStorage(basedir=tmpdir))
         user_id = model.create_user(session, active=True)
         workflow_id = model.create_workflow(session)
         model.create_group(session, workflow_id, users=[user_id])

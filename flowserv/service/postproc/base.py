@@ -13,7 +13,8 @@ workflows.
 
 from typing import List
 
-from flowserv.model.files import File, io_file
+from flowserv.model.files import io_file
+from flowserv.model.parameter.files import File
 from flowserv.model.ranking import RunResult
 from flowserv.model.run import RunManager
 from flowserv.model.template.parameter import ParameterIndex
