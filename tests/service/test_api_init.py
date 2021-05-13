@@ -8,16 +8,6 @@
 
 """Unit test for API methods."""
 
-import pytest
-
-from flowserv.config import Config
-from flowserv.model.files.bucket import BucketStore
-from flowserv.model.files.mem import MemBucket
-from flowserv.volume.factory import Volume
-
-import flowserv.config as config
-import flowserv.error as err
-
 
 def test_api_components(local_service):
     """Test methods to access API components."""
@@ -30,25 +20,3 @@ def test_api_components(local_service):
         assert api.uploads() is not None
         assert api.users() is not None
         assert api.workflows() is not None
-
-
-def test_initialize_filestore_from_env(tmpdir):
-    """Test initializing the bucket store with a memory bucket from the
-    envirnment variables.
-    """
-    # -- Setup ----------------------------------------------------------------
-    env = Config().basedir(tmpdir)
-    env[config.FLOWSERV_FILESTORE] = config.FILESTORE_BUCKET
-    env[config.FLOWSERV_FILESTORE_BUCKETTYPE] = config.BUCKET_MEM
-    # -- Create bucket store instance -----------------------------------------
-    fs = FS(env=env)
-    assert isinstance(fs, BucketStore)
-    assert isinstance(fs.bucket, MemBucket)
-    # -- Error cases ----------------------------------------------------------
-    del env[config.FLOWSERV_FILESTORE_BUCKETTYPE]
-    with pytest.raises(err.MissingConfigurationError):
-        FS(env=env)
-    # -- Default file store ---------------------------------------------------
-    assert FS(env=Config().basedir(tmpdir)) is not None
-    with pytest.raises(err.MissingConfigurationError):
-        FS(env=Config())

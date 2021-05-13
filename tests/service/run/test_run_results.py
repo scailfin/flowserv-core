@@ -25,7 +25,7 @@ def test_access_run_result_files_local(database, tmpdir):
     """Test accessing run result files."""
     # -- Setup ----------------------------------------------------------------
     env = Config().basedir(tmpdir).auth()
-    fs = FS(env=env)
+    fs = Volume(env=env)
     workflow_id, group_id, run_id, user_id = success_run(database, fs, tmpdir)
     local_service = LocalAPIFactory(env=env, db=database, engine=StateEngine())
     # -- Read result files ----------------------------------------------------
@@ -65,7 +65,7 @@ def test_result_archive_local(database, tmpdir):
     """Test getting an archive of run results."""
     # -- Setup ----------------------------------------------------------------
     env = Config().basedir(tmpdir).auth()
-    fs = FS(env=env)
+    fs = Volume(env=env)
     workflow_id, group_id, run_id, user_id = success_run(database, fs, tmpdir)
     local_service = LocalAPIFactory(env=env, db=database, engine=StateEngine())
     # -- Get result archive ---------------------------------------------------

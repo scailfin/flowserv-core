@@ -40,7 +40,7 @@ TIMEOUT = 'timeout'
 TYPE = 'type'
 
 
-def Volume(config: Optional[Dict] = dict(), env: Optional[Dict] = dict()) -> StorageVolume:
+def Volume(config: Optional[Dict] = None, env: Optional[Dict] = None) -> StorageVolume:
     """Factory pattern to create file store instances for the service API.
 
     Expects a configuration object that contains the volume type ``type`` and
@@ -49,18 +49,22 @@ def Volume(config: Optional[Dict] = dict(), env: Optional[Dict] = dict()) -> Sto
 
     Parameters
     ----------
-    config: dict
+    config: dict, default=None
         Configuration dictionary that provides access to configuration
         parameters for the storage volume.
-
+    ev: dict, default=None
+        Environment configuration needed to access the base API base directory
+        if no configuration is given.
     Returns
     -------
     flowserv.volume.base.StorageVolume
     """
+    config = config if config is not None else dict()
     volume_type = config.get(TYPE, FS)
     args = config.get(ARGS, {})
     identifier = config.get(NAME)
     if volume_type == FS:
+        env = env if env is not None else dict()
         basedir = args.get(BASEDIR, env.get(FLOWSERV_BASEDIR))
         return FileSystemStorage(basedir=basedir, identifier=identifier)
     elif volume_type == GC:

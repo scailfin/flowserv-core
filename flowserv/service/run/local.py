@@ -20,22 +20,22 @@ from flowserv.controller.base import WorkflowController
 from flowserv.model.auth import Auth
 from flowserv.model.base import WorkflowObject
 from flowserv.model.files import FileHandle
-from flowserv.model.files.fs import FSFile
 from flowserv.model.group import WorkflowGroupManager
 from flowserv.model.parameter.files import InputFile
 from flowserv.model.ranking import RankingManager
 from flowserv.model.run import RunManager
 from flowserv.model.template.base import WorkflowTemplate
 from flowserv.model.workflow.state import WorkflowState
+from flowserv.service.postproc.base import prepare_postproc_data
 from flowserv.service.run.argument import serialize_arg, serialize_fh
 from flowserv.service.run.argument import deserialize_arg, deserialize_fh, is_fh
 from flowserv.service.run.base import RunService
 from flowserv.view.run import RunSerializer
+from flowserv.volume.base import StorageFolder
 
 import flowserv.error as err
 import flowserv.util as util
 import flowserv.service.postproc.base as postbase
-import flowserv.service.postproc.util as postutil
 
 
 class LocalRunService(RunService):
@@ -388,7 +388,10 @@ class LocalRunService(RunService):
             return self.get_run(run_id)
         return self.serialize.run_handle(run, group)
 
-    def update_run(self, run_id: str, state: WorkflowState, rundir: Optional[str] = None):
+    def update_run(
+        self, run_id: str, state: WorkflowState,
+        runstore: Optional[StorageFolder] = None
+    ):
         """Update the state of the given run. For runs that are in a SUCCESS
         state the workflow evaluation ranking is updated (if a result schema
         is defined for the corresponding template). If the ranking results
@@ -406,10 +409,9 @@ class LocalRunService(RunService):
             Unique identifier for the run
         state: flowserv.model.workflow.state.WorkflowState
             New workflow state.
-        rundir: string, default=None
-            Path to folder with run (result) files on the local disk. This
-            parameter should be given for all sucessful runs and potentially
-            also for runs in an error state.
+        runstore: flowserv.volume.base.StorageFolder, default=None
+            Storage folder containing the run (result) files for a successful
+            workflow run.
 
         Raises
         ------
@@ -419,7 +421,7 @@ class LocalRunService(RunService):
         run = self.run_manager.update_run(
             run_id=run_id,
             state=state,
-            rundir=rundir
+            runstore=runstore
         )
         if run is not None and state.is_success():
             logging.info('run {} is a success'.format(run_id))
@@ -461,7 +463,7 @@ def run_postproc_workflow(
     # run argument
     strace = None
     try:
-        datadir = postutil.prepare_postproc_data(
+        datadir = prepare_postproc_data(
             input_files=pp_files,
             ranking=ranking,
             run_manager=run_manager
