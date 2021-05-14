@@ -132,7 +132,7 @@ class StorageVolume(metaclass=ABCMeta):
         raise NotImplementedError()  # pragma: no cover
 
     def download(
-        self, src: Union[str, List[str]], dst: str, store: StorageVolume,
+        self, src: Union[str, List[str]], store: StorageVolume, dst: Optional[str] = None,
         verbose: Optional[bool] = False
     ):
         """Download the file or folder at the source path of this storage
@@ -144,10 +144,10 @@ class StorageVolume(metaclass=ABCMeta):
         ----------
         src: string or list of string
             Relative source path(s) for downloaded files and directories.
-        dst: string
-            Destination folder for downloaded files.
         store: flowserv.volume.base.StorageValue
             Storage volume for destination files.
+        dst: string, default=None
+            Destination folder for downloaded files.
         verbose: bool, default=False
             Print information about source and target volume and the files that
             are being copied.
@@ -191,7 +191,7 @@ class StorageVolume(metaclass=ABCMeta):
         raise NotImplementedError()  # pragma: no cover
 
     def upload(
-        self, src: Union[str, List[str]], dst: str, store: StorageVolume,
+        self, src: Union[str, List[str]], store: StorageVolume, dst: Optional[str] = None,
         verbose: Optional[bool] = False
     ):
         """Upload a file or folder from the src path of the given storage
@@ -202,10 +202,10 @@ class StorageVolume(metaclass=ABCMeta):
         src: string or list of string
             Source file(s) or folder(s) that is/are being uploaded to the
             storage volume.
-        dst: string
-            Destination folder for uploaded files.
         store: flowserv.volume.base.StorageValue
             Storage volume for source files.
+        dst: string, default=None
+            Destination folder for uploaded files.
         verbose: bool, default=False
             Print information about source and target volume and the files that
             are being copied.
