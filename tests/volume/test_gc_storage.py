@@ -17,21 +17,12 @@ from flowserv.volume.gc import GCFile, GCVolume
 import flowserv.error as err
 
 
-FILES = [
-    (io_file(['Alice', 'Bob']), 'data/names.txt'),
-    (io_file({'a': 1}), 'code/obj1.json'),
-    (io_file({'b': 2}), 'code/obj2.json')
-]
-
-
 @pytest.fixture
 def store(mock_gcstore):
     volume = GCVolume(bucket_name='GCB01', identifier='V0001')
     assert volume.identifier == 'V0001'
     assert volume.bucket_name == 'GCB01'
     assert 'GCB01' in volume.describe()
-    for buf, key in FILES:
-        volume.store(dst=key, file=buf)
     return volume
 
 
@@ -52,18 +43,18 @@ def test_gc_erase_bucket(store):
     store.close()
 
 
-def test_gc_load_file(store):
+def test_gc_load_file(store, people):
     """Test loading and reading a GCFile handle object."""
     f = store.load(key='data/names.txt')
     with f.open() as b:
         doc = json.load(b)
-    assert doc == ['Alice', 'Bob']
+    assert doc == people
     assert f.size() > 0
 
 
-def test_gc_query_files(store):
+def test_gc_query_files(store, bucket_keys):
     """Test querying a Google Cloud bucket store."""
-    assert store.walk(src=None) == set([key for _, key in FILES])
+    assert store.walk(src=None) == bucket_keys
     assert store.walk(src='code') == set({'code/obj1.json', 'code/obj2.json'})
     assert store.walk(src='code/') == set({'code/obj1.json', 'code/obj2.json'})
 
@@ -82,3 +73,25 @@ def test_gc_store_init(mock_gcstore):
     # Initialize with existing bucket.
     volume = GCVolume(bucket_name='test_exists')
     assert volume.bucket_name == 'test_exists'
+
+
+def test_gs_volume_subfolder(store, bucket_keys, people):
+    """Test creating a new storage volume for a sub-folder of the base directory
+    of a GC bucket storage volume.
+    """
+    substore = store.get_store_for_folder(key='data', identifier='SUBSTORE')
+    assert substore.identifier == 'SUBSTORE'
+    with substore.load(key='names.txt').open() as f:
+        doc = json.load(f)
+    assert doc == people
+    # Store a file in the sub folder and then make sure we can read it.
+    substore.store(file=io_file(['a', 'b']), dst='x/y')
+    with substore.load(key='x/y').open() as f:
+        doc = json.load(f)
+    assert doc == ['a', 'b']
+    # Erase all files in the sub-folder.
+    substore.erase()
+    # Note that the file will not have been deleted in the original store. This
+    # is because of how the unit tests are set up with each store having its
+    # own full list of the files.
+    assert substore.walk(src=None) == set()

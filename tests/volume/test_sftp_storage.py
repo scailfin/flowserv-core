@@ -69,6 +69,23 @@ def test_remote_volume_load_file(mock_ssh, basedir, data_e):
     assert doc == data_e
 
 
+def test_remote_volume_subfolder(mock_ssh, basedir, data_d, data_e):
+    """Test creating a new storage volume for a sub-folder of the base directory
+    of a remote file system storage volume.
+    """
+    with ssh.ssh_client('test', sep=os.sep) as client:
+        store = RemoteStorage(remotedir=basedir, client=client)
+        substore = store.get_store_for_folder(key='docs', identifier='SUBSTORE')
+        assert substore.identifier == 'SUBSTORE'
+        with substore.load(key='D.json').open() as f:
+            doc = json.load(f)
+        assert doc == data_d
+        substore.erase()
+        with store.load(key='examples/data/data.json').open() as f:
+            doc = json.load(f)
+        assert doc == data_e
+
+
 def test_remote_volume_upload_all(mock_ssh, basedir, emptydir, filenames_all, data_a):
     """Test uploading a full directory to a storage volume."""
     with ssh.ssh_client('test', sep=os.sep) as client:

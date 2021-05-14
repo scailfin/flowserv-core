@@ -82,6 +82,24 @@ def test_fs_volume_load_file(basedir, data_e):
         store.load(key='examples/data/unknown.json')
 
 
+def test_fs_volume_subfolder(basedir, data_d, data_e):
+    """Test creating a new storage volume for a sub-folder of the base directory
+    of a file system storage volume.
+    """
+    store = FileSystemStorage(basedir=basedir)
+    substore = store.get_store_for_folder(key='docs', identifier='SUBSTORE')
+    assert substore.identifier == 'SUBSTORE'
+    with substore.load(key='D.json').open() as f:
+        doc = json.load(f)
+    assert doc == data_d
+    substore.erase()
+    with store.load(key='examples/data/data.json').open() as f:
+        doc = json.load(f)
+    assert doc == data_e
+    with pytest.raises(err.UnknownFileError):
+        store.load(key='docs/D.json')
+
+
 def test_fs_volume_upload_all(basedir, emptydir, filenames_all, data_a):
     """Test uploading a full directory to a storage volume."""
     source = FileSystemStorage(basedir=basedir)

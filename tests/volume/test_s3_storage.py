@@ -17,21 +17,12 @@ from flowserv.volume.s3 import S3File, S3Volume
 import flowserv.error as err
 
 
-FILES = [
-    (io_file(['Alice', 'Bob']), 'data/names.txt'),
-    (io_file({'a': 1}), 'code/obj1.json'),
-    (io_file({'b': 2}), 'code/obj2.json')
-]
-
-
 @pytest.fixture
 def store(mock_boto):
     volume = S3Volume(bucket_id='S3B01', identifier='V0001')
     assert volume.bucket_id == 'S3B01'
     assert volume.identifier == 'V0001'
     assert 'S3B01' in volume.describe()
-    for buf, key in FILES:
-        volume.store(dst=key, file=buf)
     return volume
 
 
@@ -42,18 +33,18 @@ def test_s3_erase_bucket(store):
     store.close()
 
 
-def test_s3_load_file(store):
+def test_s3_load_file(store, people):
     """Test loading and reading a S3File handle object."""
     f = store.load(key='data/names.txt')
     with f.open() as b:
         doc = json.load(b)
-    assert doc == ['Alice', 'Bob']
+    assert doc == people
     assert f.size() > 0
 
 
-def test_s3_query_files(store):
+def test_s3_query_files(store, bucket_keys):
     """Test querying a S3 bucket store."""
-    assert store.walk(src=None) == set([key for _, key in FILES])
+    assert store.walk(src=None) == bucket_keys
     assert store.walk(src='code') == set({'code/obj1.json', 'code/obj2.json'})
     assert store.walk(src='code/') == set({'code/obj1.json', 'code/obj2.json'})
 
@@ -63,3 +54,23 @@ def test_s3_open_file(store):
     f = S3File(key='unknown', bucket=store.bucket)
     with pytest.raises(err.UnknownFileError):
         f.open()
+
+
+def test_s3_volume_subfolder(store, people):
+    """Test creating a new storage volume for a sub-folder of the base directory
+    of a S3 bucket storage volume.
+    """
+    substore = store.get_store_for_folder(key='data', identifier='SUBSTORE')
+    assert substore.identifier == 'SUBSTORE'
+    with substore.load(key='names.txt').open() as f:
+        doc = json.load(f)
+    assert doc == people
+    substore.store(file=io_file(['a', 'b']), dst='x/y')
+    with substore.load(key='x/y').open() as f:
+        doc = json.load(f)
+    assert doc == ['a', 'b']
+    substore.erase()
+    # Note that the file will not have been deleted in the original store. This
+    # is because of how the unit tests are set up with each store having its
+    # own full list of the files.
+    assert substore.walk(src=None) == set()

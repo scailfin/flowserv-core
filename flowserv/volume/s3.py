@@ -22,6 +22,8 @@ from typing import IO, Iterable, List, Optional, Tuple, TypeVar
 from flowserv.volume.base import IOHandle, StorageVolume
 
 import flowserv.error as err
+import flowserv.util as util
+
 
 """Type alias for S3 bucket objects."""
 S3Bucket = TypeVar('S3Bucket')
@@ -77,18 +79,25 @@ class S3File(IOHandle):
 
 class S3Volume(StorageVolume):
     """Implementation of the bucket interface for AWS S3 buckets."""
-    def __init__(self, bucket_id: str, identifier: Optional[str] = None):
+    def __init__(
+        self, bucket_id: str, prefix: Optional[str] = None,
+        identifier: Optional[str] = None
+    ):
         """Initialize the storage bucket.
 
         Parameters
         ----------
         bucket_id: string
             Unique bucket identifier.
+        prefix: string, default=None
+            Key-prefix for all files. Only set if the store represents a sub-
+            folder store for the bucket.
         identifier: string, default=None
             Unique volume identifier.
         """
         super(S3Volume, self).__init__(identifier=identifier)
         self.bucket_id = bucket_id
+        self.prefix = prefix
         import boto3
         self.bucket = boto3.resource('s3').Bucket(self.bucket_id)
 
@@ -114,12 +123,34 @@ class S3Volume(StorageVolume):
         key: str
             Path to a file object in the storage volume.
         """
-        keys = self.query(filter=key)
+        keys = self.query(filter=util.join(self.prefix, key))
         self.bucket.delete_objects(Delete={'Objects': [{'Key': k} for k in keys]})
 
     def erase(self):
         """Erase the storage volume base directory and all its contents."""
         self.delete(key=None)
+
+    def get_store_for_folder(self, key: str, identifier: Optional[str] = None) -> StorageVolume:
+        """Get storage volume for a sob-folder of the given volume.
+
+        Parameters
+        ----------
+        key: string
+            Relative path to sub-folder. The concatenation of the base folder
+            for this storage volume and the given key will form te new base
+            folder for the returned storage volume.
+        identifier: string, default=None
+            Unique volume identifier.
+
+        Returns
+        -------
+        flowserv.volume.base.StorageVolume
+        """
+        return S3Volume(
+            bucket_id=self.bucket_id,
+            prefix=util.join(self.prefix, key),
+            identifier=identifier
+        )
 
     def load(self, key: str) -> IOHandle:
         """Load a file object at the source path of this volume store.
@@ -135,7 +166,7 @@ class S3Volume(StorageVolume):
         --------
         flowserv.volume.base.IOHandle
         """
-        return S3File(key=key, bucket=self.bucket)
+        return S3File(key=util.join(self.prefix, key), bucket=self.bucket)
 
     def query(self, filter: str) -> Iterable[str]:
         """Get identifier for objects that match a given prefix.
@@ -162,7 +193,7 @@ class S3Volume(StorageVolume):
         dst: str
             Destination path for the stored object.
         """
-        self.bucket.upload_fileobj(file.open(), dst)
+        self.bucket.upload_fileobj(file.open(), util.join(self.prefix, dst))
 
     def walk(self, src: str) -> List[Tuple[str, IOHandle]]:
         """Get list of all files at the given source path.
@@ -188,4 +219,4 @@ class S3Volume(StorageVolume):
             prefix = ''
         else:
             prefix = src
-        return self.query(filter=prefix)
+        return self.query(filter=util.join(self.prefix, prefix))

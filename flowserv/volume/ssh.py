@@ -147,6 +147,29 @@ class RemoteStorage(StorageVolume):
         # Delete the remote base directory itself.
         self.client.sftp().rmdir(self.remotedir)
 
+    def get_store_for_folder(self, key: str, identifier: Optional[str] = None) -> StorageVolume:
+        """Get storage volume for a sob-folder of the given volume.
+
+        Parameters
+        ----------
+        key: string
+            Relative path to sub-folder. The concatenation of the base folder
+            for this storage volume and the given key will form te new base
+            folder for the returned storage volume.
+        identifier: string, default=None
+            Unique volume identifier.
+
+        Returns
+        -------
+        flowserv.volume.base.StorageVolume
+        """
+        dirpath = util.filepath(key=key, sep=self.client.sep)
+        return RemoteStorage(
+            client=self.client,
+            remotedir=self.client.sep.join([self.remotedir, dirpath]),
+            identifier=identifier
+        )
+
     def load(self, key: str) -> IOHandle:
         """Load a file object at the source path of this volume store.
 

@@ -78,6 +78,11 @@ def test_filepath(key, sep, result):
     assert util.filepath(key=key, sep=sep) == result
 
 
+def test_join():
+    """Ensure that empty and None strings are ignored by join."""
+    assert util.join(None, 'a', '', 'b') == 'a/b'
+
+
 def test_jquery():
     """Test the Json query function."""
     doc = {

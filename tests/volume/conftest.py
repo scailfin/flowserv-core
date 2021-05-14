@@ -13,6 +13,9 @@ import botocore
 import os
 import pytest
 
+from flowserv.model.files import io_file
+from flowserv.volume.base import IOBuffer
+
 import flowserv.util as util
 
 
@@ -29,6 +32,8 @@ FILE_C = os.path.join('examples', 'C.json')
 FILE_D = os.path.join('docs', 'D.json')
 FILE_E = os.path.join('examples', 'data', 'data.json')
 
+
+# -- File system stores -------------------------------------------------------
 
 @pytest.fixture
 def basedir(tmpdir):
@@ -73,6 +78,12 @@ def data_a():
 
 
 @pytest.fixture
+def data_d():
+    """Content for file 'docs/D.json'."""
+    return DATA_D
+
+
+@pytest.fixture
 def data_e():
     """Content for file 'examples/data/data.json'."""
     return DATA_E
@@ -92,6 +103,28 @@ def filenames_all():
     return {'A.json', 'examples/B.json', 'examples/C.json', 'docs/D.json', 'examples/data/data.json'}
 
 
+# -- Bucket stores ------------------------------------------------------------
+
+NAMES = ['Alice', 'Bob']
+FILES = [
+    (io_file(NAMES), 'data/names.txt'),
+    (io_file({'a': 1}), 'code/obj1.json'),
+    (io_file({'b': 2}), 'code/obj2.json')
+]
+
+
+@pytest.fixture
+def bucket_keys():
+    """Set of file keys in the created buckets."""
+    return set([key for _, key in FILES])
+
+
+@pytest.fixture
+def people():
+    """List of person names in the data/names.txt files."""
+    return NAMES
+
+
 class BlobObject:
     def __init__(self, key, bucket=None):
         self.key = key
@@ -102,12 +135,10 @@ class BlobObject:
         if self.key not in self.bucket.objects:
             from google.cloud.exceptions import NotFound
             raise NotFound(self.key)
-        buf = self.bucket.objects[self.key]
-        buf.seek(0)
-        return buf.read()
+        return self.bucket.objects[self.key].open().read()
 
-    def upload_from_file(self, fh):
-        self.bucket.objects[self.key] = fh
+    def upload_from_file(self, buf):
+        self.bucket.objects[self.key] = IOBuffer(buf)
 
 
 # -- AWS S3 -------------------------------------------------------------------
@@ -115,6 +146,8 @@ class BlobObject:
 class MockS3Bucket:
     def __init__(self):
         self.bucket = dict()
+        for buf, key in FILES:
+            self.bucket[key] = buf.open()
 
     def Bucket(self, identifier):
         return self
@@ -162,6 +195,8 @@ class BlobBucket:
     def __init__(self, name):
         self.name = name
         self.objects = dict()
+        for buf, key in FILES:
+            self.objects[key] = buf
 
     def blob(self, key):
         return BlobObject(key, bucket=self)

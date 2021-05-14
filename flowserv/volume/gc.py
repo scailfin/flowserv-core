@@ -23,6 +23,7 @@ from google.cloud import exceptions
 from flowserv.volume.base import IOHandle, StorageVolume
 
 import flowserv.error as err
+import flowserv.util as util
 
 
 """Type alias for Google Cloud storage bucket objects."""
@@ -84,7 +85,10 @@ class GCVolume(StorageVolume):
     """Implementation of the storage volume class for Google Cloud File Store
     buckets.
     """
-    def __init__(self, bucket_name: str, identifier: Optional[str] = None):
+    def __init__(
+        self, bucket_name: str, prefix: Optional[str] = None,
+        identifier: Optional[str] = None
+    ):
         """Initialize the storage bucket from the environment settings.
 
         Expects the bucket name in the environment variable FLOWSERV_BUCKET.
@@ -93,11 +97,15 @@ class GCVolume(StorageVolume):
         ----------
         bucket_name: string
             Unique bucket identifier.
+        prefix: string, default=None
+            Key-prefix for all files. Only set if the store represents a sub-
+            folder store for the bucket.
         identifier: string, default=None
             Unique volume identifier.
         """
         super(GCVolume, self).__init__(identifier=identifier)
         self.bucket_name = bucket_name
+        self.prefix = prefix
         # Instantiates a client. Use helper method to better support mocking
         # for unit tests.
         self.client = get_google_client()
@@ -119,7 +127,7 @@ class GCVolume(StorageVolume):
         key: str
             Path to a file object in the storage volume.
         """
-        self.delete_objects(keys=self.query(filter=key))
+        self.delete_objects(keys=self.query(filter=util.join(self.prefix, key)))
 
     def delete_objects(self, keys: Iterable[str]):
         """Delete objects with the given identifier.
@@ -148,6 +156,28 @@ class GCVolume(StorageVolume):
         """Erase the storage volume base directory and all its contents."""
         self.delete(key=None)
 
+    def get_store_for_folder(self, key: str, identifier: Optional[str] = None) -> StorageVolume:
+        """Get storage volume for a sob-folder of the given volume.
+
+        Parameters
+        ----------
+        key: string
+            Relative path to sub-folder. The concatenation of the base folder
+            for this storage volume and the given key will form te new base
+            folder for the returned storage volume.
+        identifier: string, default=None
+            Unique volume identifier.
+
+        Returns
+        -------
+        flowserv.volume.base.StorageVolume
+        """
+        return GCVolume(
+            bucket_name=self.bucket_name,
+            prefix=util.join(self.prefix, key),
+            identifier=identifier
+        )
+
     def load(self, key: str) -> IOHandle:
         """Load a file object at the source path of this volume store.
 
@@ -162,7 +192,10 @@ class GCVolume(StorageVolume):
         --------
         flowserv.volume.base.IOHandle
         """
-        return GCFile(key=key, client=self.client, bucket_name=self.bucket_name)
+        return GCFile(
+            key=util.join(self.prefix, key),
+            client=self.client, bucket_name=self.bucket_name
+        )
 
     def query(self, filter: str) -> Iterable[str]:
         """Get identifier for objects that match a given prefix.
@@ -190,7 +223,7 @@ class GCVolume(StorageVolume):
         dst: str
             Destination path for the stored object.
         """
-        blob = self.client.bucket(self.bucket_name).blob(dst)
+        blob = self.client.bucket(self.bucket_name).blob(util.join(self.prefix, dst))
         blob.upload_from_file(file.open())
 
     def walk(self, src: str) -> List[Tuple[str, IOHandle]]:
@@ -217,7 +250,7 @@ class GCVolume(StorageVolume):
             prefix = ''
         else:
             prefix = src
-        return self.query(filter=prefix)
+        return self.query(filter=util.join(self.prefix, prefix))
 
 
 # -- Helper Methods -----------------------------------------------------------

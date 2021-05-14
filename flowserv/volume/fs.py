@@ -123,6 +123,27 @@ class FileSystemStorage(StorageVolume):
         """Erase the storage volume base directory and all its contents."""
         shutil.rmtree(self.basedir)
 
+    def get_store_for_folder(self, key: str, identifier: Optional[str] = None) -> StorageVolume:
+        """Get storage volume for a sob-folder of the given volume.
+
+        Parameters
+        ----------
+        key: string
+            Relative path to sub-folder. The concatenation of the base folder
+            for this storage volume and the given key will form te new base
+            folder for the returned storage volume.
+        identifier: string, default=None
+            Unique volume identifier.
+
+        Returns
+        -------
+        flowserv.volume.base.StorageVolume
+        """
+        return FileSystemStorage(
+            basedir=os.path.join(self.basedir, util.filepath(key=key)),
+            identifier=identifier
+        )
+
     def load(self, key: str) -> IOHandle:
         """Load a file object at the source path of this volume store.
 
