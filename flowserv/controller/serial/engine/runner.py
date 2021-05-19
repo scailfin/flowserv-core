@@ -11,10 +11,10 @@
 from typing import List
 
 from flowserv.controller.serial.workflow.result import RunResult
-from flowserv.model.workflow.step import WorkflowStep
-from flowserv.controller.volume.manager import VolumeManager
 from flowserv.controller.worker.code import CodeWorker
 from flowserv.controller.worker.factory import WorkerFactory
+from flowserv.model.workflow.step import WorkflowStep
+from flowserv.volume.manager import VolumeManager
 
 
 def exec_workflow(

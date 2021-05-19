@@ -173,11 +173,9 @@ class SerialWorkflowEngine(WorkflowController):
             for key, para in template.parameters.items():
                 if para.is_file() and key in arguments:
                     file = arguments[key]
-                    file.source().store(os.path.join(rundir, file.target()))
-            # Create top-level folder for all expected result files.
-            util.create_directories(basedir=rundir, files=outputs)
+                    runstore.store(file=file.source(), dst=file.target())
             # Start a new process to run the workflow. Make sure to catch all
-            # exceptions to set the run state properly
+            # exceptions to set the run state properly.
             state = state.start()
             if self.is_async:
                 # Raise an error if the service manager is not given.
