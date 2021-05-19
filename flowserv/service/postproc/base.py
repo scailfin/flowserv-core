@@ -18,7 +18,7 @@ from flowserv.model.parameter.files import File
 from flowserv.model.ranking import RunResult
 from flowserv.model.run import RunManager
 from flowserv.model.template.parameter import ParameterIndex
-from flowserv.volume.base import StorageFolder
+from flowserv.volume.base import StorageVolume
 
 
 import flowserv.util as util
@@ -53,7 +53,7 @@ PARAMETERS[PARAMETER.name] = PARAMETER
 
 def prepare_postproc_data(
     input_files: List[str], ranking: List[RunResult], run_manager: RunManager,
-    store: StorageFolder
+    store: StorageVolume
 ):
     """Create input files for post-processing steps for a given set of runs.
 
@@ -74,7 +74,7 @@ def prepare_postproc_data(
         List of runs in the current result ranking
     run_manager: flowserv.model.run.RunManager
         Manager for workflow runs
-    store: flowserv.volume.base.StorageFolder
+    store: flowserv.volume.base.StorageVolume
         Target storage volume where the created post-processing files are
         stored.
     """

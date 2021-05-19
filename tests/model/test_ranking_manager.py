@@ -19,7 +19,6 @@ from flowserv.model.ranking import RankingManager
 from flowserv.model.run import RunManager
 from flowserv.model.template.schema import ResultSchema, ResultColumn, SortColumn
 from flowserv.model.workflow.manager import WorkflowManager
-from flowserv.volume.base import StorageFolder
 from flowserv.volume.fs import FileSystemStorage
 
 import flowserv.model.workflow.state as st
@@ -132,7 +131,7 @@ def test_multi_success_runs(database, tmpdir):
                 run_success(
                     run_manager=RunManager(session=session, fs=fs),
                     run_id=run_id,
-                    store=StorageFolder(basedir=tmprundir, volume=fs),
+                    store=fs.get_store_for_folder(key=tmprundir),
                     values={'count': count, 'avg': 1.0, 'name': run_id}
                 )
                 count += 1

@@ -16,7 +16,6 @@ import os
 from flowserv.service.postproc.base import RUNS_FILE, prepare_postproc_data
 from flowserv.service.postproc.client import Runs
 from flowserv.tests.service import create_ranking, create_user
-from flowserv.volume.base import StorageFolder
 from flowserv.volume.fs import FileSystemStorage
 
 import flowserv.util as util
@@ -50,7 +49,7 @@ def test_workflow_postproc_client(local_service, hello_world, tmpdir):
             input_files=['results/analytics.json'],
             ranking=ranking,
             run_manager=api.runs().run_manager,
-            store=StorageFolder(volume=FileSystemStorage(basedir=tmpdir), basedir='postproc_run')
+            store=FileSystemStorage(basedir=os.path.join(tmpdir, 'postproc_run'))
         )
         # Test the post-processing client that accesses the prepared data.
         runs = Runs(os.path.join(tmpdir, 'postproc_run'))

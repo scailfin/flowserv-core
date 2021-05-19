@@ -30,7 +30,7 @@ from flowserv.service.run.argument import serialize_arg
 from flowserv.service.run.argument import deserialize_arg, deserialize_fh, is_fh
 from flowserv.service.run.base import RunService
 from flowserv.view.run import RunSerializer
-from flowserv.volume.base import StorageFolder, StorageVolume
+from flowserv.volume.base import StorageVolume
 
 import flowserv.error as err
 import flowserv.util as util
@@ -392,7 +392,7 @@ class LocalRunService(RunService):
 
     def update_run(
         self, run_id: str, state: WorkflowState,
-        runstore: Optional[StorageFolder] = None
+        runstore: Optional[StorageVolume] = None
     ):
         """Update the state of the given run. For runs that are in a SUCCESS
         state the workflow evaluation ranking is updated (if a result schema
@@ -411,8 +411,8 @@ class LocalRunService(RunService):
             Unique identifier for the run
         state: flowserv.model.workflow.state.WorkflowState
             New workflow state.
-        runstore: flowserv.volume.base.StorageFolder, default=None
-            Storage folder containing the run (result) files for a successful
+        runstore: flowserv.volume.base.StorageVolume, default=None
+            Storage volume containing the run (result) files for a successful
             workflow run.
 
         Raises
@@ -445,7 +445,7 @@ class LocalRunService(RunService):
                         ranking=ranking,
                         keys=runs,
                         run_manager=self.run_manager,
-                        store=StorageFolder(volume=self.fs, basedir=run_tmpdir()),
+                        store=self.fs.get_store_for_folder(key=run_tmpdir()),
                         backend=self.backend
                     )
 
@@ -454,7 +454,7 @@ class LocalRunService(RunService):
 
 def run_postproc_workflow(
     workflow: WorkflowObject, ranking: List[RunResult],
-    keys: List[str], run_manager: RunManager, store: StorageFolder,
+    keys: List[str], run_manager: RunManager, store: StorageVolume,
     backend: WorkflowController
 ):
     """Run post-processing workflow for a workflow template.
@@ -469,7 +469,7 @@ def run_postproc_workflow(
         Sorted list of run identifier for runs in the ranking.
     run_manager: flowserv.model.run.RunManager
         Manager for workflow runs
-    store: flowserv.volume.base.StorageFolder
+    store: flowserv.volume.base.StorageVolume
         Target storage volume where the created post-processing files are
         stored.
     backend: flowserv.controller.base.WorkflowController

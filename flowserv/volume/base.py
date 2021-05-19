@@ -251,57 +251,6 @@ class StorageVolume(metaclass=ABCMeta):
         raise NotImplementedError()  # pragma: no cover
 
 
-class StorageFolder(object):
-    """The storage folder is a wrapper around a directory on a storage volume
-    that provides access to individual files. This class allows to load and
-    store files in a folder or the sub-folders on a storage volume.
-    """
-    def __init__(self, volume: StorageVolume, basedir: str):
-        """Initialize the storage volume and the base directory.
-
-        Parameters
-        ----------
-        volume: flowserv.volume.base.StorageVolume
-            Storage volume that contains the base directory.
-        basedir: string
-            Base directory for accessible files on the storage volume.
-        """
-        self.volume = volume
-        self.basedir = basedir
-
-    def load(self, key: str) -> IOHandle:
-        """Load a file object at the realtive key path of this volume store
-        folder.
-
-        Returns a file handle that can be used to open and read the file.
-
-        Parameters
-        ----------
-        key: str
-            Relative path to a file object in the base directory of the storage
-            folder.
-
-        Returns
-        --------
-        flowserv.volume.base.IOHandle
-        """
-        return self.volume.load(util.join(self.basedir, key))
-
-    def store(self, file: IOHandle, dst: str):
-        """Store a given file object at the destination path of this volume
-        store folder.
-
-        Parameters
-        ----------
-        file: flowserv.volume.base.IOHandle
-            File-like object that is being stored.
-        dst: str
-            Relative destination path for the stored object in the base directory
-            of the storage folder.
-        """
-        self.volume.store(file=file, dst=util.join(self.basedir, dst))
-
-
 # -- Helper Functions ---------------------------------------------------------
 
 def copy_files(

@@ -15,7 +15,6 @@ from flowserv.model.group import WorkflowGroupManager
 from flowserv.model.run import RunManager
 from flowserv.view.run import RunSerializer
 from flowserv.view.validate import validator
-from flowserv.volume.base import StorageFolder
 from flowserv.volume.fs import FileSystemStorage
 
 import flowserv.tests.model as model
@@ -44,7 +43,7 @@ def test_run_serialization(database, tmpdir):
         runs.update_run(
             run_id,
             state.start().success(files=['A.json', 'results/B.json']),
-            runstore=StorageFolder(basedir=None, volume=runfs)
+            runstore=runfs
         )
         run = runs.get_run(run_id)
         doc = view.run_handle(run)

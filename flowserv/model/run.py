@@ -10,6 +10,7 @@
 about workflow runs in an underlying database.
 """
 
+from sqlalchemy.orm.session import Session
 from typing import List, Optional
 
 import io
@@ -20,7 +21,7 @@ from flowserv.model.base import RunFile, RunObject, RunMessage, WorkflowRankingR
 from flowserv.model.files import FileHandle
 from flowserv.model.template.schema import ResultSchema
 from flowserv.model.workflow.state import WorkflowState
-from flowserv.volume.base import IOBuffer, StorageFolder
+from flowserv.volume.base import IOBuffer, StorageVolume
 
 import flowserv.error as err
 import flowserv.model.files as dirs
@@ -33,7 +34,7 @@ class RunManager(object):
     delete, and retrieve runs. the manager also provides the functionality to
     update the state of workflow runs.
     """
-    def __init__(self, session, fs):
+    def __init__(self, session: Session, fs: StorageVolume):
         """Initialize the connection to the underlying database and the file
         system helper to get path names for run folders.
 
@@ -338,7 +339,7 @@ class RunManager(object):
 
     def update_run(
         self, run_id: str, state: WorkflowState,
-        runstore: Optional[StorageFolder] = None
+        runstore: Optional[StorageVolume] = None
     ):
         """Update the state of the given run. This method does check if the
         state transition is valid. Transitions are valid for active workflows,
@@ -354,8 +355,8 @@ class RunManager(object):
             Unique identifier for the run
         state: flowserv.model.workflow.state.WorkflowState
             New workflow state
-        runstore: flowserv.volume.base.StorageFolder, default=None
-            Storage folder containing the run (result) files for a successful
+        runstore: flowserv.volume.base.StorageVolume, default=None
+            Storage volume containing the run (result) files for a successful
             workflow run.
 
         Returns
@@ -405,7 +406,7 @@ class RunManager(object):
                 run=run,
                 files=state.files,
                 source=runstore,
-                target=StorageFolder(basedir=storedir, volume=self.fs)
+                target=self.fs.get_store_for_folder(key=storedir)
             )
             run.started_at = state.started_at
             run.ended_at = state.finished_at
@@ -425,7 +426,7 @@ class RunManager(object):
 # -- Helper Functions ---------------------------------------------------------
 
 def store_run_files(
-    run: RunObject, files: List[str], source: StorageFolder, target: StorageFolder
+    run: RunObject, files: List[str], source: StorageVolume, target: StorageVolume
 ) -> List[RunFile]:
     """Create list of output files for a successful run. The list of files
     depends on whether files are specified in the workflow specification or not.
@@ -438,11 +439,11 @@ def store_run_files(
         Handle for a workflow run.
     files: list of string
         List of result files for a successful workflow run.
-    source: flowserv.volume.base.StorageFolder
-        Storage folder containing the run (result) files for a successful
+    source: flowserv.volume.base.StorageVolume
+        Storage volume containing the run (result) files for a successful
         workflow run.
-    target: flowserv.volume.base.StorageFolder
-        Storage folder for persiting run result files.
+    target: flowserv.volume.base.StorageVolume
+        Storage volume for persiting run result files.
 
     Returns
     -------
@@ -471,7 +472,7 @@ def store_run_files(
     return runfiles
 
 
-def read_run_results(run: RunObject, schema: ResultSchema, runstore: StorageFolder):
+def read_run_results(run: RunObject, schema: ResultSchema, runstore: StorageVolume):
     """Read the run results from the result file that is specified in the workflow
     result schema. If the file is not found we currently do not raise an error.
 
@@ -482,8 +483,8 @@ def read_run_results(run: RunObject, schema: ResultSchema, runstore: StorageFold
     schema: flowserv.model.template.schema.ResultSchema
         Workflow result schema specification that contains the reference to the
         result file key.
-    runstore: flowserv.volume.base.StorageFolder
-        Storage folder containing the run (result) files for a successful
+    runstore: flowserv.volume.base.StorageVolume
+        Storage volume containing the run (result) files for a successful
         workflow run.
     """
     with runstore.load(schema.result_file).open() as f:

@@ -14,7 +14,7 @@ import tempfile
 
 from flowserv.model.files import io_file
 from flowserv.service.run.argument import serialize_fh
-from flowserv.volume.base import StorageFolder
+from flowserv.volume.base import StorageVolume
 from flowserv.volume.fs import FileSystemStorage
 
 import flowserv.util as util
@@ -73,7 +73,7 @@ def create_ranking(api, workflow_id, count):
         run_id, file_id = start_hello_world(api, group_id)
         data = {'avg_count': i, 'max_len': 100 - i, 'max_line': 'A' * i}
         write_results(
-            runstore=StorageFolder(basedir=None, volume=fs),
+            runstore=fs,
             files=[(data, None, 'results/analytics.json')]
         )
         api.runs().update_run(
@@ -82,7 +82,7 @@ def create_ranking(api, workflow_id, count):
                 run_id,
                 files=['results/analytics.json']
             ),
-            runstore=StorageFolder(basedir=None, volume=fs)
+            runstore=fs
         )
         groups.append(group_id)
     return groups
@@ -200,14 +200,14 @@ def upload_file(api, group_id, file):
     )['id']
 
 
-def write_results(runstore: StorageFolder, files: Tuple[Union[dict, list], str, str]):
+def write_results(runstore: StorageVolume, files: Tuple[Union[dict, list], str, str]):
     """Create a result files for a workflow run.
 
 
     Parameters
     ----------
-    runstore: flowserv.volume.base.StorageFolder
-        Storage folder for the run (result) files of a successful workflow run.
+    runstore: flowserv.volume.base.StorageVolume
+        Storage volume for the run (result) files of a successful workflow run.
     files: list
         List of 3-tuples containing the file data, format, and relative path.
     """

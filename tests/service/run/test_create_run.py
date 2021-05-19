@@ -13,7 +13,6 @@ import tempfile
 
 from flowserv.service.run.argument import is_fh
 from flowserv.tests.service import create_group, create_user, start_hello_world, write_results
-from flowserv.volume.base import StorageFolder
 from flowserv.volume.fs import FileSystemStorage
 
 import flowserv.error as err
@@ -37,7 +36,7 @@ def test_create_run_local(local_service, hello_world):
         run_id, file_id = start_hello_world(api, group_id)
         result = {'group': group_id, 'run': run_id}
         write_results(
-            runstore=StorageFolder(basedir=None, volume=fs),
+            runstore=fs,
             files=[
                 (result, None, 'results/data.json'),
                 ({'avg_count': 3.5, 'max_len': 30}, None, 'results/analytics.json'),
@@ -50,7 +49,7 @@ def test_create_run_local(local_service, hello_world):
                 run_id,
                 files=['results/data.json', 'values.txt']
             ),
-            runstore=StorageFolder(basedir=None, volume=fs)
+            runstore=fs
         )
     # -- Validate run handle --------------------------------------------------
     with local_service(user_id=user_1) as api:

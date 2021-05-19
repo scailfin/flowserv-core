@@ -13,7 +13,6 @@ import os
 import pytest
 
 from flowserv.model.files import io_file
-from flowserv.volume.base import StorageFolder
 from flowserv.volume.fs import FileSystemStorage
 
 
@@ -29,7 +28,8 @@ def test_copy_files(verbose, basedir, emptydir, filenames_all):
 
 def test_storage_folder(tmpdir):
     """Test the storage folder helper class."""
-    folder = StorageFolder(volume=FileSystemStorage(basedir=tmpdir), basedir='data')
+    folder = FileSystemStorage(basedir=os.path.join(tmpdir, 'data'))
+    folder = FileSystemStorage(basedir=os.path.join(tmpdir, 'data'))
     folder.store(file=io_file({'a': 1}), dst='a.json')
     assert os.path.isfile(os.path.join(tmpdir, 'data', 'a.json'))
     with folder.load('a.json').open() as f:
