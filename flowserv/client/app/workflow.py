@@ -203,7 +203,7 @@ class Workflow(object):
             Dictionary of user-provided arguments.
         config: dict, default=None
             Optional implementation-specific configuration settings that can be
-            used to overwrite settings that were intialized at object creation.
+            used to overwrite settings that were initialized at object creation.
         poll_interval: int, default=None
             Optional poll interval that is used to check the state of a run
             until it is no longer in active state.

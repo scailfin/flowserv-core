@@ -98,7 +98,7 @@ class StateEngine(WorkflowController):
 
     def exec_workflow(
         self, run: RunObject, template: WorkflowTemplate, arguments: dict,
-        config: Optional[Dict] = None
+        staticfs: StorageVolume, config: Optional[Dict] = None
     ) -> Tuple[WorkflowState, str]:
         """Fake execute method that returns the workflow state that the was
         provided when the object was instantiated. Ignores all given arguments.
@@ -112,8 +112,12 @@ class StateEngine(WorkflowController):
             the parameter declarations.
         arguments: dict
             Dictionary of argument values for parameters in the template.
-        service: contextlib,contextmanager, default=None
-            Ignored. Included for API completeness.
+        staticfs: flowserv.volume.base.StorageVolume
+            Storage volume that contains the static files from the workflow
+            template.
+        config: dict, default=None
+            Optional implementation-specific configuration settings that can be
+            used to overwrite settings that were initialized at object creation.
 
         Returns
         -------

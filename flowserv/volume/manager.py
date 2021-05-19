@@ -115,7 +115,7 @@ class VolumeManager(object):
                 target = self.stores[stores[0]]
                 # Upload file from the source storage volume to the target
                 # volume.
-                target.upload(src=key, store=source)
+                source.copy(src=key, store=target)
                 self.files[key].append(stores[0])
                 result[key] = target
         return result

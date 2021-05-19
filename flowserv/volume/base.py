@@ -131,11 +131,11 @@ class StorageVolume(metaclass=ABCMeta):
         """
         raise NotImplementedError()  # pragma: no cover
 
-    def download(
+    def copy(
         self, src: Union[str, List[str]], store: StorageVolume, dst: Optional[str] = None,
         verbose: Optional[bool] = False
     ):
-        """Download the file or folder at the source path of this storage
+        """Copy the file or folder at the source path of this storage
         volume to the given storage volume.
 
         The source path is relative to the base directory for the workflow run.
@@ -208,28 +208,6 @@ class StorageVolume(metaclass=ABCMeta):
             Destination path for the stored object.
         """
         raise NotImplementedError()  # pragma: no cover
-
-    def upload(
-        self, src: Union[str, List[str]], store: StorageVolume, dst: Optional[str] = None,
-        verbose: Optional[bool] = False
-    ):
-        """Upload a file or folder from the src path of the given storage
-        volume to this storage volume.
-
-        Parameters
-        ----------
-        src: string or list of string
-            Source file(s) or folder(s) that is/are being uploaded to the
-            storage volume.
-        store: flowserv.volume.base.StorageValue
-            Storage volume for source files.
-        dst: string, default=None
-            Destination folder for uploaded files.
-        verbose: bool, default=False
-            Print information about source and target volume and the files that
-            are being copied.
-        """
-        copy_files(src=src, source=store, dst=dst, target=self, verbose=verbose)
 
     @abstractmethod
     def walk(self, src: str) -> List[Tuple[str, IOHandle]]:

@@ -23,6 +23,7 @@ from flowserv.model.base import RunObject
 from flowserv.model.template.base import WorkflowTemplate
 from flowserv.model.workflow.state import WorkflowState
 from flowserv.service.api import APIFactory
+from flowserv.volume.base import StorageVolume
 
 import flowserv.controller.remote.monitor as monitor
 import flowserv.util as util
@@ -91,7 +92,7 @@ class RemoteWorkflowController(WorkflowController):
 
     def exec_workflow(
         self, run: RunObject, template: WorkflowTemplate, arguments: Dict,
-        config: Optional[Dict] = None
+        staticfs: StorageVolume, config: Optional[Dict] = None
     ) -> Tuple[WorkflowState, str]:
         """Initiate the execution of a given workflow template for a set of
         argument values. This will start a new process that executes a serial
@@ -113,6 +114,9 @@ class RemoteWorkflowController(WorkflowController):
             the parameter declarations.
         arguments: dict
             Dictionary of argument values for parameters in the template.
+        staticfs: flowserv.volume.base.StorageVolume
+            Storage volume that contains the static files from the workflow
+            template.
         config: dict, default=None
             Optional configuration settings are currently ignored. Included for
             API completeness.

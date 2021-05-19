@@ -147,7 +147,7 @@ class WorkflowManager(object):
             source = FileSystemStorage(basedir=sourcedir)
             files = manifest.copyfiles(staticdir)
             for src, dst in files:
-                self.fs.download(src=src, dst=dst, store=source, verbose=True)
+                self.fs.copy(src=src, dst=dst, store=source, verbose=True)
 
         # Insert workflow into database and return the workflow handle.
         workflow = WorkflowObject(

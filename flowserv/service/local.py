@@ -146,7 +146,7 @@ class LocalAPIFactory(APIFactory):
 
     def exec_workflow(
         self, run: RunObject, template: WorkflowTemplate, arguments: Dict,
-        config: Optional[Dict] = None
+        staticfs: StorageVolume, config: Optional[Dict] = None
     ) -> Tuple[WorkflowState, str]:
         """Initiate the execution of a given workflow template for a set of
         argument values. Returns the state of the workflow and the path to
@@ -166,9 +166,12 @@ class LocalAPIFactory(APIFactory):
             the parameter declarations.
         arguments: dict
             Dictionary of argument values for parameters in the template.
+        staticfs: flowserv.volume.base.StorageVolume
+            Storage volume that contains the static files from the workflow
+            template.
         config: dict, default=None
             Optional implementation-specific configuration settings that can be
-            used to overwrite settings that were intialized at object creation.
+            used to overwrite settings that were initialized at object creation.
 
         Returns
         -------
@@ -178,6 +181,7 @@ class LocalAPIFactory(APIFactory):
             run=run,
             template=template,
             arguments=arguments,
+            staticfs=staticfs,
             config=config
         )
 

@@ -155,7 +155,7 @@ class RunService(metaclass=ABCMeta):  # pragma: no cover
             List of user provided arguments for template parameters.
         config: dict, default=None
             Optional implementation-specific configuration settings that can be
-            used to overwrite settings that were intialized at object creation.
+            used to overwrite settings that were initialized at object creation.
 
         Returns
         -------

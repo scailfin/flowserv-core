@@ -33,6 +33,7 @@ from flowserv.view.run import RunSerializer
 from flowserv.volume.base import StorageVolume
 
 import flowserv.error as err
+import flowserv.model.files as dirs
 import flowserv.util as util
 
 
@@ -305,7 +306,7 @@ class LocalRunService(RunService):
             List of user provided arguments for template parameters.
         config: dict, default=None
             Optional implementation-specific configuration settings that can be
-            used to overwrite settings that were intialized at object creation.
+            used to overwrite settings that were initialized at object creation.
 
         Returns
         -------
@@ -372,10 +373,12 @@ class LocalRunService(RunService):
         # Use default engine configuration if the configuration argument was
         # not given.
         config = config if config else group.engine_config
+        staticdir = dirs.workflow_staticdir(group.workflow.workflow_id)
         state, rundir = self.backend.exec_workflow(
             run=run,
             template=template,
             arguments=run_args,
+            staticfs=self.fs.get_store_for_folder(key=staticdir),
             config=config
         )
         # Update the run state if it is no longer pending for execution. Make
@@ -524,6 +527,7 @@ def run_postproc_workflow(
                 parameters=PARAMETERS
             ),
             arguments=run_args,
+            staticfs=store,
             config=workflow.engine_config
         )
         # Update the post-processing workflow run state if it is

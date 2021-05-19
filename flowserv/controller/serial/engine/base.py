@@ -33,6 +33,7 @@ from flowserv.model.template.base import WorkflowTemplate
 from flowserv.model.workflow.state import WorkflowState
 from flowserv.service.api import APIFactory
 from flowserv.validate import validator
+from flowserv.volume.base import StorageVolume
 from flowserv.volume.factory import Volume
 
 import flowserv.controller.serial.workflow.parser as parser
@@ -46,7 +47,10 @@ class SerialWorkflowEngine(WorkflowController):
     set of arguments. Each workflow is executed as a serial workflow. The
     individual workflow steps can be executed in a separate process on request.
     """
-    def __init__(self, service: APIFactory, config: Optional[Dict] = None):
+    def __init__(
+            self, service: APIFactory, fs: Optional[StorageVolume] = None,
+            config: Optional[Dict] = None
+    ):
         """Initialize the workflow engine.
 
         The engine configuration that is maintained with the service API can
@@ -57,12 +61,14 @@ class SerialWorkflowEngine(WorkflowController):
         service: flowserv.service.api.APIFactory, default=None
             API factory for service callbach during asynchronous workflow
             execution.
+        fs: flowserv.volume.base.StorageVolume, default=None
+            Storage volume for run files.
         config: dict, default=None
             Configuration settings for the engine. Overrides the engine
             configuration that is contained in the service API object.
         """
-        self.fs = Volume(config=service.get(FLOWSERV_FILESTORE), env=service)
         self.service = service
+        self.fs = fs if fs else Volume(config=service.get(FLOWSERV_FILESTORE), env=service)
         self.config = config if config else service.get(FLOWSERV_ENGINECONFIG, dict())
         validator.validate(self.config)
         logging.info("config {}".format(self.config))
@@ -107,7 +113,7 @@ class SerialWorkflowEngine(WorkflowController):
 
     def exec_workflow(
         self, run: RunObject, template: WorkflowTemplate, arguments: Dict,
-        config: Optional[Dict] = None
+        staticfs: StorageVolume, config: Optional[Dict] = None
     ) -> Tuple[WorkflowState, str]:
         """Initiate the execution of a given workflow template for a set of
         argument values. This will start a new process that executes a serial
@@ -141,6 +147,9 @@ class SerialWorkflowEngine(WorkflowController):
             the parameter declarations.
         arguments: dict
             Dictionary of argument values for parameters in the template.
+        staticfs: flowserv.volume.base.StorageVolume
+            Storage volume that contains the static files from the workflow
+            template.
         config: dict, default=None
             Optional object to overwrite the worker configuration settings.
 
@@ -152,16 +161,14 @@ class SerialWorkflowEngine(WorkflowController):
         if not run.is_pending():
             raise RuntimeError("invalid run state '{}'".format(run.state))
         state = run.state()
-        rundir = os.path.join(self.runsdir, run.run_id)
+        runstore = self.fs.get_store_for_folder(key=util.join(self.runsdir, run.run_id))
         # Get the worker configuration.
         worker_config = self.config.get('workers') if not config else config.get('workers')
-        # Get the source directory for static workflow files.
-        sourcedir = self.fs.workflow_staticdir(run.workflow.workflow_id)
         # Get the list of workflow steps and the generated output files.
         steps, run_args, outputs = parser.parse_template(template=template, arguments=arguments)
         try:
             # Copy template files to the run folder.
-            self.fs.copy_folder(key=sourcedir, dst=rundir)
+            staticfs.copy(key=None, store=runstore)
             # Store any given file arguments in the run folder.
             for key, para in template.parameters.items():
                 if para.is_file() and key in arguments:
