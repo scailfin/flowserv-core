@@ -65,10 +65,12 @@ def test_s3_volume_subfolder(store, people):
     with substore.load(key='names.txt').open() as f:
         doc = json.load(f)
     assert doc == people
+    # Store a file in the sub folder and then make sure we can read it.
     substore.store(file=io_file(['a', 'b']), dst='x/y')
     with substore.load(key='x/y').open() as f:
         doc = json.load(f)
     assert doc == ['a', 'b']
+    # Erase all files in the sub-folder.
     substore.erase()
     # Note that the file will not have been deleted in the original store. This
     # is because of how the unit tests are set up with each store having its
