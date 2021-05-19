@@ -12,7 +12,7 @@ import json
 import os
 import pytest
 
-from flowserv.volume.fs import FileSystemStorage, walkdir
+from flowserv.volume.fs import FileSystemStorage, walkdir, FS_STORE
 
 import flowserv.error as err
 import flowserv.util as util
@@ -80,6 +80,12 @@ def test_fs_volume_load_file(basedir, data_e):
     # -- Error case for unknown file.
     with pytest.raises(err.UnknownFileError):
         store.load(key='examples/data/unknown.json')
+
+
+def test_fs_volume_serialization():
+    """Test serialization for a file system storage volume object."""
+    doc = FileSystemStorage(basedir='.', identifier='0000').to_dict()
+    assert doc == {'type': FS_STORE, 'identifier': '0000', 'args': {'basedir': '.'}}
 
 
 def test_fs_volume_subfolder(basedir, data_d, data_e):

@@ -12,7 +12,7 @@ import json
 import pytest
 
 from flowserv.model.files import io_file
-from flowserv.volume.gc import GCFile, GCVolume
+from flowserv.volume.gc import GCFile, GCVolume, GC_STORE
 
 import flowserv.error as err
 
@@ -73,6 +73,14 @@ def test_gc_store_init(mock_gcstore):
     # Initialize with existing bucket.
     volume = GCVolume(bucket_name='test_exists')
     assert volume.bucket_name == 'test_exists'
+
+
+def test_gc_volume_serialization(store):
+    """Test serialization for a GC bucket storage object."""
+    doc = store.to_dict()
+    assert doc == {'type': GC_STORE, 'identifier': 'V0001', 'args': {'bucket': 'GCB01', 'prefix': None}}
+    doc = store.get_store_for_folder(key='Y', identifier=store.identifier).to_dict()
+    assert doc == {'type': GC_STORE, 'identifier': 'V0001', 'args': {'bucket': 'GCB01', 'prefix': 'Y'}}
 
 
 def test_gs_volume_subfolder(store, bucket_keys, people):

@@ -10,7 +10,7 @@
 
 from __future__ import annotations
 from abc import ABCMeta, abstractmethod
-from typing import IO, List, Optional, Tuple, Union
+from typing import Dict, IO, List, Optional, Tuple, Union
 
 import flowserv.util as util
 
@@ -206,6 +206,19 @@ class StorageVolume(metaclass=ABCMeta):
             File-like object that is being stored.
         dst: str
             Destination path for the stored object.
+        """
+        raise NotImplementedError()  # pragma: no cover
+
+    @abstractmethod
+    def to_dict(self) -> Dict:
+        """Get dictionary serialization for the storage volume.
+
+        The returned serialization can be used by the volume factory to generate
+        a new instance of this volume store.
+
+        Returns
+        -------
+        dict
         """
         raise NotImplementedError()  # pragma: no cover
 

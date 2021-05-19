@@ -10,7 +10,7 @@
 a folder on the local file system.
 """
 
-from typing import IO, List, Optional, Tuple
+from typing import Dict, IO, List, Optional, Tuple
 
 import os
 import shutil
@@ -19,6 +19,10 @@ from flowserv.volume.base import IOHandle, StorageVolume
 
 import flowserv.error as err
 import flowserv.util as util
+
+
+"""Type identifier for storage volume serializations."""
+FS_STORE = 'FILE_SYSTEM_STORE'
 
 
 # -- File handles -------------------------------------------------------------
@@ -183,6 +187,24 @@ class FileSystemStorage(StorageVolume):
         with open(filename, 'wb') as fout:
             with file.open() as fin:
                 fout.write(fin.read())
+
+    def to_dict(self) -> Dict:
+        """Get dictionary serialization for the storage volume.
+
+        The returned serialization can be used by the volume factory to generate
+        a new instance of this volume store.
+
+        Returns
+        -------
+        dict
+        """
+        return {
+            'type': FS_STORE,
+            'identifier': self.identifier,
+            'args': {
+                'basedir': self.basedir
+            }
+        }
 
     def walk(self, src: str) -> List[Tuple[str, IOHandle]]:
         """Get list of all files at the given source path.

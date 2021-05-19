@@ -17,7 +17,7 @@ https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html
 import botocore
 
 from io import BytesIO
-from typing import IO, Iterable, List, Optional, Tuple, TypeVar
+from typing import Dict, IO, Iterable, List, Optional, Tuple, TypeVar
 
 from flowserv.volume.base import IOHandle, StorageVolume
 
@@ -27,6 +27,10 @@ import flowserv.util as util
 
 """Type alias for S3 bucket objects."""
 S3Bucket = TypeVar('S3Bucket')
+
+
+"""Type identifier for storage volume serializations."""
+S3_STORE = 'S3_BUCKET_STORE'
 
 
 # -- File handle --------------------------------------------------------------
@@ -194,6 +198,25 @@ class S3Volume(StorageVolume):
             Destination path for the stored object.
         """
         self.bucket.upload_fileobj(file.open(), util.join(self.prefix, dst))
+
+    def to_dict(self) -> Dict:
+        """Get dictionary serialization for the storage volume.
+
+        The returned serialization can be used by the volume factory to generate
+        a new instance of this volume store.
+
+        Returns
+        -------
+        dict
+        """
+        return {
+            'type': S3_STORE,
+            'identifier': self.identifier,
+            'args': {
+                'bucket': self.bucket_id,
+                'prefix': self.prefix
+            }
+        }
 
     def walk(self, src: str) -> List[Tuple[str, IOHandle]]:
         """Get list of all files at the given source path.

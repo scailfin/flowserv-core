@@ -12,7 +12,7 @@ import json
 import pytest
 
 from flowserv.model.files import io_file
-from flowserv.volume.s3 import S3File, S3Volume
+from flowserv.volume.s3 import S3File, S3Volume, S3_STORE
 
 import flowserv.error as err
 
@@ -54,6 +54,14 @@ def test_s3_open_file(store):
     f = S3File(key='unknown', bucket=store.bucket)
     with pytest.raises(err.UnknownFileError):
         f.open()
+
+
+def test_s3_volume_serialization(store):
+    """Test serialization for a S3 bucket storage object."""
+    doc = store.to_dict()
+    assert doc == {'type': S3_STORE, 'identifier': 'V0001', 'args': {'bucket': 'S3B01', 'prefix': None}}
+    doc = store.get_store_for_folder(key='Y', identifier=store.identifier).to_dict()
+    assert doc == {'type': S3_STORE, 'identifier': 'V0001', 'args': {'bucket': 'S3B01', 'prefix': 'Y'}}
 
 
 def test_s3_volume_subfolder(store, people):

@@ -12,7 +12,7 @@ import json
 import os
 
 from flowserv.volume.fs import FileSystemStorage
-from flowserv.volume.ssh import RemoteStorage
+from flowserv.volume.ssh import RemoteStorage, SFTP_STORE
 
 import flowserv.util.ssh as ssh
 
@@ -67,6 +67,29 @@ def test_remote_volume_load_file(mock_ssh, basedir, data_e):
         with store.load(key='examples/data/data.json').open() as f:
             doc = json.load(f)
     assert doc == data_e
+
+
+def test_remote_volume_serialization(mock_ssh, basedir):
+    """Test uploading a full directory to a storage volume."""
+    with ssh.ssh_client('test', sep=os.sep) as client:
+        store = RemoteStorage(remotedir=basedir, client=client)
+        store_id = store.identifier
+        basedir = store.remotedir
+        doc = store.to_dict()
+    assert doc == {
+        'type': SFTP_STORE,
+        'identifier': store_id,
+        'args': {
+            'basedir': basedir,
+            'client': {
+                'hostname': 'test',
+                'port': None,
+                'timeout': None,
+                'look_for_keys': False,
+                'sep': os.sep
+            }
+        }
+    }
 
 
 def test_remote_volume_subfolder(mock_ssh, basedir, data_d, data_e):

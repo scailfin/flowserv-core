@@ -10,7 +10,7 @@
 server where run files are maintained.
 """
 
-from typing import IO, List, Optional, Tuple
+from typing import Dict, IO, List, Optional, Tuple
 
 import paramiko
 
@@ -18,6 +18,10 @@ from flowserv.volume.base import IOHandle, StorageVolume
 from flowserv.util.ssh import SSHClient
 
 import flowserv.util as util
+
+
+"""Type identifier for storage volume serializations."""
+SFTP_STORE = 'SFTP_REMOTE_STORE'
 
 
 # -- File handles -------------------------------------------------------------
@@ -214,6 +218,31 @@ class RemoteStorage(StorageVolume):
                     fout.write(fin.read())
         finally:
             sftp.close()
+
+    def to_dict(self) -> Dict:
+        """Get dictionary serialization for the storage volume.
+
+        The returned serialization can be used by the volume factory to generate
+        a new instance of this volume store.
+
+        Returns
+        -------
+        dict
+        """
+        return {
+            'type': SFTP_STORE,
+            'identifier': self.identifier,
+            'args': {
+                'basedir': self.remotedir,
+                'client': {
+                    'hostname': self.client.hostname,
+                    'port': self.client.port,
+                    'timeout': self.client.timeout,
+                    'look_for_keys': self.client.look_for_keys,
+                    'sep': self.client.sep
+                }
+            }
+        }
 
     def walk(self, src: str) -> List[Tuple[str, IOHandle]]:
         """Get list of all files at the given source path.

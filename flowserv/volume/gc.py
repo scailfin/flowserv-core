@@ -16,7 +16,7 @@ https://cloud.google.com/storage/docs/reference/libraries#setting_up_authenticat
 """
 
 from io import BytesIO
-from typing import IO, Iterable, List, Optional, Tuple, TypeVar
+from typing import Dict, IO, Iterable, List, Optional, Tuple, TypeVar
 
 from google.cloud import exceptions
 
@@ -24,6 +24,10 @@ from flowserv.volume.base import IOHandle, StorageVolume
 
 import flowserv.error as err
 import flowserv.util as util
+
+
+"""Type identifier for storage volume serializations."""
+GC_STORE = 'GOOGLE_CLOUD_STORE'
 
 
 """Type alias for Google Cloud storage bucket objects."""
@@ -225,6 +229,25 @@ class GCVolume(StorageVolume):
         """
         blob = self.client.bucket(self.bucket_name).blob(util.join(self.prefix, dst))
         blob.upload_from_file(file.open())
+
+    def to_dict(self) -> Dict:
+        """Get dictionary serialization for the storage volume.
+
+        The returned serialization can be used by the volume factory to generate
+        a new instance of this volume store.
+
+        Returns
+        -------
+        dict
+        """
+        return {
+            'type': GC_STORE,
+            'identifier': self.identifier,
+            'args': {
+                'bucket': self.bucket_name,
+                'prefix': self.prefix
+            }
+        }
 
     def walk(self, src: str) -> List[Tuple[str, IOHandle]]:
         """Get list of all files at the given source path.
