@@ -16,6 +16,7 @@ import os
 import tempfile
 
 from contextlib import contextmanager
+from sqlalchemy.orm.session import Session
 from typing import Dict, Optional
 
 from flowserv.model.base import WorkflowObject
@@ -23,6 +24,7 @@ from flowserv.model.constraint import validate_identifier
 from flowserv.model.workflow.manifest import WorkflowManifest
 from flowserv.model.workflow.repository import WorkflowRepository
 from flowserv.util import get_unique_identifier as unique_identifier
+from flowserv.volume.base import StorageVolume
 from flowserv.volume.fs import FileSystemStorage
 
 import flowserv.error as err
@@ -34,9 +36,7 @@ class WorkflowManager(object):
     """The workflow manager maintains information that is associated with
     workflow templates in a workflow repository.
     """
-    def __init__(
-        self, session, fs, idfunc=None, attempts=None, tmpl_names=None
-    ):
+    def __init__(self, session: Session, fs: StorageVolume):
         """Initialize the database connection, and the generator for workflow
         related file names and directory paths. The optional parameters are
         used to configure the identifier function that is used to generate

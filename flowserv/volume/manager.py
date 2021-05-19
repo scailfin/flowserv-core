@@ -62,7 +62,7 @@ class VolumeManager(object):
                 if s not in self.stores:
                     raise err.UnknownObjectError(obj_id=s, type_name='storage volume')
 
-    def prepare(self, files: List[str], stores: Optional[List[str]] = None,) -> Dict[str, StorageVolume]:
+    def prepare(self, files: List[str], stores: Optional[List[str]] = None) -> Dict[str, StorageVolume]:
         """Prepare the volume stores for a worker.
 
         Ensures that the input files that are needed by the worker are available
