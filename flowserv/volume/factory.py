@@ -13,201 +13,36 @@ from typing import Dict, Optional
 from flowserv.config import FLOWSERV_BASEDIR
 from flowserv.util.ssh import SSHClient
 from flowserv.volume.base import StorageVolume
-from flowserv.volume.fs import FileSystemStorage
-from flowserv.volume.gc import GCVolume
-from flowserv.volume.s3 import S3Volume
-from flowserv.volume.ssh import RemoteStorage
+from flowserv.volume.fs import FileSystemStorage, FStore, FS_STORE  # noqa: F401
+from flowserv.volume.gc import GCVolume, GCBucket, GC_STORE  # noqa: F401
+from flowserv.volume.s3 import S3Volume, S3Bucket, S3_STORE  # noqa: F401
+from flowserv.volume.ssh import RemoteStorage, Sftp, SFTP_STORE  # noqa: F401
 
 import flowserv.error as err
 
 
-"""Storage Volume type identifier."""
-FS = 'fs'
-GC = 'gc'
-S3 = 's3'
-SFTP = 'sftp'
+def Volume(doc: Dict) -> StorageVolume:
+    """Factory pattern to create storage volume instances for the service API.
 
-"""Configuration ldictionary elements."""
-ARGS = 'args'
-BASEDIR = 'basedir'
-BUCKET = 'bucket'
-HOST = 'hostname'
-KEYS = 'lookForKeys'
-NAME = 'name'
-PORT = 'port'
-SEP = 'seperator'
-TIMEOUT = 'timeout'
-TYPE = 'type'
-
-
-def Volume(config: Optional[Dict] = None, env: Optional[Dict] = None) -> StorageVolume:
-    """Factory pattern to create file store instances for the service API.
-
-    Expects a configuration object that contains the volume type ``type`` and
-    optional volume-specific configuration arguments ``args`` and an optional
-    volume identifier ``name``.
+    Expects a serialization object that contains at least the volume type ``type``.
 
     Parameters
     ----------
-    config: dict, default=None
-        Configuration dictionary that provides access to configuration
-        parameters for the storage volume.
-    ev: dict, default=None
-        Environment configuration needed to access the base API base directory
-        if no configuration is given.
+    doc: dict
+        Serialization dictionary that provides access to storage volume type and
+        the implementation-specific volume parameters.
+
     Returns
     -------
     flowserv.volume.base.StorageVolume
     """
-    config = config if config is not None else dict()
-    volume_type = config.get(TYPE, FS)
-    args = config.get(ARGS, {})
-    identifier = config.get(NAME)
-    if volume_type == FS:
-        env = env if env is not None else dict()
-        basedir = args.get(BASEDIR, env.get(FLOWSERV_BASEDIR))
-        return FileSystemStorage(basedir=basedir, identifier=identifier)
-    elif volume_type == GC:
-        bucket_name = args.get(BUCKET)
-        if bucket_name is None:
-            raise err.MissingConfigurationError('bucket identifier')
-        return GCVolume(bucket_name=bucket_name, identifier=identifier)
-    elif volume_type == S3:
-        bucket_id = args.get(BUCKET)
-        if bucket_id is None:
-            raise err.MissingConfigurationError('bucket identifier')
-        return S3Volume(bucket_id=bucket_id, identifier=identifier)
-    elif volume_type == SFTP:
-        remotedir = args.get(BASEDIR)
-        if remotedir is None:
-            raise err.MissingConfigurationError('remote base directory')
-        hostname = args.get(HOST)
-        if hostname is None:
-            raise err.MissingConfigurationError('host name')
-        client = SSHClient(
-            hostname=hostname,
-            port=args.get(PORT),
-            timeout=args.get(TIMEOUT),
-            look_for_keys=args.get(KEYS, False),
-            sep=args.get(SEP, '/')
-        )
-        return RemoteStorage(client=client, remotedir=remotedir, identifier=identifier)
+    volume_type = doc.get('type', FS_STORE)
+    if volume_type == FS_STORE:
+        return FileSystemStorage.from_dict(doc)
+    elif volume_type == GC_STORE:
+        return GCVolume.from_dict(doc)
+    elif volume_type == S3_STORE:
+        return S3Volume.from_dict(doc)
+    elif volume_type == SFTP_STORE:
+        return RemoteStorage.from_dict(doc)
     raise err.InvalidConfigurationError('storage volume type', volume_type)
-
-
-# -- Configuration ------------------------------------------------------------
-
-def FStore(basedir: str, name: Optional[str] = None) -> Dict:
-    """Get configuration object for Google Cloud Storage Volume.
-
-    Parameters
-    ----------
-    bucket: string
-        Google Cloud Storage bucket identifier.
-    name: string, default=None
-        Optional storage volume name.
-
-    Returns
-    -------
-    dict
-    """
-    return VolumeConfig(type=FS, args={BASEDIR: basedir}, name=name)
-
-
-def GCBucket(bucket: str, name: Optional[str] = None) -> Dict:
-    """Get configuration object for Google Cloud Storage Volume.
-
-    Parameters
-    ----------
-    bucket: string
-        Google Cloud Storage bucket identifier.
-    name: string, default=None
-        Optional storage volume name.
-
-    Returns
-    -------
-    dict
-    """
-    return VolumeConfig(type=GC, args={BUCKET: bucket}, name=name)
-
-
-def S3Bucket(bucket: str, name: Optional[str] = None) -> Dict:
-    """Get configuration object for AWS S3 Storage Volume.
-
-    Parameters
-    ----------
-    bucket: string
-        AWS S3 bucket identifier.
-    name: string, default=None
-        Optional storage volume name.
-
-    Returns
-    -------
-    dict
-    """
-    return VolumeConfig(type=S3, args={BUCKET: bucket}, name=name)
-
-
-def Sftp(
-    remotedir: str, hostname: str, port: Optional[int] = None,
-    timeout: Optional[float] = None, look_for_keys: Optional[bool] = None,
-    sep: Optional[str] = None, name: Optional[str] = None
-) -> Dict:
-    """Get configuration object for a remote server storage volume that is
-    accessed via sftp.
-
-    Parameters
-    ----------
-    remotedir: string
-        Base directory for stored files on the remote server.
-    hostname: string
-        Server to connect to.
-    port: int, default=None
-        Server port to connect to.
-    timeout: float, default=None
-        Optional timeout (in seconds) for the TCP connect.
-    look_for_keys: bool, default=False
-        Set to True to enable searching for discoverable private key files
-        in ``~/.ssh/``.
-    sep: string, default='/'
-        Path separator used by the remote file system.
-    name: string, default=None
-        Optional storage volume name.
-
-    Returns
-    -------
-    dict
-    """
-    args = {BASEDIR: remotedir, HOST: hostname}
-    if port is not None:
-        args[PORT] = port
-    if timeout is not None:
-        args[TIMEOUT] = timeout
-    if look_for_keys is not None:
-        args[KEYS] = look_for_keys
-    if sep is not None:
-        args[SEP] = sep
-    return VolumeConfig(type=SFTP, args=args, name=name)
-
-
-def VolumeConfig(type: str, args: Dict, name: Optional[str] = None) -> Dict:
-    """Helper method to compose storage volume configuration parameters in a
-    single dictionary.
-
-    Parameters
-    ----------
-    type: string
-        Storage volume type identifier.
-    args: dict
-        Implementation-specific volume configuration arguments.
-    name: string, default=None
-        Storage volume identifier.
-
-    Returns
-    -------
-    dict
-    """
-    doc = {TYPE: type, ARGS: args}
-    if name is not None:
-        doc[NAME] = name
-    return doc

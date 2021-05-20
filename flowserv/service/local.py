@@ -94,7 +94,7 @@ class LocalAPIFactory(APIFactory):
         # Initialize the workflow engine.
         self._engine = engine if engine is not None else init_backend(self)
         # Initialize the file store.
-        self._fs = Volume(config=self.get(config.FLOWSERV_FILESTORE), env=self)
+        self._fs = Volume(doc=self.get(config.FLOWSERV_FILESTORE))
         # Ensure that the authentication policy identifier is set.
         self[AUTH] = self.get(AUTH, config.AUTH_OPEN)
         # Authenticated default user. The initial value depends on the given

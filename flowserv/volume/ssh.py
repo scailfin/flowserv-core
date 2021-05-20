@@ -10,6 +10,7 @@
 server where run files are maintained.
 """
 
+from __future__ import annotations
 from typing import Dict, IO, List, Optional, Tuple
 
 import paramiko
@@ -21,7 +22,7 @@ import flowserv.util as util
 
 
 """Type identifier for storage volume serializations."""
-SFTP_STORE = 'SFTP_REMOTE_STORE'
+SFTP_STORE = 'sftp'
 
 
 # -- File handles -------------------------------------------------------------
@@ -151,6 +152,32 @@ class RemoteStorage(StorageVolume):
         # Delete the remote base directory itself.
         self.client.sftp().rmdir(self.remotedir)
 
+    @staticmethod
+    def from_dict(doc) -> RemoteStorage:
+        """Get remote storage volume instance from dictionary serialization.
+
+        Parameters
+        ----------
+        doc: dict
+            Dictionary serialization as returned by the ``to_dict()`` method.
+
+        Returns
+        -------
+        flowserv.volume.ssh.RemoteStorage
+        """
+        args = doc.get('args', {})
+        return RemoteStorage(
+            identifier=doc.get('identifier'),
+            client=SSHClient(
+                hostname=args.get('hostname'),
+                port=args.get('port'),
+                timeout=args.get('timeout'),
+                look_for_keys=args.get('look_for_keys'),
+                sep=args.get('sep')
+            ),
+            remotedir=args.get('basedir')
+        )
+
     def get_store_for_folder(self, key: str, identifier: Optional[str] = None) -> StorageVolume:
         """Get storage volume for a sob-folder of the given volume.
 
@@ -229,20 +256,15 @@ class RemoteStorage(StorageVolume):
         -------
         dict
         """
-        return {
-            'type': SFTP_STORE,
-            'identifier': self.identifier,
-            'args': {
-                'basedir': self.remotedir,
-                'client': {
-                    'hostname': self.client.hostname,
-                    'port': self.client.port,
-                    'timeout': self.client.timeout,
-                    'look_for_keys': self.client.look_for_keys,
-                    'sep': self.client.sep
-                }
-            }
-        }
+        return Sftp(
+            identifier=self.identifier,
+            remotedir=self.remotedir,
+            hostname=self.client.hostname,
+            port=self.client.port,
+            timeout=self.client.timeout,
+            look_for_keys=self.client.look_for_keys,
+            sep=self.client.sep
+        )
 
     def walk(self, src: str) -> List[Tuple[str, IOHandle]]:
         """Get list of all files at the given source path.
@@ -280,6 +302,52 @@ class RemoteStorage(StorageVolume):
 
 
 # -- Helper functions ---------------------------------------------------------
+
+def Sftp(
+    remotedir: str, hostname: str, port: Optional[int] = None,
+    timeout: Optional[float] = None, look_for_keys: Optional[bool] = False,
+    sep: Optional[str] = '/', identifier: Optional[str] = None
+) -> Dict:
+    """Get configuration object for a remote server storage volume that is
+    accessed via sftp.
+
+    Parameters
+    ----------
+    remotedir: string
+        Base directory for stored files on the remote server.
+    hostname: string
+        Server to connect to.
+    port: int, default=None
+        Server port to connect to.
+    timeout: float, default=None
+        Optional timeout (in seconds) for the TCP connect.
+    look_for_keys: bool, default=False
+        Set to True to enable searching for discoverable private key files
+        in ``~/.ssh/``.
+    sep: string, default='/'
+        Path separator used by the remote file system.
+    identifier: string, default=None
+        Unique storage volume identifier.
+
+    Returns
+    -------
+    dict
+    """
+    return {
+        'type': SFTP_STORE,
+        'identifier': identifier,
+        'args': {
+            'basedir': remotedir,
+            'client': {
+                'hostname': hostname,
+                'port': port,
+                'timeout': timeout,
+                'look_for_keys': look_for_keys,
+                'sep': sep
+            }
+        }
+    }
+
 
 def sftp_mkdir(client: paramiko.SFTPClient, dirpath: str):
     """Create a directory on the remote server.

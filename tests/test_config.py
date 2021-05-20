@@ -135,7 +135,7 @@ def test_engine_config(tmpdir):
 def test_storage_volume_config(tmpdir):
     """Test storage volume configuration objects."""
     conf = config.env()
-    assert conf.get(config.FLOWSERV_FILESTORE) is None
+    assert isinstance(conf.get(config.FLOWSERV_FILESTORE), dict)
     doc = {'type': 'fs'}
     conf.volume(config=doc)
     assert conf.get(config.FLOWSERV_FILESTORE) == doc

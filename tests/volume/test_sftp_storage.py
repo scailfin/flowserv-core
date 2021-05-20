@@ -90,6 +90,10 @@ def test_remote_volume_serialization(mock_ssh, basedir):
             }
         }
     }
+    fs = RemoteStorage.from_dict(doc)
+    assert isinstance(fs, RemoteStorage)
+    assert fs.identifier == store_id
+    assert fs.remotedir == basedir
 
 
 def test_remote_volume_subfolder(mock_ssh, basedir, data_d, data_e):

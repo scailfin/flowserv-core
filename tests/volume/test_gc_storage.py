@@ -75,12 +75,22 @@ def test_gc_store_init(mock_gcstore):
     assert volume.bucket_name == 'test_exists'
 
 
-def test_gc_volume_serialization(store):
+def test_gc_volume_serialization(mock_gcstore):
     """Test serialization for a GC bucket storage object."""
-    doc = store.to_dict()
-    assert doc == {'type': GC_STORE, 'identifier': 'V0001', 'args': {'bucket': 'GCB01', 'prefix': None}}
-    doc = store.get_store_for_folder(key='Y', identifier=store.identifier).to_dict()
-    assert doc == {'type': GC_STORE, 'identifier': 'V0001', 'args': {'bucket': 'GCB01', 'prefix': 'Y'}}
+    doc = GCVolume(identifier='0000', bucket_name='B0').to_dict()
+    assert doc == {'type': GC_STORE, 'identifier': '0000', 'args': {'bucket': 'B0', 'prefix': None}}
+    fs = GCVolume.from_dict(doc)
+    assert isinstance(fs, GCVolume)
+    assert fs.identifier == '0000'
+    assert fs.bucket_name == 'B0'
+    assert fs.prefix is None
+    doc = GCVolume(identifier='0000', bucket_name='B1', prefix='dev').to_dict()
+    assert doc == {'type': GC_STORE, 'identifier': '0000', 'args': {'bucket': 'B1', 'prefix': 'dev'}}
+    fs = GCVolume.from_dict(doc)
+    assert isinstance(fs, GCVolume)
+    assert fs.identifier == '0000'
+    assert fs.bucket_name == 'B1'
+    assert fs.prefix == 'dev'
 
 
 def test_gs_volume_subfolder(store, bucket_keys, people):

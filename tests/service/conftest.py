@@ -23,6 +23,7 @@ from flowserv.service.run.remote import RemoteRunService
 from flowserv.service.user.remote import RemoteUserService
 from flowserv.service.workflow.remote import RemoteWorkflowService
 from flowserv.view.user import USER_TOKEN
+from flowserv.volume.fs import FStore
 from flowserv.tests.controller import StateEngine
 
 import flowserv.config as config
@@ -93,7 +94,7 @@ def database():
 @pytest.fixture
 def local_service(database, tmpdir):
     """Create a local API factory for test purposes."""
-    env = Config().basedir(tmpdir).auth()
+    env = Config().basedir(tmpdir).volume(FStore(basedir=str(tmpdir))).auth()
     return LocalAPIFactory(env=env, db=database, engine=StateEngine())
 
 

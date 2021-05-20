@@ -14,9 +14,11 @@ variables and to customize the configuration settings.
 
 from __future__ import annotations
 from appdirs import user_cache_dir
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 
 import os
+
+from flowserv.volume.fs import FStore
 
 import flowserv.error as err
 import flowserv.util as util
@@ -420,18 +422,23 @@ def to_int(value: Any) -> int:
         return None
 
 
-def read_config_obj(filename: str) -> Dict:
+def read_config_obj(filename: Union[str, Dict]) -> Dict:
     """Read configuration object from a file.
+
+    This function only attempts to read an object from disk if the type of the
+    filename argument is string.
 
     Parameters
     ----------
-    filename: str
+    filename: str or dict
         Path to file on disk.
 
     Returns
     -------
     dict
     """
+    if isinstance(filename, dict):
+        return filename
     return util.read_object(filename=filename)
 
 
@@ -458,7 +465,7 @@ ENV = [
     (FLOWSERV_CLIENT, LOCAL_CLIENT, None),
     (FLOWSERV_DB, None, None),
     (FLOWSERV_WEBAPP, 'False', to_bool),
-    (FLOWSERV_FILESTORE, None, read_config_obj)
+    (FLOWSERV_FILESTORE, FStore(basedir=API_DEFAULTDIR()), read_config_obj)
 ]
 
 

@@ -11,11 +11,11 @@
 import pytest
 import tarfile
 
-from flowserv.config import Config
+from flowserv.config import Config, FLOWSERV_FILESTORE
 from flowserv.tests.controller import StateEngine
 from flowserv.tests.model import create_user, success_run
 from flowserv.service.local import LocalAPIFactory
-from flowserv.volume.factory import Volume
+from flowserv.volume.factory import Volume, FStore
 
 import flowserv.error as err
 import flowserv.util as util
@@ -24,8 +24,8 @@ import flowserv.util as util
 def test_access_run_result_files_local(database, tmpdir):
     """Test accessing run result files."""
     # -- Setup ----------------------------------------------------------------
-    env = Config().basedir(tmpdir).auth()
-    fs = Volume(env=env)
+    env = Config().basedir(tmpdir).volume(FStore(basedir=str(tmpdir))).auth()
+    fs = Volume(doc=env.get(FLOWSERV_FILESTORE))
     workflow_id, group_id, run_id, user_id = success_run(database, fs, tmpdir)
     local_service = LocalAPIFactory(env=env, db=database, engine=StateEngine())
     # -- Read result files ----------------------------------------------------
@@ -52,7 +52,7 @@ def test_access_run_result_files_local(database, tmpdir):
                 file_id=files['results/B.json']
             )
     # -- With an open access policy user 2 can read the data file -------------
-    env = Config().basedir(tmpdir).open_access()
+    env = Config().basedir(tmpdir).volume(FStore(basedir=str(tmpdir))).open_access()
     local_service = LocalAPIFactory(env=env, db=database, engine=StateEngine())
     with local_service(user_id=user_2) as api:
         api.runs().get_result_file(
@@ -64,8 +64,8 @@ def test_access_run_result_files_local(database, tmpdir):
 def test_result_archive_local(database, tmpdir):
     """Test getting an archive of run results."""
     # -- Setup ----------------------------------------------------------------
-    env = Config().basedir(tmpdir).auth()
-    fs = Volume(env=env)
+    env = Config().basedir(tmpdir).volume(FStore(basedir=str(tmpdir))).auth()
+    fs = Volume(doc=env.get(FLOWSERV_FILESTORE))
     workflow_id, group_id, run_id, user_id = success_run(database, fs, tmpdir)
     local_service = LocalAPIFactory(env=env, db=database, engine=StateEngine())
     # -- Get result archive ---------------------------------------------------

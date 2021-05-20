@@ -15,6 +15,7 @@ variable *GOOGLE_APPLICATION_CREDENTIALS*. See the documentation for more detail
 https://cloud.google.com/storage/docs/reference/libraries#setting_up_authentication
 """
 
+from __future__ import annotations
 from io import BytesIO
 from typing import Dict, IO, Iterable, List, Optional, Tuple, TypeVar
 
@@ -27,7 +28,7 @@ import flowserv.util as util
 
 
 """Type identifier for storage volume serializations."""
-GC_STORE = 'GOOGLE_CLOUD_STORE'
+GC_STORE = 'gc'
 
 
 """Type alias for Google Cloud storage bucket objects."""
@@ -156,6 +157,26 @@ class GCVolume(StorageVolume):
         """
         return 'Google Cloud Storage bucket {}'.format(self.bucket_name)
 
+    @staticmethod
+    def from_dict(doc) -> GCVolume:
+        """Get Google Cloud storage volume instance from dictionary serialization.
+
+        Parameters
+        ----------
+        doc: dict
+            Dictionary serialization as returned by the ``to_dict()`` method.
+
+        Returns
+        -------
+        flowserv.volume.gc.GCVolume
+        """
+        args = doc.get('args', {})
+        return GCVolume(
+            identifier=doc.get('identifier'),
+            bucket_name=args.get('bucket'),
+            prefix=args.get('prefix')
+        )
+
     def erase(self):
         """Erase the storage volume base directory and all its contents."""
         self.delete(key=None)
@@ -240,14 +261,11 @@ class GCVolume(StorageVolume):
         -------
         dict
         """
-        return {
-            'type': GC_STORE,
-            'identifier': self.identifier,
-            'args': {
-                'bucket': self.bucket_name,
-                'prefix': self.prefix
-            }
-        }
+        return GCBucket(
+            identifier=self.identifier,
+            bucket=self.bucket_name,
+            prefix=self.prefix
+        )
 
     def walk(self, src: str) -> List[Tuple[str, IOHandle]]:
         """Get list of all files at the given source path.
@@ -277,6 +295,32 @@ class GCVolume(StorageVolume):
 
 
 # -- Helper Methods -----------------------------------------------------------
+
+def GCBucket(bucket: str, prefix: Optional[str] = None, identifier: Optional[str] = None) -> Dict:
+    """Get configuration object for Google Cloud storage volume.
+
+    Parameters
+    ----------
+    bucket: string
+        Google Cloud Storage bucket identifier.
+    prefix: string, default=None
+        Key-prefix for all files.
+    identifier: string, default=None
+        Optional storage volume identifier.
+
+    Returns
+    -------
+    dict
+    """
+    return {
+        'type': GC_STORE,
+        'identifier': identifier,
+        'args': {
+            'bucket': bucket,
+            'prefix': prefix
+        }
+    }
+
 
 def get_google_client():  # pragma: no cover
     """Helper method to get instance of the Google Cloud Storage client. This

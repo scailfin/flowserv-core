@@ -56,12 +56,22 @@ def test_s3_open_file(store):
         f.open()
 
 
-def test_s3_volume_serialization(store):
+def test_s3_volume_serialization(mock_boto):
     """Test serialization for a S3 bucket storage object."""
-    doc = store.to_dict()
-    assert doc == {'type': S3_STORE, 'identifier': 'V0001', 'args': {'bucket': 'S3B01', 'prefix': None}}
-    doc = store.get_store_for_folder(key='Y', identifier=store.identifier).to_dict()
-    assert doc == {'type': S3_STORE, 'identifier': 'V0001', 'args': {'bucket': 'S3B01', 'prefix': 'Y'}}
+    doc = S3Volume(identifier='0000', bucket_id='B0').to_dict()
+    assert doc == {'type': S3_STORE, 'identifier': '0000', 'args': {'bucket': 'B0', 'prefix': None}}
+    fs = S3Volume.from_dict(doc)
+    assert isinstance(fs, S3Volume)
+    assert fs.identifier == '0000'
+    assert fs.bucket_id == 'B0'
+    assert fs.prefix is None
+    doc = S3Volume(identifier='0000', bucket_id='B1', prefix='dev').to_dict()
+    assert doc == {'type': S3_STORE, 'identifier': '0000', 'args': {'bucket': 'B1', 'prefix': 'dev'}}
+    fs = S3Volume.from_dict(doc)
+    assert isinstance(fs, S3Volume)
+    assert fs.identifier == '0000'
+    assert fs.bucket_id == 'B1'
+    assert fs.prefix == 'dev'
 
 
 def test_s3_volume_subfolder(store, people):

@@ -14,10 +14,11 @@ documentation for more details:
 https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html
 """
 
-import botocore
-
+from __future__ import annotations
 from io import BytesIO
 from typing import Dict, IO, Iterable, List, Optional, Tuple, TypeVar
+
+import botocore
 
 from flowserv.volume.base import IOHandle, StorageVolume
 
@@ -30,7 +31,7 @@ S3Bucket = TypeVar('S3Bucket')
 
 
 """Type identifier for storage volume serializations."""
-S3_STORE = 'S3_BUCKET_STORE'
+S3_STORE = 's3'
 
 
 # -- File handle --------------------------------------------------------------
@@ -134,6 +135,26 @@ class S3Volume(StorageVolume):
         """Erase the storage volume base directory and all its contents."""
         self.delete(key=None)
 
+    @staticmethod
+    def from_dict(doc) -> S3Volume:
+        """Get S3 bucket storage volume instance from dictionary serialization.
+
+        Parameters
+        ----------
+        doc: dict
+            Dictionary serialization as returned by the ``to_dict()`` method.
+
+        Returns
+        -------
+        flowserv.volume.s3.S3Volume
+        """
+        args = doc.get('args', {})
+        return S3Volume(
+            identifier=doc.get('identifier'),
+            bucket_id=args.get('bucket'),
+            prefix=args.get('prefix')
+        )
+
     def get_store_for_folder(self, key: str, identifier: Optional[str] = None) -> StorageVolume:
         """Get storage volume for a sob-folder of the given volume.
 
@@ -209,14 +230,11 @@ class S3Volume(StorageVolume):
         -------
         dict
         """
-        return {
-            'type': S3_STORE,
-            'identifier': self.identifier,
-            'args': {
-                'bucket': self.bucket_id,
-                'prefix': self.prefix
-            }
-        }
+        return S3Bucket(
+            identifier=self.identifier,
+            bucket=self.bucket_id,
+            prefix=self.prefix
+        )
 
     def walk(self, src: str) -> List[Tuple[str, IOHandle]]:
         """Get list of all files at the given source path.
@@ -243,3 +261,31 @@ class S3Volume(StorageVolume):
         else:
             prefix = src
         return self.query(filter=util.join(self.prefix, prefix))
+
+
+# -- Helper functions --------------------------------------------------------
+
+def S3Bucket(bucket: str, prefix: Optional[str] = None, identifier: Optional[str] = None) -> Dict:
+    """Get configuration object for AWS S3 Storage Volume.
+
+    Parameters
+    ----------
+    bucket: string
+        AWS S3 bucket identifier.
+    prefix: string, default=None
+        Key-prefix for all files.
+    identifier: string, default=None
+        Optional storage volume identifier.
+
+    Returns
+    -------
+    dict
+    """
+    return {
+        'type': S3_STORE,
+        'identifier': identifier,
+        'args': {
+            'bucket': bucket,
+            'prefix': prefix
+        }
+    }

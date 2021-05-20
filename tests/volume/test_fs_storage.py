@@ -86,6 +86,10 @@ def test_fs_volume_serialization():
     """Test serialization for a file system storage volume object."""
     doc = FileSystemStorage(basedir='.', identifier='0000').to_dict()
     assert doc == {'type': FS_STORE, 'identifier': '0000', 'args': {'basedir': '.'}}
+    fs = FileSystemStorage.from_dict(doc)
+    assert isinstance(fs, FileSystemStorage)
+    assert fs.identifier == '0000'
+    assert fs.basedir == '.'
 
 
 def test_fs_volume_subfolder(basedir, data_d, data_e):
