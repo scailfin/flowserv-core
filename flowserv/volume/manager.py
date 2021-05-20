@@ -45,16 +45,16 @@ class VolumeManager(object):
         stores: list of flowserv.volume.base.StorageVolume
             List of storage volumes that provide file access for workflow
             workers.
-        files: dict, defualt=None
+        files: dict, default=None
             Mapping of file names to the list of storage volume identifier for
             the volumes that contain the latest version of a input/output file.
         """
-        # Create a mapping of store identifier to the strage volume objects.
+        # Create a mapping of store identifier to the storage volume objects.
         self.stores = {s.identifier: s for s in stores}
         # Ensure that a default storage volume is given.
         if DEFAULT_STORE not in self.stores:
             raise ValueError('missing default storage volume')
-        # Set the initial mapping of static files. Ensire that the referenced
+        # Set the initial mapping of static files. Ensure that the referenced
         # stores are valid.
         self.files = dict(files) if files is not None else dict()
         for _, file_stores in self.files.items():
@@ -121,7 +121,7 @@ class VolumeManager(object):
         return result
 
     def update(self, files: List[str], store: Optional[str] = None):
-        """Update the availablity index for workflow files.
+        """Update the availability index for workflow files.
 
         The update method is used by a worker to signal the successful execution
         of a workflow step. The given files specify the output files that were
