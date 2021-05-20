@@ -10,6 +10,7 @@
 a folder on the local file system.
 """
 
+from __future__ import annotations
 from typing import Dict, IO, List, Optional, Tuple
 
 import os
@@ -22,7 +23,7 @@ import flowserv.util as util
 
 
 """Type identifier for storage volume serializations."""
-FS_STORE = 'FILE_SYSTEM_STORE'
+FS_STORE = 'fs'
 
 
 # -- File handles -------------------------------------------------------------
@@ -127,6 +128,24 @@ class FileSystemStorage(StorageVolume):
         """Erase the storage volume base directory and all its contents."""
         shutil.rmtree(self.basedir)
 
+    @staticmethod
+    def from_dict(doc) -> FileSystemStorage:
+        """Get file system storage volume instance from dictionary serialization.
+
+        Parameters
+        ----------
+        doc: dict
+            Dictionary serialization as returned by the ``to_dict()`` method.
+
+        Returns
+        -------
+        flowserv.volume.fs.FileSystemStorage
+        """
+        return FileSystemStorage(
+            identifier=doc.get('identifier'),
+            basedir=doc.get('args', {}).get('basedir')
+        )
+
     def get_store_for_folder(self, key: str, identifier: Optional[str] = None) -> StorageVolume:
         """Get storage volume for a sob-folder of the given volume.
 
@@ -198,13 +217,7 @@ class FileSystemStorage(StorageVolume):
         -------
         dict
         """
-        return {
-            'type': FS_STORE,
-            'identifier': self.identifier,
-            'args': {
-                'basedir': self.basedir
-            }
-        }
+        return FStore(basedir=self.basedir, identifier=self.identifier)
 
     def walk(self, src: str) -> List[Tuple[str, IOHandle]]:
         """Get list of all files at the given source path.
@@ -240,6 +253,29 @@ class FileSystemStorage(StorageVolume):
 
 # -- Helper functions ---------------------------------------------------------
 
+def FStore(basedir: str, identifier: Optional[str] = None) -> Dict:
+    """Get configuration object for a file system storage volume.
+
+    Parameters
+    ----------
+    basedir: string
+        Google Cloud Storage bucket identifier.
+    identifier: string, default=None
+        Optional storage volume identifier.
+
+    Returns
+    -------
+    dict
+    """
+    return {
+        'type': FS_STORE,
+        'identifier': identifier,
+        'args': {
+            'basedir': basedir
+        }
+    }
+
+
 def walkdir(dirname: str, prefix: str, files: List[Tuple[str, IOHandle]]) -> List[Tuple[str, IOHandle]]:
     """Recursively add all files in a given source folder to a file upload list.
     The elements in the list are tuples of file object and relative target
@@ -247,9 +283,9 @@ def walkdir(dirname: str, prefix: str, files: List[Tuple[str, IOHandle]]) -> Lis
 
     Parameters
     ----------
-    str: stirng
+    dirname: string
         Path to folder of the local file system.
-    dst: string
+    prefix: string
         Relative destination path for all files in the folder.
     files: list of (flowserv.model.files.fs.FSFile, string)
         Pairs of file objects and their relative target path for upload to a
