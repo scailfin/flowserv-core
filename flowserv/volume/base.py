@@ -134,11 +134,13 @@ class StorageVolume(metaclass=ABCMeta):
     def copy(
         self, src: Union[str, List[str]], store: StorageVolume, dst: Optional[str] = None,
         verbose: Optional[bool] = False
-    ):
+    ) -> List[str]:
         """Copy the file or folder at the source path of this storage
         volume to the given storage volume.
 
         The source path is relative to the base directory for the workflow run.
+
+        Returns the list of files that were copied.
 
         Parameters
         ----------
@@ -151,8 +153,12 @@ class StorageVolume(metaclass=ABCMeta):
         verbose: bool, default=False
             Print information about source and target volume and the files that
             are being copied.
+
+        Returns
+        -------
+        list of string
         """
-        copy_files(src=src, source=self, dst=dst, target=store, verbose=verbose)
+        return copy_files(src=src, source=self, dst=dst, target=store, verbose=verbose)
 
     @abstractmethod
     def erase(self):
@@ -247,9 +253,11 @@ class StorageVolume(metaclass=ABCMeta):
 def copy_files(
     src: Union[str, List[str]], source: StorageVolume, dst: str, target: StorageVolume,
     verbose: Optional[bool] = False
-):
+) -> List[str]:
     """Copy files and folders at the source path (path) of a given source
     storage volume to the destination path (path) of a target storage volume.
+
+    Returns the list of files that were copied.
 
     Parameters
     ----------
@@ -264,12 +272,19 @@ def copy_files(
     verbose: bool, default=False
         Print information about source and target volume and the files that are
         being copied.
+
+    Returns
+    -------
+    list of string
     """
     if verbose:
         print('Copy files from {} to {}'.format(source.describe(), target.describe()))
+    files = list()
     for path in src if isinstance(src, list) else [src]:
         for key, file in source.walk(src=path):
             dstpath = util.join(dst, key) if dst else key
+            files.append(dstpath)
             target.store(file=file, dst=dstpath)
             if verbose:
                 print('copied {} to {}'.format(key, dstpath))
+    return files

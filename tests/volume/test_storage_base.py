@@ -15,15 +15,28 @@ import pytest
 from flowserv.model.files import io_file
 from flowserv.volume.fs import FileSystemStorage
 
+import flowserv.util as util
+
 
 @pytest.mark.parametrize('verbose', [True, False])
-def test_copy_files(verbose, basedir, emptydir, filenames_all):
+def test_copy_files_to_root(verbose, basedir, emptydir, filenames_all):
     """Run file copy with the two options for the verbose flag."""
     source = FileSystemStorage(basedir=basedir)
     target = FileSystemStorage(basedir=emptydir)
-    source.copy(src=None, dst=None, store=target, verbose=verbose)
-    files = {key: file for key, file in target.walk(src='')}
-    assert set(files.keys()) == filenames_all
+    # Copy to root folder.
+    files = source.copy(src=None, dst=None, store=target, verbose=verbose)
+    assert set(files) == filenames_all
+    assert {key for key, _ in target.walk(src='')} == filenames_all
+
+
+def test_copy_files_to_subdir(basedir, emptydir, filenames_all):
+    """Copy files to a sub-folder in the target store."""
+    source = FileSystemStorage(basedir=basedir)
+    target = FileSystemStorage(basedir=emptydir)
+    files = source.copy(src=None, dst='sub/dir', store=target)
+    filenames_all = {util.join('sub', 'dir', key) for key in filenames_all}
+    assert set(files) == filenames_all
+    assert {key for key, _ in target.walk(src='')} == filenames_all
 
 
 def test_storage_folder(tmpdir):
