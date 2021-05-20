@@ -374,7 +374,7 @@ class LocalRunService(RunService):
         # not given.
         config = config if config else group.engine_config
         staticdir = dirs.workflow_staticdir(group.workflow.workflow_id)
-        state, rundir = self.backend.exec_workflow(
+        state, runstore = self.backend.exec_workflow(
             run=run,
             template=template,
             arguments=run_args,
@@ -388,7 +388,7 @@ class LocalRunService(RunService):
             self.update_run(
                 run_id=run_id,
                 state=state,
-                rundir=rundir
+                runstore=runstore
             )
             return self.get_run(run_id)
         return self.serialize.run_handle(run, group)
@@ -404,9 +404,9 @@ class LocalRunService(RunService):
         These changes occur before the state of the workflow is updated in the
         underlying database.
 
-        All run result files are maintained in a temporary folder on local disk
+        All run result files are maintained in a engine-specific storage volume
         before being moved to the file storage. For runs that are incative the
-        rundir parameter is expected to reference the run folder.
+        ``runstore`` parameter is expected to reference the run folder.
 
         Parameters
         ----------
@@ -520,7 +520,7 @@ def run_postproc_workflow(
     else:
         # Execute the post-processing workflow asynchronously if
         # there were no data preparation errors.
-        postproc_state, rundir = backend.exec_workflow(
+        postproc_state, runstore = backend.exec_workflow(
             run=run,
             template=WorkflowTemplate(
                 workflow_spec=workflow_spec,
@@ -536,7 +536,7 @@ def run_postproc_workflow(
             run_manager.update_run(
                 run_id=run.run_id,
                 state=postproc_state,
-                rundir=rundir
+                runstore=runstore
             )
         # Remove the temporary input folder
         shutil.rmtree(datadir)

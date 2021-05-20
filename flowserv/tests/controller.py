@@ -99,7 +99,7 @@ class StateEngine(WorkflowController):
     def exec_workflow(
         self, run: RunObject, template: WorkflowTemplate, arguments: dict,
         staticfs: StorageVolume, config: Optional[Dict] = None
-    ) -> Tuple[WorkflowState, str]:
+    ) -> Tuple[WorkflowState, StorageVolume]:
         """Fake execute method that returns the workflow state that the was
         provided when the object was instantiated. Ignores all given arguments.
 
@@ -121,7 +121,7 @@ class StateEngine(WorkflowController):
 
         Returns
         -------
-        flowserv.model.workflow.state.WorkflowState, string
+        flowserv.model.workflow.state.WorkflowState, flowserv.volume.base.StorageVolume
         """
         state = self.state
         self.runs[run.run_id] = state

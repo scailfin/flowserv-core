@@ -147,7 +147,7 @@ class LocalAPIFactory(APIFactory):
     def exec_workflow(
         self, run: RunObject, template: WorkflowTemplate, arguments: Dict,
         staticfs: StorageVolume, config: Optional[Dict] = None
-    ) -> Tuple[WorkflowState, str]:
+    ) -> Tuple[WorkflowState, StorageVolume]:
         """Initiate the execution of a given workflow template for a set of
         argument values. Returns the state of the workflow and the path to
         the directory that contains run result files for successful runs.
@@ -175,7 +175,7 @@ class LocalAPIFactory(APIFactory):
 
         Returns
         -------
-        flowserv.model.workflow.state.WorkflowState, string
+        flowserv.model.workflow.state.WorkflowState, flowserv.volume.base.StorageVolume
         """
         return self._engine.exec_workflow(
             run=run,

@@ -114,7 +114,7 @@ class SerialWorkflowEngine(WorkflowController):
     def exec_workflow(
         self, run: RunObject, template: WorkflowTemplate, arguments: Dict,
         staticfs: StorageVolume, config: Optional[Dict] = None
-    ) -> Tuple[WorkflowState, str]:
+    ) -> Tuple[WorkflowState, StorageVolume]:
         """Initiate the execution of a given workflow template for a set of
         argument values. This will start a new process that executes a serial
         workflow asynchronously.
@@ -155,7 +155,7 @@ class SerialWorkflowEngine(WorkflowController):
 
         Returns
         -------
-        flowserv.model.workflow.state.WorkflowState, string
+        flowserv.model.workflow.state.WorkflowState, flowserv.volume.base.StorageVolume
         """
         # Get the run state. Ensure that the run is in pending state
         if not run.is_pending():

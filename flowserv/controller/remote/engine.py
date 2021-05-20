@@ -93,7 +93,7 @@ class RemoteWorkflowController(WorkflowController):
     def exec_workflow(
         self, run: RunObject, template: WorkflowTemplate, arguments: Dict,
         staticfs: StorageVolume, config: Optional[Dict] = None
-    ) -> Tuple[WorkflowState, str]:
+    ) -> Tuple[WorkflowState, StorageVolume]:
         """Initiate the execution of a given workflow template for a set of
         argument values. This will start a new process that executes a serial
         workflow asynchronously. Returns the state of the workflow after the
@@ -123,7 +123,7 @@ class RemoteWorkflowController(WorkflowController):
 
         Returns
         -------
-        flowserv.model.workflow.state.WorkflowState
+        flowserv.model.workflow.state.WorkflowState, flowserv.volume.base.StorageVolume
         """
         # Get the run state. Ensure that the run is in pending state
         if not run.is_pending():
@@ -171,7 +171,7 @@ class RemoteWorkflowController(WorkflowController):
                     client=self.client,
                     poll_interval=self.poll_interval
                 )
-                return state, rundir
+                return state, runstore
         except Exception as ex:
             # Set the workflow runinto an ERROR state
             logging.error(ex, exc_info=True)
