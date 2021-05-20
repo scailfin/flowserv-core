@@ -174,10 +174,10 @@ class WorkflowTemplate(object):
         -------
         dict
         """
-        # The workflow specificatiom is the only mandatory element.
-        doc = {'workflow': self.workflow_spec}
+        # The serialization contains the mandatory workflow specification and the
+        # optional template parameters. The parameters may be an empty dictionary.
+        doc = {'workflow': self.workflow_spec, 'parameters': self.parameters.to_dict()}
         # Add optional elements if present
-        doc['parameters'] = self.parameters.to_dict()
         if self.postproc_spec is not None:
             doc['postproc'] = self.postproc_spec
         if self.parameter_groups is not None:
