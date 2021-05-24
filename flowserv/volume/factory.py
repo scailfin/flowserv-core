@@ -8,10 +8,8 @@
 
 """Factory pattern for file stores."""
 
-from typing import Dict, Optional
+from typing import Dict
 
-from flowserv.config import FLOWSERV_BASEDIR
-from flowserv.util.ssh import SSHClient
 from flowserv.volume.base import StorageVolume
 from flowserv.volume.fs import FileSystemStorage, FStore, FS_STORE  # noqa: F401
 from flowserv.volume.gc import GCVolume, GCBucket, GC_STORE  # noqa: F401
