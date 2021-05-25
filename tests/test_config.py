@@ -31,7 +31,6 @@ import flowserv.util as util
         (config.FLOWSERV_AUTH, 'AUTH', 'AUTH'),
         (config.FLOWSERV_BACKEND_CLASS, 'CLASS', 'CLASS'),
         (config.FLOWSERV_BACKEND_MODULE, 'MODULE', 'MODULE'),
-        (config.FLOWSERV_RUNSDIR, 'DIR', 'DIR'),
         (config.FLOWSERV_POLL_INTERVAL, '2.3', 2.3),
         (config.FLOWSERV_POLL_INTERVAL, '20', 20.0),
         (config.FLOWSERV_POLL_INTERVAL, 'ABC', None),
@@ -117,21 +116,6 @@ def test_config_url():
     assert config.API_URL(conf) == api_url
 
 
-def test_engine_config(tmpdir):
-    """Test worker configuration for the serial workflow controller."""
-    conf = config.env()
-    assert conf.get(config.FLOWSERV_ENGINECONFIG) is None
-    doc = {'volumes': []}
-    conf.engine_config(doc=doc)
-    assert conf.get(config.FLOWSERV_ENGINECONFIG) == doc
-    filename = os.path.join(tmpdir, 'config.json')
-    util.write_object(filename=filename, obj=doc)
-    os.environ[config.FLOWSERV_ENGINECONFIG] = filename
-    conf = config.env()
-    assert conf.get(config.FLOWSERV_ENGINECONFIG) == doc
-    del os.environ[config.FLOWSERV_ENGINECONFIG]
-
-
 def test_storage_volume_config(tmpdir):
     """Test storage volume configuration objects."""
     conf = config.env()
@@ -144,12 +128,6 @@ def test_storage_volume_config(tmpdir):
     os.environ[config.FLOWSERV_FILESTORE] = filename
     conf = config.env()
     assert conf.get(config.FLOWSERV_FILESTORE) == doc
-
-
-def test_engine_rundirectory():
-    """Test default run directory path."""
-    assert config.RUNSDIR(dict({config.FLOWSERV_RUNSDIR: 'abc'})) == 'abc'
-    assert config.RUNSDIR(dict()) is not None
 
 
 def test_env_app_identifier():

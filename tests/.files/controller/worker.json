@@ -1,1 +1,15 @@
-[{"image": "test", "worker": "subprocess", "args": {"variables": {"a": 0, "b": 1}}}, {"image": "dummy", "worker": {"className": "a", "moduleName": "b"}}]
+{
+    "workers": [{
+        "id": "main",
+        "type": "docker",
+        "env": [{"key": "path", "value": "x"}],
+        "vars": [{"key": "python", "value": "/bin/py"}],
+        "volumes": ["store"]
+    }],
+    "volumes": [{
+        "type": "fs",
+        "id": "store",
+        "args": [{"key": "basedir", "value": "/dev/null"}],
+        "files": ["code/helloworld.py"]
+    }]
+}

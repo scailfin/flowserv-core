@@ -152,33 +152,10 @@ FLOWSERV_BACKEND_MODULE = 'FLOWSERV_BACKEND_MODULE'
 # Flag indicating whether workflows are executed asynchronously or blocking.
 FLOWSERV_ASYNC = 'FLOWSERV_ASYNCENGINE'
 DEFAULT_ASYNC = 'True'
-# Base directory to temporary run files
-FLOWSERV_RUNSDIR = 'FLOWSERV_RUNSDIR'
 
 # Poll interval
 FLOWSERV_POLL_INTERVAL = 'FLOWSERV_POLLINTERVAL'
 DEFAULT_POLL_INTERVAL = 2
-
-# Workflow engine configuration.
-FLOWSERV_ENGINECONFIG = 'FLOWSERV_ENGINECONFIG'
-
-
-def RUNSDIR(env: Dict) -> str:
-    """The default base directory for workflow run files.
-
-    The default is a sub-folder of the API_DEFAULTDIR.
-
-    Parameters
-    ----------
-    env: dict
-        Configuration object that provides access to configuration
-        parameters in the environment.
-
-    Returns
-    -------
-    string
-    """
-    return env.get(FLOWSERV_RUNSDIR, os.path.join(API_DEFAULTDIR(), 'runs'))
 
 
 # -- Client -------------------------------------------------------------------
@@ -269,21 +246,6 @@ class Config(dict):
         flowserv.config.Config
         """
         self[FLOWSERV_DB] = url
-        return self
-
-    def engine_config(self, doc: Dict) -> Config:
-        """Set the configuration dictionary for the workflow engine.
-
-        Parameters
-        ----------
-        doc: dict
-            Dictionary with engine configuration settings.
-
-        Returns
-        -------
-        flowserv.config.Config
-        """
-        self[FLOWSERV_ENGINECONFIG] = doc
         return self
 
     def multiprocess_engine(self) -> Config:
@@ -458,8 +420,6 @@ ENV = [
     (FLOWSERV_AUTH, AUTH_DEFAULT, None),
     (FLOWSERV_BACKEND_CLASS, None, None),
     (FLOWSERV_BACKEND_MODULE, None, None),
-    (FLOWSERV_ENGINECONFIG, None, read_config_obj),
-    (FLOWSERV_RUNSDIR, None, None),
     (FLOWSERV_POLL_INTERVAL, DEFAULT_POLL_INTERVAL, to_float),
     (FLOWSERV_ACCESS_TOKEN, None, None),
     (FLOWSERV_CLIENT, LOCAL_CLIENT, None),

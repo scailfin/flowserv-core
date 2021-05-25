@@ -75,12 +75,6 @@ In the shown example workflow steps that use the Docker image `heikomueller/open
 Use the environment variable *FLOWSERV_SERIAL_WORKERS* to reference the configuration file for the engine workers. By default, all workflow steps will be executed as Python sub-processes if no configuration file is given.
 
 
-Temporary Run Files
--------------------
-
-The :class:SerialWorkflowEngine maintains run files in a temporary folder before they are moved to persistent storage (as defined by the file store parameters). The base folder for these temporary files can be configured using the environment variable *FLOWSERV_RUNSDIR*. If the variable is not set all workflow runs will use the sub-folder `runs` in the *FLOWSERV_API_DIR* as the default base directory.
-
-
 --------
 Database
 --------

@@ -13,8 +13,9 @@ This controller allows execution in workflow
 steps within separate sub-processes.
 
 All workflow run files will be maintained in a (temporary) directory on the
-local file system. The base folder for these run files in configured using the
-environment variable FLOWSERV_RUNSDIR.
+storage volume that is associated with the workflow engine. The base folder for
+these run files can be configured by setting the environment variable
+*FLOWSERV_SERIAL_RUNSDIR*.
 """
 
 from functools import partial
@@ -22,10 +23,10 @@ from multiprocessing import Lock, Pool
 from typing import Dict, List, Optional, Tuple
 
 import logging
-import os
 
-from flowserv.config import FLOWSERV_ASYNC, FLOWSERV_BASEDIR, FLOWSERV_ENGINECONFIG, FLOWSERV_FILESTORE, RUNSDIR
+from flowserv.config import FLOWSERV_ASYNC, FLOWSERV_FILESTORE
 from flowserv.controller.base import WorkflowController
+from flowserv.controller.serial.engine.config import ENGINECONFIG, RUNSDIR
 from flowserv.controller.serial.engine.runner import exec_workflow
 from flowserv.controller.worker.factory import WorkerFactory
 from flowserv.controller.serial.workflow.result import RunResult
@@ -40,7 +41,6 @@ from flowserv.volume.factory import Volume
 from flowserv.volume.manager import VolumeManager, DEFAULT_STORE
 
 import flowserv.controller.serial.workflow.parser as parser
-import flowserv.error as err
 import flowserv.model.workflow.state as serialize
 import flowserv.util as util
 
@@ -72,7 +72,7 @@ class SerialWorkflowEngine(WorkflowController):
         """
         self.service = service
         self.fs = fs if fs else Volume(doc=service.get(FLOWSERV_FILESTORE))
-        self.config = config if config else service.get(FLOWSERV_ENGINECONFIG, dict())
+        self.config = config if config else ENGINECONFIG(env=service)
         validator.validate(self.config)
         logging.info("config {}".format(self.config))
         # The is_async flag controls the default setting for asynchronous
