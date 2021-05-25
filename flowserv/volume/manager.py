@@ -35,7 +35,7 @@ class VolumeManager(object):
     are first accessed.
     """
     def __init__(
-        self, stores: Dict[str, Dict], files: Optional[Dict[str, List[str]]] = None
+        self, stores: List[Dict], files: Optional[Dict[str, List[str]]] = None
     ):
         """Initialize the storage volumes specifications and the initial list
         of static files that are available for the workflow run.
@@ -45,16 +45,15 @@ class VolumeManager(object):
 
         Parameters
         ----------
-        stores: dic
-            Mapping of storage volume identifier to their specification in form
-            of a dictionary serialization.
+        stores: list
+            List of dictionary serializations for storage volumes.
         files: dict, default=None
             Mapping of file names to the list of storage volume identifier for
             the volumes that contain the latest version of a input/output file.
         """
         # Ensure that a default storage volume is given in the mapping of
         # storage volume specifications.
-        self._storespecs = stores
+        self._storespecs = {doc['id']: doc for doc in stores}
         if DEFAULT_STORE not in self._storespecs:
             raise ValueError('missing default storage volume')
         self._stores = dict()

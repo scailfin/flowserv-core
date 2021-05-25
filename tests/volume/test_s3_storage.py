@@ -61,7 +61,7 @@ def test_s3_volume_serialization(mock_boto):
     doc = S3Volume(identifier='0000', bucket_id='B0').to_dict()
     assert doc == {
         'type': S3_STORE,
-        'identifier': '0000',
+        'id': '0000',
         'args': [{'key': 'bucket', 'value': 'B0'}, {'key': 'prefix', 'value': None}]
     }
     fs = S3Volume.from_dict(doc)
@@ -72,7 +72,7 @@ def test_s3_volume_serialization(mock_boto):
     doc = S3Volume(identifier='0000', bucket_id='B1', prefix='dev').to_dict()
     assert doc == {
         'type': S3_STORE,
-        'identifier': '0000',
+        'id': '0000',
         'args': [{'key': 'bucket', 'value': 'B1'}, {'key': 'prefix', 'value': 'dev'}]
     }
     fs = S3Volume.from_dict(doc)

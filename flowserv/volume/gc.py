@@ -172,7 +172,7 @@ class GCVolume(StorageVolume):
         """
         args = util.to_dict(doc.get('args', []))
         return GCVolume(
-            identifier=doc.get('identifier'),
+            identifier=doc.get('id'),
             bucket_name=args.get('bucket'),
             prefix=args.get('prefix')
         )
@@ -314,7 +314,7 @@ def GCBucket(bucket: str, prefix: Optional[str] = None, identifier: Optional[str
     """
     return {
         'type': GC_STORE,
-        'identifier': identifier,
+        'id': identifier,
         'args': [
             util.to_kvp(key='bucket', value=bucket),
             util.to_kvp(key='prefix', value=prefix)

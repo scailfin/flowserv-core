@@ -78,7 +78,7 @@ def test_remote_volume_serialization(mock_ssh, basedir):
         doc = store.to_dict()
     assert doc == {
         'type': SFTP_STORE,
-        'identifier': store_id,
+        'id': store_id,
         'args': [
             {'key': 'basedir', 'value': basedir},
             {'key': 'hostname', 'value': 'test'},

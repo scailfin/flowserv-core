@@ -12,7 +12,7 @@ import json
 import os
 import pytest
 
-from flowserv.volume.fs import FileSystemStorage
+from flowserv.volume.fs import FileSystemStorage, FStore
 from flowserv.volume.manager import VolumeManager, DEFAULT_STORE
 
 import flowserv.error as err
@@ -20,21 +20,21 @@ import flowserv.error as err
 
 def test_manager_init(tmpdir):
     """Test edge cases for the volume manager initialization."""
-    default_store = FileSystemStorage(basedir=tmpdir, identifier=DEFAULT_STORE)
+    default_store = FStore(basedir=tmpdir, identifier=DEFAULT_STORE)
     # Ensure we can instantiate the volume manager if a default store is given.
-    volume = VolumeManager(stores={DEFAULT_STORE: default_store.to_dict()})
+    volume = VolumeManager(stores=[default_store])
     assert volume.files == dict()
-    volume = VolumeManager(stores={DEFAULT_STORE: default_store.to_dict()}, files={'f1': [DEFAULT_STORE]})
+    volume = VolumeManager(stores=[default_store], files={'f1': [DEFAULT_STORE]})
     assert volume.files == {'f1': [DEFAULT_STORE]}
     # Error cases when no default store is given.
     with pytest.raises(ValueError):
-        VolumeManager(stores=dict())
+        VolumeManager(stores=list())
     with pytest.raises(ValueError):
-        VolumeManager(stores={'unknown': default_store.to_dict()})
+        VolumeManager(stores=[FStore(basedir=tmpdir, identifier='0000')])
     # Error for unknown storage volume.
     with pytest.raises(err.UnknownObjectError):
         VolumeManager(
-            stores={DEFAULT_STORE: default_store.to_dict()},
+            stores=[default_store],
             files={'f1': ['unknown']}
         )
 
@@ -45,10 +45,7 @@ def test_manager_prepare(basedir, filenames_all, data_a, tmpdir):
     s0 = FileSystemStorage(basedir=basedir, identifier=DEFAULT_STORE)
     s1 = FileSystemStorage(basedir=os.path.join(tmpdir, 's1'), identifier='s1')
     volumes = VolumeManager(
-        stores={
-            s0.identifier: s0.to_dict(),
-            s1.identifier: s1.to_dict()
-        },
+        stores=[s0.to_dict(), s1.to_dict()],
         files={f: [DEFAULT_STORE] for f in filenames_all}
     )
     # Case 1: Empty arguments.
@@ -81,8 +78,13 @@ def test_manager_prepare(basedir, filenames_all, data_a, tmpdir):
 
 def test_manager_update(tmpdir):
     """Test the update method for the volume manager."""
-    doc = FileSystemStorage(basedir=tmpdir, identifier=DEFAULT_STORE).to_dict()
-    volume = VolumeManager(stores={DEFAULT_STORE: doc, 's1': doc}, files={'f1': [DEFAULT_STORE]})
+    volume = VolumeManager(
+        stores=[
+            FStore(basedir=tmpdir, identifier=DEFAULT_STORE),
+            FStore(basedir=tmpdir, identifier='s1')
+        ],
+        files={'f1': [DEFAULT_STORE]}
+    )
     assert volume.files == {'f1': [DEFAULT_STORE]}
     volume.update(files=['f1', 'f2'], store='s1')
     assert volume.files == {'f1': ['s1'], 'f2': ['s1']}

@@ -80,7 +80,7 @@ def test_gc_volume_serialization(mock_gcstore):
     doc = GCVolume(identifier='0000', bucket_name='B0').to_dict()
     assert doc == {
         'type': GC_STORE,
-        'identifier': '0000',
+        'id': '0000',
         'args': [{'key': 'bucket', 'value': 'B0'}, {'key': 'prefix', 'value': None}]
     }
     fs = GCVolume.from_dict(doc)
@@ -91,7 +91,7 @@ def test_gc_volume_serialization(mock_gcstore):
     doc = GCVolume(identifier='0000', bucket_name='B1', prefix='dev').to_dict()
     assert doc == {
         'type': GC_STORE,
-        'identifier': '0000',
+        'id': '0000',
         'args': [{'key': 'bucket', 'value': 'B1'}, {'key': 'prefix', 'value': 'dev'}]
     }
     fs = GCVolume.from_dict(doc)

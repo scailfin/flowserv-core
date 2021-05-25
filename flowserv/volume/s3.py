@@ -150,7 +150,7 @@ class S3Volume(StorageVolume):
         """
         args = util.to_dict(doc.get('args', []))
         return S3Volume(
-            identifier=doc.get('identifier'),
+            identifier=doc.get('id'),
             bucket_id=args.get('bucket'),
             prefix=args.get('prefix')
         )
@@ -283,7 +283,7 @@ def S3Bucket(bucket: str, prefix: Optional[str] = None, identifier: Optional[str
     """
     return {
         'type': S3_STORE,
-        'identifier': identifier,
+        'id': identifier,
         'args': [
             util.to_kvp(key='bucket', value=bucket),
             util.to_kvp(key='prefix', value=prefix)

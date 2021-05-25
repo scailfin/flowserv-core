@@ -167,7 +167,7 @@ class RemoteStorage(StorageVolume):
         """
         args = util.to_dict(doc.get('args', []))
         return RemoteStorage(
-            identifier=doc.get('identifier'),
+            identifier=doc.get('id'),
             client=SSHClient(
                 hostname=args.get('hostname'),
                 port=args.get('port'),
@@ -335,7 +335,7 @@ def Sftp(
     """
     return {
         'type': SFTP_STORE,
-        'identifier': identifier,
+        'id': identifier,
         'args': [
             util.to_kvp(key='basedir', value=remotedir),
             util.to_kvp(key='hostname', value=hostname),

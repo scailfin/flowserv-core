@@ -142,7 +142,7 @@ class FileSystemStorage(StorageVolume):
         flowserv.volume.fs.FileSystemStorage
         """
         return FileSystemStorage(
-            identifier=doc.get('identifier'),
+            identifier=doc.get('id'),
             basedir=util.to_dict(doc.get('args', [])).get('basedir')
         )
 
@@ -269,7 +269,7 @@ def FStore(basedir: str, identifier: Optional[str] = None) -> Dict:
     """
     return {
         'type': FS_STORE,
-        'identifier': identifier,
+        'id': identifier,
         'args': [util.to_kvp(key='basedir', value=basedir)]
     }
 
