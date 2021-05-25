@@ -152,10 +152,21 @@ def create_worker(doc: Dict) -> Worker:
     worker_type = doc['type']
     env = util.to_dict(doc.get('env', []))
     vars = util.to_dict(doc.get('vars', []))
+    volumes = doc.get('volumes')
     if worker_type == SUBPROCESS_WORKER:
-        return SubprocessWorker(variables=vars, env=env, identifier=identifier)
+        return SubprocessWorker(
+            variables=vars,
+            env=env,
+            identifier=identifier,
+            volumes=volumes
+        )
     elif worker_type == DOCKER_WORKER:
-        return DockerWorker(variables=vars, env=env, identifier=identifier)
+        return DockerWorker(
+            variables=vars,
+            env=env,
+            identifier=identifier,
+            volumes=volumes
+        )
     raise ValueError(f"unknown worker type '{worker_type}'")
 
 

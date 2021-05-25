@@ -13,10 +13,11 @@ engine or the Python subprocess package.
 
 from abc import ABCMeta, abstractmethod
 from string import Template
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 from flowserv.controller.serial.workflow.result import ExecResult
 from flowserv.model.workflow.step import ContainerStep, WorkflowStep
+from flowserv.volume.manager import DEFAULT_STORE
 
 import flowserv.model.template.parameter as tp
 import flowserv.util as util
@@ -27,16 +28,35 @@ class Worker(metaclass=ABCMeta):
     steps a separate worker can be implemented to execute instances of that
     particular step type.
     """
-    def __init__(self, identifier: Optional[str] = None):
-        """Initialize the unique worker identifier.
+    def __init__(
+        self, identifier: Optional[str] = None, volumes: Optional[List[str]] = None
+    ):
+        """Initialize the unique worker identifier and the list of volumes that
+        the worker has access to.
 
         Parameters
         ----------
         identifier: string, default=None
             Unique worker identifier. If the value is None a new unique identifier
             will be generated.
+        volumes: list of string, default=None
+            Identifier for storage volumes that the worker has access to. The
+            first entry in this list defines the default volume.
         """
         self.identifier = identifier if identifier is not None else util.get_unique_identifier()
+        self.volumes = volumes if volumes else [DEFAULT_STORE]
+
+    def default_volume(self) -> str:
+        """Get the identifier of the default storage volume for this worker.
+
+        The default volume is the first entry in the list of volumes that this
+        worker has access to.
+
+        Returns
+        -------
+        string
+        """
+        return self.volumes[0]
 
     @abstractmethod
     def exec(self, step: WorkflowStep, context: Dict, rundir: str) -> ExecResult:

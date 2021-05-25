@@ -33,7 +33,7 @@ class SubprocessWorker(ContainerEngine):
     """
     def __init__(
         self, variables: Optional[Dict] = None, env: Optional[Dict] = None,
-        identifier: Optional[str] = None
+        identifier: Optional[str] = None, volumes: Optional[List[str]] = None
     ):
         """Initialize the optional mapping with default values for placeholders
         in command template strings.
@@ -49,11 +49,15 @@ class SubprocessWorker(ContainerEngine):
         identifier: string, default=None
             Unique worker identifier. If the value is None a new unique identifier
             will be generated.
+        volumes: list of string, default=None
+            Identifier for storage volumes that the worker has access to. The
+            first entry in this list defines the default volume.
         """
         super(SubprocessWorker, self).__init__(
             variables=variables,
             env=env,
-            identifier=identifier
+            identifier=identifier,
+            volumes=volumes
         )
 
     def run(self, step: ContainerStep, env: Dict, rundir: str) -> ExecResult:
