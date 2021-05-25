@@ -210,7 +210,7 @@ class NotebookStep(WorkflowStep):
         self.params = params
         self.varnames = varnames if varnames is not None else dict()
 
-    def exec(self, context: Dict, params: Dict):
+    def exec(self, context: Dict):
         kwargs = dict()
         for var in params:
             source = self.varnames.get(var, var)
