@@ -69,6 +69,10 @@ def test_run_steps_with_subprocess_error(mock_subprocess):
 
 def test_run_successful_steps():
     """Test successful execution of a workflow step with two commands."""
+    # Set SYSTEMROOT environment variable.
+    systemroot = os.environ.get('SYSTEMROOT')
+    if not systemroot:
+        os.environ['SYSTEMROOT'] = 'SYSTEMROOT'
     # Avoid error '/bin/sh: 1: python: not found
     interpreter = sys.executable
     commands = [
@@ -82,6 +86,10 @@ def test_run_successful_steps():
     assert result.exception is None
     assert ' '.join([s.strip() for s in result.stdout]) == 'Hello World'
     step = ContainerStep(image='test', commands=commands)
+    if systemroot:
+        os.environ['SYSTEMROOT'] = systemroot
+    else:
+        del os.environ['SYSTEMROOT']
 
 
 def test_run_successful_steps_splitenv():

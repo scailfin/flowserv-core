@@ -10,7 +10,7 @@
 
 import os
 
-from flowserv.controller.worker.code import CodeWorker
+from flowserv.controller.worker.code import CodeWorker, OutputStream
 from flowserv.model.workflow.step import FunctionStep
 
 
@@ -31,6 +31,17 @@ def test_error_exec(tmpdir):
     assert r.stdout == ['-1 written', '\n']
     assert r.stderr != []
     assert r.exception is not None
+
+
+def test_output_stream():
+    """Test all methods of the OutputStream helper class."""
+    result = list()
+    stream = OutputStream(stream=result)
+    stream.writelines(['A', 'B', 'C'])
+    stream.write('D')
+    stream.flush()
+    stream.close()
+    assert result == ['A', 'B', 'C', 'D']
 
 
 def test_successful_exec(tmpdir):

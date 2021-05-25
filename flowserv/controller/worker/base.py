@@ -19,6 +19,7 @@ from flowserv.controller.serial.workflow.result import ExecResult
 from flowserv.model.workflow.step import ContainerStep, WorkflowStep
 
 import flowserv.model.template.parameter as tp
+import flowserv.util as util
 
 
 class Worker(metaclass=ABCMeta):
@@ -26,6 +27,17 @@ class Worker(metaclass=ABCMeta):
     steps a separate worker can be implemented to execute instances of that
     particular step type.
     """
+    def __init__(self, identifier: Optional[str] = None):
+        """Initialize the unique worker identifier.
+
+        Parameters
+        ----------
+        identifier: string, default=None
+            Unique worker identifier. If the value is None a new unique identifier
+            will be generated.
+        """
+        self.identifier = identifier if identifier is not None else util.get_unique_identifier()
+
     @abstractmethod
     def exec(self, step: WorkflowStep, context: Dict, rundir: str) -> ExecResult:
         """Execute a given workflow step in the current workflow context.
@@ -52,7 +64,10 @@ class ContainerEngine(Worker):
     Implementations may differ in the run method that executes the expanded
     commands.
     """
-    def __init__(self, variables: Optional[Dict] = None, env: Optional[Dict] = None):
+    def __init__(
+        self, variables: Optional[Dict] = None, env: Optional[Dict] = None,
+        identifier: Optional[str] = None
+    ):
         """Initialize the optional mapping with default values for placeholders
         in command template strings.
 
@@ -67,7 +82,11 @@ class ContainerEngine(Worker):
         env: dict, default=None
             Default settings for environment variables when executing workflow
             steps. These settings can get overridden by step-specific settings.
+        identifier: string, default=None
+            Unique worker identifier. If the value is None a new unique identifier
+            will be generated.
         """
+        super(ContainerEngine, self).__init__(identifier=identifier)
         self.variables = variables if variables is not None else dict()
         self.env = env if env is not None else dict()
 

@@ -1,5 +1,20 @@
 {
     "definitions": {
+        "keyValuePair": {
+            "type": "object",
+            "description": "Key-value pair object.",
+            "properties": {
+                "key": {"type": "string", "description": "Value key."},
+                "value": {
+                    "anyOf": [
+                        {"type": "integer"},
+                        {"type": "string"}
+                    ],
+                    "description": "Scalar value associated with the key."
+                }
+            },
+            "required": ["key", "value"]
+        },
         "engineConfig": {
             "type": "object",
             "description": "Configuration for a workflow engine.",
@@ -24,36 +39,17 @@
                 "type": {
                     "type": "string",
                     "description": "Volume type identifier",
-                    "enum": ["fs", "sftp"]
+                    "enum": ["fs", "gc", "s3", "sftp"]
                 },
-                "config": {
-                    "description": "Volume type-specific configuration.",
-                    "oneOf": [
-                        {
-                            "type": "object",
-                            "description": "Local file system storage volume.",
-                            "properties": {
-                                "localdir": {
-                                    "type": "string",
-                                    "description": "Path to the local base directory where all files will be stored."
-                                }
-                            }
-                        },
-                        {
-                            "type": "object",
-                            "description": "Remote file system storage volume.",
-                            "properties": {
-                                "remotedir": {
-                                    "type": "string",
-                                    "description": "Path to the remote base directory where all files will be stored."
-                                },
-                                "hostname": {"type": "string", "description": "Server host name"},
-                                "port": {"type": "integer", "description": "Port number"},
-                                "timeout": {"type": "number", "description": "Connect timeout"}
-                            },
-                            "required": ["remotedir", "hostname", "port"]
-                        }
-                    ]
+                "args": {
+                    "type": "array",
+                    "description": "Key-value pairs for storage volume configuration.",
+                    "items": {"$ref": "#/definitions/keyValuePair"}
+                },
+                "files": {
+                    "type": "array",
+                    "description": "List of available volumn files.",
+                    "items": {"type": "string"}
                 }
             },
             "required": ["name", "type"]
@@ -68,23 +64,20 @@
                     "description": "Worker type identifier",
                     "enum": ["docker", "subprocess"]
                 },
-                "isPrepared": {
-                    "type": "boolean",
-                    "decription": "True if static files are contained in the worker storage volume."
+                "env": {
+                    "type": "array",
+                    "description": "Key-value pairs for environment variables.",
+                    "items": {"$ref": "#/definitions/keyValuePair"}
                 },
-                "config": {
-                    "description": "Worker type-specific configuration.",
-                    "oneOf": [
-                        {
-                            "type": "object",
-                            "description": "Container worker.",
-                            "properties": {
-                                "image": {"type": "string", "description": "Conatiner image identifier."},
-                                "args": {"type": "object"}
-                            },
-                            "required": ["image"]
-                        }
-                    ]
+                "vars": {
+                    "type": "array",
+                    "description": "Key-value pairs for template string variables.",
+                    "items": {"$ref": "#/definitions/keyValuePair"}
+                },
+                "volumes": {
+                    "type": "array",
+                    "description": "List of storage volumns the worker has access to.",
+                    "items": {"type": "string"}
                 }
             },
             "required": ["name", "type"]

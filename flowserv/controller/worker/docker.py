@@ -22,11 +22,18 @@ from flowserv.controller.worker.base import ContainerEngine
 import flowserv.util as util
 
 
+"""Unique type identifier for DockerWorker serializations."""
+DOCKER_WORKER = 'docker'
+
+
 class DockerWorker(ContainerEngine):
     """Container step engine that uses the local Docker deamon to execute the
     commands in a workflow step.
     """
-    def __init__(self, variables: Optional[Dict] = None, env: Optional[Dict] = None):
+    def __init__(
+        self, variables: Optional[Dict] = None, env: Optional[Dict] = None,
+        identifier: Optional[str] = None
+    ):
         """Initialize the optional mapping with default values for placeholders
         in command template strings.
 
@@ -38,8 +45,15 @@ class DockerWorker(ContainerEngine):
         env: dict, default=None
             Default settings for environment variables when executing workflow
             steps. These settings can get overridden by step-specific settings.
+        identifier: string, default=None
+            Unique worker identifier. If the value is None a new unique identifier
+            will be generated.
         """
-        super(DockerWorker, self).__init__(variables=variables, env=env)
+        super(DockerWorker, self).__init__(
+            variables=variables,
+            env=env,
+            identifier=identifier
+        )
 
     def run(self, step: ContainerStep, env: Dict, rundir: str) -> ExecResult:
         """Execute a list of commands from a workflow steps synchronously using
