@@ -16,6 +16,9 @@ different possible states of a workflow run. There are four different states:
 Contains default methods to (de-)serialize workflow state.
 """
 
+from __future__ import annotations
+from typing import List, Optional
+
 from flowserv.util import utc_now
 
 
@@ -41,13 +44,15 @@ class WorkflowState(object):
     the timestamp of workflow run creation. Subclasses will add additional
     timestamps and properties.
     """
-    def __init__(self, type_id, created_at=None):
+    def __init__(self, type_id: str, created_at: Optional[str] = None):
         """Initialize the type identifier and the 'created at' timestamp.
 
         Parameters
         ----------
         type_id: string
-            Type identifier
+            Workflow state type identifier.
+        created_at: str, default=None
+            Timestamp when the workflow run was first created.
         """
         self.type_id = type_id
         self.created_at = created_at if created_at is not None else utc_now()
@@ -76,7 +81,7 @@ class WorkflowState(object):
         """
         return self.type_id
 
-    def is_active(self):
+    def is_active(self) -> bool:
         """A workflow is in active state if it is either pending or running.
 
         Returns
@@ -85,7 +90,7 @@ class WorkflowState(object):
         """
         return self.type_id in ACTIVE_STATES
 
-    def is_canceled(self):
+    def is_canceled(self) -> bool:
         """Returns True if the workflow state is of type CANCELED.
 
         Returns
@@ -94,7 +99,7 @@ class WorkflowState(object):
         """
         return self.type_id == STATE_CANCELED
 
-    def is_error(self):
+    def is_error(self) -> bool:
         """Returns True if the workflow state is of type ERROR.
 
         Returns
@@ -103,7 +108,7 @@ class WorkflowState(object):
         """
         return self.type_id == STATE_ERROR
 
-    def is_pending(self):
+    def is_pending(self) -> bool:
         """Returns True if the workflow state is of type PENDING.
 
         Returns
@@ -112,7 +117,7 @@ class WorkflowState(object):
         """
         return self.type_id == STATE_PENDING
 
-    def is_running(self):
+    def is_running(self) -> bool:
         """Returns True if the workflow state is of type RUNNING.
 
         Returns
@@ -121,7 +126,7 @@ class WorkflowState(object):
         """
         return self.type_id == STATE_RUNNING
 
-    def is_success(self):
+    def is_success(self) -> bool:
         """Returns True if the workflow state is of type SUCCESS.
 
         Returns
@@ -138,7 +143,8 @@ class StateCanceled(WorkflowState):
     list of messages.
     """
     def __init__(
-        self, created_at, started_at=None, stopped_at=None, messages=None
+        self, created_at: str, started_at: Optional[str] = None,
+        stopped_at: Optional[str] = None, messages: Optional[List[str]] = None
     ):
         """Initialize the timestamps that are associated with the workflow
         state and the optional messages.
@@ -170,7 +176,8 @@ class StateError(WorkflowState):
     maintains an optional list of error messages.
     """
     def __init__(
-        self, created_at, started_at=None, stopped_at=None, messages=None
+        self, created_at: str, started_at: Optional[str] = None,
+        stopped_at: Optional[str] = None, messages: Optional[List[str]] = None
     ):
         """Initialize the timestamps that are associated with the workflow
         state and the optional error messages.
@@ -201,7 +208,7 @@ class StatePending(WorkflowState):
     running. The workflow has only one timestamp representing the workflow
     creation time.
     """
-    def __init__(self, created_at=None):
+    def __init__(self, created_at: Optional[str] = None):
         """Initialize the timestamp that is associated with the workflow state.
 
         Parameters
@@ -214,7 +221,7 @@ class StatePending(WorkflowState):
             created_at=created_at
         )
 
-    def cancel(self, messages=None):
+    def cancel(self, messages: Optional[List[str]] = None) -> StateCanceled:
         """Get instance of canceled state for a pending wokflow.
 
         Since the workflow did not start to run the started_at timestamp is set
@@ -237,7 +244,7 @@ class StatePending(WorkflowState):
             messages=messages
         )
 
-    def error(self, messages=None):
+    def error(self, messages: Optional[List[str]] = None) -> StateError:
         """Get instance of error state for a pending wokflow. If the exception
         that caused the workflow execution to terminate is given it will be
         used to create the list of error messages.
@@ -262,7 +269,7 @@ class StatePending(WorkflowState):
             messages=messages
         )
 
-    def start(self):
+    def start(self) -> StateRunning:
         """Get instance of running state with the same create at timestamp as
         this state and the started at with the current timestamp.
 
@@ -272,7 +279,7 @@ class StatePending(WorkflowState):
         """
         return StateRunning(created_at=self.created_at)
 
-    def success(self, files=None):
+    def success(self, files: Optional[List[str]] = None) -> StateSuccess:
         """Get instance of success state for a competed wokflow.
 
         Parameters
@@ -295,7 +302,7 @@ class StateRunning(WorkflowState):
     """State representation for a active workflow run. The workflow has two
     timestamps: the workflow creation time and the workflow run start time.
     """
-    def __init__(self, created_at, started_at=None):
+    def __init__(self, created_at: str, started_at: Optional[str] = None):
         """Initialize the timestamps that are associated with the workflow
         state.
 
@@ -312,7 +319,7 @@ class StateRunning(WorkflowState):
         )
         self.started_at = started_at if started_at is not None else utc_now()
 
-    def cancel(self, messages=None):
+    def cancel(self, messages: Optional[List[str]] = None) -> StateCanceled:
         """Get instance of class cancel state for a running wokflow.
 
         Parameters
@@ -330,7 +337,7 @@ class StateRunning(WorkflowState):
             messages=messages
         )
 
-    def error(self, messages=None):
+    def error(self, messages: Optional[List[str]] = None) -> StateError:
         """Get instance of error state for a running wokflow. If the exception
         that caused the workflow execution to terminate is given it will be
         used to create the list of error messages.
@@ -350,7 +357,7 @@ class StateRunning(WorkflowState):
             messages=messages
         )
 
-    def success(self, files=None):
+    def success(self, files: Optional[List[str]] = None) -> StateSuccess:
         """Get instance of success state for a competed wokflow.
 
         Parameters
@@ -376,7 +383,8 @@ class StateSuccess(WorkflowState):
     to any files that were created by the workflow run.
     """
     def __init__(
-        self, created_at, started_at, finished_at=None, files=None
+        self, created_at: str, started_at: str, finished_at: Optional[str] = None,
+        files: Optional[List[str]] = None
     ):
         """Initialize the timestamps that are associated with the workflow
         state and the list of created files.
