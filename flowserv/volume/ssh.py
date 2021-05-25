@@ -165,7 +165,7 @@ class RemoteStorage(StorageVolume):
         -------
         flowserv.volume.ssh.RemoteStorage
         """
-        args = doc.get('args', {})
+        args = util.to_dict(doc.get('args', []))
         return RemoteStorage(
             identifier=doc.get('identifier'),
             client=SSHClient(
@@ -336,16 +336,14 @@ def Sftp(
     return {
         'type': SFTP_STORE,
         'identifier': identifier,
-        'args': {
-            'basedir': remotedir,
-            'client': {
-                'hostname': hostname,
-                'port': port,
-                'timeout': timeout,
-                'look_for_keys': look_for_keys,
-                'sep': sep
-            }
-        }
+        'args': [
+            util.to_kvp(key='basedir', value=remotedir),
+            util.to_kvp(key='hostname', value=hostname),
+            util.to_kvp(key='port', value=port),
+            util.to_kvp(key='timeout', value=timeout),
+            util.to_kvp(key='look_for_keys', value=look_for_keys),
+            util.to_kvp(key='sep', value=sep)
+        ]
     }
 
 

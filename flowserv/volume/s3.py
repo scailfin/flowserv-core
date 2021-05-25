@@ -148,7 +148,7 @@ class S3Volume(StorageVolume):
         -------
         flowserv.volume.s3.S3Volume
         """
-        args = doc.get('args', {})
+        args = util.to_dict(doc.get('args', []))
         return S3Volume(
             identifier=doc.get('identifier'),
             bucket_id=args.get('bucket'),
@@ -284,8 +284,8 @@ def S3Bucket(bucket: str, prefix: Optional[str] = None, identifier: Optional[str
     return {
         'type': S3_STORE,
         'identifier': identifier,
-        'args': {
-            'bucket': bucket,
-            'prefix': prefix
-        }
+        'args': [
+            util.to_kvp(key='bucket', value=bucket),
+            util.to_kvp(key='prefix', value=prefix)
+        ]
     }

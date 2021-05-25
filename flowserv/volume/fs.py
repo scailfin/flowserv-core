@@ -143,7 +143,7 @@ class FileSystemStorage(StorageVolume):
         """
         return FileSystemStorage(
             identifier=doc.get('identifier'),
-            basedir=doc.get('args', {}).get('basedir')
+            basedir=util.to_dict(doc.get('args', [])).get('basedir')
         )
 
     def get_store_for_folder(self, key: str, identifier: Optional[str] = None) -> StorageVolume:
@@ -270,9 +270,7 @@ def FStore(basedir: str, identifier: Optional[str] = None) -> Dict:
     return {
         'type': FS_STORE,
         'identifier': identifier,
-        'args': {
-            'basedir': basedir
-        }
+        'args': [util.to_kvp(key='basedir', value=basedir)]
     }
 
 

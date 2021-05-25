@@ -164,6 +164,14 @@ def test_read_write_object(tmpdir):
         util.write_object(filename=txt_file, obj=doc, format='UNKNOWN')
 
 
+def test_serialize_kvp():
+    """Test serializing and deserializing key-value pairs."""
+    doc = util.to_dict(args=[util.to_kvp(key='a', value=1), util.to_kvp(key='b', value='2')])
+    assert len(doc) == 2
+    assert doc['a'] == 1
+    assert doc['b'] == '2'
+
+
 def test_validate_doc():
     """Test document validation with custom error classes."""
     doc = {'name': 'A', 'value': 1}

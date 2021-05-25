@@ -59,14 +59,22 @@ def test_s3_open_file(store):
 def test_s3_volume_serialization(mock_boto):
     """Test serialization for a S3 bucket storage object."""
     doc = S3Volume(identifier='0000', bucket_id='B0').to_dict()
-    assert doc == {'type': S3_STORE, 'identifier': '0000', 'args': {'bucket': 'B0', 'prefix': None}}
+    assert doc == {
+        'type': S3_STORE,
+        'identifier': '0000',
+        'args': [{'key': 'bucket', 'value': 'B0'}, {'key': 'prefix', 'value': None}]
+    }
     fs = S3Volume.from_dict(doc)
     assert isinstance(fs, S3Volume)
     assert fs.identifier == '0000'
     assert fs.bucket_id == 'B0'
     assert fs.prefix is None
     doc = S3Volume(identifier='0000', bucket_id='B1', prefix='dev').to_dict()
-    assert doc == {'type': S3_STORE, 'identifier': '0000', 'args': {'bucket': 'B1', 'prefix': 'dev'}}
+    assert doc == {
+        'type': S3_STORE,
+        'identifier': '0000',
+        'args': [{'key': 'bucket', 'value': 'B1'}, {'key': 'prefix', 'value': 'dev'}]
+    }
     fs = S3Volume.from_dict(doc)
     assert isinstance(fs, S3Volume)
     assert fs.identifier == '0000'

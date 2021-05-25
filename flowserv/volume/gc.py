@@ -170,7 +170,7 @@ class GCVolume(StorageVolume):
         -------
         flowserv.volume.gc.GCVolume
         """
-        args = doc.get('args', {})
+        args = util.to_dict(doc.get('args', []))
         return GCVolume(
             identifier=doc.get('identifier'),
             bucket_name=args.get('bucket'),
@@ -315,10 +315,10 @@ def GCBucket(bucket: str, prefix: Optional[str] = None, identifier: Optional[str
     return {
         'type': GC_STORE,
         'identifier': identifier,
-        'args': {
-            'bucket': bucket,
-            'prefix': prefix
-        }
+        'args': [
+            util.to_kvp(key='bucket', value=bucket),
+            util.to_kvp(key='prefix', value=prefix)
+        ]
     }
 
 

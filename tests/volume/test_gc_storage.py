@@ -78,14 +78,22 @@ def test_gc_store_init(mock_gcstore):
 def test_gc_volume_serialization(mock_gcstore):
     """Test serialization for a GC bucket storage object."""
     doc = GCVolume(identifier='0000', bucket_name='B0').to_dict()
-    assert doc == {'type': GC_STORE, 'identifier': '0000', 'args': {'bucket': 'B0', 'prefix': None}}
+    assert doc == {
+        'type': GC_STORE,
+        'identifier': '0000',
+        'args': [{'key': 'bucket', 'value': 'B0'}, {'key': 'prefix', 'value': None}]
+    }
     fs = GCVolume.from_dict(doc)
     assert isinstance(fs, GCVolume)
     assert fs.identifier == '0000'
     assert fs.bucket_name == 'B0'
     assert fs.prefix is None
     doc = GCVolume(identifier='0000', bucket_name='B1', prefix='dev').to_dict()
-    assert doc == {'type': GC_STORE, 'identifier': '0000', 'args': {'bucket': 'B1', 'prefix': 'dev'}}
+    assert doc == {
+        'type': GC_STORE,
+        'identifier': '0000',
+        'args': [{'key': 'bucket', 'value': 'B1'}, {'key': 'prefix', 'value': 'dev'}]
+    }
     fs = GCVolume.from_dict(doc)
     assert isinstance(fs, GCVolume)
     assert fs.identifier == '0000'

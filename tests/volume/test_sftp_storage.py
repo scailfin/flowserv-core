@@ -79,16 +79,14 @@ def test_remote_volume_serialization(mock_ssh, basedir):
     assert doc == {
         'type': SFTP_STORE,
         'identifier': store_id,
-        'args': {
-            'basedir': basedir,
-            'client': {
-                'hostname': 'test',
-                'port': None,
-                'timeout': None,
-                'look_for_keys': False,
-                'sep': os.sep
-            }
-        }
+        'args': [
+            {'key': 'basedir', 'value': basedir},
+            {'key': 'hostname', 'value': 'test'},
+            {'key': 'port', 'value': None},
+            {'key': 'timeout', 'value': None},
+            {'key': 'look_for_keys', 'value': False},
+            {'key': 'sep', 'value': os.sep}
+        ]
     }
     fs = RemoteStorage.from_dict(doc)
     assert isinstance(fs, RemoteStorage)
