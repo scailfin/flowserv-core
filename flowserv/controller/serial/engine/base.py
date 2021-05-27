@@ -18,6 +18,7 @@ these run files can be configured by setting the environment variable
 *FLOWSERV_SERIAL_RUNSDIR*.
 """
 
+from collections import defaultdict
 from functools import partial
 from multiprocessing import Lock, Pool
 from typing import Dict, List, Optional, Tuple
@@ -28,14 +29,13 @@ from flowserv.config import FLOWSERV_ASYNC, FLOWSERV_FILESTORE
 from flowserv.controller.base import WorkflowController
 from flowserv.controller.serial.engine.config import ENGINECONFIG, RUNSDIR
 from flowserv.controller.serial.engine.runner import exec_workflow
-from flowserv.controller.worker.factory import WorkerFactory
+from flowserv.controller.worker.manager import WorkerPool
 from flowserv.controller.serial.workflow.result import RunResult
 from flowserv.model.workflow.step import ContainerStep
 from flowserv.model.base import RunObject
 from flowserv.model.template.base import WorkflowTemplate
 from flowserv.model.workflow.state import WorkflowState
 from flowserv.service.api import APIFactory
-from flowserv.validate import validator
 from flowserv.volume.base import StorageVolume
 from flowserv.volume.factory import Volume
 from flowserv.volume.manager import VolumeManager, DEFAULT_STORE
@@ -72,8 +72,7 @@ class SerialWorkflowEngine(WorkflowController):
         """
         self.service = service
         self.fs = fs if fs else Volume(doc=service.get(FLOWSERV_FILESTORE))
-        self.config = config if config else ENGINECONFIG(env=service)
-        validator.validate(self.config)
+        self.config = config if config else ENGINECONFIG(env=service, validate=True)
         logging.info("config {}".format(self.config))
         # The is_async flag controls the default setting for asynchronous
         # execution. If the flag is False all workflow steps will be executed
@@ -156,16 +155,22 @@ class SerialWorkflowEngine(WorkflowController):
         -------
         flowserv.model.workflow.state.WorkflowState, flowserv.volume.base.StorageVolume
         """
-        # Get the run state. Ensure that the run is in pending state
+        # Get the run state. Raise an error if the run is not in pending state.
         if not run.is_pending():
             raise RuntimeError("invalid run state '{}'".format(run.state))
         state = run.state()
+        # Create configuration dictionary that merges the engine global
+        # configuration with the workflow-specific one.
+        run_config = self.config if self.config is not None else dict()
+        if config:
+            run_config.update(config)
+        # Get the list of workflow steps and the generated output files.
+        steps, run_args, outputs = parser.parse_template(template=template, arguments=arguments)
+        # Create and prepare storage volume for run files.
         runstore = self.fs.get_store_for_folder(
             key=util.join(self.runsdir, run.run_id),
             identifier=DEFAULT_STORE
         )
-        # Get the list of workflow steps and the generated output files.
-        steps, run_args, outputs = parser.parse_template(template=template, arguments=arguments)
         try:
             # Copy template files to the run folder.
             files = staticfs.copy(key=None, store=runstore)
@@ -176,15 +181,18 @@ class SerialWorkflowEngine(WorkflowController):
                     dst = file.target()
                     runstore.store(file=file.source(), dst=dst)
                     files.append(dst)
-            # Create factory objects for storage volumes and workers.
-            volume_config = self.config.get('volumes', {}) if not config else config.get('volumes', {})
-            stores = volume_config.get('stores', [])
-            stores.append(runstore.to_dict())
-            stores_ls = {doc['id']: doc['files'] for doc in volume_config.get('files', [])}
-            stores_ls[DEFAULT_STORE] = files
-            volumes = VolumeManager(stores=stores, files=stores_ls)
-            worker_config = self.config.get('workers') if not config else config.get('workers')
-            workers = WorkerFactory(config=worker_config)
+            # Create factory objects for storage volumes.
+            volumes = volume_manager(
+                specs=run_config.get('volumes', []),
+                runstore=runstore,
+                runfiles=files
+            )
+            # Create factory for workers. Include mapping of workflow steps to
+            # the worker that are responsible for their execution.
+            workers = WorkerPool(
+                workers=run_config.get('workers', []),
+                managers={doc['step']: doc['worker'] for doc in run_config.get('workflow', [])}
+            )
             # Start a new process to run the workflow. Make sure to catch all
             # exceptions to set the run state properly.
             state = state.start()
@@ -271,7 +279,7 @@ def callback_function(result, lock, tasks, service):
 def run_workflow(
     run_id: str, state: WorkflowState, output_files: List[str],
     steps: List[ContainerStep], arguments: Dict, volumes: VolumeManager,
-    workers: WorkerFactory
+    workers: WorkerPool
 ) -> Tuple[str, str, Dict]:
     """Execute a list of workflow steps synchronously.
 
@@ -293,7 +301,7 @@ def run_workflow(
         Dictionary of argument values for parameters in the template.
     volumes: flowserv.volume.manager.VolumeManager
         Factory for storage volumes.
-    workers: flowserv.controller.worker.factory.WorkerFactory
+    workers: flowserv.controller.worker.manager.WorkerPool
         Factory for :class:`flowserv.model.workflow.step.ContainerStep` steps.
 
     Returns
@@ -315,13 +323,8 @@ def run_workflow(
             result_state = state.error(messages=messages)
             doc = serialize.serialize_state(result_state)
             return run_id, runstore.to_dict(), doc
-        # Create list of output files that were generated.
-        files = list()
-        for key in output_files:
-            if runstore.exists(key):
-                files.append(key)
         # Workflow executed successfully
-        result_state = state.success(files=files)
+        result_state = state.success(files=output_files)
     except Exception as ex:
         logging.error(ex, exc_info=True)
         strace = util.stacktrace(ex)
@@ -329,3 +332,37 @@ def run_workflow(
         result_state = state.error(messages=strace)
     logging.info('finished run {}: {}'.format(run_id, result_state.type_id))
     return run_id, runstore.to_dict(), serialize.serialize_state(result_state)
+
+
+def volume_manager(specs: List[Dict], runstore: StorageVolume, runfiles: List[str]) -> VolumeManager:
+    """Create an instance of the storage volume manager for a workflow run.
+
+    Combines the volume store specifications in the workflow run confguration
+    with the storage volume for the workflow run files.
+
+    Parameters
+    ----------
+    specs: list of dict
+        List of specifications (dictionary serializations) for storage volumes.
+    runstore: flowserv.volume.base.StorageVolume
+        Storage volume for run files.
+    runfiles: list of string
+        List of files that have been copied to the run store.
+
+    Returns
+    -------
+    flowserv.volume.manager.VolumeManager
+    """
+    stores = [runstore.to_dict()]
+    files = defaultdict(list)
+    for f in runfiles:
+        files[f].append(DEFAULT_STORE)
+    for doc in specs:
+        # Ignore stores that match the identifier of the runstore to avoid
+        # overriding the run store information.
+        if doc['id'] == runstore.identifier:
+            continue
+        stores.append(doc)
+        for f in doc.get('files', []):
+            files[f].append(doc['id'])
+    return VolumeManager(stores=stores, files=files)

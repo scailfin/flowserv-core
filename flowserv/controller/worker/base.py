@@ -78,7 +78,7 @@ class Worker(metaclass=ABCMeta):
         raise NotImplementedError()  # pragma: no cover
 
 
-class ContainerEngine(Worker):
+class ContainerWorker(Worker):
     """Execution engine for container steps in a serial workflow. Provides the
     functionality to expand arguments in the individual command statements.
     Implementations may differ in the run method that executes the expanded
@@ -86,7 +86,7 @@ class ContainerEngine(Worker):
     """
     def __init__(
         self, variables: Optional[Dict] = None, env: Optional[Dict] = None,
-        identifier: Optional[str] = None
+        identifier: Optional[str] = None, volumes: Optional[List[str]] = None
     ):
         """Initialize the optional mapping with default values for placeholders
         in command template strings.
@@ -105,8 +105,11 @@ class ContainerEngine(Worker):
         identifier: string, default=None
             Unique worker identifier. If the value is None a new unique identifier
             will be generated.
+        volumes: list of string, default=None
+            Identifier for storage volumes that the worker has access to. The
+            first entry in this list defines the default volume.
         """
-        super(ContainerEngine, self).__init__(identifier=identifier)
+        super(ContainerWorker, self).__init__(identifier=identifier, volumes=volumes)
         self.variables = variables if variables is not None else dict()
         self.env = env if env is not None else dict()
 
@@ -134,7 +137,11 @@ class ContainerEngine(Worker):
         # Create a modified container step where all commands are expended so
         # that they do not contain references to variables and template parameters
         # any more.
-        expanded_step = ContainerStep(image=step.image, env=step.env)
+        expanded_step = ContainerStep(
+            identifier=step.identifier,
+            image=step.image,
+            env=step.env
+        )
         for cmd in step.commands:
             # Generate mapping for template substitution. Include a mapping of
             # placeholder names to themselves.

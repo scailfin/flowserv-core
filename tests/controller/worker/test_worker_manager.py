@@ -10,11 +10,73 @@
 
 import pytest
 
+from flowserv.controller.worker.code import CodeWorker
 from flowserv.controller.worker.docker import DockerWorker
-from flowserv.controller.worker.manager import WorkerPool, Docker, Subprocess
+from flowserv.controller.worker.manager import WorkerPool, Code, Docker, Subprocess
 from flowserv.controller.worker.subprocess import SubprocessWorker
+from flowserv.model.workflow.step import CodeStep, ContainerStep
+from flowserv.volume.manager import DEFAULT_STORE
 
 import flowserv.error as err
+
+
+@pytest.mark.parametrize(
+    'step,cls',
+    [
+        (ContainerStep(identifier='test', image='test'), SubprocessWorker),
+        (ContainerStep(identifier='test', image='test'), SubprocessWorker),
+        (CodeStep(identifier='test', func=lambda x: x), CodeWorker)
+    ]
+)
+def test_get_default_worker(step, cls):
+    """Test getting a default worker for a workflow step that has no manager
+    explicitly assigned to it.
+    """
+    factory = WorkerPool(workers=[])
+    assert isinstance(factory.get_default_worker(step), cls)
+
+
+def test_get_worker_error():
+    """Test error when accessing worker with unknown identifier."""
+    step = ContainerStep(identifier='test', image='test')
+    factory = WorkerPool(workers=[], managers={'test': 'test'})
+    with pytest.raises(err.UnknownObjectError):
+        factory.get(step)
+    # Manipulate the worker type to get an error for unknown type.
+    doc = Code(identifier='test')
+    doc['type'] = 'unknown'
+    factory = WorkerPool(workers=[doc], managers={'test': 'test'})
+    with pytest.raises(ValueError):
+        factory.get(step)
+    # Manipulate the step type to get an error for unknown type.
+    step.step_type = 'unknown'
+    factory = WorkerPool(workers=[])
+    with pytest.raises(ValueError):
+        factory.get(step)
+
+
+@pytest.mark.parametrize(
+    'doc,step,cls',
+    [
+        (Subprocess(identifier='test'), ContainerStep(identifier='test', image='test'), SubprocessWorker),
+        (Docker(identifier='test'), ContainerStep(identifier='test', image='test'), DockerWorker),
+        (Code(identifier='test'), CodeStep(identifier='test', func=lambda x: x), CodeWorker)
+    ]
+)
+def test_get_worker_instance(doc, step, cls):
+    """Test creating worker instances from specification documents."""
+    factory = WorkerPool(workers=[doc], managers={step.name: doc['id']})
+    worker = factory.get(step)
+    assert isinstance(worker, cls)
+    assert worker.default_volume() == DEFAULT_STORE
+    # Run twice to account for the cached object.
+    assert factory.get(step) == worker
+
+
+def test_init_empty():
+    """Test creating a worker factory from an empty dictionary."""
+    factory = WorkerPool(workers=list())
+    assert len(factory._workerspecs) == 0
 
 
 def test_worker_spec_seriaization():
@@ -22,6 +84,8 @@ def test_worker_spec_seriaization():
     specifications.
     """
     # -- Config without additional arguments. ---------------------------------
+    doc = Code(identifier='D1')
+    assert doc == {'id': 'D1', 'type': 'code', 'env': [], 'vars': []}
     doc = Docker(identifier='D1')
     assert doc == {'id': 'D1', 'type': 'docker', 'env': [], 'vars': []}
     doc = Subprocess(identifier='S1')
@@ -43,38 +107,3 @@ def test_worker_spec_seriaization():
         'env': [{'key': 'TEST_ENV', 'value': 'abc'}],
         'vars': [{'key': 'x', 'value': 1}]
     }
-
-
-def test_get_worker_error():
-    """Test error when accessing worker with unknown identifier."""
-    factory = WorkerPool(workers=[])
-    with pytest.raises(err.UnknownObjectError):
-        factory.get('test')
-    factory = WorkerPool(workers=[Subprocess(identifier='s1')])
-    with pytest.raises(err.UnknownObjectError):
-        factory.get('test')
-    factory = WorkerPool(workers=[{'id': 'test', 'type': 'unknown'}])
-    with pytest.raises(ValueError):
-        factory.get('test')
-
-
-@pytest.mark.parametrize(
-    'doc,cls',
-    [
-        (Subprocess(identifier='test'), SubprocessWorker),
-        (Docker(identifier='test'), DockerWorker),
-    ]
-)
-def test_get_worker_instance(doc, cls):
-    """Test creating worker instances from specification documents."""
-    factory = WorkerPool(workers=[doc])
-    worker = factory.get('test')
-    assert isinstance(worker, cls)
-    # Run twice to account for the cached object.
-    assert factory.get('test') == worker
-
-
-def test_init_empty():
-    """Test creating a worker factory from an empty dictionary."""
-    factory = WorkerPool(workers=list())
-    assert len(factory._workerspecs) == 0

@@ -8,7 +8,7 @@
 
 """Execute a workflow code step."""
 
-from typing import Dict
+from typing import Dict, List, Optional
 
 import logging
 import os
@@ -16,9 +16,13 @@ import sys
 
 from flowserv.controller.serial.workflow.result import ExecResult
 from flowserv.controller.worker.base import Worker
-from flowserv.model.workflow.step import FunctionStep
+from flowserv.model.workflow.step import CodeStep
 
 import flowserv.util as util
+
+
+"""Unique type identifier for CodeWorker serializations."""
+CODE_WORKER = "code"
 
 
 class OutputStream(object):
@@ -45,10 +49,24 @@ class OutputStream(object):
 
 class CodeWorker(Worker):
     """Worker to execute workflow steps of type
-    :class:`flowserv.model.workflow.step.FunctionStep`
+    :class:`flowserv.model.workflow.step.CodeStep`
     """
-    def exec(self, step: FunctionStep, context: Dict, rundir: str) -> ExecResult:
-        """Execute a workflow step of type :class:`flowserv.model.workflow.step.FunctionStep`
+    def __init__(self, identifier: Optional[str] = None, volumes: Optional[List[str]] = None):
+        """Initialize the worker identifier and accessible volumes.
+
+        Parameters
+        ----------
+        identifier: string, default=None
+            Unique worker identifier. If the value is None a new unique identifier
+            will be generated.
+        volumes: list of string, default=None
+            Identifier for storage volumes that the worker has access to. The
+            first entry in this list defines the default volume.
+        """
+        super(CodeWorker, self).__init__(identifier=identifier, volumes=volumes)
+
+    def exec(self, step: CodeStep, context: Dict, rundir: str) -> ExecResult:
+        """Execute a workflow step of type :class:`flowserv.model.workflow.step.CodeStep`
         in a given context.
 
         Captures output to STDOUT and STDERR and includes them in the returned
@@ -56,7 +74,7 @@ class CodeWorker(Worker):
 
         Parameters
         ----------
-        step: flowserv.model.workflow.step.FunctionStep
+        step: flowserv.model.workflow.step.CodeStep
             Code step in a serial workflow.
         context: dict
             Context for the executed code.

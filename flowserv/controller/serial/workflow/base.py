@@ -20,8 +20,8 @@ import os
 
 from flowserv.controller.serial.engine.runner import exec_workflow
 from flowserv.controller.serial.workflow.result import RunResult
-from flowserv.model.workflow.step import FunctionStep, ContainerStep, WorkflowStep
-from flowserv.controller.worker.factory import WorkerFactory
+from flowserv.model.workflow.step import CodeStep, ContainerStep, WorkflowStep
+from flowserv.controller.worker.manager import WorkerPool
 from flowserv.model.parameter.base import Parameter
 from flowserv.model.template.parameter import ParameterIndex
 
@@ -32,21 +32,21 @@ class SerialWorkflow(object):
     in order for a given set of input parameters.
 
     At this point we distinguish two types of workflow steps:
-    :class:`flowserv.model.workflow.step.FunctionStep`
+    :class:`flowserv.model.workflow.step.CodeStep`
     and :class:`flowserv.model.workflow.step.ContainerStep`.
 
-    A :class:`flowserv.model.workflow.step.FunctionStep` is executed within the
+    A :class:`flowserv.model.workflow.step.CodeStep` is executed within the
     same thread and environment as the flowserv engine. A
     :class:`flowserv.model.workflow.step.ContainerStep` is executed in a separate
     container-like environment. The execution environment is represented by a
-    :class:`flowserv.controller.worker.base.ContainerEngine` that is associated
-    in the :class:`flowserv.controller.worker.factory.WorkerFactory` with the
+    :class:`flowserv.controller.worker.base.ContainerWorker` that is associated
+    in the :class:`flowserv.controller.worker.manager.WorkerPool` with the
     environment identifier of the container step.
     """
     def __init__(
         self, steps: Optional[List[WorkflowStep]] = None,
         parameters: Optional[List[Parameter]] = None,
-        workers: Optional[WorkerFactory] = None
+        workers: Optional[WorkerPool] = None
 
     ):
         """Initialize the object properties.
@@ -60,7 +60,7 @@ class SerialWorkflow(object):
             Optional sequence of steps in the serial workflow.
         parameters: list of flowserv.model.parameter.base.Parameter, default=None
             Optional list of workflow template parameters.
-        workers: flowserv.controller.worker.factory.WorkerFactory
+        workers: flowserv.controller.worker.manager.WorkerPool
             Factory for :class:`flowserv.controller.worker.base.ContainerStep`
             objects that are used to execute individual
             :class:`flowserv.model.workflow.step.ContainerStep` instances in the
@@ -68,7 +68,7 @@ class SerialWorkflow(object):
         """
         self.steps = steps if steps is not None else list()
         self.parameters = ParameterIndex(parameters=parameters)
-        self.workers = workers if workers is not None else WorkerFactory()
+        self.workers = workers if workers is not None else WorkerPool()
 
     def __iter__(self) -> Iterable[WorkflowStep]:
         """Get an interator over the steps in the workflow.
@@ -171,7 +171,7 @@ class SerialWorkflow(object):
         -------
         flowserv.controller.serial.workflow.base.SerialWorkflow
         """
-        step = FunctionStep(func=func, output=output, varnames=varnames)
+        step = CodeStep(func=func, output=output, varnames=varnames)
         self.steps.append(step)
         return self
 
@@ -199,7 +199,7 @@ class SerialWorkflow(object):
         return self
 
     def run(
-        self, arguments: Dict, workers: Optional[WorkerFactory] = None,
+        self, arguments: Dict, workers: Optional[WorkerPool] = None,
         rundir: Optional[str] = None
     ) -> RunResult:
         """Execute workflow for the given set of input arguments.
@@ -216,7 +216,7 @@ class SerialWorkflow(object):
         ----------
         arguments: dict
             User-provided arguments for the workflow run.
-        workers: flowserv.controller.worker.factory.WorkerFactory, default=None
+        workers: flowserv.controller.worker.manager.WorkerPool, default=None
             Factory for :class:`flowserv.model.workflow.step.ContainerStep`
             steps. Uses the default worker for all container steps if None.
         rundir: str, default=None
@@ -230,7 +230,7 @@ class SerialWorkflow(object):
         # Use current working directory if run directory is None.
         rundir = rundir if rundir else os.getcwd()
         # Use default worker for all container steps if no factory is given.
-        workers = workers if workers else WorkerFactory()
+        workers = workers if workers else WorkerPool()
         # Execute the workflow and return the run result that contains the
         # results of the executed steps.
         return exec_workflow(

@@ -11,15 +11,14 @@
 from typing import List
 
 from flowserv.controller.serial.workflow.result import RunResult
-from flowserv.controller.worker.code import CodeWorker
-from flowserv.controller.worker.factory import WorkerFactory
+from flowserv.controller.worker.manager import WorkerPool
 from flowserv.model.workflow.step import WorkflowStep
 from flowserv.volume.manager import VolumeManager
 
 
 def exec_workflow(
-    steps: List[WorkflowStep], workers: WorkerFactory, volumes: VolumeManager,
-    rundir: str, result: RunResult
+    steps: List[WorkflowStep], workers: WorkerPool, volumes: VolumeManager,
+    result: RunResult
 ) -> RunResult:
     """Execute steps in a serial workflow.
 
@@ -36,12 +35,10 @@ def exec_workflow(
     ----------
     steps: list of flowserv.model.workflow.step.WorkflowStep
         Steps in the serial workflow that are executed in the given context.
-    workers: flowserv.controller.worker.factory.WorkerFactory, default=None
+    workers: flowserv.controller.worker.manager.WorkerPool, default=None
         Factory for :class:`flowserv.model.workflow.step.ContainerStep` steps.
-    volumes: flowserv.controller.volume.manager.VolumeManager
+    volumes: flowserv.volume.manager.VolumeManager
         Manager for storage volumes that are used by the different workers.
-    rundir: str, default=None
-        Working directory for all executed workflow steps.
     result: flowserv.controller.worker.result.RunResult
         Collector for results from executed workflow steps. Contains the context
         within which the workflow is executed.
@@ -51,28 +48,18 @@ def exec_workflow(
     flowserv.controller.worker.result.RunResult
     """
     for step in steps:
-        if step.is_function_step():
-            worker = CodeWorker()
-        else:
-            worker = workers.get(step.image)
-        # Prepare volume store that is associated with the worker.
+        # Get the worker that is responsible for executing the workflow step.
+        worker = workers.get(step)
+        # Prepare the volume stores that are associated with the worker.
         files = volumes.prepare(
             files=worker.inputfiles,
             stores=worker.stores,
             default_store=worker.default_store
         )
-        # The volume store should provide the base directory that is being
-        # passed to the worker's exec method.
-        pass
-        # Execute the workflow step.
-        r = worker.exec(
-            step=step,
-            context=result.context,
-            files=files,
-            rundir=rundir
-        )
+        # Execute the workflow step and add the result to the overall workflow
+        # result. Terminate if the step execution was not successful.
+        r = worker.exec(step=step, context=result.context, files=files)
         result.add(r)
-        # Terminate if the step execution was not successful.
         if r.returncode != 0:
             break
         # Update volume manager with output files for the workflow step.

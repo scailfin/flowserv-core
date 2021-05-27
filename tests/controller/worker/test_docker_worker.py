@@ -66,7 +66,7 @@ def test_run_steps_with_error(mock_docker):
         'TEST_ENV_2'
     ]
     env = {'TEST_ENV_1': 'Hello', 'TEST_ENV_2': 'World'}
-    step = ContainerStep(image='test', commands=commands)
+    step = ContainerStep(identifier='test', image='test', commands=commands)
     result = DockerWorker().run(step=step, env=env, rundir=RUN_DIR)
     assert result.returncode == 1
     assert result.exception is not None
@@ -81,7 +81,7 @@ def test_run_successful_steps(mock_docker):
         'TEST_ENV_2'
     ]
     env = {'TEST_ENV_1': 'Hello', 'TEST_ENV_2': 'World'}
-    step = ContainerStep(image='test', commands=commands)
+    step = ContainerStep(identifier='test', image='test', commands=commands)
     result = DockerWorker().run(step=step, env=env, rundir=RUN_DIR)
     assert result.returncode == 0
     assert result.exception is None

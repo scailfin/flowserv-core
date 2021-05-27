@@ -62,7 +62,7 @@
                 "type": {
                     "type": "string",
                     "description": "Worker type identifier",
-                    "enum": ["docker", "subprocess"]
+                    "enum": ["code", "docker", "subprocess"]
                 },
                 "env": {
                     "type": "array",

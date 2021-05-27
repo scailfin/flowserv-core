@@ -7,7 +7,7 @@ Serial Workflows in flowServ
 Sub-classes for `WorkflowStep` capture all the information that is required to execute the workflow step. **flowServ** currently supports two types of workflow steps:
 
 - `ContainerStep <https://github.com/scailfin/flowserv-core/blob/47d383f88669af0ab79c6af61d0d48c8cb7448a9/flowserv/model/workflow/step.py#L83>`_: Execute a list of commands in a Docker container-like environment. THe class maintains the identifier of the container image and the list of commands that are executed.
-- `FunctionStep <https://github.com/scailfin/flowserv-core/blob/47d383f88669af0ab79c6af61d0d48c8cb7448a9/flowserv/model/workflow/step.py#L127>`_: Execute a given Python function directly in the current Python environment (thread). Maintains the function and mappings of input arguments and outputs for that function.
+- `CodeStep <https://github.com/scailfin/flowserv-core/blob/47d383f88669af0ab79c6af61d0d48c8cb7448a9/flowserv/model/workflow/step.py#L127>`_: Execute a given Python function directly in the current Python environment (thread). Maintains the function and mappings of input arguments and outputs for that function.
 
 When the workflow is run the individual steps are executed in order. Workflow steps are executed by dedicated `Workers <https://github.com/scailfin/flowserv-core/blob/workers/flowserv/controller/worker/base.py>`_. For different step type different workers are used to e execute the steps.
 

@@ -48,7 +48,7 @@ def test_run_steps_with_error():
         '{py} printenv.py TEST_ENV_2'.format(py=interpreter)
     ]
     env = {'TEST_ENV_1': 'Hello', 'TEST_ENV_ERROR': 'error', 'TEST_ENV_2': 'World'}
-    step = ContainerStep(image='test', commands=commands)
+    step = ContainerStep(identifier='test', image='test', commands=commands)
     result = SubprocessWorker().run(step=step, env=env, rundir=RUN_DIR)
     assert result.returncode == 1
     assert result.exception is None
@@ -59,7 +59,7 @@ def test_run_steps_with_error():
 def test_run_steps_with_subprocess_error(mock_subprocess):
     """Test execution of a workflow step that fails to run."""
     commands = ['nothing to do']
-    step = ContainerStep(image='test', commands=commands)
+    step = ContainerStep(identifier='test', image='test', commands=commands)
     result = SubprocessWorker().run(step=step, env=dict(), rundir=RUN_DIR)
     assert result.returncode == 1
     assert result.exception is not None
@@ -80,12 +80,12 @@ def test_run_successful_steps():
         '{py} printenv.py TEST_ENV_2'.format(py=interpreter)
     ]
     env = {'TEST_ENV_1': 'Hello', 'TEST_ENV_2': 'World'}
-    step = ContainerStep(image='test', commands=commands)
+    step = ContainerStep(identifier='test', image='test', commands=commands)
     result = SubprocessWorker().run(step=step, env=env, rundir=RUN_DIR)
     assert result.returncode == 0
     assert result.exception is None
     assert ' '.join([s.strip() for s in result.stdout]) == 'Hello World'
-    step = ContainerStep(image='test', commands=commands)
+    step = ContainerStep(identifier='test', image='test', commands=commands)
     if systemroot:
         os.environ['SYSTEMROOT'] = systemroot
     else:
@@ -103,7 +103,12 @@ def test_run_successful_steps_splitenv():
         '{py} printenv.py TEST_ENV_2'.format(py=interpreter)
     ]
     worker = SubprocessWorker(env={'TEST_ENV_1': 'Hello', 'TEST_ENV_2': 'You'})
-    step = ContainerStep(image='test', env={'TEST_ENV_2': 'World'}, commands=commands)
+    step = ContainerStep(
+        identifier='test',
+        image='test',
+        env={'TEST_ENV_2': 'World'},
+        commands=commands
+    )
     result = worker.exec(step=step, context=dict(), rundir=RUN_DIR)
     assert result.returncode == 0
     assert result.exception is None

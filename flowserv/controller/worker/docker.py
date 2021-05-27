@@ -17,7 +17,7 @@ import os
 
 from flowserv.controller.serial.workflow.result import ExecResult
 from flowserv.model.workflow.step import ContainerStep
-from flowserv.controller.worker.base import ContainerEngine
+from flowserv.controller.worker.base import ContainerWorker
 
 import flowserv.util as util
 
@@ -26,7 +26,7 @@ import flowserv.util as util
 DOCKER_WORKER = 'docker'
 
 
-class DockerWorker(ContainerEngine):
+class DockerWorker(ContainerWorker):
     """Container step engine that uses the local Docker deamon to execute the
     commands in a workflow step.
     """
