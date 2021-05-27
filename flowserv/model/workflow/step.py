@@ -82,6 +82,16 @@ class WorkflowStep(object):
         """
         return self.step_type == FUNCTION_STEP
 
+    @property
+    def name(self) -> str:
+        """Synonym for the step identifier.
+
+        Returns
+        -------
+        string
+        """
+        return self.identifier
+
 
 class CodeStep(WorkflowStep):
     """Workflow step that executes a given Python function.
