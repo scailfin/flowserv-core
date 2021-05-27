@@ -20,8 +20,41 @@ def parse_template(template: WorkflowTemplate, arguments: Dict) -> Tuple[List[Co
     """Parse a serial workflow template to extract workflow steps and output
     files.
 
+    The expected schema of the workflow specification is as follows:
+
+    .. code-block:: yaml
+
+        workflow:
+            files:
+                inputs:
+                - "str"
+                outputs:
+                - "str"
+            parameters:
+            - name: "scalar"
+            steps:
+            - name: "str"
+              files:
+                inputs:
+                - "str"
+                outputs:
+                - "str"
+              action: "object depending on the step type"
+
+
+    The schema for the action specification for a workflow step is dependent on
+    the step type. For container steps, the expected schema is:
+
+    .. code-block:: yaml
+
+        action:
+            environment: "str"
+            commands:
+            - "str"
+
     Expands template parameter references in the workflow argument specification
-    and returns the modified argument list as part of the result.
+    and the step inputs list. Returns the modified argument list as part of the
+    result.
 
     Parameters
     ----------
@@ -35,31 +68,48 @@ def parse_template(template: WorkflowTemplate, arguments: Dict) -> Tuple[List[Co
     # Get the commands from the workflow specification.
     workflow_spec = template.workflow_spec
     steps = list()
-    for step in workflow_spec.get('workflow', {}).get('specification', {}).get('steps', []):
-        # Workflow steps may either be parameter references or dictionaries
-        # with `image` and `commands` elements.
-        script = None
-        if tp.is_parameter(step):
-            para = template.parameters[tp.get_name(step)]
-            if para.name in arguments:
-                script = para.cast(arguments[para.name])
+    for doc in workflow_spec.get('steps', []):
+        # For each workflow step we expect the elements 'name' and 'action' as
+        # well as an optional specification of the input and output files.
+        step_id = doc['name']
+        action = doc['action']
+        input_files = doc.get('files', {}).get('inputs')
+        output_files = doc.get('files', {}).get('outputs')
+        # The action may either be a reference to an input parameter for the
+        # workflow step or a dictionary.
+        step = None
+        if isinstance(action, str):
+            # If the action references a parameter we replace the action object
+            # with the parameter value.
+            para = template.parameters[tp.get_name(action)]
+            if para.name not in arguments and not para.required:
+                # Skip this step if no parameter value was provided and is not
+                # a required parameter (step).
+                continue
+            action = para.cast(value=arguments[para.name])
+        # If the action is a dictionary, the type of the generated workflow
+        # step will depend on the elements in that dictionary.
+        if 'environment' in action and 'commands' in action:
+            # If the dictionary contains `environment` and `commands` the result
+            # is a container step.
+            step = ContainerStep(
+                identifier=step_id,
+                image=action.get('environment'),
+                commands=action.get('commands', []),
+                inputs=input_files,
+                outputs=output_files
+            )
         else:
-            script = ContainerStep(image=step.get('environment'))
-            for cmd in step.get('commands', []):
-                script.add(cmd)
-        if script:
-            steps.append(script)
+            raise ValueError(f"invalid action specification '{action}'")
+        steps.append(step)
     # Get the workflow arguments that are defined in the workflow template.
     # Expand template parameter references using the given argument set.
-    run_args = workflow_spec.get('inputs', {}).get('parameters', {})
+    run_args = workflow_spec.get('parameters', {})
     for key in run_args.keys():
         run_args[key] = tp.expand_value(
             value=str(run_args[key]),
             arguments=arguments,
             parameters=template.parameters
         )
-    # Get the list of output files from the workflow specification. At this
-    # point we do not support references to template arguments or parameters.
-    output_files = workflow_spec.get('outputs', {}).get('files', {})
     # Return tuple of workflow steps and output file list.
-    return steps, run_args, output_files
+    return steps, run_args, workflow_spec.get('files', {}).get('outputs', {})

@@ -1,25 +1,24 @@
 workflow:
-    version: '0.3.0'
-    inputs:
-      files:
+    files:
+        inputs:
         - 'code/'
         - 'data/'
-    workflow:
-      type: 'serial'
-      specification:
-        steps:
-          - $[[preproc]]
-          - $[[tagger]]
-          - environment: 'toptagger:1.0'
-            commands:
-              - '${python} code/save-probabilities.py data/evaluate/ results/'
-    outputs:
-      files:
-       - 'results/yProbBest.pkl'
-       - 'results/results.json'
-       - 'results/analyze.log'
-       - 'results/evaluate.log'
-       - 'results/preproc.log'
+        outputs:
+        - 'results/yProbBest.pkl'
+        - 'results/results.json'
+        - 'results/analyze.log'
+        - 'results/evaluate.log'
+        - 'results/preproc.log'
+    steps:
+    - name: "preproc"
+      action: "$[[preproc]]"
+    - name: "tagger"
+      action: "$[[tagger]]"
+    - name: "evaluate"
+      action:
+        environment: 'toptagger:1.0'
+        commands:
+        - '${python} code/save-probabilities.py data/evaluate/ results/'
 postproc:
     workflow:
         steps:

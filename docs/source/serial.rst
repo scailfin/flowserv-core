@@ -21,6 +21,7 @@ The workflow specification for serial workflows, as part of a **flowServ** workf
         files:
             inputs:
             - "code/"
+              "$[[names]]"
             outputs:
             - "results/score.json"
               "results/greetings.txt"
@@ -61,7 +62,7 @@ The optional ``parameters`` section defines the template parameters that are ava
 Workflow Steps
 --------------
 
-The mandatory ``steps`` section defines the list of individual workflow steps. Each workflow step has an optional ``files`` section. This section is similar to the global files specification for the workflow. It defines the required inputs for the worker that executes the workflow step, as well as the outputs that should be retained and made available to the following workflow steps or that are part of the workflow result. One difference to the global files list is that the files list for a workflow step can contain references to user-provided template parameters. If the files section is not given, no guarantees are made about the files that are available for a worker. If all workers access the same storage volume then all run files may be available to each worker. However, it is good practice to explicitly specify the inputs and outputs for each workflow step if required by a worker.
+The mandatory ``steps`` section defines the list of individual workflow steps. Each workflow step has an optional ``files`` section. This section is similar to the global files specification for the workflow. It defines the required inputs for the worker that executes the workflow step, as well as the outputs that should be retained and made available to the following workflow steps or that are part of the workflow result. One difference to the global files list is that the files list for a workflow step can contain references to template variables. If the files section is not given, no guarantees are made about the files that are available for a worker. If all workers access the same storage volume then all run files may be available to each worker. However, it is good practice to explicitly specify the inputs and outputs for each workflow step if required by a worker.
 
 The mandatory ``action`` part of the workflow step defines the action of the step. The format is dependent on the type of worker that is used for the step. This part can also be replaced with a user-defined step, i.e., a reference to a template parameter. The serial workflow engine currently supports the following types of workflow steps:
 

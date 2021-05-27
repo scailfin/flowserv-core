@@ -9,8 +9,10 @@
 """Unit tests for the workflow template parser."""
 
 import os
+import pytest
 
 from flowserv.model.template.base import WorkflowTemplate
+from flowserv.model.template.parameter import ParameterIndex
 
 import flowserv.controller.serial.workflow.parser as parser
 import flowserv.util as util
@@ -19,7 +21,7 @@ import flowserv.util as util
 DIR = os.path.dirname(os.path.realpath(__file__))
 BENCHMARK_DIR = os.path.join(DIR, '../../../.files/benchmark')
 TEMPLATE_DIR = os.path.join(DIR, '../../../.files/template')
-TEMPLATE_HELLOWORLD = os.path.join(TEMPLATE_DIR, './hello-world.yaml')
+TEMPLATE_HELLOWORLD = os.path.join(BENCHMARK_DIR, 'helloworld', 'benchmark.yaml')
 TEMPLATE_TOPTAGGER = os.path.join(BENCHMARK_DIR, './top-tagger.yaml')
 
 
@@ -29,11 +31,10 @@ def test_parse_hello_world_template():
     steps, args, output_files = parser.parse_template(template=template, arguments={'names': 'names.txt', 'sleeptime': 10})
     assert len(steps) == 1
     step = steps[0]
-    assert step.image == 'python:2.7'
-    assert len(step.commands) == 1
-    assert step.commands[0] == '${python} "${helloworld}" --inputfile "${inputfile}" --outputfile "${outputfile}" --sleeptime ${sleeptime}'  # noqa: E501
-    assert output_files == ['results/greetings.txt']
-    assert args == {'helloworld': 'code/helloworld.py', 'inputfile': 'names.txt', 'outputfile': 'results/greetings.txt', 'sleeptime': '10'}  # noqa: E501
+    assert step.image == 'python:3.7'
+    assert len(step.commands) == 2
+    assert output_files == ['results/greetings.txt', 'results/analytics.json']
+    assert args == {'inputfile': 'names.txt', 'outputfile': 'results/greetings.txt', 'sleeptime': '10', 'greeting': 'Hello'}
 
 
 def test_parse_top_tagger_template():
@@ -41,8 +42,20 @@ def test_parse_top_tagger_template():
     as workflow steps.
     """
     template = WorkflowTemplate.from_dict(doc=util.read_object(TEMPLATE_TOPTAGGER))
-    doc = {'image': 'test', 'commands': ['python analyze']}
+    doc = {'environment': 'test', 'commands': ['python analyze']}
     args = {'tagger': doc}
     steps, _, _ = parser.parse_template(template=template, arguments=args)
     assert len(steps) == 2
-    assert steps[0] == doc
+    step = steps[0]
+    assert step.image == 'test'
+    assert step.commands == ['python analyze']
+
+
+def test_parse_workflow_spec_error():
+    """Test error for unknown workflow step when parsing a serial workflow
+    specification.
+    """
+    doc = {'steps': [{'name': 'S1', 'action': {'type': 'undefined'}}]}
+    template = WorkflowTemplate(workflow_spec=doc, parameters=ParameterIndex())
+    with pytest.raises(ValueError):
+        parser.parse_template(template=template, arguments=dict())
