@@ -8,10 +8,10 @@
 
 """Definitions for the different types of steps in a serial workflow. At this
 point we distinguish two types of workflow steps:
-:class:`flowserv.model.workflow.step.FunctionStep` and
+:class:`flowserv.model.workflow.step.CodeStep` and
 :class:`flowserv.model.workflow.step.ContainerStep`.
 
-A :class:`flowserv.model.workflow.step.FunctionStep` is used to execute a given
+A :class:`flowserv.model.workflow.step.CodeStep` is used to execute a given
 function within the workflow context. The code is executed within the same
 thread and environment as the flowserv engine. Code steps are intended for minor
 actions (e.g., copying of files or reading results from previous workflow steps).
@@ -45,19 +45,22 @@ class WorkflowStep(object):
     The aim of this base class is to provide functions to distinguish between
     these two types of steps.
     """
-    def __init__(self, step_type: int):
+    def __init__(self, identifier: str, step_type: int):
         """Initialize the type identifier for the workflow step.
 
         Raises a ValueError if an invalid type identifier is given.
 
         Parameters
         ----------
+        identifier: str
+            Unique workflow step identifier.
         step_type: int
             Either CONTAINER_STEP or FUNCTION_STEP.
         """
         if step_type not in STEPS:
             raise ValueError("invalid step type '{}'".format(step_type))
         self.step_type = step_type
+        self.identifier = identifier
 
     def is_container_step(self) -> bool:
         """True if the workflow step is of type
@@ -71,7 +74,7 @@ class WorkflowStep(object):
 
     def is_function_step(self) -> bool:
         """True if the workflow step is of type
-        :class:`flowserv.model.workflow.step.FunctionStep`.
+        :class:`flowserv.model.workflow.step.CodeStep`.
 
         Returns
         -------
@@ -80,51 +83,7 @@ class WorkflowStep(object):
         return self.step_type == FUNCTION_STEP
 
 
-class ContainerStep(WorkflowStep):
-    """Workflow step that is executed in a container environment. Contains a
-    reference to the container identifier and a list of command line statements
-    that are executed in a given environment.
-    """
-    def __init__(
-        self, image: str, commands: Optional[List[str]] = None,
-        env: Optional[Dict] = None
-    ):
-        """Initialize the object properties.
-
-        Parameters
-        ----------
-        image: string
-            Execution environment identifier.
-        commands: list(string), optional
-            List of command line statements.
-        env: dict, default=None
-            Environment variables for workflow step execution.
-        """
-        super(ContainerStep, self).__init__(step_type=CONTAINER_STEP)
-        self.image = image
-        self.commands = commands if commands is not None else list()
-        self.env = env if env is not None else dict()
-
-    def add(self, cmd: str) -> ContainerStep:
-        """Append a given command line statement to the list of commands in the
-        workflow step.
-
-        Returns a reference to the object itself.
-
-        Parameters
-        ----------
-        cmd: string
-            Command line statement
-
-        Returns
-        -------
-        flowserv.model.workflow.serial.Step
-        """
-        self.commands.append(cmd)
-        return self
-
-
-class FunctionStep(WorkflowStep):
+class CodeStep(WorkflowStep):
     """Workflow step that executes a given Python function.
 
     The function is evaluated using the current state of the workflow arguments.
@@ -133,7 +92,7 @@ class FunctionStep(WorkflowStep):
     object is availble for the following workflows steps.
     """
     def __init__(
-        self, func: Callable, output: Optional[str] = None,
+        self, identifier: str, func: Callable, output: Optional[str] = None,
         varnames: Optional[Dict] = None
     ):
         """Initialize the reference to the executed function and the optional
@@ -141,6 +100,8 @@ class FunctionStep(WorkflowStep):
 
         Parameters
         ----------
+        identifier: str
+            Unique workflow step identifier.
         func: callable
             Python function that is executed by the workflow step.
         output: string, default=None
@@ -155,7 +116,7 @@ class FunctionStep(WorkflowStep):
             the function signature that do not occur in the arguments dictionary
             to argument names that are in the dictionary.
         """
-        super(FunctionStep, self).__init__(step_type=FUNCTION_STEP)
+        super(CodeStep, self).__init__(identifier=identifier, step_type=FUNCTION_STEP)
         self.func = func
         self.output = output
         self.varnames = varnames if varnames is not None else dict()
@@ -186,3 +147,53 @@ class FunctionStep(WorkflowStep):
         # for the result is given.
         if self.output is not None:
             context[self.output] = result
+
+
+"""Include FunctionStep class for backward compatibility."""
+FunctionStep = CodeStep
+
+
+class ContainerStep(WorkflowStep):
+    """Workflow step that is executed in a container environment. Contains a
+    reference to the container identifier and a list of command line statements
+    that are executed in a given environment.
+    """
+    def __init__(
+        self, identifier: str, image: str, commands: Optional[List[str]] = None,
+        env: Optional[Dict] = None
+    ):
+        """Initialize the object properties.
+
+        Parameters
+        ----------
+        identifier: str
+            Unique workflow step identifier.
+        image: string
+            Execution environment identifier.
+        commands: list(string), optional
+            List of command line statements.
+        env: dict, default=None
+            Environment variables for workflow step execution.
+        """
+        super(ContainerStep, self).__init__(identifier=identifier, step_type=CONTAINER_STEP)
+        self.image = image
+        self.commands = commands if commands is not None else list()
+        self.env = env if env is not None else dict()
+
+    def add(self, cmd: str) -> ContainerStep:
+        """Append a given command line statement to the list of commands in the
+        workflow step.
+
+        Returns a reference to the object itself.
+
+        Parameters
+        ----------
+        cmd: string
+            Command line statement
+
+        Returns
+        -------
+        flowserv.model.workflow.serial.Step
+        """
+        self.commands.append(cmd)
+        return self
