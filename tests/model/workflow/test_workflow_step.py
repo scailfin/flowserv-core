@@ -29,11 +29,11 @@ def test_container_step():
 def test_exec_func_step():
     """Test executing a Python function as a step in a serial workflow."""
     args = {'x': 1, 'y': 2}
-    step = CodeStep(identifier='test', func=my_add, output='z')
+    step = CodeStep(identifier='test', func=my_add, arg='z')
     step.exec(context=args)
     assert args == {'x': 1, 'y': 2, 'z': 3}
     # Test renaming arguments.
-    step = CodeStep(identifier='test', func=my_add, varnames={'x': 'z'}, output='x')
+    step = CodeStep(identifier='test', func=my_add, varnames={'x': 'z'}, arg='x')
     step.exec(context=args)
     assert args == {'x': 5, 'y': 2, 'z': 3}
     # Execute function but ignore output.
@@ -45,14 +45,39 @@ def test_exec_func_step():
 def test_step_type():
     """Test methods that distinguish different step types."""
     # CodeStep
-    step = CodeStep(identifier='test', func=my_add, output='z')
+    step = CodeStep(
+        identifier='test',
+        func=my_add,
+        arg='z',
+        inputs=['a', 'b'],
+        outputs=['x', 'y']
+    )
     assert step.identifier == 'test'
-    assert step.is_function_step()
+    assert step.arg == 'z'
+    assert step.inputs == ['a', 'b']
+    assert step.outputs == ['x', 'y']
+    assert step.is_code_step()
     assert not step.is_container_step()
     # ContainerStep
-    step = ContainerStep(identifier='test', image='test')
+    step = ContainerStep(
+        identifier='test',
+        image='test',
+        inputs=['a', 'b'],
+        outputs=['x', 'y']
+    )
+    assert step.identifier == 'test'
+    assert step.image == 'test'
+    assert step.inputs == ['a', 'b']
+    assert step.outputs == ['x', 'y']
     assert step.is_container_step()
-    assert not step.is_function_step()
+    assert not step.is_code_step()
+    # Empty inputs.
+    step = CodeStep(identifier='test', func=my_add)
+    assert step.inputs == []
+    assert step.outputs == []
+    step = ContainerStep(identifier='test', image='test')
+    assert step.inputs == []
+    assert step.outputs == []
     # Invalid step type.
     with pytest.raises(ValueError):
         WorkflowStep(identifier='test', step_type=-1)

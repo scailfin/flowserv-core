@@ -48,7 +48,7 @@ def myfunc(a):
 @pytest.fixture
 def workflow():
     return SerialWorkflow()\
-        .add_function_step(func=myfunc, output='b')\
+        .add_function_step(func=myfunc, arg='b')\
         .add_container_step(image='test', commands=['py $b'])
 
 

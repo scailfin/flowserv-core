@@ -94,14 +94,17 @@ class WorkerPool(object):
     Workers are instantiated from a dictionary serializations that follows the
     `workerSpec` schema defined in the `schema.json` file.
     """
-    def __init__(self, workers: List[Dict], managers: Optional[Dict] = None):
+    def __init__(
+        self, workers: Optional[List[Dict]] = list(),
+        managers: Optional[Dict] = None
+    ):
         """Initialize the specifications for the workers that are managed by
         this worker pool and the optional list of task managers for individual
         workflow steps.
 
         Parameters
         ----------
-        workers: list
+        workers: list, default=list
             List of worker specifications.
         managers: dict, default=None
             Mapping from workflow step identifier to worker identifier that
@@ -163,7 +166,7 @@ class WorkerPool(object):
         -------
         flowserv.controller.worker.base.Worker
         """
-        if step.is_function_step():
+        if step.is_code_step():
             return CodeWorker()
         elif step.is_container_step():
             return default_container_worker

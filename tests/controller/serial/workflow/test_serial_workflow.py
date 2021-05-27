@@ -57,27 +57,38 @@ def test_add_workflow_step():
     """Test adding steps to a serial workflow."""
     wf = SerialWorkflow()
     # -- Add container step ---------------------------------------------------
-    wf = wf.add_step(image='test', commands=['a', 'b'], env={'x': 1})
+    wf = wf.add_container_step(
+        identifier='test',
+        image='testimg',
+        commands=['a', 'b'],
+        env={'x': 1},
+        inputs=['a', 'b'],
+        outputs=['x', 'y']
+    )
     assert len(wf.steps) == 1
     s = wf.steps[0]
     assert s.is_container_step()
-    assert s.image == 'test'
+    assert s.identifier == 'test'
+    assert s.image == 'testimg'
     assert s.commands == ['a', 'b']
     assert s.env == {'x': 1}
+    assert s.inputs == ['a', 'b']
+    assert s.outputs == ['x', 'y']
     # -- Add code step --------------------------------------------------------
-    wf = wf.add_step(func=str.lower, output='x', varnames={'x': 'y'})
+    wf = wf.add_code_step(
+        identifier='test',
+        func=str.lower,
+        arg='x',
+        varnames={'x': 'y'},
+        inputs=['a', 'b'],
+        outputs=['x', 'y']
+    )
     assert len(wf.steps) == 2
     s = wf.steps[1]
-    assert s.is_function_step()
+    assert s.is_code_step()
     assert s.func('ABC') == 'abc'
-    assert s.output == 'x'
+    assert s.identifier == 'test'
+    assert s.arg == 'x'
     assert s.varnames == {'x': 'y'}
-    # -- Error cases ----------------------------------------------------------
-    with pytest.raises(ValueError):
-        wf.add_step()
-    with pytest.raises(ValueError):
-        wf.add_step(image='test', output='x')
-    with pytest.raises(ValueError):
-        wf.add_step(func=str.lower, commands=['x'])
-    with pytest.raises(ValueError):
-        wf.add_step(commands=['a'], output='x')
+    assert s.inputs == ['a', 'b']
+    assert s.outputs == ['x', 'y']
