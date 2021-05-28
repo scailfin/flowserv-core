@@ -67,7 +67,7 @@ The mandatory ``steps`` section defines the list of individual workflow steps. E
 The mandatory ``action`` part of the workflow step defines the action of the step. The format is dependent on the type of worker that is used for the step. This part can also be replaced with a user-defined step, i.e., a reference to a template parameter. The serial workflow engine currently supports the following types of workflow steps:
 
 - **Container Step**: A container step defines an action that includes one or more command-line statements that are executed in a specified (container) environment. The specification for a container step has mandatory elements ``environment`` and ``commands``. The environment defines the container image and the commands gives the list of command-line statements. Note that container steps are not necessarily executed in a Docker container. The workers configuration (see below) allows the user to specify the particular type of container worker, e.g., to execute the commands in the Python environment that runs the **flowServ** application using a ``flowserv.controller.worker.subprocess.SubprocessWorker`` that uses Python's ``multiprocess`` module to run the commands.
-- **Code Step**: A code step is used to execute a Python function directly in the same environment that is running the **flowServ** API.
+- **Code Step**: A code step is used to execute a Python function directly in the same environment that is running the **flowServ** API. The function is specified in absolute terms by the package and the function name (e.g., ``my.package.myfunc``). This is referred to as the function import name. The function is imported dynamically when the workflow step is executed. When the function is called it will receive its arguments from the workflow context dictionary. The specification of a code step includes the mandatory ``func`` element that contains the function import name and optional elements ``arg`` and ``vars``. The ``arg`` element specifies the key by which the function result is stored in the workflow context. The ``vars`` element is a list of mappings from function argument names (``arg``) to names of variables (``var``) in the workflow context. The mapping is used when generating the input arguments for the function call (in case that the variable names in the function signature do not match the names of variables in the workflow context).
 
 
 Engine and Workflow Configuration
@@ -112,6 +112,8 @@ Each worker has a unique identifier (``name``) and a workflow ``type`` that is u
 The optional ``env`` and ``vars`` elements in the worker specification contain key-value pairs that define values for environment variables and template string variables, respectively. The values for these elements are passed to the constructor of the worker class implementation as dictionaries during instantiation.
 
 The ``volume`` elements specifies the identifier of the storage volume that the worker has access to. If the element is not present for a worker, by default the worker has access to the ``__default__`` storage volume.
+
+Note that the type of the worker determines the type of the expected storage volume that the worker uses. For both, container worker and code worker, the expected storage volume is a file system storage volume (``flowserv.volume.fs.FileSystemStorage``).
 
 
 Engine Configuration
