@@ -78,6 +78,14 @@ def test_filepath(key, sep, result):
     assert util.filepath(key=key, sep=sep) == result
 
 
+def test_import_object():
+    """Test importing a function dynamically."""
+    ctime = util.import_obj('time.ctime')
+    # Ensure that we can call the function and that the returned value is
+    # of type string.
+    assert isinstance(ctime(), str)
+
+
 def test_join():
     """Ensure that empty and None strings are ignored by join."""
     assert util.join(None, 'a', '', 'b') == 'a/b'

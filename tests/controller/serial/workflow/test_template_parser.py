@@ -25,6 +25,25 @@ TEMPLATE_HELLOWORLD = os.path.join(BENCHMARK_DIR, 'helloworld', 'benchmark.yaml'
 TEMPLATE_TOPTAGGER = os.path.join(BENCHMARK_DIR, './top-tagger.yaml')
 
 
+def test_parse_code_step():
+    """Test parsing specification for a workflow with a code step."""
+    doc = {'steps': [{
+        'name': 'code_step',
+        'action': {
+            'func': 'flowserv.tests.worker.a_plus_b',
+            'arg': 'z',
+            'vars': [{'arg': 'a', 'var': 'val1'}, {'arg': 'b', 'var': 'val2'}]
+        }
+    }]}
+    template = WorkflowTemplate(workflow_spec=doc, parameters=ParameterIndex())
+    steps, _, _ = parser.parse_template(template=template, arguments=dict())
+    assert len(steps) == 1
+    step = steps[0]
+    assert step.func(2, 3) == 5
+    assert step.arg == 'z'
+    assert step.varnames == {'a': 'val1', 'b': 'val2'}
+
+
 def test_parse_hello_world_template():
     """Extract commands and output files from the 'Hello world' template."""
     template = WorkflowTemplate.from_dict(doc=util.read_object(TEMPLATE_HELLOWORLD))

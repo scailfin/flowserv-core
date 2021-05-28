@@ -12,7 +12,8 @@ import json
 import traceback
 import uuid
 
-from typing import Any, Dict, List, Optional, Type
+from importlib import import_module
+from typing import Any, Callable, Dict, List, Optional, Type, Union
 
 
 def get_unique_identifier() -> str:
@@ -23,6 +24,26 @@ def get_unique_identifier() -> str:
     string
     """
     return str(uuid.uuid4()).replace('-', '')
+
+
+def import_obj(import_path: str) -> Union[Callable, Type]:
+    """Import an object (function or class) from a given package path.
+
+    Parameters
+    ----------
+    import_path: string
+        Full package target path for the imported object. Assumes that path
+        components are separated by '.'.
+
+    Returns
+    -------
+    callable or class
+    """
+    pos = import_path.rfind('.')
+    module_name = import_path[:pos]
+    class_name = import_path[pos + 1:]
+    module = import_module(module_name)
+    return getattr(module, class_name)
 
 
 def jquery(doc: Dict, path: List[str]) -> Any:

@@ -10,10 +10,11 @@
 
 from typing import Dict, List, Tuple
 
-from flowserv.model.workflow.step import ContainerStep
+from flowserv.model.workflow.step import CodeStep, ContainerStep
 from flowserv.model.template.base import WorkflowTemplate
 
 import flowserv.model.template.parameter as tp
+import flowserv.util as util
 
 
 def parse_template(template: WorkflowTemplate, arguments: Dict) -> Tuple[List[ContainerStep], Dict, List[str]]:
@@ -96,6 +97,15 @@ def parse_template(template: WorkflowTemplate, arguments: Dict) -> Tuple[List[Co
                 identifier=step_id,
                 image=action.get('environment'),
                 commands=action.get('commands', []),
+                inputs=input_files,
+                outputs=output_files
+            )
+        elif 'func' in action:
+            step = CodeStep(
+                identifier=step_id,
+                func=util.import_obj(action['func']),
+                arg=action.get('arg'),
+                varnames={doc['arg']: doc['var'] for doc in action.get('vars', [])},
                 inputs=input_files,
                 outputs=output_files
             )
