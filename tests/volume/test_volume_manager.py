@@ -22,10 +22,10 @@ def test_manager_init(tmpdir):
     """Test edge cases for the volume manager initialization."""
     default_store = FStore(basedir=tmpdir, identifier=DEFAULT_STORE)
     # Ensure we can instantiate the volume manager if a default store is given.
-    volume = VolumeManager(stores=[default_store])
-    assert volume.files == dict()
-    volume = VolumeManager(stores=[default_store], files={'f1': [DEFAULT_STORE]})
-    assert volume.files == {'f1': [DEFAULT_STORE]}
+    volumes = VolumeManager(stores=[default_store])
+    assert volumes.files == dict()
+    volumes = VolumeManager(stores=[default_store], files={'f1': [DEFAULT_STORE]})
+    assert volumes.files == {'f1': [DEFAULT_STORE]}
     # Error cases when no default store is given.
     with pytest.raises(ValueError):
         VolumeManager(stores=list())
@@ -50,15 +50,15 @@ def test_manager_prepare(basedir, filenames_all, data_a, tmpdir):
         files={f: [DEFAULT_STORE] for f in filenames_all}
     )
     # Case 1: Empty arguments.
-    volumes.prepare(store=DEFAULT_STORE, files=[])
+    volumes.prepare(store=s0, files=[])
     # Case 2: No file copy.
-    volumes.prepare(store=DEFAULT_STORE, files=['examples/'])
+    volumes.prepare(store=s0, files=['examples/'])
     assert len(os.listdir(basedir)) == 3
     assert len(os.listdir(s1_dir)) == 0
     for f in filenames_all:
         assert volumes.files[f] == [DEFAULT_STORE]
     # Case 3: Copy file between stores.
-    volumes.prepare(store='s1', files=['A.json', 'docs/'])
+    volumes.prepare(store=s1, files=['A.json', 'docs/'])
     assert len(os.listdir(basedir)) == 3
     assert len(os.listdir(s1_dir)) == 2
     filename = os.path.join(s1_dir, 'A.json')
@@ -72,26 +72,23 @@ def test_manager_prepare(basedir, filenames_all, data_a, tmpdir):
         'A.json': [DEFAULT_STORE, 's1'],
         'examples/B.json': [DEFAULT_STORE]
     }
-    # Error cases.
-    with pytest.raises(err.UnknownObjectError):
-        volumes.prepare(files=['A.json'], store='unknown')
 
 
 def test_manager_update(tmpdir):
     """Test the update method for the volume manager."""
-    volume = VolumeManager(
+    volumes = VolumeManager(
         stores=[
             FStore(basedir=tmpdir, identifier=DEFAULT_STORE),
             FStore(basedir=tmpdir, identifier='s1')
         ],
         files={'f1': [DEFAULT_STORE]}
     )
-    assert volume.files == {'f1': [DEFAULT_STORE]}
-    volume.update(files=['f1', 'f2'], store='s1')
-    assert volume.files == {'f1': ['s1'], 'f2': ['s1']}
-    volume.update(files=['f2'])
-    assert volume.files == {'f1': ['s1'], 'f2': [DEFAULT_STORE]}
-    volume.update(files=['f2'], store='s1')
-    assert volume.files == {'f1': ['s1'], 'f2': ['s1']}
-    with pytest.raises(ValueError):
-        volume.update(files=['f2'], store='s2')
+    default_store = volumes.get(identifier=DEFAULT_STORE)
+    s1 = volumes.get(identifier='s1')
+    assert volumes.files == {'f1': [DEFAULT_STORE]}
+    volumes.update(files=['f1', 'f2'], store=s1)
+    assert volumes.files == {'f1': ['s1'], 'f2': ['s1']}
+    volumes.update(files=['f2'], store=default_store)
+    assert volumes.files == {'f1': ['s1'], 'f2': [DEFAULT_STORE]}
+    volumes.update(files=['f2'], store=s1)
+    assert volumes.files == {'f1': ['s1'], 'f2': ['s1']}

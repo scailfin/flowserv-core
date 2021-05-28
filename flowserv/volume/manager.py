@@ -83,25 +83,21 @@ class VolumeManager(object):
             self._stores[identifier] = Volume(self._storespecs[identifier])
         return self._stores[identifier]
 
-    def prepare(self, store: str, files: List[str]):
+    def prepare(self, store: StorageVolume, files: List[str]):
         """Prepare the storage volume for a worker.
 
         Ensures that the input files that are needed by the worker are available
         in their latest version at the given volume store.
 
-        Raises a ValueError if a specified input file or the storage volume does
-        not exist.
+        Raises a ValueError if a specified input file does not exist.
 
         Parameters
         ----------
-        store: string
-            Identifier of the storage volume that the worker has access to.
+        store: flowserv.volume.base.StorageVolume
+            Storage volume that is being prepared.
         files: list of string
             Relative path (keys) of required input files for a workflow step.
         """
-        # Ensure that the identifier for the worker store is valid.
-        if store not in self._storespecs:
-            raise err.UnknownObjectError(obj_id=store, type_name='storage volume')
         # Generate dictionary that maps all files that are matches to the given
         # query list to the list of storage volume that the files are available
         # at. At this point we perform a search with quadratic time complexity
@@ -122,18 +118,17 @@ class VolumeManager(object):
         # be uploaded to one of the storage volumes the worker has access to.
         for f, fstores in required_files.items():
             # Check if the file is available at the target store.
-            if store in fstores:
+            if store.identifier in fstores:
                 continue
             # If the file is not available at the target volume we need to
             # upload it.
             source = self.get(fstores[0])
-            target = self.get(store)
             # Upload file from the source storage volume to the target
             # volume.
-            for key in source.copy(src=f, store=target):
-                self.files[key].append(store)
+            for key in source.copy(src=f, store=store):
+                self.files[key].append(store.identifier)
 
-    def update(self, files: List[str], store: Optional[str] = None):
+    def update(self, store: StorageVolume, files: List[str]):
         """Update the availability index for workflow files.
 
         The update method is used by a worker to signal the successful execution
@@ -145,22 +140,15 @@ class VolumeManager(object):
 
         Parameters
         ----------
+        store: flowserv.volume.base.StorageVolume
+            Storage volume that contains the latest versions for the given
+            files.
         files: list of str
             List of relative path (keys) for output files that were generated
             by a successful workflow step.
-        store: str, default=None
-            Identifier for the storage volume that contains the latest versions
-            for the referenced output files.
         """
-        # Ensure the store identifier is valid.
-        if store is not None:
-            if store not in self._storespecs:
-                raise ValueError("unknown storage volume '{}'".format(store))
-        else:
-            store = DEFAULT_STORE
-        # Update storage volume for all specified files.
         for key in files:
-            self.files[key] = [store]
+            self.files[key] = [store.identifier]
 
 
 # -- Helper functions ---------------------------------------------------------

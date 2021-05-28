@@ -50,18 +50,15 @@ def exec_workflow(
     for step in steps:
         # Get the worker that is responsible for executing the workflow step.
         worker = workers.get(step)
-        # Prepare the volume stores that are associated with the worker.
-        files = volumes.prepare(
-            files=worker.inputfiles,
-            stores=worker.stores,
-            default_store=worker.default_store
-        )
+        # Prepare the volume store that is associated with the worker.
+        store = volumes.get(worker.volume)
+        files = volumes.prepare(store=store, files=worker.inputfiles)
         # Execute the workflow step and add the result to the overall workflow
         # result. Terminate if the step execution was not successful.
-        r = worker.exec(step=step, context=result.context, files=files)
+        r = worker.exec(step=step, context=result.context, store=store)
         result.add(r)
         if r.returncode != 0:
             break
         # Update volume manager with output files for the workflow step.
-        volumes.update(files.worker.outputfiles, store=worker.default_store)
+        volumes.update(store=store, files=files.worker.outputfiles)
     return result
