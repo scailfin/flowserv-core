@@ -18,11 +18,11 @@ from flowserv.service.run.argument import serialize_arg, serialize_fh
 from flowserv.tests.service import (
     create_group, create_user, create_workflow, start_run, upload_file
 )
+from flowserv.volume.manager import FStore
 
 import flowserv.util as util
 import flowserv.model.workflow.state as st
 import flowserv.tests.serialize as serialize
-from flowserv.volume.manager import FStore
 
 
 # Template directory

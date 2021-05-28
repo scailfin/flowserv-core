@@ -24,7 +24,7 @@ def test_app_installation(flowserv_cli):
     # Create app in a fresh database
     cmd = ['app', 'install', '--key', 'mykey', TEMPLATE_DIR]
     result = flowserv_cli.invoke(cli, cmd)
-    assert result.output.strip() == 'export FLOWSERV_APP=mykey'
+    assert 'export FLOWSERV_APP=mykey' in result.output
     assert result.exit_code == 0
     app_key = result.output[result.output.rfind('=') + 1:].strip()
     # List apps

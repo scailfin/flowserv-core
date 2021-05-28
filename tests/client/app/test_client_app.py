@@ -11,21 +11,23 @@
 import os
 
 from flowserv.client.app.base import Flowserv, open_app
-
-import flowserv.config as config
+from flowserv.config import Config
+from flowserv.volume.manager import FStore
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))
-TEMPLATE_DIR = os.path.join(DIR, '../../.files/benchmark/helloworld')
+BENCHMARK_DIR = os.path.join(DIR, '..', '..', '.files', 'benchmark', 'helloworld')
 
 
 def test_install_app(tmpdir):
     """Install and uninstall a workflow application via the app client."""
     basedir = os.path.join(tmpdir, 'test')
-    env = {config.FLOWSERV_BASEDIR: basedir}
+    env = Config()\
+        .basedir(tmpdir)\
+        .volume(FStore(basedir=str(tmpdir)))
     client = Flowserv(env=env)
     # Install workflow as application.
-    app_id = client.install(source=TEMPLATE_DIR)
+    app_id = client.install(source=BENCHMARK_DIR)
     # Get the application object.
     app = client.open(app_id)
     assert app.name() == 'Hello World'

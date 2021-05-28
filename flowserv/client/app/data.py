@@ -14,6 +14,7 @@ from typing import Dict, List, Tuple
 
 import codecs
 import csv
+import json
 
 from flowserv.model.files import FileHandle
 from flowserv.service.api import APIFactory
@@ -69,6 +70,16 @@ class DataFile(object):
                 rows.append(row)
         columns = [None] * len(rows[0]) if not columns and rows else columns
         return (columns, rows)
+
+    def json(self) -> Dict:
+        """Load file content as Json object.
+
+        Returns
+        -------
+        dict
+        """
+        with self.load().open() as f:
+            return json.load(f)
 
     def load(self) -> FileHandle:
         """Get handle for the file.

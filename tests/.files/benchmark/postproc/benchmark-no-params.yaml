@@ -1,53 +1,47 @@
 workflow:
-    version: 0.3.0
-    inputs:
-      files:
+    files:
+        inputs:
         - code/analyze.py
         - code/helloworld.py
         - data/names.txt
-      parameters:
+        outputs:
+        - results/greetings.txt
+        - results/analytics.json
+    parameters:
         inputfile: data/names.txt
         outputfile: results/greetings.txt
         greeting: 'Hi'
-    workflow:
-      type: serial
-      specification:
-        steps:
-          - environment: 'python:3.7'
-            commands:
-              - ${python} code/helloworld.py
-                  --inputfile "${inputfile}"
-                  --outputfile "${outputfile}"
-                  --sleeptime 1
-                  --greeting ${greeting}
-              - ${python} code/analyze.py
-                  --inputfile "${outputfile}"
-                  --outputfile results/analytics.json
-    outputs:
-      files:
-       - 'results/greetings.txt'
-       - 'results/analytics.json'
+    steps:
+    - name: "say_hello"
+      action:
+          environment: "python:3.7"
+          commands:
+          - ${python} code/helloworld.py
+              --inputfile "${inputfile}"
+              --outputfile "${outputfile}"
+              --sleeptime 0
+              --greeting ${greeting}
+          - ${python} code/analyze.py
+              --inputfile "${outputfile}"
+              --outputfile results/analytics.json
 postproc:
     workflow:
-        version: 0.3.0
-        inputs:
-          files:
+        files:
+            inputs:
             - code/postproc.py
             - $[[runs]]
-          parameters:
+            outputs:
+            - 'results/compare.json'
+        parameters:
             rundir: $[[runs]]
-        workflow:
-          type: serial
-          specification:
-            steps:
-              - environment: 'python:3.7'
-                commands:
+        steps:
+            - name: postproc
+              action:
+                  environment: 'python:3.7'
+                  commands:
                   - ${python} code/postproc.py
-                      --runs "${rundir}"
-                      --outputfile results/compare.json
-        outputs:
-            files:
-                - 'results/compare.json'
+                    --runs "${rundir}"
+                    --outputfile results/compare.json
     inputs:
         files:
             - 'results/analytics.json'

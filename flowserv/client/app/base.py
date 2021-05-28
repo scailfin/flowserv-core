@@ -32,9 +32,8 @@ class Flowserv(object):
     """
     def __init__(
         self, env: Optional[Dict] = None, basedir: Optional[str] = None,
-        database: Optional[str] = None, engine_config: Optional[Dict] = None,
-        open_access: Optional[bool] = None, run_async: Optional[bool] = None,
-        s3bucket: Optional[str] = None, clear: Optional[bool] = False,
+        database: Optional[str] = None, open_access: Optional[bool] = None,
+        run_async: Optional[bool] = None, clear: Optional[bool] = False,
         user_id: Optional[str] = None
     ):
         """Initialize the client API factory. Provides the option to alter the
@@ -50,15 +49,10 @@ class Flowserv(object):
             specified in the environment a temporary directory will be created.
         database: str, defualt=None
             Databse connection Url.
-        engine_config: dict, default=None
-            Configuration settings for the workflow engine.
         open_access: bool, default=None
             Use an open access policy if set to True.
         run_async: bool, default=False
             Run workflows in asynchronous mode.
-        s3bucket: string, default=None
-            Use the S3 bucket with the given identifier to store all workflow
-            files.
         clear: bool, default=False
             Remove all existing files and folders in the base directory if the
             clear flag is True.
@@ -82,10 +76,8 @@ class Flowserv(object):
             env=self.env,
             basedir=self.basedir,
             database=database,
-            engine_config=engine_config,
             open_access=open_access,
             run_async=run_async,
-            s3bucket=s3bucket,
             user_id=user_id
         )
 

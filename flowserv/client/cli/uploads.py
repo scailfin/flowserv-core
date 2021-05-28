@@ -13,8 +13,8 @@ import os
 
 from flowserv.client.api import service
 from flowserv.client.cli.table import ResultTable
-from flowserv.model.files.fs import FSFile
 from flowserv.model.parameter.base import PARA_INT, PARA_STRING
+from flowserv.volume.fs import FSFile
 
 import flowserv.view.files as labels
 

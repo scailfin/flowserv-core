@@ -223,7 +223,6 @@ class SerialWorkflowEngine(WorkflowController):
                 )
                 return state, runstore
             else:
-                print('RUN SYNC')
                 # Run steps synchronously and block the controller until done
                 _, _, state_dict = run_workflow(
                     run_id=run.run_id,

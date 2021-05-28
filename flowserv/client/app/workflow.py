@@ -15,12 +15,12 @@ import time
 
 from flowserv.client.app.run import Run
 from flowserv.model.files import FileHandle
-from flowserv.model.files.fs import FSFile
 from flowserv.model.parameter.files import InputFile
 from flowserv.model.template.parameter import ParameterIndex
 from flowserv.service.api import APIFactory
 from flowserv.service.run.argument import serialize_arg, serialize_fh
 from flowserv.volume.base import IOHandle, IOBuffer
+from flowserv.volume.fs import FSFile
 
 import flowserv.error as err
 import flowserv.view.files as filelbls
@@ -237,9 +237,6 @@ class Workflow(object):
                         upload_file = IOBuffer(val)
                     elif isinstance(val, IOHandle):
                         upload_file = val
-                    elif isinstance(val, InputFile):
-                        upload_file = val.source()
-                        target = val.target()
                     else:
                         msg = 'invalid argument {} for {}'.format(key, val)
                         raise err.InvalidArgumentError(msg)
