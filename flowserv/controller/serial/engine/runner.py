@@ -12,7 +12,7 @@ from typing import List
 
 from flowserv.controller.serial.workflow.result import RunResult
 from flowserv.model.workflow.step import WorkflowStep
-from flowserv.controller.wo  rker.code import exec_func
+from flowserv.controller.worker.code import exec_func
 from flowserv.controller.worker.factory import WorkerFactory
 
 
@@ -58,9 +58,7 @@ def exec_workflow(
                 rundir=rundir
             )
         elif step.is_notebook_step():
-            r = worker.exec(step=step, context=result.context, rundir=rundir)
-
-
+            r = 'notebook'
         result.add(r)
         # Terminate if the step execution was not successful.
         if r.returncode != 0:
