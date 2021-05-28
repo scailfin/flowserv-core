@@ -90,19 +90,29 @@ def test_worker_spec_seriaization():
     doc = Subprocess(identifier='S1')
     assert doc == {'id': 'S1', 'type': 'subprocess', 'env': [], 'vars': []}
     # -- Config with arguments ------------------------------------------------
+    doc = Code(identifier='D1', volume='v1')
+    assert doc == {
+        'id': 'D1',
+        'type': 'code',
+        'env': [],
+        'vars': [],
+        'volume': 'v1'
+    }
     vars = {'x': 1}
     env = {'TEST_ENV': 'abc'}
-    doc = Docker(variables=vars, env=env, identifier='D2')
+    doc = Docker(variables=vars, env=env, identifier='D2', volume='v1')
     assert doc == {
         'id': 'D2',
         'type': 'docker',
         'env': [{'key': 'TEST_ENV', 'value': 'abc'}],
-        'vars': [{'key': 'x', 'value': 1}]
+        'vars': [{'key': 'x', 'value': 1}],
+        'volume': 'v1'
     }
-    doc = Subprocess(variables=vars, env=env, identifier='S2')
+    doc = Subprocess(variables=vars, env=env, identifier='S2', volume='v1')
     assert doc == {
         'id': 'S2',
         'type': 'subprocess',
         'env': [{'key': 'TEST_ENV', 'value': 'abc'}],
-        'vars': [{'key': 'x', 'value': 1}]
+        'vars': [{'key': 'x', 'value': 1}],
+        'volume': 'v1'
     }

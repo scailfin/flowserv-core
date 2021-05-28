@@ -214,7 +214,7 @@ def create_worker(doc: Dict) -> Worker:
 
 def WorkerSpec(
     worker_type: str, identifier: str, variables: Optional[Dict] = None,
-    env: Optional[Dict] = None,
+    env: Optional[Dict] = None, volume: Optional[str] = None
 ) -> Dict:
     """Get a serialization for a worker specification.
 
@@ -230,6 +230,8 @@ def WorkerSpec(
     env: dict, default=None
         Default settings for environment variables when executing workflow
         steps. These settings can get overridden by step-specific settings.
+    volume: string, default=None
+        Identifier for the storage volume that the worker has access to.
 
     Returns
     -------
@@ -238,30 +240,42 @@ def WorkerSpec(
     # Set optional environment and variables dictionaries if not given.
     env = env if env is not None else dict()
     variables = variables if variables is not None else dict()
-    return {
+    doc = {
         'id': identifier,
         'type': worker_type,
         'env': [util.to_kvp(key=k, value=v) for k, v in env.items()],
         'vars': [util.to_kvp(key=k, value=v) for k, v in variables.items()]
     }
+    if volume:
+        doc['volume'] = volume
+    return doc
 
 
-def Code(identifier: str) -> Dict:
+def Code(identifier: str, volume: Optional[str] = None) -> Dict:
     """Get base configuration serialization for a code worker.
 
     Parameters
     ----------
     identifier: string
         Uniuqe worker identifier.
+    volume: string, default=None
+        Identifier for the storage volume that the worker has access to.
 
     Returns
     -------
     dict
     """
-    return WorkerSpec(worker_type=CODE_WORKER, identifier=identifier)
+    return WorkerSpec(
+        worker_type=CODE_WORKER,
+        identifier=identifier,
+        volume=volume
+    )
 
 
-def Docker(identifier: str, variables: Optional[Dict] = None, env: Optional[Dict] = None) -> Dict:
+def Docker(
+    identifier: str, variables: Optional[Dict] = None, env: Optional[Dict] = None,
+    volume: Optional[str] = None
+) -> Dict:
     """Get base configuration for a subprocess worker with the given optional
     arguments.
 
@@ -275,6 +289,8 @@ def Docker(identifier: str, variables: Optional[Dict] = None, env: Optional[Dict
     env: dict, default=None
         Default settings for environment variables when executing workflow
         steps. These settings can get overridden by step-specific settings.
+    volume: string, default=None
+        Identifier for the storage volume that the worker has access to.
 
     Returns
     -------
@@ -284,11 +300,15 @@ def Docker(identifier: str, variables: Optional[Dict] = None, env: Optional[Dict
         worker_type=DOCKER_WORKER,
         identifier=identifier,
         variables=variables,
-        env=env
+        env=env,
+        volume=volume
     )
 
 
-def Subprocess(identifier: str, variables: Optional[Dict] = None, env: Optional[Dict] = None) -> Dict:
+def Subprocess(
+    identifier: str, variables: Optional[Dict] = None, env: Optional[Dict] = None,
+    volume: Optional[str] = None
+) -> Dict:
     """Get base configuration for a subprocess worker with the given optional
     arguments.
 
@@ -302,6 +322,8 @@ def Subprocess(identifier: str, variables: Optional[Dict] = None, env: Optional[
     env: dict, default=None
         Default settings for environment variables when executing workflow
         steps. These settings can get overridden by step-specific settings.
+    volume: string, default=None
+        Identifier for the storage volume that the worker has access to.
 
     Returns
     -------
@@ -311,5 +333,6 @@ def Subprocess(identifier: str, variables: Optional[Dict] = None, env: Optional[
         worker_type=SUBPROCESS_WORKER,
         variables=variables,
         env=env,
-        identifier=identifier
+        identifier=identifier,
+        volume=volume
     )
