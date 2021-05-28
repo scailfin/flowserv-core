@@ -26,6 +26,10 @@ a subprocess with specific environment variable settings or a Docker container.
 """
 
 import papermill
+from typing import Optional
+from typing import List
+from typing import Dict
+from typing import Callable
 
 
 """Unique identifier for workflow step types."""
@@ -116,7 +120,7 @@ class ContainerStep(WorkflowStep):
         self.commands = commands if commands is not None else list()
         self.env = env if env is not None else dict()
 
-    def add(self, cmd: str) -> ContainerStep:
+    def add(self, cmd: str):
         """Append a given command line statement to the list of commands in the
         workflow step.
 
@@ -204,7 +208,7 @@ class NotebookStep(WorkflowStep):
         varnames: Optional[Dict] = None
     ):
 
-        super(NotebookStep, self).__init__(step_type=NotebookStep)
+        super(NotebookStep, self).__init__(step_type=NOTEBOOK_STEP)
         self.notebook = notebook
         self.output = output
         self.params = params
