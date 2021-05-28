@@ -173,14 +173,12 @@ class SerialWorkflowEngine(WorkflowController):
         )
         try:
             # Copy template files to the run folder.
-            files = staticfs.copy(key=None, store=runstore)
+            files = staticfs.copy(src=None, store=runstore, verbose=True)
             # Store any given file arguments in the run folder.
             for key, para in template.parameters.items():
                 if para.is_file() and key in arguments:
-                    file = arguments[key]
-                    dst = file.target()
-                    runstore.store(file=file.source(), dst=dst)
-                    files.append(dst)
+                    for f in arguments[key].copy(target=runstore):
+                        files.append(f)
             # Create factory objects for storage volumes.
             volumes = volume_manager(
                 specs=run_config.get('volumes', []),
@@ -225,6 +223,7 @@ class SerialWorkflowEngine(WorkflowController):
                 )
                 return state, runstore
             else:
+                print('RUN SYNC')
                 # Run steps synchronously and block the controller until done
                 _, _, state_dict = run_workflow(
                     run_id=run.run_id,
@@ -309,6 +308,7 @@ def run_workflow(
     (string, string, dict)
     """
     logging.info('start run {}'.format(run_id))
+    runstore = volumes.get(DEFAULT_STORE)
     try:
         run_result = exec_workflow(
             steps=steps,
@@ -316,7 +316,6 @@ def run_workflow(
             volumes=volumes,
             result=RunResult(arguments=arguments)
         )
-        runstore = volumes.get(DEFAULT_STORE)
         if run_result.returncode != 0:
             # Return error state. Include STDERR in result
             messages = run_result.log

@@ -411,9 +411,16 @@ class RunManager(object):
             run.started_at = state.started_at
             run.ended_at = state.finished_at
             # Parse run result if the associated workflow has a result schema.
+            # We only expect a result file for runs that are group submissions
+            # and not post-processing runs.
             result_schema = run.workflow.result_schema
-            if result_schema is not None:
-                read_run_results(run=run, schema=result_schema, runstore=runstore)
+            if result_schema is not None and run.group_id is not None:
+                # Make sure to catch any exceptions in case the run result
+                # file is not present or corrupted.
+                try:
+                    read_run_results(run=run, schema=result_schema, runstore=runstore)
+                except Exception:
+                    pass
         # -- PENDING ----------------------------------------------------------
         else:
             validate_state_transition(current_state, state.type_id, [st.STATE_PENDING])

@@ -109,34 +109,12 @@ class StorageVolume(metaclass=ABCMeta):
         """
         raise NotImplementedError()  # pragma: no cover
 
-    @abstractmethod
-    def delete(self, key: str) -> int:
-        """Delete file or folder with the given key.
-
-        Parameters
-        ----------
-        key: str
-            Path to a file object in the storage volume.
-        """
-        raise NotImplementedError()  # pragma: no cover
-
-    @abstractmethod
-    def describe(self) -> str:
-        """Get short descriptive string about the storage volume for display
-        purposes.
-
-        Returns
-        -------
-        str
-        """
-        raise NotImplementedError()  # pragma: no cover
-
     def copy(
         self, src: Union[str, List[str]], store: StorageVolume, dst: Optional[str] = None,
         verbose: Optional[bool] = False
     ) -> List[str]:
-        """Copy the file or folder at the source path of this storage
-        volume to the given storage volume.
+        """Copy the file or folder at the source path of this storage volume to
+        the given storage volume.
 
         The source path is relative to the base directory for the workflow run.
 
@@ -159,6 +137,28 @@ class StorageVolume(metaclass=ABCMeta):
         list of string
         """
         return copy_files(src=src, source=self, dst=dst, target=store, verbose=verbose)
+
+    @abstractmethod
+    def delete(self, key: str) -> int:
+        """Delete file or folder with the given key.
+
+        Parameters
+        ----------
+        key: str
+            Path to a file object in the storage volume.
+        """
+        raise NotImplementedError()  # pragma: no cover
+
+    @abstractmethod
+    def describe(self) -> str:
+        """Get short descriptive string about the storage volume for display
+        purposes.
+
+        Returns
+        -------
+        str
+        """
+        raise NotImplementedError()  # pragma: no cover
 
     @abstractmethod
     def erase(self):

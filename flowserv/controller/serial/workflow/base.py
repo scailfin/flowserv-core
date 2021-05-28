@@ -24,6 +24,7 @@ from flowserv.model.workflow.step import CodeStep, ContainerStep, WorkflowStep
 from flowserv.controller.worker.manager import WorkerPool
 from flowserv.model.parameter.base import Parameter
 from flowserv.model.template.parameter import ParameterIndex
+from flowserv.volume.manager import DefaultVolume, VolumeManager
 
 
 class SerialWorkflow(object):
@@ -184,7 +185,7 @@ class SerialWorkflow(object):
 
     def run(
         self, arguments: Dict, workers: Optional[WorkerPool] = None,
-        rundir: Optional[str] = None
+        volumes: Optional[VolumeManager] = None
     ) -> RunResult:
         """Execute workflow for the given set of input arguments.
 
@@ -203,16 +204,17 @@ class SerialWorkflow(object):
         workers: flowserv.controller.worker.manager.WorkerPool, default=None
             Factory for :class:`flowserv.model.workflow.step.ContainerStep`
             steps. Uses the default worker for all container steps if None.
-        rundir: str, default=None
-            Working directory for all executed workflow steps. Uses the current
-            working directory if None.
+        volumes: flowserv.volume.manager.VolumeManager
+            Manager for storage volumes that are used by the different workers.
 
         Returns
         -------
         flowserv.controller.worker.result.RunResult
         """
-        # Use current working directory if run directory is None.
-        rundir = rundir if rundir else os.getcwd()
+        # Use current working directory as the default storage volume is no
+        # volumes are specified.
+        if volumes is None:
+            volumes = DefaultVolume(basedir=os.getcwd())
         # Use default worker for all container steps if no factory is given.
         workers = workers if workers else WorkerPool()
         # Execute the workflow and return the run result that contains the
@@ -220,6 +222,6 @@ class SerialWorkflow(object):
         return exec_workflow(
             steps=self.steps,
             workers=workers,
-            rundir=rundir,
+            volumes=volumes,
             result=RunResult(arguments=arguments)
         )

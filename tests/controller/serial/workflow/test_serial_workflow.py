@@ -25,7 +25,12 @@ def test_initialize_workflow():
     assert len(wf.parameters) == 0
     assert wf.workers is not None
     # -- Set workflow steps at initialization ---------------------------------
-    wf = SerialWorkflow(steps=[ContainerStep(image='test_1'), ContainerStep(image='test_2')])
+    wf = SerialWorkflow(
+        steps=[
+            ContainerStep(identifier='s1', image='test_1'),
+            ContainerStep(identifier='s2', image='test_2')
+        ]
+    )
     assert len(wf.steps) == 2
     assert [s.image for s in wf] == ['test_1', 'test_2']
     assert wf.steps[0].image == 'test_1'

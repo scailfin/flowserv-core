@@ -10,53 +10,29 @@ workflow:
     parameters:
         inputfile: $[[names]]
         outputfile: results/greetings.txt
+        sleeptime: $[[sleeptime]]
         greeting: $[[greeting]]
     steps:
     - name: "say_hello"
       action:
           environment: "python:3.7"
           commands:
-          - ${python} code/helloworld.py
+          - pithon code/helloworld.py
               --inputfile "${inputfile}"
               --outputfile "${outputfile}"
-              --sleeptime 0
+              --sleeptime ${sleeptime}
               --greeting ${greeting}
-          - ${python} code/analyze.py
-              --inputfile "${outputfile}"
-              --outputfile results/analytics.json
-postproc:
-    workflow:
-        files:
-            inputs:
-            - code/postproc.py
-            - $[[runs]]
-            outputs:
-            - 'results/compare.json'
-        parameters:
-            rundir: $[[runs]]
-        steps:
-            - name: postproc
-              action:
-                  environment: 'python:3.7'
-                  commands:
-                  - ${python} code/postproc.py
-                    --runs "${rundir}"
-                    --outputfile results/compare.json
-    inputs:
-        files:
-            - 'results/analytics.json'
-        runs: 'runs/'
-    outputs:
-        - source: 'results/compare.json'
-          title: 'Results'
-          caption: 'The results.'
 parameters:
     - name: names
       label: 'Input file'
       dtype: file
       target: data/names.txt
+    - name: sleeptime
+      label: 'Sleep time (s)'
+      dtype: int
+      defaultValue: 10
     - name: greeting
-      label: Greeting
+      label: 'Greeting'
       dtype: string
       defaultValue: 'Hello'
 parameterGroups:

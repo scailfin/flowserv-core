@@ -13,6 +13,7 @@ import pytest
 from flowserv.config import Config
 from flowserv.model.database import DB, TEST_URL
 from flowserv.service.local import LocalAPIFactory
+from flowserv.volume.manager import FStore
 
 
 @pytest.fixture
@@ -26,12 +27,12 @@ def database():
 @pytest.fixture
 def async_service(database, tmpdir):
     """Create a local API factory that executes workflows asynchronously."""
-    env = Config().basedir(tmpdir).run_async().auth()
+    env = Config().basedir(tmpdir).volume(FStore(basedir=str(tmpdir))).run_async().auth()
     return LocalAPIFactory(env=env)
 
 
 @pytest.fixture
 def sync_service(database, tmpdir):
     """Create a local API factory that executes workflows synchronously."""
-    env = Config().basedir(tmpdir).run_sync().auth()
+    env = Config().basedir(tmpdir).volume(FStore(basedir=str(tmpdir))).run_sync().auth()
     return LocalAPIFactory(env=env, db=database)

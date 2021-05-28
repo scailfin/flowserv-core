@@ -18,6 +18,7 @@ from flowserv.volume.fs import FileSystemStorage
 from flowserv.model.workflow.manager import WorkflowManager
 
 import flowserv.error as err
+import flowserv.model.files as dirs
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))
@@ -57,6 +58,21 @@ def test_create_workflow(database, tmpdir):
         assert wf.instructions is None
         template = wf.get_template()
         assert template.result_schema is not None
+    # Ensure that the static files where copied to the workflow folder.
+    staticfs = fs.get_store_for_folder(dirs.workflow_staticdir(workflow_id='WF001'))
+    files = {key for key, _ in staticfs.walk(src=None)}
+    assert files == {
+        'instructions.md',
+        'benchmark.yaml',
+        'flowserv.yaml',
+        'benchmark-invalid-cmd.yaml',
+        'benchmark-with-outputs.yaml',
+        'data/names.txt',
+        'code/analyze.py',
+        'code/postproc.py',
+        'code/helloworld.py',
+        'flowserv.alt.yaml'
+    }
     # -- Add workflow with user-provided metadata -----------------------------
     with database.session() as session:
         manager = WorkflowManager(session=session, fs=fs)

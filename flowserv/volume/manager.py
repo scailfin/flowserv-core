@@ -15,6 +15,10 @@ from typing import Dict, List, Optional
 
 from flowserv.volume.base import StorageVolume
 from flowserv.volume.factory import Volume
+from flowserv.volume.fs import FStore  # noqa: F401
+from flowserv.volume.gc import GCBucket  # noqa: F401
+from flowserv.volume.s3 import S3Bucket  # noqa: F401
+from flowserv.volume.ssh import Sftp  # noqa: F401
 
 import flowserv.error as err
 
@@ -152,6 +156,22 @@ class VolumeManager(object):
 
 
 # -- Helper functions ---------------------------------------------------------
+
+def DefaultVolume(basedir: str) -> VolumeManager:
+    """Helper method to create a volume manager with a single file system store
+    as the default store.
+
+    Parameters
+    ----------
+    basedir: str
+        Base directory for the created file system store.
+
+    Returns
+    -------
+    flowserv.volume.manager.VolumeManager
+    """
+    return VolumeManager(stores=[FStore(basedir=basedir, identifier=DEFAULT_STORE)])
+
 
 def exact_match(s1: str, s2: str) -> bool:
     """Test if two strings are exact matches.

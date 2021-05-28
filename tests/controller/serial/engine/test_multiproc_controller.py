@@ -25,7 +25,7 @@ import flowserv.model.workflow.state as st
 
 # Template directory
 DIR = os.path.dirname(os.path.realpath(__file__))
-TEMPLATE_DIR = os.path.join(DIR, '../../../.files/benchmark/helloworld')
+BENCHMARK_DIR = os.path.join(DIR, '..', '..', '..', '.files', 'benchmark', 'helloworld')
 
 
 def test_cancel_run_helloworld(async_service):
@@ -34,7 +34,7 @@ def test_cancel_run_helloworld(async_service):
     #
     # Start a new run for the workflow template.
     with async_service() as api:
-        workflow_id = create_workflow(api, source=TEMPLATE_DIR)
+        workflow_id = create_workflow(api, source=BENCHMARK_DIR)
         user_id = create_user(api)
     with async_service(user_id=user_id) as api:
         group_id = create_group(api, workflow_id)
@@ -72,7 +72,7 @@ def test_run_helloworld_async(async_service, target):
     #
     # Start a new run for the workflow template.
     with async_service() as api:
-        workflow_id = create_workflow(api, source=TEMPLATE_DIR)
+        workflow_id = create_workflow(api, source=BENCHMARK_DIR)
         user_id = create_user(api)
     with async_service(user_id=user_id) as api:
         group_id = create_group(api, workflow_id)

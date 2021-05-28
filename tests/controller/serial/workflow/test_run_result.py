@@ -30,10 +30,10 @@ def test_empty_run_result():
 def test_error_run_result():
     """Test results of an erroneous workflow run."""
     r = RunResult(arguments={})
-    r.add(ExecResult(step=ContainerStep(image='test'), returncode=0))
+    r.add(ExecResult(step=ContainerStep(identifier='s1', image='test'), returncode=0))
     assert r.exception is None
     assert r.returncode == 0
-    r.add(ExecResult(step=ContainerStep(image='test'), returncode=1, stderr=['e1', 'e2'], exception=ValueError()))
+    r.add(ExecResult(step=ContainerStep(identifier='s2', image='test'), returncode=1, stderr=['e1', 'e2'], exception=ValueError()))
     with pytest.raises(ValueError):
         r.raise_for_status()
     assert r.exception is not None
@@ -41,7 +41,7 @@ def test_error_run_result():
     assert r.stdout == []
     assert r.stderr == ['e1', 'e2']
     r = RunResult(arguments={})
-    r.add(ExecResult(step=ContainerStep(image='test'), returncode=1, stderr=['e1', 'e2']))
+    r.add(ExecResult(step=ContainerStep(identifier='s3', image='test'), returncode=1, stderr=['e1', 'e2']))
     with pytest.raises(err.FlowservError):
         r.raise_for_status()
 
@@ -49,9 +49,9 @@ def test_error_run_result():
 def test_successful_run_result():
     """Test results of a successful workflow run."""
     r = RunResult(arguments={'a': 1})
-    r.add(ExecResult(step=ContainerStep(image='test1'), returncode=0, stdout=['o1']))
+    r.add(ExecResult(step=ContainerStep(identifier='s1', image='test1'), returncode=0, stdout=['o1']))
     r.context['a'] = 2
-    r.add(ExecResult(step=ContainerStep(image='test2'), returncode=0, stdout=['o2', 'o3']))
+    r.add(ExecResult(step=ContainerStep(identifier='s2', image='test2'), returncode=0, stdout=['o2', 'o3']))
     r.context['b'] = 1
     assert r.exception is None
     assert r.returncode == 0

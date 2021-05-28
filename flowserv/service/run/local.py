@@ -14,13 +14,13 @@ resources directly via a the database model.
 from typing import Dict, List, Optional
 
 import logging
-import shutil
 
 from flowserv.controller.base import WorkflowController
 from flowserv.model.auth import Auth
 from flowserv.model.base import WorkflowObject
 from flowserv.model.files import FileHandle, run_tmpdir
 from flowserv.model.group import WorkflowGroupManager
+from flowserv.model.parameter.files import InputDirectory
 from flowserv.model.ranking import RankingManager, RunResult
 from flowserv.model.run import RunManager
 from flowserv.model.template.base import WorkflowTemplate
@@ -441,6 +441,9 @@ class LocalRunService(RunService):
                 # post-processing resources where generated for a different
                 # set of runs than those in the ranking.
                 if runs != workflow.ranking():
+                    # Create temporary post-processing folder for static
+                    # workflow files.
+                    # postproc_store = self.fs.get_store_for_folder(key=run_tmpdir())
                     msg = 'Run post-processing workflow for {}'
                     logging.info(msg.format(workflow.workflow_id))
                     run_postproc_workflow(
@@ -448,7 +451,10 @@ class LocalRunService(RunService):
                         ranking=ranking,
                         keys=runs,
                         run_manager=self.run_manager,
-                        store=self.fs.get_store_for_folder(key=run_tmpdir()),
+                        tmpstore=self.fs.get_store_for_folder(key=run_tmpdir()),
+                        staticfs=self.fs.get_store_for_folder(
+                            key=dirs.workflow_staticdir(workflow.workflow_id)
+                        ),
                         backend=self.backend
                     )
 
@@ -457,8 +463,8 @@ class LocalRunService(RunService):
 
 def run_postproc_workflow(
     workflow: WorkflowObject, ranking: List[RunResult],
-    keys: List[str], run_manager: RunManager, store: StorageVolume,
-    backend: WorkflowController
+    keys: List[str], run_manager: RunManager, tmpstore: StorageVolume,
+    staticfs: StorageVolume, backend: WorkflowController
 ):
     """Run post-processing workflow for a workflow template.
 
@@ -472,9 +478,12 @@ def run_postproc_workflow(
         Sorted list of run identifier for runs in the ranking.
     run_manager: flowserv.model.run.RunManager
         Manager for workflow runs
-    store: flowserv.volume.base.StorageVolume
-        Target storage volume where the created post-processing files are
-        stored.
+    tmpstore: flowserv.volume.base.StorageVolume
+        Temporary storage volume where the created post-processing files are
+        stored. This volume will be erased after the workflow is started.
+    staticfs: flowserv.volume.base.StorageVolume
+        Storage volume that contains the static files from the workflow
+        template.
     backend: flowserv.controller.base.WorkflowController
         Backend that is used to execute the post-processing workflow.
     """
@@ -489,14 +498,14 @@ def run_postproc_workflow(
     # run argument
     strace = None
     try:
-        datadir = prepare_postproc_data(
+        prepare_postproc_data(
             input_files=pp_files,
             ranking=ranking,
             run_manager=run_manager,
-            store=store
+            store=tmpstore
         )
         dst = pp_inputs.get('runs', RUNS_DIR)
-        run_args = {PARA_RUNS: dst}
+        run_args = {PARA_RUNS: InputDirectory(store=tmpstore, target=RUNS_DIR)}
         arg_list = [serialize_arg(PARA_RUNS, dst)]
     except Exception as ex:
         logging.error(ex, exc_info=True)
@@ -520,16 +529,21 @@ def run_postproc_workflow(
     else:
         # Execute the post-processing workflow asynchronously if
         # there were no data preparation errors.
-        postproc_state, runstore = backend.exec_workflow(
-            run=run,
-            template=WorkflowTemplate(
-                workflow_spec=workflow_spec,
-                parameters=PARAMETERS
-            ),
-            arguments=run_args,
-            staticfs=store,
-            config=workflow.engine_config
-        )
+        try:
+            postproc_state, runstore = backend.exec_workflow(
+                run=run,
+                template=WorkflowTemplate(
+                    workflow_spec=workflow_spec,
+                    parameters=PARAMETERS
+                ),
+                arguments=run_args,
+                staticfs=staticfs,
+                config=workflow.engine_config
+            )
+        except Exception as ex:
+            # Make sure to catch exceptions and set the run into an error state.
+            postproc_state = run.state().error(messages=util.stacktrace(ex))
+            runstore = None
         # Update the post-processing workflow run state if it is
         # no longer pending for execution.
         if not postproc_state.is_pending():
@@ -538,5 +552,5 @@ def run_postproc_workflow(
                 state=postproc_state,
                 runstore=runstore
             )
-        # Remove the temporary input folder
-        shutil.rmtree(datadir)
+        # Erase the temporary storage volume.
+        tmpstore.erase()

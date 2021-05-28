@@ -26,7 +26,7 @@ import flowserv.util as util
 
 """Names for files and folders that contain run result files and run metadata.
 """
-RUNS_DIR = '.runs'
+RUNS_DIR = 'runs'
 RUNS_FILE = 'runs.json'
 
 

@@ -12,10 +12,11 @@ storage volume.
 """
 
 from __future__ import annotations
-from typing import Dict, IO, Optional, Tuple, Union
+from abc import ABCMeta, abstractmethod
+from typing import Dict, List, Optional, Tuple, Union
 
 from flowserv.model.parameter.base import Parameter, PARA_FILE
-from flowserv.volume.base import IOHandle
+from flowserv.volume.base import IOHandle, StorageVolume
 
 import flowserv.error as err
 import flowserv.model.parameter.base as pd
@@ -157,10 +158,89 @@ class File(Parameter):
         return obj
 
 
-class InputFile(object):
-    """The InputFile represents the value for a template parameter of type
-    'file'. This class contains the path to the source for an uploaded file as
-    well as the target path for the Upload.
+class IOValue(metaclass=ABCMeta):
+    """The IO value represents the value for a template parameter of type
+    'file'. Implementations will either represent single input files or
+    directories. The ``copy`` method is used to store the input object in
+    the target storage volume for workflow runs.
+    """
+    def __init__(self, target: str):
+        """Initialize the object's target storage path.
+
+        Parameters
+        ----------
+        target: string
+            Relative target path for file upload.
+
+        Raises
+        ------
+        TypeError
+        """
+        self._target = target
+
+    def __str__(self):
+        """The string representation of an input file is the path to the target
+        file. This is important since the parameter replacement function
+        converts input arguments to string using str().
+
+        Returns
+        -------
+        string
+        """
+        return self._target
+
+    @abstractmethod
+    def copy(self, target: StorageVolume) -> List[str]:
+        """Copy the input(s) to the given target storage volume.
+
+        Returns the list of copied files.
+
+        Returns
+        -------
+        list of string
+        """
+        raise NotImplementedError()  # pragma: no cover
+
+
+class InputDirectory(IOValue):
+    """Implementation of the IOValue class for template parameter values that
+    represents a directory on a storage volume. The ``copy`` method will copy
+    the complete folder to the tartget volume for a workflow run.
+    """
+    def __init__(self, store: StorageVolume, target: str, source: Optional[str] = None):
+        """Initialize the object properties.
+
+        Parameters
+        ----------
+        store: flowserv.volume.base.StorageVolume
+            Storage volume containing the directory.
+        target: string
+            Relative target path for file upload.
+        source: string, default=None
+            Relative target path for the source directory.
+
+        Raises
+        ------
+        TypeError
+        """
+        super(InputDirectory, self).__init__(target=target)
+        self._store = store
+        self._source = source
+
+    def copy(self, target: StorageVolume) -> List[str]:
+        """Copy the file object to the target volume.
+
+        Returns
+        -------
+        list of string
+        """
+        return self._store.copy(src=self._source, store=target, dst=self._target)
+
+
+class InputFile(IOValue):
+    """Implementation of the IOValue class for template parameter values that
+    are a single file. Maintains the IOHandle for an input file that can be
+    copied to the tartget volume for a workflow run.
     """
     def __init__(self, source: IOHandle, target: str):
         """Initialize the object properties.
@@ -176,36 +256,15 @@ class InputFile(object):
         ------
         TypeError
         """
-        if not isinstance(source, IOHandle):
-            raise TypeError("invalid source type '{}'".format(type(source)))
+        super(InputFile, self).__init__(target=target)
         self._source = source
-        self._target = target
 
-    def __str__(self):
-        """The string representation of an input file is the path to the target
-        file. This is important since the parameter replacement function
-        converts input arguments to string using str().
+    def copy(self, target: StorageVolume) -> List[str]:
+        """Copy the file object to the target volume.
 
         Returns
         -------
-        string
+        list of string
         """
-        return self._target
-
-    def source(self) -> Union[str, IO]:
-        """Get the source path for the file.
-
-        Returns
-        -------
-        flowserv.volume.base.IOHandle
-        """
-        return self._source
-
-    def target(self) -> str:
-        """Get the target path for the file.
-
-        Returns
-        -------
-        string
-        """
-        return self._target
+        target.store(file=self._source, dst=self._target)
+        return [self._target]

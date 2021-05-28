@@ -13,9 +13,18 @@ import os
 import pytest
 
 from flowserv.volume.fs import FileSystemStorage, FStore
-from flowserv.volume.manager import VolumeManager, DEFAULT_STORE
+from flowserv.volume.manager import DefaultVolume, VolumeManager, DEFAULT_STORE
 
 import flowserv.error as err
+
+
+def test_default_volumes(tmpdir):
+    """Test the default volumes helper function."""
+    # Ensure we can instantiate the volume manager if a default store is given.
+    volumes = DefaultVolume(basedir=tmpdir)
+    assert volumes.files == dict()
+    default_store = volumes.get(identifier=DEFAULT_STORE)
+    assert default_store.basedir == tmpdir
 
 
 def test_manager_init(tmpdir):
