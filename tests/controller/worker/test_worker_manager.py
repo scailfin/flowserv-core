@@ -68,7 +68,6 @@ def test_get_worker_instance(doc, step, cls):
     factory = WorkerPool(workers=[doc], managers={step.name: doc['id']})
     worker = factory.get(step)
     assert isinstance(worker, cls)
-    assert worker.default_volume() == DEFAULT_STORE
     # Run twice to account for the cached object.
     assert factory.get(step) == worker
 

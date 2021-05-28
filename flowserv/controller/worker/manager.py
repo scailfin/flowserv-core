@@ -54,11 +54,9 @@ follow the following schema:
             items:
               $ref: '#/definitions/keyValuePair'
             type: array
-          volumes:
-            description: List of storage volumns the worker has access to.
-            items:
-              type: string
-            type: array
+          volume:
+            description: Storage volume the worker has access to.
+            type: string
         required:
         - name
         - type
@@ -194,23 +192,23 @@ def create_worker(doc: Dict) -> Worker:
     worker_type = doc['type']
     env = util.to_dict(doc.get('env', []))
     vars = util.to_dict(doc.get('vars', []))
-    volumes = doc.get('volumes')
+    volume = doc.get('volume')
     if worker_type == SUBPROCESS_WORKER:
         return SubprocessWorker(
             variables=vars,
             env=env,
             identifier=identifier,
-            volumes=volumes
+            volume=volume
         )
     elif worker_type == DOCKER_WORKER:
         return DockerWorker(
             variables=vars,
             env=env,
             identifier=identifier,
-            volumes=volumes
+            volume=volume
         )
     elif worker_type == CODE_WORKER:
-        return CodeWorker(identifier=identifier, volumes=volumes)
+        return CodeWorker(identifier=identifier, volume=volume)
     raise ValueError(f"unknown worker type '{worker_type}'")
 
 

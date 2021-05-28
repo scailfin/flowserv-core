@@ -32,7 +32,7 @@ class DockerWorker(ContainerWorker):
     """
     def __init__(
         self, variables: Optional[Dict] = None, env: Optional[Dict] = None,
-        identifier: Optional[str] = None, volumes: Optional[List[str]] = None
+        identifier: Optional[str] = None, volume: Optional[str] = None
     ):
         """Initialize the optional mapping with default values for placeholders
         in command template strings.
@@ -48,15 +48,16 @@ class DockerWorker(ContainerWorker):
         identifier: string, default=None
             Unique worker identifier. If the value is None a new unique identifier
             will be generated.
-        volumes: list of string, default=None
-            Identifier for storage volumes that the worker has access to. The
-            first entry in this list defines the default volume.
+        volume: string, default=None
+            Identifier for the storage volume that the worker has access to.
+            By default, the worker is expected to have access to the default
+            volume store for a workflow run.
         """
         super(DockerWorker, self).__init__(
             variables=variables,
             env=env,
             identifier=identifier,
-            volumes=volumes
+            volume=volume
         )
 
     def run(self, step: ContainerStep, env: Dict, rundir: str) -> ExecResult:

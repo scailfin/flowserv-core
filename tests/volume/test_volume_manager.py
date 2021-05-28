@@ -42,25 +42,26 @@ def test_manager_init(tmpdir):
 def test_manager_prepare(basedir, filenames_all, data_a, tmpdir):
     """Test the volume manager prepare method."""
     # -- Setup ----------------------------------------------------------------
+    s1_dir = os.path.join(tmpdir, 's1')
     s0 = FileSystemStorage(basedir=basedir, identifier=DEFAULT_STORE)
-    s1 = FileSystemStorage(basedir=os.path.join(tmpdir, 's1'), identifier='s1')
+    s1 = FileSystemStorage(basedir=s1_dir, identifier='s1')
     volumes = VolumeManager(
         stores=[s0.to_dict(), s1.to_dict()],
         files={f: [DEFAULT_STORE] for f in filenames_all}
     )
     # Case 1: Empty arguments.
-    assert volumes.prepare(files=[]) == dict()
+    volumes.prepare(store=DEFAULT_STORE, files=[])
     # Case 2: No file copy.
-    files = volumes.prepare(files=['examples/'], stores=[DEFAULT_STORE])
-    assert len(files) == 3
-    for f in files:
-        assert files[f].identifier == DEFAULT_STORE
+    volumes.prepare(store=DEFAULT_STORE, files=['examples/'])
+    assert len(os.listdir(basedir)) == 3
+    assert len(os.listdir(s1_dir)) == 0
+    for f in filenames_all:
+        assert volumes.files[f] == [DEFAULT_STORE]
     # Case 3: Copy file between stores.
-    files = volumes.prepare(files=['A.json', 'docs/'], stores=['s1'])
-    assert set(files.keys()) == {'A.json', 'docs/D.json'}
-    for f in files:
-        assert files[f].identifier == 's1'
-        filename = os.path.join(tmpdir, 's1', 'A.json')
+    volumes.prepare(store='s1', files=['A.json', 'docs/'])
+    assert len(os.listdir(basedir)) == 3
+    assert len(os.listdir(s1_dir)) == 2
+    filename = os.path.join(s1_dir, 'A.json')
     assert os.path.isfile(filename)
     with s1.load('A.json').open() as f:
         assert json.load(f) == data_a
@@ -73,7 +74,7 @@ def test_manager_prepare(basedir, filenames_all, data_a, tmpdir):
     }
     # Error cases.
     with pytest.raises(err.UnknownObjectError):
-        volumes.prepare(files=['A.json'], stores=['s1', 'unknown'])
+        volumes.prepare(files=['A.json'], store='unknown')
 
 
 def test_manager_update(tmpdir):

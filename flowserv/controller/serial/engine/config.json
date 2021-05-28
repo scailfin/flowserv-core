@@ -74,10 +74,9 @@
                     "description": "Key-value pairs for template string variables.",
                     "items": {"$ref": "#/definitions/keyValuePair"}
                 },
-                "volumes": {
-                    "type": "array",
-                    "description": "List of storage volumns the worker has access to.",
-                    "items": {"type": "string"}
+                "volume": {
+                    "type": "string",
+                    "description": "Storage volume the worker has access to."
                 }
             },
             "required": ["name", "type"]

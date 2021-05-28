@@ -4,9 +4,9 @@ Serial Workflow Engine
 
 The **serial workflow engine** (``flowserv.controller.serial.engine.base.SerialWorkflowEngine``) is the default implementation of the **flowServ** workflow controller (``flowserv.controller.base.WorkflowEngine``).
 
-**Serial workflows** are sequences of workflow steps that operate on a global workflow state. Each step defines an action that modifies the workflow state. The workflow state is given as (i) a set of files that are available to (and manipulated) by each workflow step, and (ii) a dictionary of workflow parameters and the user-provided parameter values.
+**Serial workflows** are sequences of workflow steps that operate on a global workflow state. Each step defines an action that modifies the workflow state. The workflow state is given as (i) a set of files that are available to (and manipulated by) each workflow step, and (ii) a dictionary of workflow parameters and the user-provided parameter values (referred to as the *context*).
 
-Serial workflows are executed by the serial workflow engine. The engine maintains a set of workers that are used to execute the workflow steps (``flowserv.controller.worker.base.Worker``). Each workers is configured for a particular type of workflow step  (see below). Workers have access to one or more storage volumes (``flowserv.volume.base.StorageVolume``) that provide read and write access to files that the worker needs to access.
+The serial workflow engine orchestrates the execution of a serial workflow. The engine maintains a set of workers that are used to execute individual workflow steps (``flowserv.controller.worker.base.Worker``). Each workers is configured for a particular type of workflow step  (see below). The worker has access to a storage volumes (``flowserv.volume.base.StorageVolume``) that provides read and write access to files that the worker needs to access.
 
 
 Templates for Serial Workflows
@@ -67,6 +67,7 @@ The mandatory ``steps`` section defines the list of individual workflow steps. E
 The mandatory ``action`` part of the workflow step defines the action of the step. The format is dependent on the type of worker that is used for the step. This part can also be replaced with a user-defined step, i.e., a reference to a template parameter. The serial workflow engine currently supports the following types of workflow steps:
 
 - **Container Step**: A container step defines an action that includes one or more command-line statements that are executed in a specified (container) environment. The specification for a container step has mandatory elements ``environment`` and ``commands``. The environment defines the container image and the commands gives the list of command-line statements. Note that container steps are not necessarily executed in a Docker container. The workers configuration (see below) allows the user to specify the particular type of container worker, e.g., to execute the commands in the Python environment that runs the **flowServ** application using a ``flowserv.controller.worker.subprocess.SubprocessWorker`` that uses Python's ``multiprocess`` module to run the commands.
+- **Code Step**: A code step is used to execute a Python function directly in the same environment that is running the **flowServ** API.
 
 
 Engine and Workflow Configuration
@@ -101,7 +102,7 @@ The workflow engine has access to a set of dedicated workers. Workers are respon
 
 Workers are classified based on the type of the workflow step that they can handle, e.g., a container step worker (``flowserv.controller.worker.base.ContainerWorker``). For each class of workers there may exist several implementations for different execution backends or environments. For example, a container step worker may either execute a workflow step as a sub-process from the Python environment (``flowserv.controller.worker.subprocess.SubprocessWorker``) or using a Docker engine (``flowserv.controller.worker.docker.DockerWorker``).
 
-Workers are specified as part of the workflow engine configuration (``workers`` section). The workers are instantiated and maintained by a worker manager (``flowserv.controller.worker.manager.WorkerPool``) that is associated with the workflow engine. The specification for each worker is a dictionary that contains the two mandatory elements ``name`` and ``type`` and three optional elements ``env``, ``vars``, and ``volumes``.
+Workers are specified as part of the workflow engine configuration (``workers`` section). The workers are instantiated and maintained by a worker manager (``flowserv.controller.worker.manager.WorkerPool``) that is associated with the workflow engine. The specification for each worker is a dictionary that contains the two mandatory elements ``name`` and ``type`` and three optional elements ``env``, ``vars``, and ``volume``.
 
 Each worker has a unique identifier (``name``) and a workflow ``type`` that is used to get an instance of this worker from the worker factory. The ``type`` specifies the implementation of the worker interface (``flowserv.controller.worker.base.Worker``). The worker factory currently supports the following types:
 
@@ -110,7 +111,7 @@ Each worker has a unique identifier (``name``) and a workflow ``type`` that is u
 
 The optional ``env`` and ``vars`` elements in the worker specification contain key-value pairs that define values for environment variables and template string variables, respectively. The values for these elements are passed to the constructor of the worker class implementation as dictionaries during instantiation.
 
-The list of ``volumes`` contains the identifier of storage volumes that the worker has access to. Note that the order of entries in this list is important in that the first entry is used as the default volume for the worker. If the list of volumes is not specified for a worker, by default the worker has access to the ``__default__`` storage volume.
+The ``volume`` elements specifies the identifier of the storage volume that the worker has access to. If the element is not present for a worker, by default the worker has access to the ``__default__`` storage volume.
 
 
 Engine Configuration
@@ -137,8 +138,7 @@ The specification of volumes and workers form the configuration for the serial w
           vars:
             - key: 'template variable key-value pairs'
               value: ''
-          volumes:
-            - 'volume identifier'
+          volume: 'volume identifier'
     workflow:
         - step: 'workflow step identifier'
           worker: 'worker identifier'
@@ -149,7 +149,7 @@ The configuration for the serial workflow engine is expected to be stored in a f
 Workflow Configuration
 ----------------------
 
-When executing a serial workflow, the default engine configuration can be modified by passing an optional configuration dictionary to the ``exec_workflow`` method of the workflow engine. This dictionary may contain the elements ``volumes`` and ``workers` that will override the definition of volume and workers that were used to configure the engine when the it was instantiated. In addition, the workflow-specific configuration element may contain a ``workflow`` section that defines a mapping of workflow steps to the dedicated workers that are used to execute the workflow step. This mapping is given as a list of dictionaries containing the elements ``step`` and ``worker`` that reference the unique step identifier and worker identifier, respectively.
+When executing a serial workflow, the default engine configuration can be modified by passing an optional configuration dictionary to the ``exec_workflow`` method of the workflow engine. This dictionary may contain the elements ``volumes`` and ``workers` that will override the definition of volume and workers that were used to configure the engine when the it was instantiated. In addition, the configuration dictionary may contain a ``workflow`` section that defines a mapping of workflow steps to the dedicated workers that are used to execute the workflow step. This mapping is given as a list of dictionaries containing the elements ``step`` and ``worker`` that reference the unique step identifier and worker identifier, respectively.
 
 
 Workflow Execution
@@ -157,16 +157,6 @@ Workflow Execution
 
 The workflow is executed step-by-step in sequential order. For each workflow step, the engine first gets the worker that is responsible for the step execution. This is either (i) the worker that has been mapped to the workflow step in the ``workflow`` section of the configuration object, or (ii) a default worker that is dependent on the step type. For container steps, the default worker is a ``flowserv.controller.worker.subprocess.SubprocessWorker``. For code steps there currently only exists one type of worker (``flowserv.controller.worker.code.CodeWorker``).
 
-uses the step specification to get the worker from the associated worker factory. It them calls the volume manager to ensure that the worker has access to all the required files. It then executes the step using the worker and updates the global index of files in the workfrelative path (key) of all files that are available (e.g., pre-loaded) at the storage volumelow context.
+The workflow engine then instructs the volume manager to ensure that the worker has access to all the required files (as specified in the ``files.inputs`` section of the step specification). The volume manager will copy all required files to the storage volume that the worker has access to.
 
-The type of a worker is identified based on the elements that are present in the workflow step.
-
-
-Config - Env
-------------
-
-A default local file system environment will be created (using the default FLOWSERV_SERIAL_RUNSDIR) value. This environment is assigned to any worker that does not specify the environment.
-
-
-For each worker type a default worker is defined, e.g., the sub-process worker is the default worker for container steps.
-Besides the worker and volume specification, the configuration includes a mapping associates the different workflow steps with the worker that is responsible for the step execution. For each worker type a default worker is defined, e.g., the sub-process worker is the default worker for container steps.
+When the storage volume is prepared, the worker initiates the execution of the workflow step. Once execution is completed successfully, the generated output files are registered with the volume manager for further use by other workflow steps. In case that step execution is not successful, execution of the workflow will terminate.

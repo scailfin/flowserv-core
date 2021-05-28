@@ -29,9 +29,9 @@ class Worker(metaclass=ABCMeta):
     particular step type.
     """
     def __init__(
-        self, identifier: Optional[str] = None, volumes: Optional[List[str]] = None
+        self, identifier: Optional[str] = None, volume: Optional[str] = None
     ):
-        """Initialize the unique worker identifier and the list of volumes that
+        """Initialize the unique worker identifier and the storage volume that
         the worker has access to.
 
         Parameters
@@ -39,24 +39,13 @@ class Worker(metaclass=ABCMeta):
         identifier: string, default=None
             Unique worker identifier. If the value is None a new unique identifier
             will be generated.
-        volumes: list of string, default=None
-            Identifier for storage volumes that the worker has access to. The
-            first entry in this list defines the default volume.
+        volume: string, default=None
+            Identifier for the storage volume that the worker has access to.
+            By default, the worker is expected to have access to the default
+            volume store for a workflow run.
         """
         self.identifier = identifier if identifier is not None else util.get_unique_identifier()
-        self.volumes = volumes if volumes else [DEFAULT_STORE]
-
-    def default_volume(self) -> str:
-        """Get the identifier of the default storage volume for this worker.
-
-        The default volume is the first entry in the list of volumes that this
-        worker has access to.
-
-        Returns
-        -------
-        string
-        """
-        return self.volumes[0]
+        self.volume = volume if volume is not None else DEFAULT_STORE
 
     @abstractmethod
     def exec(self, step: WorkflowStep, context: Dict, rundir: str) -> ExecResult:
@@ -86,7 +75,7 @@ class ContainerWorker(Worker):
     """
     def __init__(
         self, variables: Optional[Dict] = None, env: Optional[Dict] = None,
-        identifier: Optional[str] = None, volumes: Optional[List[str]] = None
+        identifier: Optional[str] = None, volume: Optional[str] = None
     ):
         """Initialize the optional mapping with default values for placeholders
         in command template strings.
@@ -105,11 +94,12 @@ class ContainerWorker(Worker):
         identifier: string, default=None
             Unique worker identifier. If the value is None a new unique identifier
             will be generated.
-        volumes: list of string, default=None
-            Identifier for storage volumes that the worker has access to. The
-            first entry in this list defines the default volume.
+        volume: string, default=None
+            Identifier for the storage volume that the worker has access to.
+            By default, the worker is expected to have access to the default
+            volume store for a workflow run.
         """
-        super(ContainerWorker, self).__init__(identifier=identifier, volumes=volumes)
+        super(ContainerWorker, self).__init__(identifier=identifier, volume=volume)
         self.variables = variables if variables is not None else dict()
         self.env = env if env is not None else dict()
 

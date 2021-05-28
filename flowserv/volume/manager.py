@@ -83,36 +83,25 @@ class VolumeManager(object):
             self._stores[identifier] = Volume(self._storespecs[identifier])
         return self._stores[identifier]
 
-    def prepare(self, files: List[str], stores: Optional[List[str]] = None) -> Dict[str, StorageVolume]:
-        """Prepare the volume stores for a worker.
+    def prepare(self, store: str, files: List[str]):
+        """Prepare the storage volume for a worker.
 
         Ensures that the input files that are needed by the worker are available
-        in their latest version on at least one of the given volume stores.
+        in their latest version at the given volume store.
 
-        Raises a ValueError if a specified input file or storage volume does
+        Raises a ValueError if a specified input file or the storage volume does
         not exist.
-
-        Returns a mapping of the required input files to the storage volume that
-        contains them. If a file is available on multiple of the storage volumes
-        only one of them is referenced in the result.
 
         Parameters
         ----------
-        files: list of str
+        store: string
+            Identifier of the storage volume that the worker has access to.
+        files: list of string
             Relative path (keys) of required input files for a workflow step.
-        stores: list of string, default=None
-            List of storage volumes that the worker has access to. If no volume
-            is given the default volume is used as default.
-
-        Returns
-        -------
-        dict
         """
-        # Ensure that the identifier for the worker stores are valid.
-        stores = stores if stores is not None else [DEFAULT_STORE]
-        for s in stores:
-            if s not in self._storespecs:
-                raise err.UnknownObjectError(obj_id=s, type_name='storage volume')
+        # Ensure that the identifier for the worker store is valid.
+        if store not in self._storespecs:
+            raise err.UnknownObjectError(obj_id=store, type_name='storage volume')
         # Generate dictionary that maps all files that are matches to the given
         # query list to the list of storage volume that the files are available
         # at. At this point we perform a search with quadratic time complexity
@@ -131,25 +120,18 @@ class VolumeManager(object):
         # storage volume where the worker has access to it. Files that currently
         # are not available to a worker at any of its stores, these files will
         # be uploaded to one of the storage volumes the worker has access to.
-        result = dict()
         for f, fstores in required_files.items():
-            for s in stores:
-                # Find the first store that the worker has access to where the
-                # file is available.
-                if s in fstores:
-                    result[f] = self.get(s)
-                    break
-            if f not in result:
-                # If the file is not available on any of the volumes that the
-                # worker has access to upload it to the first one of them.
-                source = self.get(fstores[0])
-                target = self.get(stores[0])
-                # Upload file from the source storage volume to the target
-                # volume.
-                for key in source.copy(src=f, store=target):
-                    self.files[key].append(target.identifier)
-                result[key] = target
-        return result
+            # Check if the file is available at the target store.
+            if store in fstores:
+                continue
+            # If the file is not available at the target volume we need to
+            # upload it.
+            source = self.get(fstores[0])
+            target = self.get(store)
+            # Upload file from the source storage volume to the target
+            # volume.
+            for key in source.copy(src=f, store=target):
+                self.files[key].append(store)
 
     def update(self, files: List[str], store: Optional[str] = None):
         """Update the availability index for workflow files.

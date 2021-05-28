@@ -51,19 +51,20 @@ class CodeWorker(Worker):
     """Worker to execute workflow steps of type
     :class:`flowserv.model.workflow.step.CodeStep`
     """
-    def __init__(self, identifier: Optional[str] = None, volumes: Optional[List[str]] = None):
-        """Initialize the worker identifier and accessible volumes.
+    def __init__(self, identifier: Optional[str] = None, volume: Optional[str] = None):
+        """Initialize the worker identifier and accessible storage volume.
 
         Parameters
         ----------
         identifier: string, default=None
             Unique worker identifier. If the value is None a new unique identifier
             will be generated.
-        volumes: list of string, default=None
-            Identifier for storage volumes that the worker has access to. The
-            first entry in this list defines the default volume.
+        volume: string, default=None
+            Identifier for the storage volume that the worker has access to.
+            By default, the worker is expected to have access to the default
+            volume store for a workflow run.
         """
-        super(CodeWorker, self).__init__(identifier=identifier, volumes=volumes)
+        super(CodeWorker, self).__init__(identifier=identifier, volume=volume)
 
     def exec(self, step: CodeStep, context: Dict, rundir: str) -> ExecResult:
         """Execute a workflow step of type :class:`flowserv.model.workflow.step.CodeStep`
