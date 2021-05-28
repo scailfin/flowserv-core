@@ -13,10 +13,12 @@ engine or the Python subprocess package.
 
 from abc import ABCMeta, abstractmethod
 from string import Template
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
 from flowserv.controller.serial.workflow.result import ExecResult
 from flowserv.model.workflow.step import ContainerStep, WorkflowStep
+from flowserv.volume.base import StorageVolume
+from flowserv.volume.fs import FileSystemStorage
 from flowserv.volume.manager import DEFAULT_STORE
 
 import flowserv.model.template.parameter as tp
@@ -48,7 +50,7 @@ class Worker(metaclass=ABCMeta):
         self.volume = volume if volume is not None else DEFAULT_STORE
 
     @abstractmethod
-    def exec(self, step: WorkflowStep, context: Dict, rundir: str) -> ExecResult:
+    def exec(self, step: WorkflowStep, context: Dict, store: StorageVolume) -> ExecResult:
         """Execute a given workflow step in the current workflow context.
 
         Parameters
@@ -57,8 +59,8 @@ class Worker(metaclass=ABCMeta):
             Step in a serial workflow.
         context: dict
             Dictionary of variables that represent the current workflow state.
-        rundir: string
-            Path to the working directory of the workflow run.
+        store: flowserv.volume.base.StorageVolume
+            Storage volume that contains the workflow run files.
 
         Returns
         -------
@@ -103,7 +105,7 @@ class ContainerWorker(Worker):
         self.variables = variables if variables is not None else dict()
         self.env = env if env is not None else dict()
 
-    def exec(self, step: ContainerStep, context: Dict, rundir: str) -> ExecResult:
+    def exec(self, step: ContainerStep, context: Dict, store: FileSystemStorage) -> ExecResult:
         """Execute a given list of commands that are represented by template
         strings.
 
@@ -111,14 +113,16 @@ class ContainerWorker(Worker):
         calls the implementation-specific run method to execute the individual
         commands.
 
+        Note that the container worker expects a file system storage volume.
+
         Parameters
         ----------
         step: flowserv.controller.serial.workflow.ContainerStep
             Step in a serial workflow.
         context: dict
             Dictionary of argument values for parameters in the template.
-        rundir: string
-            Path to the working directory of the workflow run.
+        store: flowserv.volume.fs.FileSystemStorage
+            Storage volume that contains the workflow run files.
 
         Returns
         -------
@@ -144,7 +148,7 @@ class ContainerWorker(Worker):
         environment = dict(self.env)
         environment.update(step.env)
         environment = environment if environment else None
-        return self.run(step=expanded_step, env=environment, rundir=rundir)
+        return self.run(step=expanded_step, env=environment, rundir=store.basedir)
 
     @abstractmethod
     def run(self, step: ContainerStep, env: Dict, rundir: str) -> ExecResult:

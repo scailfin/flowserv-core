@@ -8,7 +8,7 @@
 
 """Execute a workflow code step."""
 
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
 import logging
 import os
@@ -17,6 +17,7 @@ import sys
 from flowserv.controller.serial.workflow.result import ExecResult
 from flowserv.controller.worker.base import Worker
 from flowserv.model.workflow.step import CodeStep
+from flowserv.volume.fs import FileSystemStorage
 
 import flowserv.util as util
 
@@ -66,12 +67,14 @@ class CodeWorker(Worker):
         """
         super(CodeWorker, self).__init__(identifier=identifier, volume=volume)
 
-    def exec(self, step: CodeStep, context: Dict, rundir: str) -> ExecResult:
+    def exec(self, step: CodeStep, context: Dict, store: FileSystemStorage) -> ExecResult:
         """Execute a workflow step of type :class:`flowserv.model.workflow.step.CodeStep`
         in a given context.
 
         Captures output to STDOUT and STDERR and includes them in the returned
         execution result.
+
+        Note that the code worker expects a file system storage volume.
 
         Parameters
         ----------
@@ -79,6 +82,8 @@ class CodeWorker(Worker):
             Code step in a serial workflow.
         context: dict
             Context for the executed code.
+        store: flowserv.volume.fs.FileSystemStorage
+            Storage volume that contains the workflow run files.
 
         Returns
         -------
@@ -91,7 +96,7 @@ class CodeWorker(Worker):
         sys.stderr = OutputStream(stream=result.stderr)
         # Change working directory temporarily.
         cwd = os.getcwd()
-        os.chdir(rundir)
+        os.chdir(store.basedir)
         try:
             step.exec(context=context)
         except Exception as ex:

@@ -12,6 +12,7 @@ import os
 
 from flowserv.controller.worker.code import CodeWorker, OutputStream
 from flowserv.model.workflow.step import CodeStep
+from flowserv.volume.fs import FileSystemStorage
 
 
 def write_and_add(a):
@@ -26,7 +27,7 @@ def write_and_add(a):
 def test_error_exec(tmpdir):
     """Test error when running a code step."""
     step = CodeStep(identifier='test', func=write_and_add, arg='a')
-    r = CodeWorker().exec(step=step, context={'a': -1}, rundir=tmpdir)
+    r = CodeWorker().exec(step=step, context={'a': -1}, store=FileSystemStorage(tmpdir))
     assert r.returncode == 1
     assert r.stdout == ['-1 written', '\n']
     assert r.stderr != []
@@ -47,7 +48,7 @@ def test_output_stream():
 def test_successful_exec(tmpdir):
     """Test successfully running a code step."""
     step = CodeStep(identifier='test', func=write_and_add, arg='a')
-    r = CodeWorker().exec(step=step, context={'a': 1}, rundir=tmpdir)
+    r = CodeWorker().exec(step=step, context={'a': 1}, store=FileSystemStorage(tmpdir))
     assert r.returncode == 0
     assert r.stdout == ['1 written', '\n']
     assert r.stderr == []

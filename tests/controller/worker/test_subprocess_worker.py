@@ -15,6 +15,7 @@ import sys
 
 from flowserv.controller.worker.subprocess import SubprocessWorker
 from flowserv.model.workflow.step import ContainerStep
+from flowserv.volume.fs import FileSystemStorage
 
 
 # Test files directory
@@ -109,7 +110,7 @@ def test_run_successful_steps_splitenv():
         env={'TEST_ENV_2': 'World'},
         commands=commands
     )
-    result = worker.exec(step=step, context=dict(), rundir=RUN_DIR)
+    result = worker.exec(step=step, context=dict(), store=FileSystemStorage(RUN_DIR))
     assert result.returncode == 0
     assert result.exception is None
     assert ' '.join([s.strip() for s in result.stdout]) == 'Hello World'
