@@ -16,39 +16,14 @@ from string import Template
 from typing import Dict, Optional
 
 from flowserv.controller.serial.workflow.result import ExecResult
-from flowserv.model.workflow.step import ContainerStep, WorkflowStep
+from flowserv.model.workflow.step import ContainerStep, NotebookStep
 
 import flowserv.model.template.parameter as tp
 
 
-class Worker(metaclass=ABCMeta):
-    """Worker to execute steps in a serial workflow. For each class of workflow
-    steps a separate worker can be implemented to execute instances of that
-    particular step type.
-    """
-    @abstractmethod
-    def exec(self, step: WorkflowStep, context: Dict, rundir: str) -> ExecResult:
-        """Execute a given workflow step in the current workflow context.
-
-        Parameters
-        ----------
-        step: flowserv.controller.serial.workflow.WorkflowStep
-            Step in a serial workflow.
-        context: dict
-            Dictionary of variables that represent the current workflow state.
-        rundir: string
-            Path to the working directory of the workflow run.
-
-        Returns
-        -------
-        flowserv.controller.serial.workflow.result.ExecResult
-        """
-        raise NotImplementedError()  # pragma: no cover
-
-
-class ContainerEngine(Worker):
+class ContainerEngine(metaclass=ABCMeta):
     """Execution engine for container steps in a serial workflow. Provides the
-    functionality to expand arguments in the individual command statements.
+    functionality to expand arguments in the individual c   ommand statements.
     Implementations may differ in the run method that executes the expanded
     commands.
     """
@@ -71,7 +46,7 @@ class ContainerEngine(Worker):
         self.variables = variables if variables is not None else dict()
         self.env = env if env is not None else dict()
 
-    def exec(self, step: ContainerStep, context: Dict, rundir: str) -> ExecResult:
+    def exec(self, step: ContainerStep, arguments: Dict, rundir: str) -> ExecResult:
         """Execute a given list of commands that are represented by template
         strings.
 
@@ -83,7 +58,7 @@ class ContainerEngine(Worker):
         ----------
         step: flowserv.controller.serial.workflow.ContainerStep
             Step in a serial workflow.
-        context: dict
+        arguments: dict
             Dictionary of argument values for parameters in the template.
         rundir: string
             Path to the working directory of the workflow run.
@@ -100,7 +75,7 @@ class ContainerEngine(Worker):
             # Generate mapping for template substitution. Include a mapping of
             # placeholder names to themselves.
             args = {p: p for p in tp.placeholders(cmd)}
-            args.update(context)
+            args.update(arguments)
             # Update arguments with fixed variables.
             args.update(self.variables)
             expanded_step.add(Template(cmd).substitute(args).strip())
@@ -129,3 +104,15 @@ class ContainerEngine(Worker):
         flowserv.controller.serial.workflow.result.ExecResult
         """
         raise NotImplementedError()  # pragma: no cover
+
+class NotebookEngine(metaclass=ABCMeta):
+    """Execution engine for notebook steps in a serial workflow.
+    """
+    def __init__(self,):
+        """
+
+        """
+
+    def exec(self, step: NotebookStep) -> ExecResult:
+
+        result = ExecResult(step=step)
