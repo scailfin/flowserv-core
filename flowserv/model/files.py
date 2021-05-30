@@ -87,56 +87,6 @@ class FileHandle(IOHandle):
         return self.fileobj.size()
 
 
-class FlaskFile(IOHandle):
-    """File object implementation for files that are uploaded via Flask
-    requests as werkzeug.FileStorage objects.
-    """
-    def __init__(self, file):
-        """Initialize the reference to the uploaded file object.
-
-        Parameters
-        ----------
-        file: werkzeug.FileStorage
-            File object that was uploaded as part of a Flask request.
-        """
-        self.file = file
-
-    def open(self) -> IO:
-        """Get file contents as a BytesIO buffer.
-
-        Returns
-        -------
-        io.BytesIO
-
-        Raises
-        ------
-        flowserv.error.UnknownFileError
-        """
-        buf = BytesIO()
-        self.file.save(buf)
-        buf.seek(0)
-        return buf
-
-    def size(self) -> int:
-        """Get size of the file in the number of bytes.
-
-        Returns
-        -------
-        int
-        """
-        return self.file.content_length
-
-    def store(self, filename: str):
-        """Write file content to disk.
-
-        Parameters
-        ----------
-        filename: string
-            Name of the file to which the content is written.
-        """
-        self.file.save(filename)
-
-
 # -- Helper functions for file storage locations ------------------------------
 
 def group_uploaddir(workflow_id: str, group_id: str) -> str:

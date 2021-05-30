@@ -15,7 +15,6 @@ from flowserv.controller.worker.docker import DockerWorker
 from flowserv.controller.worker.manager import WorkerPool, Code, Docker, Subprocess
 from flowserv.controller.worker.subprocess import SubprocessWorker
 from flowserv.model.workflow.step import CodeStep, ContainerStep
-from flowserv.volume.manager import DEFAULT_STORE
 
 import flowserv.error as err
 

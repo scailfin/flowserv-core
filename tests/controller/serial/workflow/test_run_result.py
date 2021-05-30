@@ -33,7 +33,7 @@ def test_error_run_result():
     r.add(ExecResult(step=ContainerStep(identifier='s1', image='test'), returncode=0))
     assert r.exception is None
     assert r.returncode == 0
-    r.add(ExecResult(step=ContainerStep(identifier='s2', image='test'), returncode=1, stderr=['e1', 'e2'], exception=ValueError()))
+    r.add(ExecResult(step=ContainerStep(identifier='s2', image='test'), returncode=1, stderr=['e1', 'e2'], exception=ValueError()))  # noqa: E501
     with pytest.raises(ValueError):
         r.raise_for_status()
     assert r.exception is not None

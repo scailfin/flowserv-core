@@ -46,23 +46,6 @@ def cleardir(directory: str):
             shutil.rmtree(file)
 
 
-def create_directories(basedir: str, files: List[str]):
-    """Create top-level folder for all files in a given list. The file list
-    contains the path names of (result) files relative to a given base
-    directory. All directories are created under the base directory.
-
-    Parameters
-    ----------
-    basedir: string
-        Base directory under which new directories are created
-    files: list(string)
-        Relative path names for (expected) result files.
-    """
-    for filename in files:
-        dirname = os.path.dirname(filename)
-        os.makedirs(os.path.join(basedir, dirname), exist_ok=True)
-
-
 def dirname(key: str) -> str:
     """Get the parent directory for a given file identifier.
 

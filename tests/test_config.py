@@ -118,16 +118,19 @@ def test_config_url():
 
 def test_storage_volume_config(tmpdir):
     """Test storage volume configuration objects."""
+    # Default config.
     conf = config.env()
     assert isinstance(conf.get(config.FLOWSERV_FILESTORE), dict)
     doc = {'type': 'fs'}
     conf.volume(config=doc)
     assert conf.get(config.FLOWSERV_FILESTORE) == doc
+    # Configure from file.
     filename = os.path.join(tmpdir, 'config.json')
     util.write_object(filename=filename, obj=doc)
     os.environ[config.FLOWSERV_FILESTORE] = filename
     conf = config.env()
     assert conf.get(config.FLOWSERV_FILESTORE) == doc
+    del os.environ[config.FLOWSERV_FILESTORE]
 
 
 def test_env_app_identifier():

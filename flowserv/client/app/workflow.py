@@ -15,7 +15,6 @@ import time
 
 from flowserv.client.app.run import Run
 from flowserv.model.files import FileHandle
-from flowserv.model.parameter.files import InputFile
 from flowserv.model.template.parameter import ParameterIndex
 from flowserv.service.api import APIFactory
 from flowserv.service.run.argument import serialize_arg, serialize_fh

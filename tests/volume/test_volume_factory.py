@@ -8,10 +8,8 @@
 
 """Unit tests for edge cases for the file store factory."""
 
-import os
 import pytest
 
-from flowserv.config import FLOWSERV_BASEDIR
 from flowserv.volume.factory import FStore, GCBucket, S3Bucket, Sftp, Volume
 from flowserv.volume.fs import FileSystemStorage
 from flowserv.volume.gc import GCVolume
