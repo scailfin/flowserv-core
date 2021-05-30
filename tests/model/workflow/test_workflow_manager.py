@@ -65,6 +65,7 @@ def test_create_workflow(database, tmpdir):
         'instructions.md',
         'benchmark.yaml',
         'flowserv.yaml',
+        'benchmark-code.yaml',
         'benchmark-invalid-cmd.yaml',
         'benchmark-with-outputs.yaml',
         'data/names.txt',

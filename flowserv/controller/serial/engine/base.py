@@ -164,8 +164,12 @@ class SerialWorkflowEngine(WorkflowController):
         run_config = self.config if self.config is not None else dict()
         if config:
             run_config.update(config)
-        # Get the list of workflow steps and the generated output files.
-        steps, run_args, outputs = parser.parse_template(template=template, arguments=arguments)
+        # Get the list of workflow steps, run arguments, and the list of output
+        # files that the workflow is expected to generate.
+        steps, run_args, outputs = parser.parse_template(
+            template=template,
+            arguments=arguments
+        )
         # Create and prepare storage volume for run files.
         runstore = self.fs.get_store_for_folder(
             key=util.join(self.runsdir, run.run_id),
@@ -174,11 +178,17 @@ class SerialWorkflowEngine(WorkflowController):
         try:
             # Copy template files to the run folder.
             files = staticfs.copy(src=None, store=runstore, verbose=True)
-            # Store any given file arguments in the run folder.
+            # Store any given file arguments and additional input files
+            # that are required by actor parameters into the run folder.
             for key, para in template.parameters.items():
                 if para.is_file() and key in arguments:
-                    for f in arguments[key].copy(target=runstore):
-                        files.append(f)
+                    for key in arguments[key].copy(target=runstore):
+                        files.append(key)
+                elif para.is_actor() and key in arguments:
+                    input_files = arguments[key].files
+                    for f in input_files if input_files else []:
+                        for key in f.copy(target=runstore):
+                            files.append(key)
             # Create factory objects for storage volumes.
             volumes = volume_manager(
                 specs=run_config.get('volumes', []),

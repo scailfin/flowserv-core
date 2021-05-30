@@ -20,14 +20,14 @@ from flowserv.model.auth import Auth
 from flowserv.model.base import WorkflowObject
 from flowserv.model.files import FileHandle, run_tmpdir
 from flowserv.model.group import WorkflowGroupManager
+from flowserv.model.parameter.actor import ActorValue
 from flowserv.model.parameter.files import InputDirectory
 from flowserv.model.ranking import RankingManager, RunResult
 from flowserv.model.run import RunManager
 from flowserv.model.template.base import WorkflowTemplate
 from flowserv.model.workflow.state import WorkflowState
 from flowserv.service.postproc.base import PARAMETERS, PARA_RUNS, RUNS_DIR, prepare_postproc_data
-from flowserv.service.run.argument import serialize_arg
-from flowserv.service.run.argument import deserialize_arg, deserialize_fh, is_fh
+from flowserv.service.run.argument import deserialize_arg, deserialize_fh, is_fh, serialize_arg
 from flowserv.service.run.base import RunService
 from flowserv.view.run import RunSerializer
 from flowserv.volume.base import StorageVolume
@@ -289,7 +289,7 @@ class LocalRunService(RunService):
         self, group_id: str, arguments: List[Dict], config: Optional[Dict] = None
     ) -> Dict:
         """Start a new workflow run for the given group. The user provided
-        arguments are expected to be a list of (key,value)-pairs. The key value
+        arguments are expected to be a list of (name,value)-pairs. The name
         identifies the template parameter. The data type of the value depends
         on the type of the parameter.
 
@@ -340,6 +340,7 @@ class LocalRunService(RunService):
         # input files. Also create a mapping from he argument list that is used
         # stored in the database.
         run_args = dict()
+        serialized_args = list()
         for arg in arguments:
             arg_id, arg_val = deserialize_arg(arg)
             # Raise an error if multiple values are given for the same argument
@@ -360,6 +361,12 @@ class LocalRunService(RunService):
                 run_args[arg_id] = para.cast(value=(fileobj, target))
             else:
                 run_args[arg_id] = para.cast(arg_val)
+            # Actor values as parameter values canno be serialized. for now,
+            # we only store the serialized workflow step but no information
+            # about the additional input files.
+            if isinstance(arg_val, ActorValue):
+                arg_val = arg_val.spec
+            serialized_args.append(serialize_arg(name=arg_id, value=arg_val))
         # Before we start creating directories and copying files make sure that
         # there are values for all template parameters (either in the arguments
         # dictionary or set as default values)
@@ -367,7 +374,7 @@ class LocalRunService(RunService):
         # Start the run.
         run = self.run_manager.create_run(
             group=group,
-            arguments=arguments
+            arguments=serialized_args
         )
         run_id = run.run_id
         # Use default engine configuration if the configuration argument was

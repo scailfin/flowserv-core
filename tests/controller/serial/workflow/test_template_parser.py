@@ -11,6 +11,7 @@
 import os
 import pytest
 
+from flowserv.model.parameter.actor import ActorValue
 from flowserv.model.template.base import WorkflowTemplate
 from flowserv.model.template.parameter import ParameterIndex
 
@@ -62,7 +63,7 @@ def test_parse_top_tagger_template():
     """
     template = WorkflowTemplate.from_dict(doc=util.read_object(TEMPLATE_TOPTAGGER))
     doc = {'environment': 'test', 'commands': ['python analyze']}
-    args = {'tagger': doc}
+    args = {'tagger': ActorValue(spec=doc)}
     steps, _, _ = parser.parse_template(template=template, arguments=args)
     assert len(steps) == 2
     step = steps[0]
