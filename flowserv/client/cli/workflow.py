@@ -71,11 +71,17 @@ import flowserv.util as util
     default=False,
     help='Print run logs'
 )
+@click.option(
+    '-v', '--verbose',
+    is_flag=True,
+    default=False,
+    help='Print information about copied files'
+)
 @click.argument('template')
 @click.pass_context
 def create_workflow(
     ctx, key, name, description, instructions, specfile, manifest, template,
-    configfile, ignore_postproc
+    configfile, ignore_postproc, verbose
 ):
     """Create a new workflow for a given template."""
     config = util.read_object(configfile) if configfile else None
@@ -92,7 +98,8 @@ def create_workflow(
             specfile=specfile,
             manifestfile=manifest,
             engine_config=config,
-            ignore_postproc=ignore_postproc
+            ignore_postproc=ignore_postproc,
+            verbose=verbose
         )
     workflow_id = doc[labels.WORKFLOW_ID]
     click.echo('export {}={}'.format(ctx.obj.vars['workflow'], workflow_id))

@@ -60,7 +60,7 @@ class WorkflowManager(object):
         name: Optional[str] = None, description: Optional[str] = None,
         instructions: Optional[str] = None, specfile: Optional[str] = None,
         manifestfile: Optional[str] = None, engine_config: Optional[Dict] = None,
-        ignore_postproc: Optional[bool] = False
+        ignore_postproc: Optional[bool] = False, verbose: Optional[bool] = False
     ) -> WorkflowObject:
         """Add new workflow to the repository. The associated workflow template
         is created in the template repository from either the given source
@@ -111,6 +111,8 @@ class WorkflowManager(object):
             when running the workflow and the post-processing workflow.
         ignore_postproc: bool, default=False
             Ignore post-processing workflow specification if True.
+        verbose: bool, default=False
+            Print information about copied files.
 
         Returns
         -------
@@ -147,7 +149,7 @@ class WorkflowManager(object):
             source = FileSystemStorage(basedir=sourcedir)
             files = manifest.copyfiles(staticdir)
             for src, dst in files:
-                source.copy(src=src, dst=dst, store=self.fs, verbose=True)
+                source.copy(src=src, dst=dst, store=self.fs, verbose=verbose)
 
         # Insert workflow into database and return the workflow handle.
         workflow = WorkflowObject(

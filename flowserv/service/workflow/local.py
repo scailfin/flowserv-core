@@ -67,7 +67,7 @@ class LocalWorkflowService(WorkflowService):
         name: Optional[str] = None, description: Optional[str] = None,
         instructions: Optional[str] = None, specfile: Optional[str] = None,
         manifestfile: Optional[str] = None, engine_config: Optional[Dict] = None,
-        ignore_postproc: Optional[bool] = False
+        ignore_postproc: Optional[bool] = False, verbose: Optional[bool] = False
     ) -> Dict:
         """Create a new workflow in the repository. If the workflow template
         includes a result schema the workflow is also registered with the
@@ -97,6 +97,9 @@ class LocalWorkflowService(WorkflowService):
             when running the workflow and the post-processing workflow.
         ignore_postproc: bool, default=False
             Ignore post-processing workflow specification if True.
+        verbose: bool, default=False
+            Print information about source and target volume and the files that
+            are being copied.
 
         Returns
         -------
@@ -118,7 +121,8 @@ class LocalWorkflowService(WorkflowService):
             specfile=specfile,
             manifestfile=manifestfile,
             engine_config=engine_config,
-            ignore_postproc=ignore_postproc
+            ignore_postproc=ignore_postproc,
+            verbose=verbose
         )
         # Return serialization og the workflow handle
         return self.serialize.workflow_handle(workflow)

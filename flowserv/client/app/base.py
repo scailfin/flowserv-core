@@ -135,7 +135,8 @@ class Flowserv(object):
         manifestfile: Optional[str] = None,
         engine_config: Optional[Dict] = None,
         ignore_postproc: Optional[bool] = False,
-        multi_user: Optional[bool] = False
+        multi_user: Optional[bool] = False,
+        verbose: Optional[bool] = False
 
     ) -> str:
         """Create a new workflow in the environment that is defined by the
@@ -173,6 +174,9 @@ class Flowserv(object):
         multi_user: bool, default=False
             If the multi user flag is False a group will be created for the
             workflow with the same identifier as the workflow.
+        verbose: bool, default=False
+            Print information about source and target volume and the files that
+            are being copied.
 
         Returns
         -------
@@ -188,7 +192,8 @@ class Flowserv(object):
                 specfile=specfile,
                 manifestfile=manifestfile,
                 engine_config=engine_config,
-                ignore_postproc=ignore_postproc
+                ignore_postproc=ignore_postproc,
+                verbose=verbose
             )
             workflow_id = doc[labels.WORKFLOW_ID]
             if not multi_user:
