@@ -7,9 +7,11 @@
 # terms of the MIT License; see LICENSE file for more details.
 
 """Definitions for the different types of steps in a serial workflow. At this
-point we distinguish two types of workflow steps:
+point we distinguish three types of workflow steps:
+
 :class:`flowserv.model.workflow.step.FunctionStep` and
-:class:`flowserv.model.workflow.step.ContainerStep`.
+:class:`flowserv.model.workflow.step.ContainerStep`
+:class: `flowserv.model.workflow.step.NotebookStep`.
 
 A :class:`flowserv.model.workflow.step.FunctionStep` is used to execute a given
 function within the workflow context. The code is executed within the same
@@ -23,17 +25,19 @@ executed in a separate container-like environment. The environment can either be
 a subprocess with specific environment variable settings or a Docker container.
 """
 
-from __future__ import annotations
-from typing import Callable, Dict, List, Optional
-
+import papermill
+from typing import Optional
+from typing import List
+from typing import Dict
+from typing import Callable
 import inspect
-
 
 """Unique identifier for workflow step types."""
 CONTAINER_STEP = 'container'
 FUNCTION_STEP = 'func'
+NOTEBOOK_STEP = 'notebook'
 
-STEPS = [CONTAINER_STEP, FUNCTION_STEP]
+STEPS = [CONTAINER_STEP, FUNCTION_STEP, NOTEBOOK_STEP]
 
 
 class WorkflowStep(object):
@@ -79,6 +83,17 @@ class WorkflowStep(object):
         """
         return self.step_type == FUNCTION_STEP
 
+    def is_notebook_step(self) -> bool:
+        """True if the workflow step is of type
+        "class 'flowserv.model.workflow.step.NotebookStep'.
+
+        Returns
+        -------
+        bool
+        """
+
+        return self.step_type == NOTEBOOK_STEP
+
 
 class ContainerStep(WorkflowStep):
     """Workflow step that is executed in a container environment. Contains a
@@ -105,7 +120,7 @@ class ContainerStep(WorkflowStep):
         self.commands = commands if commands is not None else list()
         self.env = env if env is not None else dict()
 
-    def add(self, cmd: str) -> ContainerStep:
+    def add(self, cmd: str):
         """Append a given command line statement to the list of commands in the
         workflow step.
 
@@ -170,7 +185,7 @@ class FunctionStep(WorkflowStep):
         ----------
         context: dict
             Mapping of parameter names to their current value in the workflow
-            executon state. These are the global variables in the execution
+            execution state. These are the global variables in the execution
             context.
         """
         # Generate argument dictionary from the signature of the evaluated function
@@ -186,3 +201,24 @@ class FunctionStep(WorkflowStep):
         # for the result is given.
         if self.output is not None:
             context[self.output] = result
+
+class NotebookStep(WorkflowStep):
+    def __init__(
+        self, notebook: str, output: Optional[str] = None,
+        varnames: Optional[Dict] = None
+    ):
+
+        super(NotebookStep, self).__init__(step_type=NOTEBOOK_STEP)
+        self.notebook = notebook
+        self.output = output
+        self.params = params
+        self.varnames = varnames if varnames is not None else dict()
+
+    def exec(self, context: Dict):
+        kwargs = dict()
+        for var in params:
+            source = self.varnames.get(var, var)
+            if source in context:
+                kwargs[var] = context[source]
+
+        pm.execute_notebook(self.notebook, 'output', **kwargs)
