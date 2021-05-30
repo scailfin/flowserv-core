@@ -7,9 +7,11 @@
 # terms of the MIT License; see LICENSE file for more details.
 
 """Definitions for the different types of steps in a serial workflow. At this
-point we distinguish two types of workflow steps:
-:class:`flowserv.model.workflow.step.CodeStep` and
-:class:`flowserv.model.workflow.step.ContainerStep`.
+point we distinguish three types of workflow steps:
+
+:class:`flowserv.model.workflow.step.FunctionStep` and
+:class:`flowserv.model.workflow.step.ContainerStep`
+:class: `flowserv.model.workflow.step.NotebookStep`.
 
 A :class:`flowserv.model.workflow.step.CodeStep` is used to execute a given
 function within the workflow context. The code is executed within the same
@@ -27,13 +29,15 @@ from __future__ import annotations
 from typing import Callable, Dict, List, Optional
 
 import inspect
+import papermill as pm
 
 
 """Unique identifier for workflow step types."""
 CONTAINER_STEP = 'container'
 FUNCTION_STEP = 'func'
+NOTEBOOK_STEP = 'notebook'
 
-STEPS = [CONTAINER_STEP, FUNCTION_STEP]
+STEPS = [CONTAINER_STEP, FUNCTION_STEP, NOTEBOOK_STEP]
 
 
 class WorkflowStep(object):
@@ -95,6 +99,17 @@ class WorkflowStep(object):
         bool
         """
         return self.step_type == FUNCTION_STEP
+
+    def is_notebook_step(self) -> bool:
+        """True if the workflow step is of type
+        :class:'flowserv.model.workflow.step.NotebookStep'.
+
+        Returns
+        -------
+        bool
+        """
+
+        return self.step_type == NOTEBOOK_STEP
 
     @property
     def name(self) -> str:
@@ -241,3 +256,25 @@ class ContainerStep(WorkflowStep):
         """
         self.commands.append(cmd)
         return self
+
+
+class NotebookStep(WorkflowStep):
+    def __init__(
+        self, notebook: str, output: Optional[str] = None,
+        varnames: Optional[Dict] = None
+    ):
+
+        super(NotebookStep, self).__init__(step_type=NOTEBOOK_STEP)
+        self.notebook = notebook
+        self.output = output
+        self.params = params
+        self.varnames = varnames if varnames is not None else dict()
+
+    def exec(self, context: Dict):
+        kwargs = dict()
+        for var in params:
+            source = self.varnames.get(var, var)
+            if source in context:
+                kwargs[var] = context[source]
+
+        pm.execute_notebook(self.notebook, 'output', **kwargs)

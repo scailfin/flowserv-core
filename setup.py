@@ -25,6 +25,7 @@ install_requires = [
     'pyyaml>=5.1',
     'requests',
     'SQLAlchemy>=1.3.18',
+    'papermill',
     'Click'
 ]
 aws_requires = ['boto3']

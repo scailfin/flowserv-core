@@ -16,7 +16,7 @@ from string import Template
 from typing import Dict, Optional
 
 from flowserv.controller.serial.workflow.result import ExecResult
-from flowserv.model.workflow.step import ContainerStep, WorkflowStep
+from flowserv.model.workflow.step import ContainerStep, NotebookStep, WorkflowStep
 from flowserv.volume.base import StorageVolume
 from flowserv.volume.fs import FileSystemStorage
 from flowserv.volume.manager import DEFAULT_STORE
@@ -169,3 +169,16 @@ class ContainerWorker(Worker):
         flowserv.controller.serial.workflow.result.ExecResult
         """
         raise NotImplementedError()  # pragma: no cover
+
+
+class NotebookEngine(metaclass=ABCMeta):
+    """Execution engine for notebook steps in a serial workflow.
+    """
+    def __init__(self,):
+        """
+
+        """
+
+    def exec(self, step: NotebookStep) -> ExecResult:
+
+        result = ExecResult(step=step)
