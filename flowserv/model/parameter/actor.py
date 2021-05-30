@@ -13,13 +13,29 @@ serialized dictionaries.
 """
 
 from __future__ import annotations
-from typing import Dict, Optional
+from dataclasses import dataclass
+from typing import Dict, List, Optional
 
 from flowserv.model.parameter.base import Parameter, PARA_ACTOR
+from flowserv.model.parameter.files import IOValue
 
 import flowserv.error as err
 import flowserv.model.parameter.base as pd
 import flowserv.util as util
+
+
+@dataclass
+class ActorValue:
+    """Value for an :class:`flowserv.model.parameter.actor.Actor` parameter.
+    The value contains two main components: (i) the serialization of the
+    workflow step that is used by the workflow engine to create an instance
+    of a workflow step, and (ii) a list of additional input files and directories
+    for the workflow step that will be copied to the workflow run directory.
+    """
+    # Serialization of the workflow step.
+    spec: Dict
+    # List of additional input files and directories.
+    files: Optional[List[IOValue]] = None
 
 
 class Actor(Parameter):
@@ -60,27 +76,27 @@ class Actor(Parameter):
             group=group
         )
 
-    def cast(self, value: Dict) -> Dict:
-        """Ensure that the given value is a dictionary (serialization of a
-        workflow step).
+    def cast(self, value: ActorValue) -> ActorValue:
+        """Ensure that the given value is an instance of the actor value class
+        :class:`flowserv.model.parameter.actor.ActorValue`.
 
         Serializations of workflow steps are implementation dependent. For this
         reason, the function does not further validate the contents of the
-        dictionary.
+        serialized workglow step.
 
         Raises an InvalidArgumentError if the argument value is not a
         dictionary.
 
         Parameters
         ----------
-        value: dict
-            Dictionary serialization for a workflow actor.
+        value: flowserv.model.parameter.actor.ActorValue
+            Argument value for an actor parameter.
 
         Returns
         -------
-        dict
+        flowserv.model.parameter.actor.ActorValue
         """
-        if not isinstance(value, dict):
+        if not isinstance(value, ActorValue):
             raise err.InvalidArgumentError("invalid actor value '{}'".format(value))
         return value
 

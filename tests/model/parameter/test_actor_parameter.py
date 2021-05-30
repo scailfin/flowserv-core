@@ -10,7 +10,7 @@
 
 import pytest
 
-from flowserv.model.parameter.actor import Actor, PARA_ACTOR
+from flowserv.model.parameter.actor import Actor, ActorValue, PARA_ACTOR
 
 import flowserv.error as err
 
@@ -48,8 +48,8 @@ def test_actor_step_factory():
     """Test getting workflow step instances for an actor parameter."""
     para = Actor('step')
     doc = {'image': 'test', 'commands': ['step1'], 'env': {'a': 'x'}}
-    step = para.cast(doc)
-    assert step == doc
+    step = para.cast(ActorValue(spec=doc))
+    assert step.spec == doc
     # Error cases.
     with pytest.raises(err.InvalidArgumentError):
         para.cast('unknown')

@@ -55,7 +55,7 @@ class Worker(metaclass=ABCMeta):
 
         Parameters
         ----------
-        step: flowserv.controller.serial.workflow.WorkflowStep
+        step: flowserv.model.workflow.step.WorkflowStep
             Step in a serial workflow.
         context: dict
             Dictionary of variables that represent the current workflow state.
@@ -174,11 +174,26 @@ class ContainerWorker(Worker):
 class NotebookEngine(metaclass=ABCMeta):
     """Execution engine for notebook steps in a serial workflow.
     """
-    def __init__(self,):
+    def __init__(self):
         """
 
         """
 
-    def exec(self, step: NotebookStep) -> ExecResult:
+    def exec(self, step: NotebookStep, context: Dict, store: StorageVolume) -> ExecResult:
+        """Execute a given notebook workflow step in the current workflow
+        context.
 
+        Parameters
+        ----------
+        step: flowserv.model.workflow.step.NotebookStep
+            Notebook step in a serial workflow.
+        context: dict
+            Dictionary of variables that represent the current workflow state.
+        store: flowserv.volume.base.StorageVolume
+            Storage volume that contains the workflow run files.
+
+        Returns
+        -------
+        flowserv.controller.serial.workflow.result.ExecResult
+        """
         result = ExecResult(step=step)
