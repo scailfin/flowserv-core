@@ -52,7 +52,7 @@ class RemoteWorkflowController(WorkflowController):
             Flag that determines whether workflows execution is synchronous or
             asynchronous by default.
         service: flowserv.service.api.APIFactory, default=None
-            API factory for service callbach during asynchronous workflow
+            API factory for service callback during asynchronous workflow
             execution.
         """
         self.client = client
@@ -125,53 +125,43 @@ class RemoteWorkflowController(WorkflowController):
         -------
         flowserv.model.workflow.state.WorkflowState, flowserv.volume.base.StorageVolume
         """
-        # Get the run state. Ensure that the run is in pending state
+        # Get the run state. Ensure that the run is in pending state.
         if not run.is_pending():
             raise RuntimeError("invalid run state '{}'".format(run.state()))
         try:
-            # Raise an error if the service manager is not given.
-            if self.service is None:
-                raise ValueError('service manager not given')
             # Create a workflow on the remote engine. This will also upload all
             # necessary files to the remote engine. Workflow execution may not
             # be started (indicated by the state property of the returned
             # handle for the remote workflow).
-            wf = self.client.create_workflow(
+            workflow = self.client.create_workflow(
                 run=run,
                 template=template,
-                arguments=arguments
+                arguments=arguments,
+                staticfs=staticfs
             )
-            workflow_id = wf.workflow_id
-            # Run the workflow. Depending on the values of the is_async and
-            # run_async flags the process will either block execution while
-            # monitoring the workflow state or not.
+            workflow_id = workflow.workflow_id
+            # Run the workflow. Depending on the values of the is_async flag
+            # the process will either block execution while monitoring the
+            # workflow state or not.
             if self.is_async:
                 self.tasks[run.run_id] = workflow_id
                 # Start monitor tread for asynchronous monitoring.
                 monitor.WorkflowMonitor(
-                    run_id=run.run_id,
-                    state=wf.state,
-                    workflow_id=workflow_id,
-                    output_files=wf.output_files(),
-                    client=self.client,
+                    workflow=workflow,
                     poll_interval=self.poll_interval,
                     service=self.service,
                     tasks=self.tasks
                 ).start()
-                return wf.state, None
+                return workflow.state, workflow.runstore
             else:
                 # Run workflow synchronously. This will lock the calling thread
                 # while waiting (i.e., polling the remote engine) for the
                 # workflow execution to finish.
-                state, rundir = monitor.monitor_workflow(
-                    run_id=run.run_id,
-                    state=wf.state,
-                    workflow_id=workflow_id,
-                    output_files=wf.output_files(),
-                    client=self.client,
+                state = monitor.monitor_workflow(
+                    workflow=workflow,
                     poll_interval=self.poll_interval
                 )
-                return state, runstore
+                return state, workflow.runstore
         except Exception as ex:
             # Set the workflow runinto an ERROR state
             logging.error(ex, exc_info=True)

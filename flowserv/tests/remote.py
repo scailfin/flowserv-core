@@ -8,14 +8,15 @@
 
 """Implementation of the remote client for test purposes."""
 
-import os
+from typing import Dict
 
 from flowserv.controller.remote.client import RemoteClient
-from flowserv.controller.remote.engine import RemoteWorkflowController
-from flowserv.model.workflow.remote import RemoteWorkflowObject
-from flowserv.model.workflow.state import StatePending
+from flowserv.controller.remote.client import RemoteWorkflowHandle
+from flowserv.model.base import RunObject
+from flowserv.model.template.base import WorkflowTemplate
+from flowserv.model.workflow.state import StatePending, WorkflowState
+from flowserv.volume.base import StorageVolume
 
-import flowserv.controller.serial.workflow.parser as parser
 import flowserv.util as util
 
 
@@ -28,7 +29,7 @@ class RemoteTestClient(RemoteClient):
     the method is then called next either successful run or an error run is
     returned.
     """
-    def __init__(self, runcount=5, error=None, data=['no data']):
+    def __init__(self, runcount=5, error=None):
         """Initialize the internal state that maintains the created workflow.
         The client only supports execution for a single workflow at a time.
 
@@ -47,13 +48,16 @@ class RemoteTestClient(RemoteClient):
         """
         self.runcount = runcount
         self.error = error
-        self.data = data
         self.state = None
         # Count the number of times that the get_workflow_state() method has
         # been called.
-        self._pollcount = None
+        self.state = StatePending()
+        self._pollcount = 0
 
-    def create_workflow(self, run, template, arguments):
+    def create_workflow(
+        self, run: RunObject, template: WorkflowTemplate, arguments: Dict,
+        staticfs: StorageVolume
+    ) -> RemoteWorkflowHandle:
         """Create a new instance of a workflow from the given workflow
         template and user-provided arguments.
 
@@ -66,39 +70,27 @@ class RemoteTestClient(RemoteClient):
             the parameter declarations.
         arguments: dict
             Dictionary of argument values for parameters in the template.
+        staticfs: flowserv.volume.base.StorageVolume
+            Storage volume that contains the static files from the workflow
+            template.
 
         Returns
         -------
-        flowserv.model.workflow.remote.RemoteWorkflowObject
+        flowserv.controller.remote.client.RemoteWorkflowHandle
         """
         # Create a serial workfow to have a workflow handle.
-        _, _, output_file = parser.parse_template(template=template, arguments=arguments)
-        self.state = StatePending()
-        self._pollcount = 0
-        return RemoteWorkflowObject(
+        return RemoteWorkflowHandle(
+            run_id=run.run_id,
             workflow_id=run.run_id,
             state=self.state,
-            output_files=output_file
+            output_files=[],
+            runstore=staticfs.get_store_for_folder(util.join('runs', run.run_id)),
+            client=self
         )
 
-    def download_file(self, workflow_id, source, target):
-        """Download file from relative location in the base directory to a
-        given target path. Since the workflow is executed in the run directory
-        no files need to be copied.
-
-        Parameters
-        ----------
-        workflow_id: string
-            Unique workflow identifier.
-        source: string
-            Relative path to source file in workflow workspace.
-        target: string
-            Path to target file on local disk.
-        """
-        os.makedirs(os.path.dirname(target), exist_ok=True)
-        util.write_object(obj=self.data, filename=target)
-
-    def get_workflow_state(self, workflow_id, current_state):
+    def get_workflow_state(
+        self, workflow_id: str, current_state: WorkflowState
+    ) -> WorkflowState:
         """Get information about the current state of a given workflow.
 
         Note, if the returned result is SUCCESS the workflow resource files may
@@ -130,10 +122,11 @@ class RemoteTestClient(RemoteClient):
         self._pollcount += 1
         return self.state
 
-    def stop_workflow(self, workflow_id):
-        """Stop the execution of the workflow with the given identifier. Set
-        the get state counter to a negative value to avoid that the workflow is
-        executed.
+    def stop_workflow(self, workflow_id: str):
+        """Stop the execution of the workflow with the given identifier.
+
+        Sets the state to None to raise an error the next time the workflow
+        state is polled.
 
         Parameters
         ----------
@@ -141,22 +134,3 @@ class RemoteTestClient(RemoteClient):
             Unique workflow identifier
         """
         self.state = None
-
-
-class RemoteTestController(RemoteWorkflowController):
-    """Extend remote workflow controller with dummy template modification
-    method.
-    """
-    def __init__(self, client, poll_interval, is_async):
-        """Initialize the test client.
-
-        Parameters
-        ----------
-        client: flowserv.tests.remote.RemoteTestClient
-            Test client.
-        """
-        super(RemoteTestController, self).__init__(
-            client=client,
-            poll_interval=poll_interval,
-            is_async=is_async
-        )

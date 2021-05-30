@@ -62,7 +62,7 @@ class SerialWorkflowEngine(WorkflowController):
         Parameters
         ----------
         service: flowserv.service.api.APIFactory, default=None
-            API factory for service callbach during asynchronous workflow
+            API factory for service callback during asynchronous workflow
             execution.
         fs: flowserv.volume.base.StorageVolume, default=None
             Storage volume for run files.
