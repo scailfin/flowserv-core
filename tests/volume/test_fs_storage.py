@@ -18,6 +18,10 @@ import flowserv.error as err
 import flowserv.util as util
 
 
+DIR = os.path.dirname(os.path.realpath(__file__))
+BENCHMARK_DIR = os.path.join(DIR, '..', '.files', 'benchmark')
+
+
 def test_fs_volume_delete_files(basedir):
     """Test deleting files and folders from the file system storage volume."""
     store = FileSystemStorage(basedir=basedir)
@@ -80,6 +84,15 @@ def test_fs_volume_load_file(basedir, data_e):
     # -- Error case for unknown file.
     with pytest.raises(err.UnknownFileError):
         store.load(key='examples/data/unknown.json')
+
+
+def test_fs_volume_path_expression():
+    """Test getting a path object for a file that is relative to the base
+    directory of the storage volume.
+    """
+    volume = FileSystemStorage(basedir=BENCHMARK_DIR)
+    path = volume.path('helloworld', 'code', 'helloworld.py')
+    assert path.is_file()
 
 
 def test_fs_volume_serialization():

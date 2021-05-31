@@ -11,6 +11,7 @@ a folder on the local file system.
 """
 
 from __future__ import annotations
+from pathlib import Path
 from typing import Dict, IO, List, Optional, Tuple
 
 import os
@@ -187,6 +188,23 @@ class FileSystemStorage(StorageVolume):
         if not os.path.isfile(filename):
             raise err.UnknownFileError(filename)
         return FSFile(filename=filename)
+
+    def path(self, *args) -> Path:
+        """Get a file system path object for a file or directory that is given
+        by a list of path components relative to the base directory of the
+        storage volume.
+
+        Parameters
+        ----------
+        args: list of string
+            List of path components that are joined with the base directory of
+            the storage volume to generate the path object.
+
+        Returns
+        -------
+        pathlib.Path
+        """
+        return Path(os.path.join(self.basedir, *args))
 
     def store(self, file: IOHandle, dst: str):
         """Store a given file object at the destination path of this volume
