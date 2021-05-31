@@ -14,7 +14,7 @@ from flowserv.client.cli.base import cli_flowserv as cli
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))
-TEMPLATE_DIR = os.path.join(DIR, '../../.files/benchmark/helloworld')
+TEMPLATE_DIR = os.path.join(DIR, '..', '..', '.files', 'benchmark', 'helloworld')
 
 
 def test_app_installation(flowserv_cli):
@@ -22,7 +22,7 @@ def test_app_installation(flowserv_cli):
     command-line interface.
     """
     # Create app in a fresh database
-    cmd = ['app', 'install', '--key', 'mykey', TEMPLATE_DIR]
+    cmd = ['app', 'install', '--key=mykey', TEMPLATE_DIR]
     result = flowserv_cli.invoke(cli, cmd)
     assert 'export FLOWSERV_APP=mykey' in result.output
     assert result.exit_code == 0

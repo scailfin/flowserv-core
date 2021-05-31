@@ -90,7 +90,7 @@ class WorkflowManifest(object):
         result = list()
         for f in self.files:
             source = f['source']
-            target = f.get('target', f['source'])
+            target = f.get('target')
             target = target if dst is None else util.join(dst, target)
             result.append((source, target))
         return result

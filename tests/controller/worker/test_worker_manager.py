@@ -12,9 +12,10 @@ import pytest
 
 from flowserv.controller.worker.code import CodeWorker
 from flowserv.controller.worker.docker import DockerWorker
-from flowserv.controller.worker.manager import WorkerPool, Code, Docker, Subprocess
+from flowserv.controller.worker.manager import WorkerPool, Code, Docker, Notebook, Subprocess
+from flowserv.controller.worker.notebook import NotebookEngine
 from flowserv.controller.worker.subprocess import SubprocessWorker
-from flowserv.model.workflow.step import CodeStep, ContainerStep
+from flowserv.model.workflow.step import CodeStep, ContainerStep, NotebookStep
 
 import flowserv.error as err
 
@@ -24,7 +25,8 @@ import flowserv.error as err
     [
         (ContainerStep(identifier='test', image='test'), SubprocessWorker),
         (ContainerStep(identifier='test', image='test'), SubprocessWorker),
-        (CodeStep(identifier='test', func=lambda x: x), CodeWorker)
+        (CodeStep(identifier='test', func=lambda x: x), CodeWorker),
+        (NotebookStep(identifier='test', notebook='helloworld.ipynb'), NotebookEngine)
     ]
 )
 def test_get_default_worker(step, cls):
@@ -59,7 +61,8 @@ def test_get_worker_error():
     [
         (Subprocess(identifier='test'), ContainerStep(identifier='test', image='test'), SubprocessWorker),
         (Docker(identifier='test'), ContainerStep(identifier='test', image='test'), DockerWorker),
-        (Code(identifier='test'), CodeStep(identifier='test', func=lambda x: x), CodeWorker)
+        (Code(identifier='test'), CodeStep(identifier='test', func=lambda x: x), CodeWorker),
+        (Notebook(identifier='test'), NotebookStep(identifier='test', notebook='helloworld.ipynb'), NotebookEngine),
     ]
 )
 def test_get_worker_instance(doc, step, cls):
@@ -83,18 +86,18 @@ def test_worker_spec_seriaization():
     """
     # -- Config without additional arguments. ---------------------------------
     doc = Code(identifier='D1')
-    assert doc == {'id': 'D1', 'type': 'code', 'env': [], 'vars': []}
+    assert doc == {'id': 'D1', 'type': 'code', 'env': [], 'variables': []}
     doc = Docker(identifier='D1')
-    assert doc == {'id': 'D1', 'type': 'docker', 'env': [], 'vars': []}
+    assert doc == {'id': 'D1', 'type': 'docker', 'env': [], 'variables': []}
     doc = Subprocess(identifier='S1')
-    assert doc == {'id': 'S1', 'type': 'subprocess', 'env': [], 'vars': []}
+    assert doc == {'id': 'S1', 'type': 'subprocess', 'env': [], 'variables': []}
     # -- Config with arguments ------------------------------------------------
     doc = Code(identifier='D1', volume='v1')
     assert doc == {
         'id': 'D1',
         'type': 'code',
         'env': [],
-        'vars': [],
+        'variables': [],
         'volume': 'v1'
     }
     vars = {'x': 1}
@@ -104,7 +107,7 @@ def test_worker_spec_seriaization():
         'id': 'D2',
         'type': 'docker',
         'env': [{'key': 'TEST_ENV', 'value': 'abc'}],
-        'vars': [{'key': 'x', 'value': 1}],
+        'variables': [{'key': 'x', 'value': 1}],
         'volume': 'v1'
     }
     doc = Subprocess(variables=vars, env=env, identifier='S2', volume='v1')
@@ -112,6 +115,6 @@ def test_worker_spec_seriaization():
         'id': 'S2',
         'type': 'subprocess',
         'env': [{'key': 'TEST_ENV', 'value': 'abc'}],
-        'vars': [{'key': 'x', 'value': 1}],
+        'variables': [{'key': 'x', 'value': 1}],
         'volume': 'v1'
     }

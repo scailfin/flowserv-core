@@ -69,6 +69,7 @@ from flowserv.controller.worker.base import Worker
 from flowserv.controller.worker.code import CodeWorker, CODE_WORKER
 from flowserv.controller.worker.config import java_jvm, python_interpreter
 from flowserv.controller.worker.docker import DockerWorker, DOCKER_WORKER
+from flowserv.controller.worker.notebook import NotebookEngine, NOTEBOOK_WORKER
 from flowserv.controller.worker.subprocess import SubprocessWorker, SUBPROCESS_WORKER
 from flowserv.model.workflow.step import WorkflowStep
 
@@ -168,6 +169,8 @@ class WorkerPool(object):
             return CodeWorker()
         elif step.is_container_step():
             return default_container_worker
+        elif step.is_notebook_step():
+            return NotebookEngine()
         raise ValueError(f"unknown step type '{step.step_type}'")
 
 
@@ -191,7 +194,7 @@ def create_worker(doc: Dict) -> Worker:
     identifier = doc['id']
     worker_type = doc['type']
     env = util.to_dict(doc.get('env', []))
-    vars = util.to_dict(doc.get('vars', []))
+    vars = util.to_dict(doc.get('variables', []))
     volume = doc.get('volume')
     if worker_type == SUBPROCESS_WORKER:
         return SubprocessWorker(
@@ -209,6 +212,8 @@ def create_worker(doc: Dict) -> Worker:
         )
     elif worker_type == CODE_WORKER:
         return CodeWorker(identifier=identifier, volume=volume)
+    elif worker_type == NOTEBOOK_WORKER:
+        return NotebookEngine(identifier=identifier, volume=volume)
     raise ValueError(f"unknown worker type '{worker_type}'")
 
 
@@ -244,7 +249,7 @@ def WorkerSpec(
         'id': identifier,
         'type': worker_type,
         'env': [util.to_kvp(key=k, value=v) for k, v in env.items()],
-        'vars': [util.to_kvp(key=k, value=v) for k, v in variables.items()]
+        'variables': [util.to_kvp(key=k, value=v) for k, v in variables.items()]
     }
     if volume:
         doc['volume'] = volume
@@ -301,6 +306,27 @@ def Docker(
         identifier=identifier,
         variables=variables,
         env=env,
+        volume=volume
+    )
+
+
+def Notebook(identifier: str, volume: Optional[str] = None) -> Dict:
+    """Get base configuration serialization for a notebook worker.
+
+    Parameters
+    ----------
+    identifier: string
+        Uniuqe worker identifier.
+    volume: string, default=None
+        Identifier for the storage volume that the worker has access to.
+
+    Returns
+    -------
+    dict
+    """
+    return WorkerSpec(
+        worker_type=NOTEBOOK_WORKER,
+        identifier=identifier,
         volume=volume
     )
 

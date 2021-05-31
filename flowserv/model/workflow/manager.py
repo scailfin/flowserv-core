@@ -143,11 +143,13 @@ class WorkflowManager(object):
             template = manifest.template()
             # Create identifier for the workflow template.
             workflow_id = identifier if identifier else unique_identifier()
+            # Ensure that the workflow target directory does not exist.
+            self.fs.get_store_for_folder(dirs.workflow_basedir(workflow_id)).erase()
             staticdir = dirs.workflow_staticdir(workflow_id)
             # Copy files from the project folder to the template's static file
             # folder. By default all files in the project folder are copied.
             source = FileSystemStorage(basedir=sourcedir)
-            files = manifest.copyfiles(staticdir)
+            files = manifest.copyfiles(dst=staticdir)
             for src, dst in files:
                 source.copy(src=src, dst=dst, store=self.fs, verbose=verbose)
 

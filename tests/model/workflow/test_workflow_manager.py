@@ -54,8 +54,8 @@ def test_create_workflow(database, tmpdir):
         )
         assert wf.workflow_id == 'WF001'
         assert wf.name == 'Hello World'
-        assert wf.description is None
-        assert wf.instructions is None
+        assert wf.description == 'Hello World Demo'
+        assert wf.instructions is not None
         template = wf.get_template()
         assert template.result_schema is not None
     # Ensure that the static files where copied to the workflow folder.
@@ -63,16 +63,11 @@ def test_create_workflow(database, tmpdir):
     files = {key for key, _ in staticfs.walk(src=None)}
     assert files == {
         'instructions.md',
-        'benchmark.yaml',
-        'flowserv.yaml',
-        'benchmark-code.yaml',
-        'benchmark-invalid-cmd.yaml',
-        'benchmark-with-outputs.yaml',
         'data/names.txt',
         'code/analyze.py',
         'code/postproc.py',
         'code/helloworld.py',
-        'flowserv.alt.yaml'
+        'notebooks/HelloWorld.ipynb'
     }
     # -- Add workflow with user-provided metadata -----------------------------
     with database.session() as session:
@@ -160,8 +155,8 @@ def test_create_workflow_with_alt_manifest(database, tmpdir):
             manifestfile=ALT_MANIFEST
         )
         assert wf.name == 'Hello World'
-        assert wf.description == 'Hello World Demo'
-        assert wf.instructions == '# Hello World'
+        assert wf.description is None
+        assert wf.instructions is None
         template = wf.get_template()
         assert template.result_schema is not None
 
@@ -216,8 +211,8 @@ def test_get_workflow(database, tmpdir):
         manager = WorkflowManager(session=session, fs=fs)
         wf = manager.get_workflow(workflow_1)
         assert wf.name == 'A'
-        assert wf.description is None
-        assert wf.instructions is None
+        assert wf.description == 'Hello World Demo'
+        assert wf.instructions is not None
         template = wf.get_template()
         assert template.result_schema is not None
         wf = manager.get_workflow(workflow_2)

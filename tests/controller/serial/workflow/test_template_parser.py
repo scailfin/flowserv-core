@@ -21,8 +21,8 @@ import flowserv.util as util
 
 DIR = os.path.dirname(os.path.realpath(__file__))
 BENCHMARK_DIR = os.path.join(DIR, '../../../.files/benchmark')
-TEMPLATE_DIR = os.path.join(DIR, '../../../.files/template')
 TEMPLATE_HELLOWORLD = os.path.join(BENCHMARK_DIR, 'helloworld', 'benchmark.yaml')
+TEMPLATE_NOTEBOOK = os.path.join(BENCHMARK_DIR, 'helloworld', './benchmark-with-notebook.yaml')
 TEMPLATE_TOPTAGGER = os.path.join(BENCHMARK_DIR, './top-tagger.yaml')
 
 
@@ -33,7 +33,7 @@ def test_parse_code_step():
         'action': {
             'func': 'flowserv.tests.worker.a_plus_b',
             'arg': 'z',
-            'vars': [{'arg': 'a', 'var': 'val1'}, {'arg': 'b', 'var': 'val2'}]
+            'variables': [{'arg': 'a', 'var': 'val1'}, {'arg': 'b', 'var': 'val2'}]
         }
     }]}
     template = WorkflowTemplate(workflow_spec=doc, parameters=ParameterIndex())
@@ -55,6 +55,21 @@ def test_parse_hello_world_template():
     assert len(step.commands) == 2
     assert output_files == ['results/greetings.txt', 'results/analytics.json']
     assert args == {'inputfile': 'names.txt', 'outputfile': 'results/greetings.txt', 'sleeptime': '10', 'greeting': 'Hello'}
+
+
+def test_parse_hello_world_notebook_template():
+    """Extract commands and output files from the 'Hello world' template
+    that included a notebook step.
+    """
+    template = WorkflowTemplate.from_dict(doc=util.read_object(TEMPLATE_NOTEBOOK))
+    steps, args, output_files = parser.parse_template(template=template, arguments={'greeting': 'Hey'})
+    assert len(steps) == 2
+    step = steps[0]
+    assert step.notebook == 'notebooks/HelloWorld.ipynb'
+    assert step.inputs == ['data/names.txt', 'notebooks/HelloWorld.ipynb']
+    assert step.outputs == ['results/greetings.txt']
+    assert output_files == ['results/greetings.txt', 'results/analytics.json']
+    assert args == {'inputfile': 'data/names.txt', 'outputfile': 'results/greetings.txt', 'greeting': 'Hey'}
 
 
 def test_parse_top_tagger_template():

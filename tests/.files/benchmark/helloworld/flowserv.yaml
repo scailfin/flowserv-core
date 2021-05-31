@@ -1,2 +1,9 @@
 name: 'Hello World'
+description: 'Hello World Demo'
+instructions: 'instructions.md'
 specfile: 'benchmark.yaml'
+files:
+    - source: 'code'
+    - source: 'data'
+    - source: 'notebooks/HelloWorld.ipynb'
+    - source: 'instructions.md'

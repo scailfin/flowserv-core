@@ -11,7 +11,7 @@
 from typing import Dict, List, Optional, Tuple
 
 from flowserv.model.template.base import WorkflowTemplate
-from flowserv.model.workflow.step import CodeStep, ContainerStep, WorkflowStep
+from flowserv.model.workflow.step import CodeStep, ContainerStep, NotebookStep, WorkflowStep
 
 import flowserv.model.template.parameter as tp
 import flowserv.util as util
@@ -59,7 +59,16 @@ def Step(
             identifier=identifier,
             func=util.import_obj(action['func']),
             arg=action.get('arg'),
-            varnames={doc['arg']: doc['var'] for doc in action.get('vars', [])},
+            varnames=parse_varnames(action=action),
+            inputs=inputs,
+            outputs=outputs
+        )
+    elif 'notebook' in action:
+        return NotebookStep(
+            identifier=identifier,
+            notebook=action['notebook'],
+            params=action.get('parameters'),
+            varnames=parse_varnames(action=action),
             inputs=inputs,
             outputs=outputs
         )
@@ -149,3 +158,18 @@ def parse_template(template: WorkflowTemplate, arguments: Dict) -> Tuple[List[Co
         )
     # Return tuple of workflow steps and output file list.
     return steps, run_args, workflow_spec.get('files', {}).get('outputs', {})
+
+
+def parse_varnames(action: Dict) -> Dict:
+    """Parse mapping of argument names to variables names.
+
+    Parameters
+    ----------
+    action: dict
+        Workflow step serialization.
+
+    Returns
+    -------
+    dict
+    """
+    return {doc['arg']: doc['var'] for doc in action.get('variables', [])}
