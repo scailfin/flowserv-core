@@ -13,7 +13,7 @@ NOTEBOOK_WORKER = 'notebook'
 
 class NotebookEngine(Worker):
     """Execution engine for notebook steps in a serial workflow."""
-    def __init__(self, identifier: Optional[str] = None, volume: Optional[str] = None):
+    def __init__(self, identifier: Optional[str] = None, env:Optional[Dict] = None, volume: Optional[str] = None):
         """Initialize the worker identifier and accessible storage volume.
 
         Parameters
@@ -27,6 +27,8 @@ class NotebookEngine(Worker):
             volume store for a workflow run.
         """
         super(NotebookEngine, self).__init__(identifier=identifier, volume=volume)
+
+        self.env = env if env is not None else dict()
 
     def exec(self, step: NotebookStep, context: Dict, store: FileSystemStorage) -> ExecResult:
         """Execute a given notebook workflow step in the current workflow
@@ -63,3 +65,4 @@ class NotebookEngine(Worker):
         # TODO: Call execute method of the NotebookEngine to run the notebook
         # with the argument values from the workflow context.
         result = ExecResult(step=step)
+        return result
