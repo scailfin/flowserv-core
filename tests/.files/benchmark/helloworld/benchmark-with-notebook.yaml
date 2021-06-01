@@ -1,6 +1,7 @@
 workflow:
     files:
         inputs:
+        - notebooks/HelloWorld.ipynb
         - code/analyze.py
         - data/names.txt
         outputs:
@@ -20,7 +21,16 @@ workflow:
           - results/greetings.txt
       action:
           notebook: 'notebooks/HelloWorld.ipynb'
+          params:
+          - inputfile
+          - outputfile
+          - greetings
     - name: "analyze"
+      files:
+          inputs:
+          - results/greetings.txt
+          outputs:
+          - results/analytics.json
       action:
           environment: "python:3.7"
           commands:

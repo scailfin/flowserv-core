@@ -76,7 +76,7 @@ def jquery(doc: Dict, path: List[str]) -> Any:
         return jquery(doc=doc.get(path[0], dict()), path=path[1:])
 
 
-def stacktrace(ex):
+def stacktrace(ex) -> List[str]:
     """Get list of strings representing the stack trace for a given exception.
 
     Parameters
@@ -86,7 +86,7 @@ def stacktrace(ex):
 
     Returns
     -------
-    list(string)
+    list of string
     """
     try:
         st = traceback.format_exception(type(ex), ex, ex.__traceback__)
