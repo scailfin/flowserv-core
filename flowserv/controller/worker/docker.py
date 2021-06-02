@@ -102,16 +102,34 @@ class DockerWorker(ContainerWorker):
         try:
             for cmd in step.commands:
                 logging.info('{}'.format(cmd))
-                logs = client.containers.run(
+                # Run detached container to be able to capture output to
+                # both, STDOUT and STDERR. DO NOT remove the container yet
+                # in order to be able to get the captured outputs.
+                container = client.containers.run(
                     image=step.image,
                     command=cmd,
                     volumes=volumes,
-                    remove=True,
+                    remove=False,
                     environment=env,
+                    detach=False,
                     stdout=True
                 )
+                # Wait for container to finish. The returned dictionary will
+                # contain the container's exit code ('StatusCode').
+                r = container.wait()
+                # Add container logs to the standard outputs for the workflow
+                # results.
+                logs = container.logs()
                 if logs:
                     result.stdout.append(logs.decode('utf-8'))
+                # Remove container if the remove flag is set to True.
+                container.remove()
+                # Check exit code for the container. If the code is not zero
+                # an error occurred and we exit the commands loop.
+                status_code = r.get('StatusCode')
+                if status_code != 0:
+                    result.returncode = status_code
+                    break
         except (ContainerError, ImageNotFound, APIError) as ex:
             logging.error(ex, exc_info=True)
             strace = '\n'.join(util.stacktrace(ex))
@@ -119,4 +137,5 @@ class DockerWorker(ContainerWorker):
             result.stderr.append(strace)
             result.exception = ex
             result.returncode = 1
+        client.close()
         return result
