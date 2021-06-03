@@ -24,7 +24,7 @@ workflow:
           params:
           - inputfile
           - outputfile
-          - greetings
+          - greeting
     - name: "analyze"
       files:
           inputs:

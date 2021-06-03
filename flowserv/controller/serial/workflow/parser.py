@@ -67,7 +67,9 @@ def Step(
         return NotebookStep(
             identifier=identifier,
             notebook=action['notebook'],
-            params=action.get('parameters'),
+            output=action.get('output'),
+            params=action.get('params'),
+            requirements=action.get('requirements'),
             varnames=parse_varnames(action=action),
             inputs=inputs,
             outputs=outputs

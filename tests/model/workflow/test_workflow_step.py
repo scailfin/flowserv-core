@@ -10,7 +10,7 @@
 
 import pytest
 
-from flowserv.model.workflow.step import CodeStep, ContainerStep, WorkflowStep
+from flowserv.model.workflow.step import CodeStep, ContainerStep, WorkflowStep, output_notebook
 
 
 def my_add(x: int, y: int) -> int:
@@ -81,3 +81,17 @@ def test_step_type():
     # Invalid step type.
     with pytest.raises(ValueError):
         WorkflowStep(identifier='test', step_type=-1)
+
+
+@pytest.mark.parametrize(
+    'name,input,output',
+    [
+        ('output.ipynb', 'input.ipynb', 'output.ipynb'),
+        (None, 'input.ipynb', 'input.out.ipynb'),
+        (None, 'input.nb', 'input.nb.out.ipynb'),
+        (None, '', '.out.ipynb')
+    ]
+)
+def test_output_notebook_name(name, input, output):
+    """Test function for generating output notebook names."""
+    assert output_notebook(name=name, input=input) == output

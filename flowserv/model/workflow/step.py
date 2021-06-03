@@ -260,7 +260,8 @@ class ContainerStep(WorkflowStep):
 
 class NotebookStep(WorkflowStep):
     def __init__(
-        self, identifier: str, notebook: str, params: Optional[List[str]] = None,
+        self, identifier: str, notebook: str, output: Optional[str] = None,
+        requirements: Optional[List[str]] = None, params: Optional[List[str]] = None,
         varnames: Optional[Dict] = None, inputs: Optional[List[str]] = None,
         outputs: Optional[List[str]] = None
     ):
@@ -273,6 +274,18 @@ class NotebookStep(WorkflowStep):
         notebook: string
             Relative path to notebook file in the storage volume that is
             associated with the worker that will execute the notebook step.
+        output: string, default=None
+            Relative path of the output notebook. If not given, the name of
+            the output notebook will be the same name as the input notebook
+            with the suffix ``.ipynb`` replaced by ``.out.ipynb`` (or with
+            suffix ``.out.ipynb`` appended if the input notebook does not
+            have a ``.ipynb`` suffix).
+        requirements: list of string, default=None
+            List of additional Python packages that need to be installed for
+            running the notebook. These requirements will only be taken into
+            account when running the notebook inside a Docker container using a
+            :class:``flowserv.controller.worker.nbdocker.NotebookDockerWorker``
+            worker.
         params: list of string, default=None
             List of names for notebook parameters. These parameters will be
             assigned values from the workflow context when the notebook step
@@ -298,17 +311,60 @@ class NotebookStep(WorkflowStep):
             outputs=outputs
         )
         self.notebook = notebook
+        self.output = output_notebook(name=output, input=self.notebook)
+        self.requirements = requirements if requirements is not None else list()
         self.params = params if params is not None else list()
         self.varnames = varnames if varnames is not None else dict()
 
     def exec(self, context: Dict, rundir: str):
+        """Execute the notebook using papermill in the given workflow context.
 
+        Parameters
+        ----------
+        context: dict
+            Mapping of parameter names to their current value in the workflow
+            executon state. These are the global variables in the execution
+            context.
+        rundir: string
+            Directory for the workflow run that contains all the run files.
+        """
+        # Prepare parameters for running the notebook using papermill.
         kwargs = dict()
         for var in self.params:
             source = self.varnames.get(var, var)
+            print(f'{var}={context.get(var)}')
             if source in context:
                 kwargs[var] = context[source]
+        # Change working directory temporarily to the given rundir.
+        cwd = os.getcwd()
         os.chdir(rundir)
-        pm.execute_notebook(self.notebook, 'output', context)
+        try:
+            pm.execute_notebook(self.notebook, self.output, parameters=kwargs)
+        finally:
+            os.chdir(cwd)
 
 
+# -- Helper Functions ---------------------------------------------------------
+
+def output_notebook(name: str, input: str) -> str:
+    """Generate name for output notebook.
+
+    If an output name is given it is returned as it is. Otherwise, the name
+    of the input notebook will have the suffix ``.ipynb`` replaced by ``.out.ipynb``.
+    If the input notebook does not have a suffix ``.ipynb`` the suffix  ``.out.ipynb``
+    is appended to the input notebook name.
+
+    Parameters
+    ----------
+    name: string
+        User-provided name for the output notebook. This value may be None.
+    input: string
+        Name of the input notebook.
+
+    Returns
+    -------
+    string
+    """
+    if name:
+        return name
+    return input[:-6] + '.out.ipynb' if input.endswith('.ipynb') else input + '.out.ipynb'
