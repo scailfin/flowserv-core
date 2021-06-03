@@ -44,7 +44,7 @@ class MockClient:
     def remove(self):
         pass
 
-    def run(self, image, command, volumes, remove, environment, detach, stdout):
+    def run(self, image, command, volumes, remove, environment, detach):
         """Mock run for docker container."""
         if command == 'error':
             raise docker.errors.ContainerError(

@@ -10,7 +10,7 @@
 to execute workflow steps.
 """
 
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 import logging
 import os
@@ -83,59 +83,84 @@ class DockerWorker(ContainerWorker):
         flowserv.controller.serial.workflow.result.ExecResult
         """
         logging.info('run step with Docker worker')
-        # Keep output to STDOUT and STDERR for all executed commands in the
-        # respective attributes of the returned execution result.
-        result = ExecResult(step=step)
-        # Setup the workflow environment by obtaining volume information for
-        # all directories in the run folder.
-        volumes = dict()
-        for filename in os.listdir(rundir):
-            abs_file = os.path.abspath(os.path.join(rundir, filename))
-            if os.path.isdir(abs_file):
-                volumes[abs_file] = {'bind': '/{}'.format(filename), 'mode': 'rw'}
-        # Run the individual commands using the local Docker deamon. Import
-        # docker package here to avoid errors for installations that do not
-        # intend to use Docker and therefore did not install the package.
-        import docker
-        from docker.errors import ContainerError, ImageNotFound, APIError
-        client = docker.from_env()
-        try:
-            for cmd in step.commands:
-                logging.info('{}'.format(cmd))
-                # Run detached container to be able to capture output to
-                # both, STDOUT and STDERR. DO NOT remove the container yet
-                # in order to be able to get the captured outputs.
-                container = client.containers.run(
-                    image=step.image,
-                    command=cmd,
-                    volumes=volumes,
-                    remove=False,
-                    environment=env,
-                    detach=False,
-                    stdout=True
-                )
-                # Wait for container to finish. The returned dictionary will
-                # contain the container's exit code ('StatusCode').
-                r = container.wait()
-                # Add container logs to the standard outputs for the workflow
-                # results.
-                logs = container.logs()
-                if logs:
-                    result.stdout.append(logs.decode('utf-8'))
-                # Remove container if the remove flag is set to True.
-                container.remove()
-                # Check exit code for the container. If the code is not zero
-                # an error occurred and we exit the commands loop.
-                status_code = r.get('StatusCode')
-                if status_code != 0:
-                    result.returncode = status_code
-                    break
-        except (ContainerError, ImageNotFound, APIError) as ex:
-            logging.error(ex, exc_info=True)
-            strace = '\n'.join(util.stacktrace(ex))
-            logging.debug(strace)
-            result.stderr.append(strace)
-            result.exception = ex
-            result.returncode = 1
-        client.close()
-        return result
+        return docker_run(
+            image=step.image,
+            commands=step.commands,
+            env=env,
+            rundir=rundir,
+            result=ExecResult(step=step)
+        )
+
+
+# -- Helper Methods -----------------------------------------------------------
+
+def docker_run(
+    image: str, commands: List[str], env: Dict, rundir: str, result: ExecResult
+) -> ExecResult:
+    """Helper function that executes a list of commands inside a Docker container.
+
+    Parameters
+    ----------
+    image: string
+        Identifier of the Docker image to run.
+    commands: string or list of string
+        Commands that are executed inside the Docker container.
+    result: flowserv.controller.serial.workflow.result.ExecResult
+        Result object that will contain the run outputs and status code.
+
+    Returns
+    -------
+    flowserv.controller.serial.workflow.result.ExecResult
+    """
+    # Setup the workflow environment by obtaining volume information for
+    # all directories in the run folder.
+    volumes = dict()
+    for filename in os.listdir(rundir):
+        abs_file = os.path.abspath(os.path.join(rundir, filename))
+        if os.path.isdir(abs_file):
+            volumes[abs_file] = {'bind': '/{}'.format(filename), 'mode': 'rw'}
+    # Run the individual commands using the local Docker deamon. Import
+    # docker package here to avoid errors for installations that do not
+    # intend to use Docker and therefore did not install the package.
+    import docker
+    from docker.errors import ContainerError, ImageNotFound, APIError
+    client = docker.from_env()
+    try:
+        for cmd in commands:
+            logging.info('{}'.format(cmd))
+            # Run detached container to be able to capture output to
+            # both, STDOUT and STDERR. DO NOT remove the container yet
+            # in order to be able to get the captured outputs.
+            container = client.containers.run(
+                image=image,
+                command=cmd,
+                volumes=volumes,
+                remove=False,
+                environment=env,
+                detach=True
+            )
+            # Wait for container to finish. The returned dictionary will
+            # contain the container's exit code ('StatusCode').
+            r = container.wait()
+            # Add container logs to the standard outputs for the workflow
+            # results.
+            logs = container.logs()
+            if logs:
+                result.stdout.append(logs.decode('utf-8'))
+            # Remove container if the remove flag is set to True.
+            container.remove()
+            # Check exit code for the container. If the code is not zero
+            # an error occurred and we exit the commands loop.
+            status_code = r.get('StatusCode')
+            if status_code != 0:
+                result.returncode = status_code
+                break
+    except (ContainerError, ImageNotFound, APIError) as ex:
+        logging.error(ex, exc_info=True)
+        strace = '\n'.join(util.stacktrace(ex))
+        logging.debug(strace)
+        result.stderr.append(strace)
+        result.exception = ex
+        result.returncode = 1
+    client.close()
+    return result
