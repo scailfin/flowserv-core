@@ -64,5 +64,6 @@ class NotebookEngine(Worker):
         print(f'Context: {context}')
         # TODO: Call execute method of the NotebookEngine to run the notebook
         # with the argument values from the workflow context.
+        step.exec(context=context, rundir=store.basedir)
         result = ExecResult(step=step)
         return result
