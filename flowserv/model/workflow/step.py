@@ -30,7 +30,7 @@ from typing import Callable, Dict, List, Optional
 
 import inspect
 import papermill as pm
-
+import os
 
 """Unique identifier for workflow step types."""
 CONTAINER_STEP = 'container'
@@ -301,11 +301,14 @@ class NotebookStep(WorkflowStep):
         self.params = params if params is not None else list()
         self.varnames = varnames if varnames is not None else dict()
 
-    def exec(self, context: Dict):
+    def exec(self, context: Dict, rundir: str):
+
         kwargs = dict()
         for var in self.params:
             source = self.varnames.get(var, var)
             if source in context:
                 kwargs[var] = context[source]
+        os.chdir(rundir)
+        pm.execute_notebook(self.notebook, 'output', context)
 
-        pm.execute_notebook(self.notebook, 'output', **kwargs)
+
