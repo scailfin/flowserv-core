@@ -10,9 +10,7 @@
 environment.
 """
 
-import docker
 import os
-import pytest
 
 from flowserv.controller.worker.docker import DockerWorker
 from flowserv.model.workflow.step import ContainerStep
@@ -22,57 +20,6 @@ from flowserv.model.workflow.step import ContainerStep
 DIR = os.path.dirname(os.path.realpath(__file__))
 RUN_DIR = os.path.join(DIR, '../../.files')
 
-
-# -- Patching for error condition testing -------------------------------------
-
-class MockClient:
-    """Mock Docker client."""
-    def __init__(self):
-        self._logs = None
-        self._result = None
-
-    def close(self):
-        pass
-
-    @property
-    def containers(self):
-        return self
-
-    def logs(self):
-        return self._logs
-
-    def remove(self):
-        pass
-
-    def run(self, image, command, volumes, remove, environment, detach):
-        """Mock run for docker container."""
-        if command == 'error':
-            raise docker.errors.ContainerError(
-                exit_status=1,
-                image=image,
-                command=command,
-                container=None,
-                stderr='there was an error'.encode('utf-8')
-            )
-        msg, self._result = environment[command]
-        self._logs = msg.encode('utf-8')
-        return self
-
-    def wait(self):
-        return {'StatusCode': self._result}
-
-
-@pytest.fixture
-def mock_docker(monkeypatch):
-    """Raise error in subprocess.run()."""
-
-    def mock_client(*args, **kwargs):
-        return MockClient()
-
-    monkeypatch.setattr(docker, "from_env", mock_client)
-
-
-# -- Unit tests ---------------------------------------------------------------
 
 def test_run_steps_with_error(mock_docker):
     """Test execution of a workflow step where one of the commands raises an

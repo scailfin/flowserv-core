@@ -23,7 +23,7 @@ BENCHMARK_DIR = os.path.join(DIR, '..', '..', '..', '.files', 'benchmark', 'hell
 SPEC_FILE = os.path.join(BENCHMARK_DIR, 'benchmark-with-notebook.yaml')
 
 
-def test_run_helloworld_sync_docker(sync_service):
+def test_run_helloworld_sync_docker(mock_docker, sync_service):
     """Successfully execute the helloworld example that contains a notebook step
     using a Docker container."""
     # -- Setup ----------------------------------------------------------------
@@ -44,8 +44,8 @@ def test_run_helloworld_sync_docker(sync_service):
             group_id,
             arguments=args,
             config={
-                'workers': [{'name': 'nbdocker', 'type': 'nbdocker'}],
-                'workflow': [{'step': 'say_hello', 'worker': 'nbdocker'}]
+                'workers': [{'name': 'nbdocker_worker', 'type': 'nbdocker'}],
+                'workflow': [{'step': 'say_hello', 'worker': 'nbdocker_worker'}]
             }
         )
     # -- Validate the run handle against the expected state -------------------
