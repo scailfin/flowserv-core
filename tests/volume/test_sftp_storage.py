@@ -69,6 +69,14 @@ def test_remote_volume_load_file(mock_ssh, basedir, data_e):
     assert doc == data_e
 
 
+def test_remote_volume_mkdir(mock_ssh, basedir):
+    """Test mkdir for remote storage volumes."""
+    with ssh.ssh_client('test', sep=os.sep) as client:
+        store = RemoteStorage(remotedir=basedir, client=client)
+        store.mkdir(path='docs')
+        store.mkdir(path='docs/results')
+
+
 def test_remote_volume_serialization(mock_ssh, basedir):
     """Test uploading a full directory to a storage volume."""
     with ssh.ssh_client('test', sep=os.sep) as client:

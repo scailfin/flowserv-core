@@ -207,6 +207,20 @@ class S3Volume(StorageVolume):
         """
         return {obj.key for obj in self.bucket.objects.filter(Prefix=filter)}
 
+    def mkdir(self, path: str):
+        """Create the directory with the given (relative) path and all of its
+        parent directories.
+
+        For bucket stores no directories need to be created prior to accessing
+        them.
+
+        Parameters
+        ----------
+        path: string
+            Relative path to a directory in the storage volume.
+        """
+        pass
+
     def store(self, file: IOHandle, dst: str):
         """Store a given file object at the destination path of this volume
         store.

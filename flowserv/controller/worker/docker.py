@@ -14,10 +14,13 @@ from typing import Dict, List, Optional
 
 import logging
 import os
+import tempfile
+import shutil
 
 from flowserv.controller.serial.workflow.result import ExecResult
-from flowserv.model.workflow.step import ContainerStep
-from flowserv.controller.worker.base import ContainerWorker
+from flowserv.model.workflow.step import ContainerStep, NotebookStep
+from flowserv.controller.worker.base import ContainerWorker, Worker
+from flowserv.volume.fs import FileSystemStorage
 
 import flowserv.util as util
 
@@ -92,7 +95,137 @@ class DockerWorker(ContainerWorker):
         )
 
 
+"""Unique type identifier for NotebookDockerWorker serializations."""
+NOTEBOOK_DOCKER_WORKER = 'nbdocker'
+
+
+"""Default Dockerfile for created papermill containers."""
+DOCKERFILE = [
+    'FROM python:3.8',
+    'COPY requirements.txt /app/requirements.txt',
+    'WORKDIR /app',
+    'RUN pip install jupyter',
+    'RUN pip install papermill',
+    'RUN pip install -r requirements.txt',
+    'RUN rm -Rf /app',
+    'WORKDIR /'
+]
+
+
+class NotebookDockerWorker(Worker):
+    """Execution engine for notebook steps in a serial workflow."""
+    def __init__(
+        self, env: Optional[Dict] = None, identifier: Optional[str] = None,
+        volume: Optional[str] = None
+    ):
+        """Initialize the worker identifier and accessible storage volume.
+
+        Parameters
+        ----------
+        env: dict, default=None
+            Default settings for environment variables when executing workflow
+            steps. These settings can get overridden by step-specific settings.
+        identifier: string, default=None
+            Unique worker identifier. If the value is None a new unique identifier
+            will be generated.
+        volume: string, default=None
+            Identifier for the storage volume that the worker has access to.
+            By default, the worker is expected to have access to the default
+            volume store for a workflow run.
+        """
+        super(NotebookDockerWorker, self).__init__(identifier=identifier, volume=volume)
+        self.env = env
+
+    def exec(self, step: NotebookStep, context: Dict, store: FileSystemStorage) -> ExecResult:
+        """Execute a given notebook workflow step in the current workflow
+        context.
+
+        The notebook engine expects a file system storage volume that provides
+        access to the notebook file and any other aditional input files.
+
+        Parameters
+        ----------
+        step: flowserv.model.workflow.step.NotebookStep
+            Notebook step in a serial workflow.
+        context: dict
+            Dictionary of variables that represent the current workflow state.
+        store: flowserv.volume.fs.FileSystemStorage
+            Storage volume that contains the workflow run files.
+
+        Returns
+        -------
+        flowserv.controller.serial.workflow.result.ExecResult
+        """
+        result = ExecResult(step=step)
+        # Create Docker image including papermill and notebook requirements.
+        try:
+            image, logs = docker_build(name=step.name, requirements=step.requirements)
+            if logs:
+                result.stdout.append('\n'.join(logs))
+        except Exception as ex:
+            logging.error(ex, exc_info=True)
+            strace = '\n'.join(util.stacktrace(ex))
+            logging.debug(strace)
+            result.stderr.append(strace)
+            result.exception = ex
+            result.returncode = 1
+            return result
+        # Run notebook in Docker container.
+        cmd = step.cli_command(context=context)
+        result.stdout.append(f'run: {cmd}')
+        return docker_run(
+            image=image,
+            commands=[cmd],
+            env=self.env,
+            rundir=store.basedir,
+            result=result
+        )
+
+
 # -- Helper Methods -----------------------------------------------------------
+
+def docker_build(name: str, requirements: List[str]) -> str:
+    """Build a Docker image from a standard Python image with ``papermill`` and
+    the given requirements installed.
+
+    Returns the identifier of the created image.
+
+    Parameters
+    ----------
+    name: string
+        Name for the created image (derived from the workflow step name).
+    requirements: list of string
+        List of requirements that will be written to a file ``requirements.txt``
+        and installed inside the created Docker image.
+
+    Returns
+    -------
+    string
+    """
+    # Create a temporary folder for the Dockerfile.
+    tmpdir = tempfile.mkdtemp()
+    # Write requirements.txt to file.
+    with open(os.path.join(tmpdir, 'requirements.txt'), 'wt') as f:
+        for line in requirements:
+            f.write(f'{line}\n')
+    # Write Dockerfile.
+    # TODO. In the future we may want to allow an option to read this from
+    # a file that is specified via an environment variable.
+    with open(os.path.join(tmpdir, 'Dockerfile'), 'wt') as f:
+        for line in DOCKERFILE:
+            f.write(f'{line}\n')
+    # Build Docker image. Import docker package here to avoid errors for
+    # installations that do not intend to use Docker and therefore did not
+    # install the package.
+    import docker
+    client = docker.from_env()
+    image, logs = client.images.build(path=tmpdir, tag=name, nocache=False)
+    outputs = [doc['stream'] for doc in logs if doc.get('stream', '').strip()]
+    client.close()
+    # Remove temporary folder before returning the image identifier.
+    shutil.rmtree(tmpdir)
+    return image.tags[-1], outputs
+
 
 def docker_run(
     image: str, commands: List[str], env: Dict, rundir: str, result: ExecResult

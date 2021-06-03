@@ -59,17 +59,17 @@ def test_manager_prepare(basedir, filenames_all, data_a, tmpdir):
         files={f: [DEFAULT_STORE] for f in filenames_all}
     )
     # Case 1: Empty arguments.
-    volumes.prepare(store=s0, files=[])
+    volumes.prepare(store=s0, inputs=[], outputs=[])
     # Case 2: No file copy.
-    volumes.prepare(store=s0, files=['examples/'])
+    volumes.prepare(store=s0, inputs=['examples/'], outputs=['examples/'])
     assert len(os.listdir(basedir)) == 3
     assert len(os.listdir(s1_dir)) == 0
     for f in filenames_all:
         assert volumes.files[f] == [DEFAULT_STORE]
     # Case 3: Copy file between stores.
-    volumes.prepare(store=s1, files=['A.json', 'docs/'])
+    volumes.prepare(store=s1, inputs=['A.json', 'docs/'], outputs=['results/A.json', 'docs/'])
     assert len(os.listdir(basedir)) == 3
-    assert len(os.listdir(s1_dir)) == 2
+    assert len(os.listdir(s1_dir)) == 3
     filename = os.path.join(s1_dir, 'A.json')
     assert os.path.isfile(filename)
     with s1.load('A.json').open() as f:

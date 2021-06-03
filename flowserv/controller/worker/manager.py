@@ -69,6 +69,7 @@ from flowserv.controller.worker.base import Worker
 from flowserv.controller.worker.code import CodeWorker, CODE_WORKER
 from flowserv.controller.worker.config import java_jvm, python_interpreter
 from flowserv.controller.worker.docker import DockerWorker, DOCKER_WORKER
+from flowserv.controller.worker.docker import NotebookDockerWorker, NOTEBOOK_DOCKER_WORKER
 from flowserv.controller.worker.notebook import NotebookEngine, NOTEBOOK_WORKER
 from flowserv.controller.worker.subprocess import SubprocessWorker, SUBPROCESS_WORKER
 from flowserv.model.workflow.step import WorkflowStep
@@ -111,7 +112,7 @@ class WorkerPool(object):
             respective workflow step.
         """
         # Index of worker specifications.
-        self._workerspecs = {doc['id']: doc for doc in workers}
+        self._workerspecs = {doc['name']: doc for doc in workers}
         # Cache for created engine instance.
         self._workers = dict()
         self.managers = managers if managers is not None else dict()
@@ -191,7 +192,7 @@ def create_worker(doc: Dict) -> Worker:
     -------
     flowserv.controller.worker.base.Worker
     """
-    identifier = doc['id']
+    identifier = doc['name']
     worker_type = doc['type']
     env = util.to_dict(doc.get('env', []))
     vars = util.to_dict(doc.get('variables', []))
@@ -214,6 +215,8 @@ def create_worker(doc: Dict) -> Worker:
         return CodeWorker(identifier=identifier, volume=volume)
     elif worker_type == NOTEBOOK_WORKER:
         return NotebookEngine(identifier=identifier, volume=volume)
+    elif worker_type == NOTEBOOK_DOCKER_WORKER:
+        return NotebookDockerWorker(identifier=identifier, env=env, volume=volume)
     raise ValueError(f"unknown worker type '{worker_type}'")
 
 
@@ -246,7 +249,7 @@ def WorkerSpec(
     env = env if env is not None else dict()
     variables = variables if variables is not None else dict()
     doc = {
-        'id': identifier,
+        'name': identifier,
         'type': worker_type,
         'env': [util.to_kvp(key=k, value=v) for k, v in env.items()],
         'variables': [util.to_kvp(key=k, value=v) for k, v in variables.items()]

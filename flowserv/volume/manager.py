@@ -21,6 +21,7 @@ from flowserv.volume.s3 import S3Bucket  # noqa: F401
 from flowserv.volume.ssh import Sftp  # noqa: F401
 
 import flowserv.error as err
+import flowserv.util as util
 
 
 DEFAULT_STORE = '__default__'
@@ -87,7 +88,7 @@ class VolumeManager(object):
             self._stores[identifier] = Volume(self._storespecs[identifier])
         return self._stores[identifier]
 
-    def prepare(self, store: StorageVolume, files: List[str]):
+    def prepare(self, store: StorageVolume, inputs: List[str], outputs: List[str]):
         """Prepare the storage volume for a worker.
 
         Ensures that the input files that are needed by the worker are available
@@ -99,8 +100,10 @@ class VolumeManager(object):
         ----------
         store: flowserv.volume.base.StorageVolume
             Storage volume that is being prepared.
-        files: list of string
+        inputs: list of string
             Relative path (keys) of required input files for a workflow step.
+        outputs: list of string
+            Relative path (keys) of created output files by a workflow step.
         """
         # Generate dictionary that maps all files that are matches to the given
         # query list to the list of storage volume that the files are available
@@ -109,17 +112,14 @@ class VolumeManager(object):
         # assuming that neither (or at least the query files) contains a very
         # large number of elements.
         required_files = dict()
-        for q in files:
+        for q in inputs:
             # The comparison depends on whether the specified file name ends
             # with a '/' (indicating that a directory is referenced) or not.
             is_match = prefix_match if q.endswith('/') else exact_match
             for f, fstores in self.files.items():
                 if f not in required_files and is_match(f, q):
                     required_files[f] = fstores
-        # Create result disctionary that maps each required input file to the
-        # storage volume where the worker has access to it. Files that currently
-        # are not available to a worker at any of its stores, these files will
-        # be uploaded to one of the storage volumes the worker has access to.
+        # Copy required files that are currently not available to the worker.
         for f, fstores in required_files.items():
             # Check if the file is available at the target store.
             if store.identifier in fstores:
@@ -131,6 +131,13 @@ class VolumeManager(object):
             # volume.
             for key in source.copy(src=f, store=store):
                 self.files[key].append(store.identifier)
+        # Create folders for output files.
+        out_folders = set()
+        for file in outputs:
+            parent = file if file.endswith('/') else util.join(*file.split('/')[:-1])
+            out_folders.add(parent)
+        for dirname in out_folders:
+            store.mkdir(path=dirname)
 
     def update(self, store: StorageVolume, files: List[str]):
         """Update the availability index for workflow files.

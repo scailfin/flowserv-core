@@ -168,6 +168,20 @@ class FileSystemStorage(StorageVolume):
             identifier=identifier
         )
 
+    def mkdir(self, path: str):
+        """Create the directory with the given (relative) path and all of its
+        parent directories.
+
+        Does not raise an error if the directory exists.
+
+        Parameters
+        ----------
+        path: string
+            Relative path to a directory in the storage volume.
+        """
+        dirname = os.path.join(self.basedir, util.filepath(key=path))
+        os.makedirs(dirname, exist_ok=True)
+
     def load(self, key: str) -> IOHandle:
         """Load a file object at the source path of this volume store.
 

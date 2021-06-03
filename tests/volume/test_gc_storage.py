@@ -59,6 +59,11 @@ def test_gc_query_files(store, bucket_keys):
     assert store.walk(src='code/') == set({'code/obj1.json', 'code/obj2.json'})
 
 
+def test_gc_mkdir(store):
+    """Test mkdir for completeness purposes."""
+    store.mkdir(path='a/b/c')
+
+
 def test_gc_open_file(store):
     """Error case when openening an unknown file."""
     f = GCFile(key='unknown', client=store.client, bucket_name=store.bucket_name)

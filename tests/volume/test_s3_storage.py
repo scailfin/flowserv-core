@@ -42,6 +42,11 @@ def test_s3_load_file(store, people):
     assert f.size() > 0
 
 
+def test_s3_mkdir(store):
+    """Test mkdir for completeness purposes."""
+    store.mkdir(path='a/b/c')
+
+
 def test_s3_query_files(store, bucket_keys):
     """Test querying a S3 bucket store."""
     assert store.walk(src=None) == bucket_keys

@@ -67,7 +67,7 @@ def test_get_worker_error():
 )
 def test_get_worker_instance(doc, step, cls):
     """Test creating worker instances from specification documents."""
-    factory = WorkerPool(workers=[doc], managers={step.name: doc['id']})
+    factory = WorkerPool(workers=[doc], managers={step.name: doc['name']})
     worker = factory.get(step)
     assert isinstance(worker, cls)
     # Run twice to account for the cached object.
@@ -86,15 +86,15 @@ def test_worker_spec_seriaization():
     """
     # -- Config without additional arguments. ---------------------------------
     doc = Code(identifier='D1')
-    assert doc == {'id': 'D1', 'type': 'code', 'env': [], 'variables': []}
+    assert doc == {'name': 'D1', 'type': 'code', 'env': [], 'variables': []}
     doc = Docker(identifier='D1')
-    assert doc == {'id': 'D1', 'type': 'docker', 'env': [], 'variables': []}
+    assert doc == {'name': 'D1', 'type': 'docker', 'env': [], 'variables': []}
     doc = Subprocess(identifier='S1')
-    assert doc == {'id': 'S1', 'type': 'subprocess', 'env': [], 'variables': []}
+    assert doc == {'name': 'S1', 'type': 'subprocess', 'env': [], 'variables': []}
     # -- Config with arguments ------------------------------------------------
     doc = Code(identifier='D1', volume='v1')
     assert doc == {
-        'id': 'D1',
+        'name': 'D1',
         'type': 'code',
         'env': [],
         'variables': [],
@@ -104,7 +104,7 @@ def test_worker_spec_seriaization():
     env = {'TEST_ENV': 'abc'}
     doc = Docker(variables=vars, env=env, identifier='D2', volume='v1')
     assert doc == {
-        'id': 'D2',
+        'name': 'D2',
         'type': 'docker',
         'env': [{'key': 'TEST_ENV', 'value': 'abc'}],
         'variables': [{'key': 'x', 'value': 1}],
@@ -112,7 +112,7 @@ def test_worker_spec_seriaization():
     }
     doc = Subprocess(variables=vars, env=env, identifier='S2', volume='v1')
     assert doc == {
-        'id': 'S2',
+        'name': 'S2',
         'type': 'subprocess',
         'env': [{'key': 'TEST_ENV', 'value': 'abc'}],
         'variables': [{'key': 'x', 'value': 1}],

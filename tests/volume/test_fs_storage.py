@@ -86,6 +86,14 @@ def test_fs_volume_load_file(basedir, data_e):
         store.load(key='examples/data/unknown.json')
 
 
+def test_fs_volume_mkdir(basedir):
+    """Test mkdir for file system stores."""
+    store = FileSystemStorage(basedir=basedir)
+    store.mkdir(path='docs')
+    store.mkdir(path='docs/results')
+    assert os.path.isdir(os.path.join(store.basedir, 'docs', 'results'))
+
+
 def test_fs_volume_path_expression():
     """Test getting a path object for a file that is relative to the base
     directory of the storage volume.

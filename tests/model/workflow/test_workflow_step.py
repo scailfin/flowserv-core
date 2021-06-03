@@ -10,7 +10,7 @@
 
 import pytest
 
-from flowserv.model.workflow.step import CodeStep, ContainerStep, WorkflowStep, output_notebook
+from flowserv.model.workflow.step import CodeStep, ContainerStep, NotebookStep, WorkflowStep, output_notebook
 
 
 def my_add(x: int, y: int) -> int:
@@ -40,6 +40,31 @@ def test_exec_func_step():
     step = CodeStep(identifier='test', func=my_add)
     step.exec(context=args)
     assert args == {'x': 5, 'y': 2, 'z': 3}
+
+
+@pytest.mark.parametrize(
+    'step,context,cmd',
+    [
+        (
+            NotebookStep('NB', 'nb.ipynb', params=['a', 'b']),
+            {'a': '1', 'b': 2},
+            'papermill nb.ipynb nb.out.ipynb -p a "1" -p b 2'
+        ),
+        (
+            NotebookStep('NB', 'nb.ipynb', params=['a', 'b']),
+            {'b': 2},
+            'papermill nb.ipynb nb.out.ipynb -p b 2'
+        ),
+        (
+            NotebookStep('NB', 'nb.ipynb', params=['a', 'b']),
+            {'c': 2},
+            'papermill nb.ipynb nb.out.ipynb'
+        )
+    ]
+)
+def test_notebook_step_cli(step, context, cmd):
+    """Test the papermill CLI function of the notebook step."""
+    assert step.cli_command(context=context) == cmd
 
 
 def test_step_type():

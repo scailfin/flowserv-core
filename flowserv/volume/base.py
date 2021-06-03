@@ -202,6 +202,20 @@ class StorageVolume(metaclass=ABCMeta):
         raise NotImplementedError()  # pragma: no cover
 
     @abstractmethod
+    def mkdir(self, path: str):
+        """Create the directory with the given (relative) path and all of its
+        parent directories.
+
+        Does not raise an error if the directory exists.
+
+        Parameters
+        ----------
+        path: string
+            Relative path to a directory in the storage volume.
+        """
+        raise NotImplementedError()  # pragma: no cover
+    
+    @abstractmethod
     def store(self, file: IOHandle, dst: str):
         """Store a given file object at the destination path of this volume
         store.

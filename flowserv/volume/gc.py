@@ -222,6 +222,20 @@ class GCVolume(StorageVolume):
             client=self.client, bucket_name=self.bucket_name
         )
 
+    def mkdir(self, path: str):
+        """Create the directory with the given (relative) path and all of its
+        parent directories.
+
+        For bucket stores no directories need to be created prior to accessing
+        them.
+
+        Parameters
+        ----------
+        path: string
+            Relative path to a directory in the storage volume.
+        """
+        pass
+
     def query(self, filter: str) -> Iterable[str]:
         """Get identifier for objects that match a given prefix.
 

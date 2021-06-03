@@ -108,7 +108,6 @@ class WorkflowStep(object):
         -------
         bool
         """
-
         return self.step_type == NOTEBOOK_STEP
 
     @property
@@ -316,6 +315,26 @@ class NotebookStep(WorkflowStep):
         self.params = params if params is not None else list()
         self.varnames = varnames if varnames is not None else dict()
 
+    def cli_command(self, context: Dict) -> str:
+        """Get command to run notebbok using papermill from command line.
+
+        This method is used when running a notebook inside a Docker container.
+
+        Parameters
+        ----------
+        context: dict
+            Mapping of parameter names to their current value in the workflow
+            executon state. These are the global variables in the execution
+            context.
+        """
+        cli_params = list()
+        for arg, val in self._get_parameters(context=context).items():
+            if isinstance(val, str):
+                val = f'"{val}"'
+            cli_params.append(f'-p {arg} {val}')
+        parameters = ' '.join(cli_params)
+        return f'papermill {self.notebook} {self.output} {parameters}'.strip()
+
     def exec(self, context: Dict, rundir: str):
         """Execute the notebook using papermill in the given workflow context.
 
@@ -329,12 +348,7 @@ class NotebookStep(WorkflowStep):
             Directory for the workflow run that contains all the run files.
         """
         # Prepare parameters for running the notebook using papermill.
-        kwargs = dict()
-        for var in self.params:
-            source = self.varnames.get(var, var)
-            print(f'{var}={context.get(var)}')
-            if source in context:
-                kwargs[var] = context[source]
+        kwargs = self._get_parameters(context=context)
         # Change working directory temporarily to the given rundir.
         cwd = os.getcwd()
         os.chdir(rundir)
@@ -342,6 +356,27 @@ class NotebookStep(WorkflowStep):
             pm.execute_notebook(self.notebook, self.output, parameters=kwargs)
         finally:
             os.chdir(cwd)
+
+    def _get_parameters(self, context: Dict) -> Dict:
+        """Get values for notebook parameters from the workflow context.
+
+        Parameters
+        ----------
+        context: dict
+            Mapping of parameter names to their current value in the workflow
+            executon state. These are the global variables in the execution
+            context.
+
+        Returns
+        -------
+        dict
+        """
+        parameters = dict()
+        for var in self.params:
+            source = self.varnames.get(var, var)
+            if source in context:
+                parameters[var] = context[source]
+        return parameters
 
 
 # -- Helper Functions ---------------------------------------------------------
