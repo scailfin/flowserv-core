@@ -51,10 +51,14 @@ def test_fs_volume_copy_files(basedir, emptydir, data_a, data_e):
     source.copy(src=['A.json', 'examples/data/data.json'], dst='static', store=target)
     files = {key: file for key, file in target.walk(src='static')}
     assert set(files.keys()) == {'static/A.json', 'static/examples/data/data.json'}
-    with files['static/A.json'].open() as f:
-        assert json.load(f) == data_a
     with files['static/examples/data/data.json'].open() as f:
         assert json.load(f) == data_e
+    source.copy(src=['examples'], dst='static2', store=target, verbose=True)
+    files = {key: file for key, file in target.walk(src='static2')}
+    assert set(files.keys()) == {'static2/B.json', 'static2/C.json', 'static2/data/data.json'}
+    source.copy(src=['examples/'], dst='static3', store=target, verbose=True)
+    files = {key: file for key, file in target.walk(src='static3')}
+    assert set(files.keys()) == {'static3/B.json', 'static3/C.json', 'static3/data/data.json'}
 
 
 def test_fs_volume_erase(basedir):

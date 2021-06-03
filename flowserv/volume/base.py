@@ -214,7 +214,7 @@ class StorageVolume(metaclass=ABCMeta):
             Relative path to a directory in the storage volume.
         """
         raise NotImplementedError()  # pragma: no cover
-    
+
     @abstractmethod
     def store(self, file: IOHandle, dst: str):
         """Store a given file object at the destination path of this volume
@@ -296,6 +296,12 @@ def copy_files(
     files = list()
     for path in src if isinstance(src, list) else [src]:
         for key, file in source.walk(src=path):
+            # If we are copying a directory and the destination path is given,
+            # make sure to remove the 'path' from all keys.
+            if path:
+                prefix = path + '/'
+                if key.startswith(prefix) and key != path and dst:
+                    key = key[len(prefix):]
             dstpath = util.join(dst, key) if dst else key
             files.append(dstpath)
             target.store(file=file, dst=dstpath)

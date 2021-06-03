@@ -15,9 +15,8 @@ import flowserv.util as util
 
 
 def main(rundir, outputfile):
-    """Write greeting for every name in a given input file to the output file.
-    The optional waiting period delays the output between each input name.
-
+    """
+    Create summary of analytics results for all runs.
     """
     # Read avg_count for all runs in the ranking
     results = list()
