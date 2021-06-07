@@ -23,12 +23,14 @@ def spec():
     return {
         'name': 'myname',
         'var1': tp.VARIABLE('A'),
-        'var2': '{} XYZ {}'.format(tp.VARIABLE('A'), tp.VARIABLE('E? e1')),
+        'var2': tp.VARIABLE('A'),
+        'var3': tp.VARIABLE('E? e1'),
         'values': [
             {
                 'name': 'name',
                 'el1': tp.VARIABLE('B'),
-                'el2': '{}{}'.format(tp.VARIABLE('G?Z'), tp.VARIABLE('F')),
+                'el2': tp.VARIABLE('G?Z'),
+                'el3': tp.VARIABLE('F'),
                 'nest': {'var': tp.VARIABLE('D')}
             },
             tp.VARIABLE('C'),
@@ -43,21 +45,11 @@ def spec():
 @pytest.mark.parametrize(
     'value,args,result',
     [
-        (tp.VARIABLE('A'), {'A': 1}, '1'),
+        (tp.VARIABLE('A'), {'A': 1}, 1),
         (tp.VARIABLE('A ? xyz : abc'), {'A': True}, 'xyz'),
         (tp.VARIABLE('A ? xyz : abc'), {'A': 'true'}, 'xyz'),
         (tp.VARIABLE('A ? xyz : abc'), {'A': False}, 'abc'),
-        (tp.VARIABLE('C'), {'A': 1}, 'default'),
-        (
-            '{} : {} = {}{}'.format(
-                tp.VARIABLE('A'),
-                tp.VARIABLE('B ? y'),
-                tp.VARIABLE('C'),
-                tp.VARIABLE('A ? t')
-            ),
-            {'A': 'x', 'B': 'True'},
-            'x : y = default'
-        )
+        (tp.VARIABLE('C'), {'A': 1}, 'default')
     ]
 )
 def test_expand_parameter_value(value, args, result):
@@ -192,18 +184,20 @@ def test_replace_arguments(spec):
     parameters['G'] = String(name='G', label='P7', index=6)
     doc = tp.replace_args(
         spec,
-        arguments={'A': 'x', 'B': 'y', 'C': 'z', 'E': 'a', 'F': 'b', 'G': 'c'},
+        arguments={'A': 'x', 'B': 'y', 'C': 'z', 'E': True, 'F': 'b', 'G': 'c'},
         parameters=parameters
     )
     assert doc == {
         "name": "myname",
         "var1": "x",
-        "var2": "x XYZ ",
+        "var2": "x",
+        "var3": "e1",
         "values": [
             {
                 "name": "name",
                 "el1": "y",
-                "el2": "b",
+                "el2": None,
+                "el3": "b",
                 "nest": {
                     "var": "default"
                 }

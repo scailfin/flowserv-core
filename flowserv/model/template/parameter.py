@@ -82,6 +82,27 @@ class ParameterIndex(dict):
             parameters[para.name] = para
         return parameters
 
+    def set_defaults(self, arguments: Dict) -> Dict:
+        """Set default values for parameters that have a default and that are
+        not present in the given arguments dictionary.
+
+        Returns a modified copy of the given arguments dictionary.
+
+        Parameters
+        ----------
+        arguments: dict
+            Dictionary of user-provided argument values.
+
+        Returns
+        -------
+        dict
+        """
+        args = dict(arguments)
+        for para in self.values():
+            if para.default and para.name not in args:
+                args[para.name] = para.default
+        return args
+
     def sorted(self):
         """Get list of parameter declarations sorted by ascending parameter
         index position.
@@ -124,30 +145,15 @@ def expand_value(value, arguments, parameters):
 
     Returns
     -------
-    string
+    any
 
     Raises
     ------
     flowserv.error.MissingArgumentError
     """
-    # Replace function for parameter references.
-    def replace_ref(match):
-        """Function to replace references to template parameters in a given
-        string. Used as callback function by the regular expression substitute
-        method.
-
-        Parameters
-        ----------
-        match: re.MatchObject
-            Regular expression match object.
-
-        Returns
-        -------
-        string
-        """
-        ref = match.group()
+    if isinstance(value, str) and value.startswith('$[[') and value.endswith(']]'):
         # Strip expression of parameter reference syntax.
-        expr = ref[3:-2]
+        expr = value[3:-2]
         pos = expr.find('?')
         if pos == -1:
             para = parameters[expr]
@@ -156,10 +162,10 @@ def expand_value(value, arguments, parameters):
             # value is returned or and error is raised if no default value
             # is defined for the parameter.
             if expr in arguments:
-                return str(arguments[expr])
+                return arguments[expr]
             elif para.default is not None:
                 # Return the parameter default value.
-                return str(para.default)
+                return para.default
             raise err.MissingArgumentError(para.name)
         # Extract the variable name and the conditional return values.
         var = expr[:pos].strip()
@@ -177,8 +183,7 @@ def expand_value(value, arguments, parameters):
             return eval_true
         else:
             return eval_false
-
-    return re.sub(REGEX_PARA, replace_ref, value)
+    return value
 
 
 def get_name(value):

@@ -154,7 +154,7 @@ def parse_template(template: WorkflowTemplate, arguments: Dict) -> Tuple[List[Co
     run_args = workflow_spec.get('parameters', {})
     for key in run_args.keys():
         run_args[key] = tp.expand_value(
-            value=str(run_args[key]),
+            value=run_args[key],
             arguments=arguments,
             parameters=template.parameters
         )
@@ -163,7 +163,8 @@ def parse_template(template: WorkflowTemplate, arguments: Dict) -> Tuple[List[Co
 
 
 def parse_varnames(action: Dict) -> Dict:
-    """Parse mapping of argument names to variables names.
+    """Parse mapping of function or notebook argument names to the names of
+    variables (e.g., parameters) in the workflow context.
 
     Parameters
     ----------

@@ -295,16 +295,30 @@ def copy_files(
         print('Copy files from {} to {}'.format(source.describe(), target.describe()))
     files = list()
     for path in src if isinstance(src, list) else [src]:
-        for key, file in source.walk(src=path):
-            # If we are copying a directory and the destination path is given,
-            # make sure to remove the 'path' from all keys.
-            if path:
-                prefix = path + '/'
-                if key.startswith(prefix) and key != path and dst:
-                    key = key[len(prefix):]
-            dstpath = util.join(dst, key) if dst else key
+        # Get list of source files to copy. If a single element is returned
+        # with a key that equals the 'path' then we are copying a file. In this
+        # case the source path is copied to the given dst path (or the source
+        # path is dst is None). If we are opying a directory and the destination
+        # path is given, we remove the 'path' from all keys.
+        source_files = source.walk(src=path)
+        if len(source_files) == 1 and source_files[0][0] == path:
+            # We are copying a single file.
+            _, file = source_files[0]
+            dstpath = dst if dst is not None else path
             files.append(dstpath)
             target.store(file=file, dst=dstpath)
             if verbose:
-                print('copied {} to {}'.format(key, dstpath))
+                print('copied {} to {}'.format(path, dstpath))
+        else:
+            # We are copying a directory. If the destination path is given,
+            # make sure to remove the 'path' from all keys.
+            for key, file in source_files:
+                if path:
+                    prefix = path + '/'
+                    key = key[len(prefix):]
+                dstpath = util.join(dst, key) if dst else key
+                files.append(dstpath)
+                target.store(file=file, dst=dstpath)
+                if verbose:
+                    print('copied {} to {}'.format(key, dstpath))
     return files

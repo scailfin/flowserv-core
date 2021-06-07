@@ -170,6 +170,7 @@ class SerialWorkflowEngine(WorkflowController):
             template=template,
             arguments=arguments
         )
+        print(f'run with {run_args}')
         # Create and prepare storage volume for run files.
         runstore = self.fs.get_store_for_folder(
             key=util.join(self.runsdir, run.run_id),
@@ -205,9 +206,6 @@ class SerialWorkflowEngine(WorkflowController):
             # exceptions to set the run state properly.
             state = state.start()
             if self.is_async:
-                # Raise an error if the service manager is not given.
-                if self.service is None:
-                    raise ValueError('service manager not given')
                 # Run steps asynchronously in a separate process
                 pool = Pool(processes=1)
                 task_callback_function = partial(

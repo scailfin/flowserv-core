@@ -10,7 +10,7 @@
 to execute workflow steps.
 """
 
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 import logging
 import os
@@ -184,7 +184,7 @@ class NotebookDockerWorker(Worker):
 
 # -- Helper Methods -----------------------------------------------------------
 
-def docker_build(name: str, requirements: List[str]) -> str:
+def docker_build(name: str, requirements: List[str]) -> Tuple[str, List[str]]:
     """Build a Docker image from a standard Python image with ``papermill`` and
     the given requirements installed.
 
@@ -200,7 +200,7 @@ def docker_build(name: str, requirements: List[str]) -> str:
 
     Returns
     -------
-    string
+    string, list of string
     """
     # Create a temporary folder for the Dockerfile.
     tmpdir = tempfile.mkdtemp()

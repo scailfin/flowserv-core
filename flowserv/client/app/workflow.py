@@ -211,6 +211,7 @@ class Workflow(object):
         -------
         flowserv.client.app.run.Run
         """
+        arguments = self._parameters.set_defaults(arguments=arguments)
         with self.service() as api:
             # Upload any argument values as files that are either of type
             # StringIO or BytesIO.

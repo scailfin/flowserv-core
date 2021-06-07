@@ -54,7 +54,7 @@ def test_parse_hello_world_template():
     assert step.image == 'python:3.7'
     assert len(step.commands) == 2
     assert output_files == ['results/greetings.txt', 'results/analytics.json']
-    assert args == {'inputfile': 'names.txt', 'outputfile': 'results/greetings.txt', 'sleeptime': '10', 'greeting': 'Hello'}
+    assert args == {'inputfile': 'names.txt', 'outputfile': 'results/greetings.txt', 'sleeptime': 10, 'greeting': 'Hello'}
 
 
 def test_parse_hello_world_notebook_template():

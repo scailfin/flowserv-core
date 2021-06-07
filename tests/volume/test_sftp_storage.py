@@ -43,7 +43,7 @@ def test_remote_volume_copy_file(mock_ssh, basedir, emptydir, data_e):
     source = FileSystemStorage(basedir=basedir)
     with ssh.ssh_client('test', sep=os.sep) as client:
         target = RemoteStorage(remotedir=emptydir, client=client)
-        source.copy(src='examples/data/data.json', dst='static', store=target)
+        source.copy(src='examples/data/data.json', dst='static/examples/data/data.json', store=target)
         files = {key: file for key, file in target.walk(src='static')}
     assert set(files.keys()) == {'static/examples/data/data.json'}
     with files['static/examples/data/data.json'].open() as f:
@@ -136,7 +136,7 @@ def test_remote_volume_upload_file(mock_ssh, basedir, emptydir, data_e):
     with ssh.ssh_client('test', sep=os.sep) as client:
         source = RemoteStorage(remotedir=basedir, client=client)
         target = FileSystemStorage(basedir=emptydir)
-        source.copy(src='examples/data/data.json', dst='static', store=target)
+        source.copy(src='examples/data/data.json', dst='static/examples/data/data.json', store=target)
         files = {key: file for key, file in target.walk(src='static')}
     assert set(files.keys()) == {'static/examples/data/data.json'}
     with files['static/examples/data/data.json'].open() as f:
