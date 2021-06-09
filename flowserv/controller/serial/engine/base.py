@@ -170,7 +170,6 @@ class SerialWorkflowEngine(WorkflowController):
             template=template,
             arguments=arguments
         )
-        print(f'run with {run_args}')
         # Create and prepare storage volume for run files.
         runstore = self.fs.get_store_for_folder(
             key=util.join(self.runsdir, run.run_id),
@@ -178,7 +177,7 @@ class SerialWorkflowEngine(WorkflowController):
         )
         try:
             # Copy template files to the run folder.
-            files = staticfs.copy(src=None, store=runstore, verbose=True)
+            files = staticfs.copy(src=None, store=runstore)
             # Store any given file arguments and additional input files
             # that are required by actor parameters into the run folder.
             for key, para in template.parameters.items():
