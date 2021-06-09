@@ -10,8 +10,43 @@
 
 from click.testing import CliRunner
 
+import pytest
+import requests
+
 from flowserv.client.cli.base import cli_flowserv as cli
 
+
+# -- Monkey path requests -----------------------------------------------------
+
+class MockResponse:
+    """Mock response object for requests to download the repository index.
+    Adopted from the online documentation at:
+    https://docs.pytest.org/en/stable/monkeypatch.html
+    """
+    def __init__(self, url):
+        """Here we ignore the URL."""
+        pass
+
+    def json(self):
+        """Return empty document."""
+        return []
+
+    def raise_for_status(self):
+        """Never raise an error for a failed requests."""
+        pass
+
+
+@pytest.fixture
+def mock_response(monkeypatch):
+    """Requests.get() mocked to return index document."""
+
+    def mock_get(*args, **kwargs):
+        return MockResponse(*args)
+
+    monkeypatch.setattr(requests, "get", mock_get)
+
+
+# -- Unit tests ---------------------------------------------------------------
 
 def test_config_options(flowserv_cli):
     """Test different options for the config command."""
@@ -41,7 +76,7 @@ def test_init_without_force(flowserv_cli):
     assert result.exit_code == 0
 
 
-def test_list_repository(flowserv_cli):
+def test_list_repository(mock_response, flowserv_cli):
     """Test listing the contents of the global repository."""
     result = flowserv_cli.invoke(cli, ['repo'])
     assert result.exit_code == 0
