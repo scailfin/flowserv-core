@@ -44,13 +44,15 @@ class WorkflowRepository(object):
             templates = r.json()
         self.templates = templates
 
-    def get(self, identifier: str) -> Tuple[str, str]:
-        """Get the URL and the optional (relative) manifest file path for the
-        repository entry with the given identifier. If no entry matches the
-        identifier it is returned as the function result.
+    def get(self, identifier: str) -> Tuple[str, str, Dict]:
+        """Get the URL, the optional (relative) manifest file path, and optional
+        additional arguments (e.g., the branch name) for the repository entry
+        with the given identifier. If no entry matches the identifier it is
+        returned as the function result.
 
-        Returns a tuple of (url, manifestpath). If the manifest element is not
-        present in the repository entry the second value is None.
+        Returns a tuple of (url, manifestpath, args). If the manifest element
+        is not present in the repository entry the second value is None. If
+        no arguments are present the result is an empty dictionary.
 
         Parameters
         ----------
@@ -59,12 +61,15 @@ class WorkflowRepository(object):
 
         Returns
         -------
-        string, string
+        string, string, dict
         """
         for obj in self.templates:
             if obj.get('id') == identifier:
-                return obj.get('url'), obj.get('manifest')
-        return identifier, None
+                url = obj.get('url')
+                manifestpath = obj.get('manifest')
+                args = {arg['key']: arg['value'] for arg in obj.get('args', [])}
+                return url, manifestpath, args
+        return identifier, None, dict()
 
     def list(self) -> List[Tuple[str, str, str]]:
         """Get list of tuples containing the template identifier, descriptions,

@@ -317,13 +317,13 @@ def clone(source, repository=None):
         # directory on local disk.
         if repository is None:
             repository = WorkflowRepository()
-        repourl, manifestpath = repository.get(source)
+        repourl, manifestpath, kwargs = repository.get(source)
         sourcedir = tempfile.mkdtemp()
         print('cloning into {}'.format(sourcedir))
         if manifestpath is not None:
             manifestpath = os.path.join(sourcedir, manifestpath)
         try:
-            git.Repo.clone_from(repourl, sourcedir)
+            git.Repo.clone_from(repourl, sourcedir, **kwargs)
             yield sourcedir, manifestpath
         except (IOError, OSError, git.exc.GitCommandError) as ex:
             raise ex
