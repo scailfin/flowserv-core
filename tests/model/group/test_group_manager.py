@@ -10,23 +10,20 @@
 
 import pytest
 
-from flowserv.config import Config
-from flowserv.model.files.fs import FileSystemStore
 from flowserv.model.group import WorkflowGroupManager
 from flowserv.model.template.parameter import ParameterIndex
-from flowserv.tests.files import DiskStore
+from flowserv.volume.fs import FileSystemStorage
 
 import flowserv.error as err
 import flowserv.tests.model as model
 
 
-@pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
-def test_create_group(fscls, database, tmpdir):
+def test_create_group(database, tmpdir):
     """Test creating and retrieving new workflow groups."""
     # -- Setup ----------------------------------------------------------------
     #
     # Create a database with a single workflow.
-    fs = fscls(env=Config().basedir(tmpdir))
+    fs = FileSystemStorage(basedir=tmpdir)
     with database.session() as session:
         user_id = model.create_user(session, active=True)
         workflow_id = model.create_workflow(session)
@@ -118,13 +115,12 @@ def test_create_group(fscls, database, tmpdir):
             )
 
 
-@pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
-def test_delete_group(fscls, database, tmpdir):
+def test_delete_group(database, tmpdir):
     """Test creating and deleting workflow groups."""
     # -- Setup ----------------------------------------------------------------
     #
     # Create a database with two groups for a single workflow.
-    fs = fscls(env=Config().basedir(tmpdir))
+    fs = FileSystemStorage(basedir=tmpdir)
     with database.session() as session:
         user_id = model.create_user(session, active=True)
         wf_id = model.create_workflow(session)
@@ -154,15 +150,14 @@ def test_delete_group(fscls, database, tmpdir):
         assert manager.get_group(group_2) is not None
 
 
-@pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
-def test_list_groups(fscls, database, tmpdir):
+def test_list_groups(database, tmpdir):
     """Test listing groups by user or by workflow."""
     # -- Setup ----------------------------------------------------------------
     #
     # Create a database with three groups for a two workflow. Group 1 has
     # user 1 as only member, group 2 has user 2 and 3 as member, group 3 has
     # user 1 and 3 as members.
-    fs = fscls(env=Config().basedir(tmpdir))
+    fs = FileSystemStorage(basedir=tmpdir)
     with database.session() as session:
         user_1 = model.create_user(session, active=True)
         user_2 = model.create_user(session, active=True)
@@ -198,14 +193,13 @@ def test_list_groups(fscls, database, tmpdir):
         assert [g.name for g in groups] == [group_2, group_3]
 
 
-@pytest.mark.parametrize('fscls', [FileSystemStore, DiskStore])
-def test_update_groups(fscls, database, tmpdir):
+def test_update_groups(database, tmpdir):
     """Test updating group name and group members."""
     # -- Setup ----------------------------------------------------------------
     #
     # Create a database with two groups for one workflow. Group 1 has user 1 as
     # only member, group 2 has user 2 and 3 as member.
-    fs = fscls(env=Config().basedir(tmpdir))
+    fs = FileSystemStorage(basedir=tmpdir)
     with database.session() as session:
         user_1 = model.create_user(session, active=True)
         user_2 = model.create_user(session, active=True)

@@ -16,6 +16,7 @@ import os
 import tempfile
 
 from contextlib import contextmanager
+from sqlalchemy.orm.session import Session
 from typing import Dict, Optional
 
 from flowserv.model.base import WorkflowObject
@@ -23,18 +24,19 @@ from flowserv.model.constraint import validate_identifier
 from flowserv.model.workflow.manifest import WorkflowManifest
 from flowserv.model.workflow.repository import WorkflowRepository
 from flowserv.util import get_unique_identifier as unique_identifier
+from flowserv.volume.base import StorageVolume
+from flowserv.volume.fs import FileSystemStorage
 
 import flowserv.error as err
 import flowserv.model.constraint as constraint
+import flowserv.model.files as dirs
 
 
 class WorkflowManager(object):
     """The workflow manager maintains information that is associated with
     workflow templates in a workflow repository.
     """
-    def __init__(
-        self, session, fs, idfunc=None, attempts=None, tmpl_names=None
-    ):
+    def __init__(self, session: Session, fs: StorageVolume):
         """Initialize the database connection, and the generator for workflow
         related file names and directory paths. The optional parameters are
         used to configure the identifier function that is used to generate
@@ -47,7 +49,7 @@ class WorkflowManager(object):
         ----------
         session: sqlalchemy.orm.session.Session
             Database session.
-        fs: flowserv.model.files.FileStore
+        fs: flowserv.volume.base.StorageVolume
             File store for workflow files.
         """
         self.session = session
@@ -58,7 +60,7 @@ class WorkflowManager(object):
         name: Optional[str] = None, description: Optional[str] = None,
         instructions: Optional[str] = None, specfile: Optional[str] = None,
         manifestfile: Optional[str] = None, engine_config: Optional[Dict] = None,
-        ignore_postproc: Optional[bool] = False
+        ignore_postproc: Optional[bool] = False, verbose: Optional[bool] = False
     ) -> WorkflowObject:
         """Add new workflow to the repository. The associated workflow template
         is created in the template repository from either the given source
@@ -109,6 +111,8 @@ class WorkflowManager(object):
             when running the workflow and the post-processing workflow.
         ignore_postproc: bool, default=False
             Ignore post-processing workflow specification if True.
+        verbose: bool, default=False
+            Print information about copied files.
 
         Returns
         -------
@@ -139,10 +143,15 @@ class WorkflowManager(object):
             template = manifest.template()
             # Create identifier for the workflow template.
             workflow_id = identifier if identifier else unique_identifier()
-            staticdir = self.fs.workflow_staticdir(workflow_id)
+            # Ensure that the workflow target directory does not exist.
+            self.fs.get_store_for_folder(dirs.workflow_basedir(workflow_id)).erase()
+            staticdir = dirs.workflow_staticdir(workflow_id)
             # Copy files from the project folder to the template's static file
             # folder. By default all files in the project folder are copied.
-            self.fs.store_files(files=manifest.copyfiles(), dst=staticdir)
+            source = FileSystemStorage(basedir=sourcedir)
+            files = manifest.copyfiles(dst=staticdir)
+            for src, dst in files:
+                source.copy(src=src, dst=dst, store=self.fs, verbose=verbose)
 
         # Insert workflow into database and return the workflow handle.
         workflow = WorkflowObject(
@@ -182,7 +191,7 @@ class WorkflowManager(object):
         self.session.commit()
         # Delete all files that are associated with the workflow if the changes
         # to the database were successful.
-        self.fs.delete_folder(key=self.fs.workflow_basedir(workflow_id))
+        self.fs.delete(key=dirs.workflow_basedir(workflow_id))
 
     def get_workflow(self, workflow_id):
         """Get handle for the workflow with the given identifier. Raises
@@ -308,13 +317,12 @@ def clone(source, repository=None):
         # directory on local disk.
         if repository is None:
             repository = WorkflowRepository()
-        repourl, manifestpath = repository.get(source)
+        repourl, manifestpath, kwargs = repository.get(source)
         sourcedir = tempfile.mkdtemp()
-        print('cloning into {}'.format(sourcedir))
         if manifestpath is not None:
             manifestpath = os.path.join(sourcedir, manifestpath)
         try:
-            git.Repo.clone_from(repourl, sourcedir)
+            git.Repo.clone_from(repourl, sourcedir, **kwargs)
             yield sourcedir, manifestpath
         except (IOError, OSError, git.exc.GitCommandError) as ex:
             raise ex

@@ -12,14 +12,14 @@ modules.
 
 from typing import Dict, List, Optional, Tuple
 
+from flowserv.controller.base import WorkflowController
 from flowserv.model.base import RunObject
-from flowserv.model.files.base import FileStore
 from flowserv.model.parameter.numeric import PARA_FLOAT, PARA_INT
 from flowserv.model.parameter.string import PARA_STRING
 from flowserv.model.template.base import WorkflowTemplate
 from flowserv.model.template.schema import ResultColumn, ResultSchema
 from flowserv.model.workflow.state import WorkflowState
-from flowserv.controller.base import WorkflowController
+from flowserv.volume.base import StorageVolume
 
 import flowserv.model.workflow.state as st
 
@@ -41,14 +41,14 @@ class StateEngine(WorkflowController):
     states. Allows to modify the state of maintained runs
     """
     def __init__(
-        self, fs: FileStore = None, state: Optional[WorkflowState] = None
+        self, fs: StorageVolume = None, state: Optional[WorkflowState] = None
     ):
         """Initialize the run index. The file store argument is included for
         API completness.
 
         Parameters
         ----------
-        fs: flowserv.model.files.base.FileStore
+        fs: flowserv.volume.base.StorageVolume
             File store that is passed to the engine by the controller init
             method.
         state: flowserv.model.workflow.state.WorkflowState, default=None
@@ -98,8 +98,8 @@ class StateEngine(WorkflowController):
 
     def exec_workflow(
         self, run: RunObject, template: WorkflowTemplate, arguments: dict,
-        config: Optional[Dict] = None
-    ) -> Tuple[WorkflowState, str]:
+        staticfs: StorageVolume, config: Optional[Dict] = None
+    ) -> Tuple[WorkflowState, StorageVolume]:
         """Fake execute method that returns the workflow state that the was
         provided when the object was instantiated. Ignores all given arguments.
 
@@ -112,12 +112,16 @@ class StateEngine(WorkflowController):
             the parameter declarations.
         arguments: dict
             Dictionary of argument values for parameters in the template.
-        service: contextlib,contextmanager, default=None
-            Ignored. Included for API completeness.
+        staticfs: flowserv.volume.base.StorageVolume
+            Storage volume that contains the static files from the workflow
+            template.
+        config: dict, default=None
+            Optional implementation-specific configuration settings that can be
+            used to overwrite settings that were initialized at object creation.
 
         Returns
         -------
-        flowserv.model.workflow.state.WorkflowState, string
+        flowserv.model.workflow.state.WorkflowState, flowserv.volume.base.StorageVolume
         """
         state = self.state
         self.runs[run.run_id] = state

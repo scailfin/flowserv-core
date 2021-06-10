@@ -1,0 +1,78 @@
+workflow:
+    files:
+        inputs:
+        - code/analyze.py
+        - code/helloworld.py
+        - $[[names]]
+        outputs:
+        - results/greetings.txt
+        - results/analytics.json
+    parameters:
+        inputfile: $[[names]]
+        outputfile: results/greetings.txt
+        greeting: $[[greeting]]
+    steps:
+    - name: "say_hello"
+      action:
+          environment: "python:3.7"
+          commands:
+          - ${python} code/helloworld.py
+              --inputfile "${inputfile}"
+              --outputfile "${outputfile}"
+              --sleeptime 0
+              --greeting ${greeting}
+          - ${python} code/analyze.py
+              --inputfile "${outputfile}"
+              --outputfile results/analytics.json
+postproc:
+    workflow:
+        files:
+            inputs:
+            - code/postproc.py
+            - $[[runs]]
+            outputs:
+            - 'results/compare.json'
+        parameters:
+            rundir: $[[runs]]
+        steps:
+            - name: postproc
+              action:
+                  environment: 'python:3.7'
+                  commands:
+                  - ${python} code/postproc.py
+                    --runs "${rundir}"
+                    --outputfile results/compare.json
+    inputs:
+        files:
+            - 'results/not-here.json'
+        runs: 'runs/'
+    outputs:
+        - source: 'results/compare.json'
+          title: 'Results'
+          caption: 'The results.'
+parameters:
+    - name: names
+      label: 'Input file'
+      dtype: file
+      target: data/names.txt
+    - name: greeting
+      label: Greeting
+      dtype: string
+      defaultValue: 'Hello'
+parameterGroups:
+    - name: 'main'
+      title: 'Main Step'
+      index: 0
+results:
+    file: 'results/analytics.json'
+    schema:
+        - name: avg_count
+          label: 'Avg. Characters per Line'
+          dtype: float
+        - name: max_len
+          label: 'Max. Output Line Length'
+          dtype: float
+        - name: max_line
+          label: 'Longest Output Line'
+          dtype: string
+          required: False

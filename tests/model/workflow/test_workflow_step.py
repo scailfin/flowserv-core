@@ -10,7 +10,7 @@
 
 import pytest
 
-from flowserv.model.workflow.step import FunctionStep, ContainerStep, WorkflowStep
+from flowserv.model.workflow.step import CodeStep, ContainerStep, NotebookStep, WorkflowStep, output_notebook
 
 
 def my_add(x: int, y: int) -> int:
@@ -21,7 +21,7 @@ def my_add(x: int, y: int) -> int:
 
 def test_container_step():
     """Test add method of the container step."""
-    step = ContainerStep(image='test').add('A').add('B')
+    step = ContainerStep(identifier='test', image='test').add('A').add('B')
     assert step.image == 'test'
     assert step.commands == ['A', 'B']
 
@@ -29,29 +29,94 @@ def test_container_step():
 def test_exec_func_step():
     """Test executing a Python function as a step in a serial workflow."""
     args = {'x': 1, 'y': 2}
-    step = FunctionStep(func=my_add, output='z')
+    step = CodeStep(identifier='test', func=my_add, arg='z')
     step.exec(context=args)
     assert args == {'x': 1, 'y': 2, 'z': 3}
     # Test renaming arguments.
-    step = FunctionStep(func=my_add, varnames={'x': 'z'}, output='x')
+    step = CodeStep(identifier='test', func=my_add, varnames={'x': 'z'}, arg='x')
     step.exec(context=args)
     assert args == {'x': 5, 'y': 2, 'z': 3}
     # Execute function but ignore output.
-    step = FunctionStep(func=my_add)
+    step = CodeStep(identifier='test', func=my_add)
     step.exec(context=args)
     assert args == {'x': 5, 'y': 2, 'z': 3}
+
+
+@pytest.mark.parametrize(
+    'step,context,cmd',
+    [
+        (
+            NotebookStep('NB', 'nb.ipynb', params=['a', 'b']),
+            {'a': '1', 'b': 2},
+            'papermill nb.ipynb nb.out.ipynb -p a "1" -p b 2'
+        ),
+        (
+            NotebookStep('NB', 'nb.ipynb', params=['a', 'b']),
+            {'b': 2},
+            'papermill nb.ipynb nb.out.ipynb -p b 2'
+        ),
+        (
+            NotebookStep('NB', 'nb.ipynb', params=['a', 'b']),
+            {'c': 2},
+            'papermill nb.ipynb nb.out.ipynb'
+        )
+    ]
+)
+def test_notebook_step_cli(step, context, cmd):
+    """Test the papermill CLI function of the notebook step."""
+    assert step.cli_command(context=context) == cmd
 
 
 def test_step_type():
     """Test methods that distinguish different step types."""
-    # FunctionStep
-    step = FunctionStep(func=my_add, output='z')
-    assert step.is_function_step()
+    # CodeStep
+    step = CodeStep(
+        identifier='test',
+        func=my_add,
+        arg='z',
+        inputs=['a', 'b'],
+        outputs=['x', 'y']
+    )
+    assert step.identifier == 'test'
+    assert step.arg == 'z'
+    assert step.inputs == ['a', 'b']
+    assert step.outputs == ['x', 'y']
+    assert step.is_code_step()
     assert not step.is_container_step()
     # ContainerStep
-    step = ContainerStep(image='test')
+    step = ContainerStep(
+        identifier='test',
+        image='test',
+        inputs=['a', 'b'],
+        outputs=['x', 'y']
+    )
+    assert step.identifier == 'test'
+    assert step.image == 'test'
+    assert step.inputs == ['a', 'b']
+    assert step.outputs == ['x', 'y']
     assert step.is_container_step()
-    assert not step.is_function_step()
+    assert not step.is_code_step()
+    # Empty inputs.
+    step = CodeStep(identifier='test', func=my_add)
+    assert step.inputs == []
+    assert step.outputs == []
+    step = ContainerStep(identifier='test', image='test')
+    assert step.inputs == []
+    assert step.outputs == []
     # Invalid step type.
     with pytest.raises(ValueError):
-        WorkflowStep(step_type=-1)
+        WorkflowStep(identifier='test', step_type=-1)
+
+
+@pytest.mark.parametrize(
+    'name,input,output',
+    [
+        ('output.ipynb', 'input.ipynb', 'output.ipynb'),
+        (None, 'input.ipynb', 'input.out.ipynb'),
+        (None, 'input.nb', 'input.nb.out.ipynb'),
+        (None, '', '.out.ipynb')
+    ]
+)
+def test_output_notebook_name(name, input, output):
+    """Test function for generating output notebook names."""
+    assert output_notebook(name=name, input=input) == output

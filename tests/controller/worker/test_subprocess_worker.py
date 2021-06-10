@@ -15,6 +15,7 @@ import sys
 
 from flowserv.controller.worker.subprocess import SubprocessWorker
 from flowserv.model.workflow.step import ContainerStep
+from flowserv.volume.fs import FileSystemStorage
 
 
 # Test files directory
@@ -48,7 +49,7 @@ def test_run_steps_with_error():
         '{py} printenv.py TEST_ENV_2'.format(py=interpreter)
     ]
     env = {'TEST_ENV_1': 'Hello', 'TEST_ENV_ERROR': 'error', 'TEST_ENV_2': 'World'}
-    step = ContainerStep(image='test', commands=commands)
+    step = ContainerStep(identifier='test', image='test', commands=commands)
     result = SubprocessWorker().run(step=step, env=env, rundir=RUN_DIR)
     assert result.returncode == 1
     assert result.exception is None
@@ -59,7 +60,7 @@ def test_run_steps_with_error():
 def test_run_steps_with_subprocess_error(mock_subprocess):
     """Test execution of a workflow step that fails to run."""
     commands = ['nothing to do']
-    step = ContainerStep(image='test', commands=commands)
+    step = ContainerStep(identifier='test', image='test', commands=commands)
     result = SubprocessWorker().run(step=step, env=dict(), rundir=RUN_DIR)
     assert result.returncode == 1
     assert result.exception is not None
@@ -69,6 +70,10 @@ def test_run_steps_with_subprocess_error(mock_subprocess):
 
 def test_run_successful_steps():
     """Test successful execution of a workflow step with two commands."""
+    # Set SYSTEMROOT environment variable.
+    systemroot = os.environ.get('SYSTEMROOT')
+    if not systemroot:
+        os.environ['SYSTEMROOT'] = 'SYSTEMROOT'
     # Avoid error '/bin/sh: 1: python: not found
     interpreter = sys.executable
     commands = [
@@ -76,12 +81,16 @@ def test_run_successful_steps():
         '{py} printenv.py TEST_ENV_2'.format(py=interpreter)
     ]
     env = {'TEST_ENV_1': 'Hello', 'TEST_ENV_2': 'World'}
-    step = ContainerStep(image='test', commands=commands)
+    step = ContainerStep(identifier='test', image='test', commands=commands)
     result = SubprocessWorker().run(step=step, env=env, rundir=RUN_DIR)
     assert result.returncode == 0
     assert result.exception is None
     assert ' '.join([s.strip() for s in result.stdout]) == 'Hello World'
-    step = ContainerStep(image='test', commands=commands)
+    step = ContainerStep(identifier='test', image='test', commands=commands)
+    if systemroot:
+        os.environ['SYSTEMROOT'] = systemroot
+    else:
+        del os.environ['SYSTEMROOT']
 
 
 def test_run_successful_steps_splitenv():
@@ -95,8 +104,13 @@ def test_run_successful_steps_splitenv():
         '{py} printenv.py TEST_ENV_2'.format(py=interpreter)
     ]
     worker = SubprocessWorker(env={'TEST_ENV_1': 'Hello', 'TEST_ENV_2': 'You'})
-    step = ContainerStep(image='test', env={'TEST_ENV_2': 'World'}, commands=commands)
-    result = worker.exec(step=step, arguments=dict(), rundir=RUN_DIR)
+    step = ContainerStep(
+        identifier='test',
+        image='test',
+        env={'TEST_ENV_2': 'World'},
+        commands=commands
+    )
+    result = worker.exec(step=step, context=dict(), store=FileSystemStorage(RUN_DIR))
     assert result.returncode == 0
     assert result.exception is None
     assert ' '.join([s.strip() for s in result.stdout]) == 'Hello World'

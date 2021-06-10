@@ -18,6 +18,7 @@ import subprocess
 from flowserv.controller.serial.engine.base import run_workflow
 from flowserv.controller.serial.workflow.base import SerialWorkflow
 from flowserv.model.workflow.state import StatePending, STATE_ERROR
+from flowserv.volume.manager import DefaultVolume
 
 
 # -- Patch subprocess run -----------------------------------------------------
@@ -48,15 +49,15 @@ def myfunc(a):
 @pytest.fixture
 def workflow():
     return SerialWorkflow()\
-        .add_function_step(func=myfunc, output='b')\
-        .add_container_step(image='test', commands=['py $b'])
+        .add_code_step(identifier='s1', func=myfunc, arg='b')\
+        .add_container_step(identifier='s2', image='test', commands=['py $b'])
 
 
 # -- Unit tests ---------------------------------------------------------------
 
 def test_error_run(mock_subprocess, workflow, tmpdir):
     """Test error in workflow run."""
-    r = workflow.run(arguments={'a': 0}, rundir=tmpdir)
+    r = workflow.run(arguments={'a': 0}, volumes=DefaultVolume(basedir=tmpdir))
     assert r.returncode == 1
     assert r.steps[1].step.commands == ['py error']
     assert r.stdout == ['input 0', '\n']
@@ -65,13 +66,15 @@ def test_error_run(mock_subprocess, workflow, tmpdir):
 
 def test_run_workflow_error(tmpdir):
     """Test error edge case for the run_workflow function."""
+    # This will cause a NonType exception when trying to access the steps in
+    # the exec_workflow method.
     _, _, result = run_workflow(
         run_id='0',
-        rundir=tmpdir,
         state=StatePending(),
         output_files=[],
         steps=None,
         arguments=dict(),
+        volumes=DefaultVolume(basedir=tmpdir),
         workers=None
     )
     assert result['type'] == STATE_ERROR
@@ -79,7 +82,7 @@ def test_run_workflow_error(tmpdir):
 
 def test_successful_run(mock_subprocess, workflow, tmpdir):
     """Test successful workflow run."""
-    r = workflow.run(arguments={'a': 1}, rundir=tmpdir)
+    r = workflow.run(arguments={'a': 1}, volumes=DefaultVolume(basedir=tmpdir))
     with open(os.path.join(tmpdir, 'test_result.json'), 'r') as f:
         doc = json.load(f)
     # assert r.returncode == 0

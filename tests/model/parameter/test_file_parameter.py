@@ -8,11 +8,14 @@
 
 """Unit tests for file parameter declarations."""
 
+from pathlib import Path
+
 import os
 import pytest
 
-from flowserv.model.files.fs import FSFile
-from flowserv.model.parameter.files import File, PARA_FILE
+from flowserv.volume.fs import FSFile
+from flowserv.model.parameter.files import InputDirectory, InputFile, File, PARA_FILE
+from flowserv.volume.fs import FileSystemStorage
 
 import flowserv.error as err
 
@@ -78,21 +81,40 @@ def test_file_parameter_from_dict():
     assert para.target == 'data/names.txt'
 
 
-def test_file_parameter_value(tmpdir):
+def test_parameter_value_dir(tmpdir):
+    """Test directories as input parameter values."""
+    basedir = os.path.join(tmpdir, 's1')
+    os.makedirs(basedir)
+    f1 = os.path.join(basedir, 'file.txt')
+    Path(f1).touch()
+    f2 = os.path.join(basedir, 'data.json')
+    Path(f2).touch()
+    dir = InputDirectory(
+        store=FileSystemStorage(basedir=basedir),
+        source=None,
+        target='runs'
+    )
+    assert str(dir) == 'runs'
+    target = FileSystemStorage(basedir=os.path.join(tmpdir, 's2'))
+    assert set(dir.copy(target=target)) == {'runs/file.txt', 'runs/data.json'}
+    assert os.path.isfile(os.path.join(tmpdir, 's2', 'runs', 'file.txt'))
+    assert os.path.isfile(os.path.join(tmpdir, 's2', 'runs', 'data.json'))
+
+
+def test_parameter_value_file(tmpdir):
     """Test getting argument value for a file parameter."""
-    filename = os.path.abspath(tmpdir)
+    filename = os.path.join(tmpdir, 'file.txt')
+    Path(filename).touch()
     # -- Parameter target value
     para = File('0000', 0, target='data/names.txt')
     file = para.cast(FSFile(filename))
-    assert file.source().filename == filename
-    assert file.target() == 'data/names.txt'
-    assert str(file) == file.target()
+    assert isinstance(file, InputFile)
+    assert str(file) == 'data/names.txt'
+    assert file.copy(target=FileSystemStorage(basedir=os.path.join(tmpdir, 's1'))) == ['data/names.txt']
     # -- Parameter default value
     para = File('0000', 0, default='data/names.txt')
     file = para.cast(FSFile(filename))
-    assert file.source().filename == filename
-    assert file.target() == 'data/names.txt'
-    assert str(file) == file.target()
+    assert str(file) == 'data/names.txt'
     # -- Error for missing target
     para = File('0000', 0)
     with pytest.raises(err.InvalidArgumentError):
@@ -100,9 +122,5 @@ def test_file_parameter_value(tmpdir):
     # -- Missing file without error
     para = File('0000', 0, target='data/names.txt')
     filename = os.path.join(filename, 'missing.txt')
-    file = para.cast(FSFile(filename))
-    assert file.source().filename == filename
-    assert file.target() == 'data/names.txt'
-    # Invalid argument.
-    with pytest.raises(err.InvalidArgumentError):
-        para.cast(value=({'A': 1}, '/dev/null'))
+    file = para.cast(FSFile(filename, raise_error=False))
+    assert str(file) == 'data/names.txt'

@@ -14,28 +14,27 @@ resources directly via a the database model.
 from typing import Dict, List, Optional
 
 import logging
-import shutil
 
 from flowserv.controller.base import WorkflowController
 from flowserv.model.auth import Auth
 from flowserv.model.base import WorkflowObject
-from flowserv.model.files.base import FileHandle
-from flowserv.model.files.fs import FSFile
+from flowserv.model.files import FileHandle, run_tmpdir
 from flowserv.model.group import WorkflowGroupManager
-from flowserv.model.parameter.files import InputFile
-from flowserv.model.ranking import RankingManager
+from flowserv.model.parameter.actor import ActorValue
+from flowserv.model.parameter.files import InputDirectory
+from flowserv.model.ranking import RankingManager, RunResult
 from flowserv.model.run import RunManager
 from flowserv.model.template.base import WorkflowTemplate
 from flowserv.model.workflow.state import WorkflowState
-from flowserv.service.run.argument import serialize_arg, serialize_fh
-from flowserv.service.run.argument import deserialize_arg, deserialize_fh, is_fh
+from flowserv.service.postproc.base import PARAMETERS, PARA_RUNS, RUNS_DIR, prepare_postproc_data
+from flowserv.service.run.argument import deserialize_arg, deserialize_fh, is_fh, serialize_arg
 from flowserv.service.run.base import RunService
 from flowserv.view.run import RunSerializer
+from flowserv.volume.base import StorageVolume
 
 import flowserv.error as err
+import flowserv.model.files as dirs
 import flowserv.util as util
-import flowserv.service.postproc.base as postbase
-import flowserv.service.postproc.util as postutil
 
 
 class LocalRunService(RunService):
@@ -45,8 +44,9 @@ class LocalRunService(RunService):
     """
     def __init__(
         self, run_manager: RunManager, group_manager: WorkflowGroupManager,
-        ranking_manager: RankingManager, backend: WorkflowController, auth: Auth,
-        user_id: Optional[str] = None, serializer: Optional[RunSerializer] = None
+        ranking_manager: RankingManager, backend: WorkflowController,
+        fs: StorageVolume, auth: Auth, user_id: Optional[str] = None,
+        serializer: Optional[RunSerializer] = None
     ):
         """Initialize the internal reference to the workflow controller, the
         runa and group managers, and to the serializer.
@@ -61,6 +61,8 @@ class LocalRunService(RunService):
             Manager for workflow evaluation rankings
         backend: flowserv.controller.base.WorkflowController
             Workflow engine controller
+        fs: flowserv.volume.base.StorageVolume
+            File store for run input and output files.
         auth: flowserv.model.auth.Auth
             Implementation of the authorization policy for the API
         user_id: string, default=None
@@ -72,6 +74,7 @@ class LocalRunService(RunService):
         self.group_manager = group_manager
         self.ranking_manager = ranking_manager
         self.backend = backend
+        self.fs = fs
         self.auth = auth
         self.user_id = user_id
         self.serialize = serializer if serializer is not None else RunSerializer()
@@ -164,7 +167,7 @@ class LocalRunService(RunService):
 
         Returns
         -------
-        flowserv.model.files.base.FileHandle
+        flowserv.model.files.FileHandle
 
         Raises
         ------
@@ -203,7 +206,7 @@ class LocalRunService(RunService):
 
         Returns
         -------
-        flowserv.model.files.base.FileHandle
+        flowserv.model.files.FileHandle
 
         Raises
         ------
@@ -286,7 +289,7 @@ class LocalRunService(RunService):
         self, group_id: str, arguments: List[Dict], config: Optional[Dict] = None
     ) -> Dict:
         """Start a new workflow run for the given group. The user provided
-        arguments are expected to be a list of (key,value)-pairs. The key value
+        arguments are expected to be a list of (name,value)-pairs. The name
         identifies the template parameter. The data type of the value depends
         on the type of the parameter.
 
@@ -303,7 +306,7 @@ class LocalRunService(RunService):
             List of user provided arguments for template parameters.
         config: dict, default=None
             Optional implementation-specific configuration settings that can be
-            used to overwrite settings that were intialized at object creation.
+            used to overwrite settings that were initialized at object creation.
 
         Returns
         -------
@@ -337,6 +340,7 @@ class LocalRunService(RunService):
         # input files. Also create a mapping from he argument list that is used
         # stored in the database.
         run_args = dict()
+        serialized_args = list()
         for arg in arguments:
             arg_id, arg_val = deserialize_arg(arg)
             # Raise an error if multiple values are given for the same argument
@@ -357,6 +361,12 @@ class LocalRunService(RunService):
                 run_args[arg_id] = para.cast(value=(fileobj, target))
             else:
                 run_args[arg_id] = para.cast(arg_val)
+            # Actor values as parameter values canno be serialized. for now,
+            # we only store the serialized workflow step but no information
+            # about the additional input files.
+            if isinstance(arg_val, ActorValue):
+                arg_val = arg_val.spec
+            serialized_args.append(serialize_arg(name=arg_id, value=arg_val))
         # Before we start creating directories and copying files make sure that
         # there are values for all template parameters (either in the arguments
         # dictionary or set as default values)
@@ -364,16 +374,18 @@ class LocalRunService(RunService):
         # Start the run.
         run = self.run_manager.create_run(
             group=group,
-            arguments=arguments
+            arguments=serialized_args
         )
         run_id = run.run_id
         # Use default engine configuration if the configuration argument was
         # not given.
         config = config if config else group.engine_config
-        state, rundir = self.backend.exec_workflow(
+        staticdir = dirs.workflow_staticdir(group.workflow.workflow_id)
+        state, runstore = self.backend.exec_workflow(
             run=run,
             template=template,
             arguments=run_args,
+            staticfs=self.fs.get_store_for_folder(key=staticdir),
             config=config
         )
         # Update the run state if it is no longer pending for execution. Make
@@ -383,12 +395,15 @@ class LocalRunService(RunService):
             self.update_run(
                 run_id=run_id,
                 state=state,
-                rundir=rundir
+                runstore=runstore
             )
             return self.get_run(run_id)
         return self.serialize.run_handle(run, group)
 
-    def update_run(self, run_id: str, state: WorkflowState, rundir: Optional[str] = None):
+    def update_run(
+        self, run_id: str, state: WorkflowState,
+        runstore: Optional[StorageVolume] = None
+    ):
         """Update the state of the given run. For runs that are in a SUCCESS
         state the workflow evaluation ranking is updated (if a result schema
         is defined for the corresponding template). If the ranking results
@@ -396,9 +411,9 @@ class LocalRunService(RunService):
         These changes occur before the state of the workflow is updated in the
         underlying database.
 
-        All run result files are maintained in a temporary folder on local disk
+        All run result files are maintained in a engine-specific storage volume
         before being moved to the file storage. For runs that are incative the
-        rundir parameter is expected to reference the run folder.
+        ``runstore`` parameter is expected to reference the run folder.
 
         Parameters
         ----------
@@ -406,10 +421,9 @@ class LocalRunService(RunService):
             Unique identifier for the run
         state: flowserv.model.workflow.state.WorkflowState
             New workflow state.
-        rundir: string, default=None
-            Path to folder with run (result) files on the local disk. This
-            parameter should be given for all sucessful runs and potentially
-            also for runs in an error state.
+        runstore: flowserv.volume.base.StorageVolume, default=None
+            Storage volume containing the run (result) files for a successful
+            workflow run.
 
         Raises
         ------
@@ -419,7 +433,7 @@ class LocalRunService(RunService):
         run = self.run_manager.update_run(
             run_id=run_id,
             state=state,
-            rundir=rundir
+            runstore=runstore
         )
         if run is not None and state.is_success():
             logging.info('run {} is a success'.format(run_id))
@@ -434,14 +448,20 @@ class LocalRunService(RunService):
                 # post-processing resources where generated for a different
                 # set of runs than those in the ranking.
                 if runs != workflow.ranking():
+                    # Create temporary post-processing folder for static
+                    # workflow files.
+                    # postproc_store = self.fs.get_store_for_folder(key=run_tmpdir())
                     msg = 'Run post-processing workflow for {}'
                     logging.info(msg.format(workflow.workflow_id))
                     run_postproc_workflow(
-                        postproc_spec=workflow.postproc_spec,
                         workflow=workflow,
                         ranking=ranking,
-                        runs=runs,
+                        keys=runs,
                         run_manager=self.run_manager,
+                        tmpstore=self.fs.get_store_for_folder(key=run_tmpdir()),
+                        staticfs=self.fs.get_store_for_folder(
+                            key=dirs.workflow_staticdir(workflow.workflow_id)
+                        ),
                         backend=self.backend
                     )
 
@@ -449,10 +469,34 @@ class LocalRunService(RunService):
 # -- Helper functions ---------------------------------------------------------
 
 def run_postproc_workflow(
-    postproc_spec: Dict, workflow: WorkflowObject, ranking: List, runs: List,
-    run_manager: RunManager, backend: WorkflowController
+    workflow: WorkflowObject, ranking: List[RunResult],
+    keys: List[str], run_manager: RunManager, tmpstore: StorageVolume,
+    staticfs: StorageVolume, backend: WorkflowController
 ):
-    """Run post-processing workflow for a workflow template."""
+    """Run post-processing workflow for a workflow template.
+
+    Parameters
+    ----------
+    workflow: flowserv.model.base.WorkflowObject
+        Handle for the workflow that triggered the post-processing workflow run.
+    ranking: list(flowserv.model.ranking.RunResult)
+        List of runs in the current result ranking.
+    keys: list of string
+        Sorted list of run identifier for runs in the ranking.
+    run_manager: flowserv.model.run.RunManager
+        Manager for workflow runs
+    tmpstore: flowserv.volume.base.StorageVolume
+        Temporary storage volume where the created post-processing files are
+        stored. This volume will be erased after the workflow is started.
+    staticfs: flowserv.volume.base.StorageVolume
+        Storage volume that contains the static files from the workflow
+        template.
+    backend: flowserv.controller.base.WorkflowController
+        Backend that is used to execute the post-processing workflow.
+    """
+    # Get workflow specification and the list of input files from the
+    # post-processing statement.
+    postproc_spec = workflow.postproc_spec
     workflow_spec = postproc_spec.get('workflow')
     pp_inputs = postproc_spec.get('inputs', {})
     pp_files = pp_inputs.get('files', [])
@@ -461,21 +505,17 @@ def run_postproc_workflow(
     # run argument
     strace = None
     try:
-        datadir = postutil.prepare_postproc_data(
+        prepare_postproc_data(
             input_files=pp_files,
             ranking=ranking,
-            run_manager=run_manager
+            run_manager=run_manager,
+            store=tmpstore
         )
-        dst = pp_inputs.get('runs', postbase.RUNS_DIR)
-        run_args = {
-            postbase.PARA_RUNS: InputFile(
-                source=FSFile(datadir),
-                target=dst
-            )
-        }
-        arg_list = [serialize_arg(postbase.PARA_RUNS, serialize_fh(datadir, dst))]
+        dst = pp_inputs.get('runs', RUNS_DIR)
+        run_args = {PARA_RUNS: InputDirectory(store=tmpstore, target=RUNS_DIR)}
+        arg_list = [serialize_arg(PARA_RUNS, dst)]
     except Exception as ex:
-        logging.error(ex)
+        logging.error(ex, exc_info=True)
         strace = util.stacktrace(ex)
         run_args = dict()
         arg_list = []
@@ -484,7 +524,7 @@ def run_postproc_workflow(
     run = run_manager.create_run(
         workflow=workflow,
         arguments=arg_list,
-        runs=runs
+        runs=keys
     )
     if strace is not None:
         # If there were data preparation errors set the created run into an
@@ -496,22 +536,28 @@ def run_postproc_workflow(
     else:
         # Execute the post-processing workflow asynchronously if
         # there were no data preparation errors.
-        postproc_state, rundir = backend.exec_workflow(
-            run=run,
-            template=WorkflowTemplate(
-                workflow_spec=workflow_spec,
-                parameters=postbase.PARAMETERS
-            ),
-            arguments=run_args,
-            config=workflow.engine_config
-        )
+        try:
+            postproc_state, runstore = backend.exec_workflow(
+                run=run,
+                template=WorkflowTemplate(
+                    workflow_spec=workflow_spec,
+                    parameters=PARAMETERS
+                ),
+                arguments=run_args,
+                staticfs=staticfs,
+                config=workflow.engine_config
+            )
+        except Exception as ex:
+            # Make sure to catch exceptions and set the run into an error state.
+            postproc_state = run.state().error(messages=util.stacktrace(ex))
+            runstore = None
         # Update the post-processing workflow run state if it is
         # no longer pending for execution.
         if not postproc_state.is_pending():
             run_manager.update_run(
                 run_id=run.run_id,
                 state=postproc_state,
-                rundir=rundir
+                runstore=runstore
             )
-        # Remove the temporary input folder
-        shutil.rmtree(datadir)
+        # Erase the temporary storage volume.
+        tmpstore.erase()

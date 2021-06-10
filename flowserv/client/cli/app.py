@@ -53,11 +53,17 @@ from flowserv.client.app.base import Flowserv
     default=False,
     help='Print run logs'
 )
+@click.option(
+    '-v', '--verbose',
+    is_flag=True,
+    default=False,
+    help='Print information about copied files'
+)
 @click.argument('template')
 @click.pass_context
 def install_application(
     ctx, key, name, description, instructions, specfile, manifest, template,
-    ignore_postproc
+    ignore_postproc, verbose
 ):
     """Install workflow from local folder or repository."""
     # Install the application from the given workflow template.
@@ -70,7 +76,8 @@ def install_application(
         instructions=instructions,
         specfile=specfile,
         manifestfile=manifest,
-        ignore_postproc=ignore_postproc
+        ignore_postproc=ignore_postproc,
+        verbose=verbose
     )
     click.echo('export {}={}'.format(ctx.obj.vars['workflow'], app_key))
 

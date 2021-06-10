@@ -23,7 +23,7 @@ from flowserv.model.parameter.files import File
 from flowserv.model.parameter.list import Array
 from flowserv.model.parameter.numeric import Int, Float
 from flowserv.model.parameter.record import Record
-from flowserv.model.parameter.step import Actor
+from flowserv.model.parameter.actor import Actor
 from flowserv.model.parameter.string import String
 
 import flowserv.error as err

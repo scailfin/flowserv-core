@@ -14,35 +14,26 @@ import pytest
 from io import BytesIO, StringIO
 
 from flowserv.client.app.base import Flowserv
-from flowserv.model.files.base import FlaskFile
-from flowserv.model.files.fs import FSFile
-from flowserv.model.parameter.files import InputFile
-from flowserv.tests.files import FileStorage
+from flowserv.volume.fs import FSFile
 
 import flowserv.error as err
 import flowserv.model.workflow.state as st
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))
-TEMPLATE_DIR = os.path.join(DIR, '../../.files/benchmark/helloworld')
-BENCHMARK_FILE = os.path.join(TEMPLATE_DIR, 'benchmark-with-outputs.yaml')
+BENCHMARK_DIR = os.path.join(DIR, '..', '..', '.files', 'benchmark', 'helloworld')
+BENCHMARK_FILE = os.path.join(BENCHMARK_DIR, 'benchmark-with-outputs.yaml')
+POSTPROC_SPEC = os.path.join(BENCHMARK_DIR, '..', 'postproc', 'benchmark.yaml')
 
 
-@pytest.mark.parametrize(
-    'source,specfile,filekey',
-    [
-        (TEMPLATE_DIR, BENCHMARK_FILE, 'greetings'),
-        ('helloworld', None, 'results/greetings.txt')
-    ]
-)
-def test_run_helloworld_in_env(source, specfile, filekey, tmpdir):
+def test_run_helloworld_in_env(tmpdir):
     """Run the hello world workflow in the test environment."""
     basedir = os.path.join(tmpdir, 'flowserv')
     db = Flowserv(basedir=basedir, open_access=True, clear=True)
     # -- Install and run the workflow -----------------------------------------
     app_id = db.install(
-        source=source,
-        specfile=specfile,
+        source=BENCHMARK_DIR,
+        specfile=BENCHMARK_FILE,
         ignore_postproc=True
     )
     wf = db.open(app_id)
@@ -55,7 +46,7 @@ def test_run_helloworld_in_env(source, specfile, filekey, tmpdir):
     assert not run.is_active()
     assert str(run) == st.STATE_SUCCESS
     assert len(run.files()) == 2
-    text = run.get_file(filekey).text()
+    text = run.get_file('greetings').text()
     assert 'Hey Alice' in text
     assert 'Hey Bob' in text
     assert 'Hey Claire' in text
@@ -70,8 +61,8 @@ def test_run_helloworld_in_env(source, specfile, filekey, tmpdir):
     file_handles = dict()
     for f in run.files():
         file_handles[f.name] = f
-    assert file_handles[filekey].name == filekey
-    assert file_handles[filekey].format == {'type': 'plaintext'}
+    assert file_handles['greetings'].name == 'greetings'
+    assert file_handles['greetings'].format == {'type': 'plaintext'}
     assert file_handles['results/analytics.json'].name == 'results/analytics.json'
     assert file_handles['results/analytics.json'].caption is None
     assert file_handles['results/analytics.json'].format == {'type': 'json'}
@@ -101,10 +92,8 @@ def test_run_helloworld_with_diff_inputs(tmpdir):
         f.write('Alice\nBob\nClaire')
     files.append(filename)
     files.append(FSFile(filename))
-    files.append(InputFile(FSFile(filename), 'output.txt'))
-    files.append(FlaskFile(FileStorage(FSFile(filename))))
     # -- Install and run the workflow -----------------------------------------
-    app_id = db.install(source=TEMPLATE_DIR, ignore_postproc=True)
+    app_id = db.install(source=BENCHMARK_DIR, ignore_postproc=True)
     wf = db.open(app_id)
     for file in files:
         run = wf.start_run({
@@ -135,25 +124,21 @@ def test_run_helloworld_with_postproc(tmpdir):
     """
     db = Flowserv(basedir=os.path.join(tmpdir, 'flowserv'), open_access=True)
     # -- Install and run the workflow -----------------------------------------
-    app_id = db.install(source='helloworld', ignore_postproc=False)
+    app_id = db.install(source=BENCHMARK_DIR, specfile=POSTPROC_SPEC, ignore_postproc=False)
     wf = db.open(app_id)
     run = wf.start_run({
         'names': StringIO('Alice\nBob\nClaire'),
-        'greeting': 'Hey',
-        'sleeptime': 0.1
+        'greeting': 'Hey'
     })
     assert run.is_success()
     run = wf.start_run({
         'names': StringIO('Xenia\nYolanda\nZoe'),
-        'greeting': 'Hello',
-        'sleeptime': 0.1
+        'greeting': 'Hello'
     })
     assert run.is_success()
     postproc = wf.get_postproc_results()
-    columns, rows = postproc.get_file('results/ngrams.csv').data()
-    assert columns == ['3-gram', 'Count']
-    assert rows is not None
-    columns.append('X')
+    doc = postproc.get_file('results/compare.json').json()
+    assert doc == [{'avg_count': 12.0, 'total_count': 36, 'max_len': 14, 'max_line': 'Hello Yolanda!'}]
     # Access the data object again to receive the buffered data
-    columns, rows = postproc.get_file('results/ngrams.csv').data()
-    assert columns == ['3-gram', 'Count', 'X']
+    doc = postproc.get_file('results/compare.json').json()
+    assert doc == [{'avg_count': 12.0, 'total_count': 36, 'max_len': 14, 'max_line': 'Hello Yolanda!'}]

@@ -14,9 +14,11 @@ variables and to customize the configuration settings.
 
 from __future__ import annotations
 from appdirs import user_cache_dir
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Optional, Union
 
 import os
+
+from flowserv.volume.fs import FStore
 
 import flowserv.error as err
 import flowserv.util as util
@@ -150,17 +152,10 @@ FLOWSERV_BACKEND_MODULE = 'FLOWSERV_BACKEND_MODULE'
 # Flag indicating whether workflows are executed asynchronously or blocking.
 FLOWSERV_ASYNC = 'FLOWSERV_ASYNCENGINE'
 DEFAULT_ASYNC = 'True'
-# Base directory to temporary run files
-FLOWSERV_RUNSDIR = 'FLOWSERV_RUNSDIR'
-DEFAULT_RUNSDIR = 'runs'
 
 # Poll interval
 FLOWSERV_POLL_INTERVAL = 'FLOWSERV_POLLINTERVAL'
-# Default value for the poll interval.
 DEFAULT_POLL_INTERVAL = 2
-
-# Serial workflow controller worker configuration.
-FLOWSERV_SERIAL_WORKERS = 'FLOWSERV_SERIAL_WORKERS'
 
 
 # -- Client -------------------------------------------------------------------
@@ -184,13 +179,8 @@ FLOWSERV_WEBAPP = 'FLOWSERV_WEBAPP'
 """Environment variables that are used to configure the file store that is used
 to maintain files for workflow templates, user group uploads, and workflow runs.
 """
-# Name of the class that implements the file store interface
-FLOWSERV_FILESTORE_CLASS = 'FLOWSERV_FILESTORE_CLASS'
-# Name of the module that contains the file store implementation
-FLOWSERV_FILESTORE_MODULE = 'FLOWSERV_FILESTORE_MODULE'
-
-"""Environment variable for unique bucket identifier."""
-FLOWSERV_S3BUCKET = 'FLOWSERV_S3BUCKET'
+# Identifier of the file store class.
+FLOWSERV_FILESTORE = 'FLOWSERV_FILESTORE'
 
 
 # --
@@ -300,23 +290,6 @@ class Config(dict):
         self[FLOWSERV_ASYNC] = False
         return self
 
-    def s3(self, bucket: str) -> Config:
-        """Use an S3 bucket to store workflow files.
-
-        Parameters
-        ----------
-        bucket: string
-            S3 bucket identifier
-
-        Returns
-        -------
-        flowserv.config.Config
-        """
-        self[FLOWSERV_FILESTORE_CLASS] = 'BucketStore'
-        self[FLOWSERV_FILESTORE_MODULE] = 'flowserv.model.files.s3'
-        self[FLOWSERV_S3BUCKET] = bucket
-        return self
-
     def token_timeout(self, timeout: int) -> Config:
         """Set the authentication token timeout interval.
 
@@ -325,6 +298,21 @@ class Config(dict):
         flowserv.config.Config
         """
         self[FLOWSERV_AUTH_LOGINTTL] = timeout
+        return self
+
+    def volume(self, config: dict) -> Config:
+        """Set configuration object for the file storage volume.
+
+        Parameters
+        ----------
+        config: dict
+            Volume configuration information for the storage volume factory.
+
+        Returns
+        -------
+        flowserv.config.Config
+        """
+        self[FLOWSERV_FILESTORE] = config
         return self
 
     def webapp(self) -> Config:
@@ -336,35 +324,6 @@ class Config(dict):
         """
         self[FLOWSERV_WEBAPP] = True
         return self
-
-    def workers(self, config: Dict) -> Config:
-        """Set configuration for container workers.
-
-        Parameters
-        ----------
-        config: dict
-            Worker configuration settings.
-
-        Returns
-        flowserv.config.Config
-        """
-        self[FLOWSERV_SERIAL_WORKERS] = config
-        return self
-
-    def worker_config(self) -> Union[Dict, List]:
-        """Get the configuration settings for workers that are used by the
-        serial workflow controller.
-
-        If the configuration is not set an empty dictionary is returned.
-
-        Returns
-        -------
-        dict of list
-        """
-        wconf = self.get(FLOWSERV_SERIAL_WORKERS, dict())
-        if wconf and isinstance(wconf, str):
-            wconf = util.read_object(filename=wconf)
-        return wconf if wconf else dict()
 
 
 # -- Initialize configuration from environment variables ----------------------
@@ -425,6 +384,26 @@ def to_int(value: Any) -> int:
         return None
 
 
+def read_config_obj(filename: Union[str, Dict]) -> Dict:
+    """Read configuration object from a file.
+
+    This function only attempts to read an object from disk if the type of the
+    filename argument is string.
+
+    Parameters
+    ----------
+    filename: str or dict
+        Path to file on disk.
+
+    Returns
+    -------
+    dict
+    """
+    if isinstance(filename, dict):
+        return filename
+    return util.read_object(filename=filename)
+
+
 """List of environment variables and their default settings and an optional
 value case function.
 """
@@ -441,16 +420,12 @@ ENV = [
     (FLOWSERV_AUTH, AUTH_DEFAULT, None),
     (FLOWSERV_BACKEND_CLASS, None, None),
     (FLOWSERV_BACKEND_MODULE, None, None),
-    (FLOWSERV_SERIAL_WORKERS, None, None),
-    (FLOWSERV_RUNSDIR, None, None),
     (FLOWSERV_POLL_INTERVAL, DEFAULT_POLL_INTERVAL, to_float),
     (FLOWSERV_ACCESS_TOKEN, None, None),
     (FLOWSERV_CLIENT, LOCAL_CLIENT, None),
     (FLOWSERV_DB, None, None),
     (FLOWSERV_WEBAPP, 'False', to_bool),
-    (FLOWSERV_FILESTORE_CLASS, None, None),
-    (FLOWSERV_FILESTORE_MODULE, None, None),
-    (FLOWSERV_S3BUCKET, None, None)
+    (FLOWSERV_FILESTORE, FStore(basedir=API_DEFAULTDIR()), read_config_obj)
 ]
 
 

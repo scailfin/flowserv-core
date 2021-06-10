@@ -1,0 +1,31 @@
+workflow:
+    files:
+        inputs:
+        - code/analyze.py
+        - data/names.txt
+        outputs:
+        - results/greetings.txt
+        - results/analytics.json
+    parameters:
+        inputfile: data/names.txt
+        outputfile: results/greetings.txt
+        greeting: $[[greeting]]
+    steps:
+    - name: "say_hello"
+      action: "$[[helloworld]]"
+    - name: "analyze"
+      action:
+          environment: "python:3.7"
+          commands:
+          - ${python} code/analyze.py
+              --inputfile "${outputfile}"
+              --outputfile results/analytics.json
+parameters:
+    - name: 'helloworld'
+      label: 'Say Hello Step'
+      dtype: 'actor'
+      index: 0
+    - name: greeting
+      label: 'Greeting'
+      dtype: string
+      defaultValue: 'Hello'

@@ -1,7 +1,7 @@
-flowserv.model.files.factory module
+flowserv.volume.factory module
 ===================================
 
-.. automodule:: flowserv.model.files.factory
+.. automodule:: flowserv.volume.factory
    :members:
    :undoc-members:
    :show-inheritance:

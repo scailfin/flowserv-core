@@ -10,7 +10,7 @@
 
 import pytest
 
-from flowserv.tests.files import io_file
+from flowserv.model.files import io_file
 from flowserv.tests.service import create_group, create_user, upload_file
 
 import flowserv.error as err

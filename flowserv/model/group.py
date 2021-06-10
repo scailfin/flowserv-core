@@ -12,20 +12,21 @@ database.
 """
 
 import mimetypes
-import os
 
 from sqlalchemy.orm.session import Session
 from typing import Dict, List, Optional
 
 from flowserv.model.base import UploadFile, GroupObject, WorkflowObject
-from flowserv.model.files.base import FileHandle, IOHandle, FileStore
+from flowserv.model.files import FileHandle
 from flowserv.model.constraint import validate_identifier
 from flowserv.model.parameter.base import Parameter
 from flowserv.model.user import UserManager
 from flowserv.util import get_unique_identifier as unique_identifier
+from flowserv.volume.base import IOHandle, StorageVolume
 
 import flowserv.error as err
 import flowserv.model.constraint as constraint
+import flowserv.model.files as dirs
 import flowserv.util as util
 
 
@@ -34,7 +35,10 @@ class WorkflowGroupManager(object):
     workflow runs. The manager provides functionality to interact with the
     underlying database for creating and maintaining workflow groups.
     """
-    def __init__(self, session: Session, fs: FileStore, users: Optional[UserManager] = None):
+    def __init__(
+        self, session: Session, fs: StorageVolume,
+        users: Optional[UserManager] = None
+    ):
         """Initialize the connection to the underlying database and the file
         system helper to access group files.
 
@@ -42,7 +46,7 @@ class WorkflowGroupManager(object):
         ----------
         session: sqlalchemy.orm.session.Session
             Database session.
-        fs: flowserv.model.files.FileStore
+        fs: flowserv.volume.base.StorageVolume
             File store for uploaded group files.
         users: flowserv.model.user.UserManager, default=None
             Manager to access user objects.
@@ -170,7 +174,7 @@ class WorkflowGroupManager(object):
             raise err.UnknownFileError(file_id)
         # If deleting the database record was successful delete the file on
         # disk.
-        self.fs.delete_file(key=file_key)
+        self.fs.delete(key=file_key)
 
     def delete_group(self, group_id):
         """Delete the given workflow group and all associated resources.
@@ -187,12 +191,12 @@ class WorkflowGroupManager(object):
         # Get group object from the database. If the result is None we
         # assume that the group does not exist and raise an error.
         group = self.get_group(group_id)
-        groupdir = self.fs.workflow_groupdir(group.workflow_id, group_id)
+        groupdir = dirs.workflow_groupdir(group.workflow_id, group_id)
         # Delete the group and the base directory containing group files.
         # Commit changes before deleting the directory.
         self.session.delete(group)
         self.session.commit()
-        self.fs.delete_folder(key=groupdir)
+        self.fs.delete(key=groupdir)
 
     def get_group(self, group_id):
         """Get handle for the workflow group with the given identifier.
@@ -234,7 +238,7 @@ class WorkflowGroupManager(object):
 
         Returns
         -------
-        flowserv.model.files.base.FileHandle
+        flowserv.model.files.FileHandle
 
         Raises
         ------
@@ -247,7 +251,7 @@ class WorkflowGroupManager(object):
                 return FileHandle(
                     name=fh.name,
                     mime_type=fh.mime_type,
-                    fileobj=self.fs.load_file(key=fh.key)
+                    fileobj=self.fs.load(key=fh.key)
                 )
         # No file with matching identifier was found.
         raise err.UnknownFileError(file_id)
@@ -356,7 +360,7 @@ class WorkflowGroupManager(object):
         ----------
         group_id: string
             Unique group identifier
-        file: flowserv.model.files.base.IOHandle
+        file: flowserv.volume.base.IOHandle
             File object (e.g., uploaded via HTTP request)
         name: string
             Name of the file
@@ -377,7 +381,7 @@ class WorkflowGroupManager(object):
         # Create a new unique identifier for the file and save the file object
         # to the new file path.
         file_id = util.get_unique_identifier()
-        uploaddir = self.fs.group_uploaddir(
+        uploaddir = dirs.group_uploaddir(
             workflow_id=group.workflow_id,
             group_id=group.group_id
         )
@@ -386,12 +390,13 @@ class WorkflowGroupManager(object):
         # Attempt to guess the Mime type for the uploaded file from the file
         # name.
         mime_type, _ = mimetypes.guess_type(url=name)
-        self.fs.store_files(files=[(file, file_id)], dst=uploaddir)
+        dst = util.join(uploaddir, file_id)
+        self.fs.store(file=file, dst=dst)
         # Insert information into database and return handle for uploaded file.
         fileobj = UploadFile(
             file_id=file_id,
             created_at=util.utc_now(),
-            key=os.path.join(uploaddir, file_id),
+            key=dst,
             name=name,
             mime_type=mime_type,
             size=file_size

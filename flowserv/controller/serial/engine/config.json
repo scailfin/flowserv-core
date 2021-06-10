@@ -1,0 +1,85 @@
+{
+    "definitions": {
+        "keyValuePair": {
+            "type": "object",
+            "description": "Key-value pair object.",
+            "properties": {
+                "key": {"type": "string", "description": "Value key."},
+                "value": {
+                    "anyOf": [
+                        {"type": "integer"},
+                        {"type": "string"}
+                    ],
+                    "description": "Scalar value associated with the key."
+                }
+            },
+            "required": ["key", "value"]
+        },
+        "engineConfig": {
+            "type": "object",
+            "description": "Configuration for a workflow engine.",
+            "properties": {
+                "workers": {
+                    "type": "array",
+                    "description": "List of worker configurations.",
+                    "items": {"$ref": "#/definitions/workerSpec"}
+                },
+                "volumes": {
+                    "type": "array",
+                    "description": "List of runtime storage volumes.",
+                    "items": {"$ref": "#/definitions/volumeSpec"}
+                }
+            }
+        },
+        "volumeSpec": {
+            "type": "object",
+            "description": "Specification for a runtime storage volume.",
+            "properties": {
+                "name": {"type": "string", "description": "Unique volume identifier."},
+                "type": {
+                    "type": "string",
+                    "description": "Volume type identifier",
+                    "enum": ["fs", "gc", "s3", "sftp"]
+                },
+                "args": {
+                    "type": "array",
+                    "description": "Key-value pairs for storage volume configuration.",
+                    "items": {"$ref": "#/definitions/keyValuePair"}
+                },
+                "files": {
+                    "type": "array",
+                    "description": "List of available volumn files.",
+                    "items": {"type": "string"}
+                }
+            },
+            "required": ["name", "type"]
+        },
+        "workerSpec": {
+            "type": "object",
+            "description": "Specification for a worker engine instance.",
+            "properties": {
+                "name": {"type": "string", "description": "Unique worker identifier."},
+                "type": {
+                    "type": "string",
+                    "description": "Worker type identifier",
+                    "enum": ["code", "docker", "subprocess"]
+                },
+                "env": {
+                    "type": "array",
+                    "description": "Key-value pairs for environment variables.",
+                    "items": {"$ref": "#/definitions/keyValuePair"}
+                },
+                "vars": {
+                    "type": "array",
+                    "description": "Key-value pairs for template string variables.",
+                    "items": {"$ref": "#/definitions/keyValuePair"}
+                },
+                "volume": {
+                    "type": "string",
+                    "description": "Storage volume the worker has access to."
+                }
+            },
+            "required": ["name", "type"]
+        }
+    }
+}

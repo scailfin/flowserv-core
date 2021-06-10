@@ -1,10 +1,2 @@
-- args:
-    variables:
-      a: 0
-      b: 1
-  image: test
-  worker: subprocess
-- image: dummy
-  worker:
-    className: a
-    moduleName: b
+- workers:
+    - id: dummy

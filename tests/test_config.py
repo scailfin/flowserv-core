@@ -13,6 +13,7 @@ import pytest
 
 import flowserv.config as config
 import flowserv.error as err
+import flowserv.util as util
 
 
 @pytest.mark.parametrize(
@@ -30,7 +31,6 @@ import flowserv.error as err
         (config.FLOWSERV_AUTH, 'AUTH', 'AUTH'),
         (config.FLOWSERV_BACKEND_CLASS, 'CLASS', 'CLASS'),
         (config.FLOWSERV_BACKEND_MODULE, 'MODULE', 'MODULE'),
-        (config.FLOWSERV_RUNSDIR, 'DIR', 'DIR'),
         (config.FLOWSERV_POLL_INTERVAL, '2.3', 2.3),
         (config.FLOWSERV_POLL_INTERVAL, '20', 20.0),
         (config.FLOWSERV_POLL_INTERVAL, 'ABC', None),
@@ -42,10 +42,7 @@ import flowserv.error as err
         (config.FLOWSERV_WEBAPP, 'TruE', True),
         (config.FLOWSERV_WEBAPP, 'False', False),
         (config.FLOWSERV_WEBAPP, 'ABC', False),
-        (config.FLOWSERV_WEBAPP, '1', False),
-        (config.FLOWSERV_FILESTORE_CLASS, 'CLASS', 'CLASS'),
-        (config.FLOWSERV_FILESTORE_MODULE, 'MODULE', 'MODULE'),
-        (config.FLOWSERV_S3BUCKET, 'S3', 'S3')
+        (config.FLOWSERV_WEBAPP, '1', False)
     ]
 )
 def test_config_env(var, value, result):
@@ -88,10 +85,8 @@ def test_config_setter():
     conf = conf.run_async()
     assert conf[config.FLOWSERV_ASYNC]
     # S3 bucket
-    conf = conf.s3('mybucket')
-    assert conf[config.FLOWSERV_FILESTORE_MODULE] == 'flowserv.model.files.s3'
-    assert conf[config.FLOWSERV_FILESTORE_CLASS] == 'BucketStore'
-    assert conf[config.FLOWSERV_S3BUCKET] == 'mybucket'
+    conf = conf.volume({'type': 'mybucket'})
+    assert conf[config.FLOWSERV_FILESTORE] == {'type': 'mybucket'}
     # Token timeout
     conf = conf.token_timeout(100)
     assert conf[config.FLOWSERV_AUTH_LOGINTTL] == 100
@@ -121,12 +116,21 @@ def test_config_url():
     assert config.API_URL(conf) == api_url
 
 
-def test_config_workers():
-    """Test worker configuration for the serial workflow controller."""
-    conf = config.Config()
-    assert conf.worker_config() == dict()
-    conf = conf.workers({'a': 1})
-    assert conf.worker_config() == {'a': 1}
+def test_storage_volume_config(tmpdir):
+    """Test storage volume configuration objects."""
+    # Default config.
+    conf = config.env()
+    assert isinstance(conf.get(config.FLOWSERV_FILESTORE), dict)
+    doc = {'type': 'fs'}
+    conf.volume(config=doc)
+    assert conf.get(config.FLOWSERV_FILESTORE) == doc
+    # Configure from file.
+    filename = os.path.join(tmpdir, 'config.json')
+    util.write_object(filename=filename, obj=doc)
+    os.environ[config.FLOWSERV_FILESTORE] = filename
+    conf = config.env()
+    assert conf.get(config.FLOWSERV_FILESTORE) == doc
+    del os.environ[config.FLOWSERV_FILESTORE]
 
 
 def test_env_app_identifier():
@@ -138,3 +142,9 @@ def test_env_app_identifier():
     del os.environ[config.FLOWSERV_APP]
     with pytest.raises(err.MissingConfigurationError):
         config.APP()
+
+
+@pytest.mark.parametrize('value,result', [(1, False), ('true', True), ('false', False)])
+def test_to_bool(value, result):
+    """Test the to boolean converter."""
+    config.to_bool(value) == result

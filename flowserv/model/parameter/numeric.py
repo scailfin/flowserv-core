@@ -308,6 +308,8 @@ class Numeric(Parameter):
         """
         if value in ['-inf', 'inf']:
             value = float(value)
+        elif value in [float('-inf'), float('inf')]:
+            value = float(value)
         elif self.dtype == PARA_INT:
             try:
                 value = int(value)

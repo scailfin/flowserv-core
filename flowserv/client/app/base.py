@@ -32,9 +32,8 @@ class Flowserv(object):
     """
     def __init__(
         self, env: Optional[Dict] = None, basedir: Optional[str] = None,
-        database: Optional[str] = None, workers: Optional[Dict] = None,
-        open_access: Optional[bool] = None, run_async: Optional[bool] = None,
-        s3bucket: Optional[str] = None, clear: Optional[bool] = False,
+        database: Optional[str] = None, open_access: Optional[bool] = None,
+        run_async: Optional[bool] = None, clear: Optional[bool] = False,
         user_id: Optional[str] = None
     ):
         """Initialize the client API factory. Provides the option to alter the
@@ -50,17 +49,10 @@ class Flowserv(object):
             specified in the environment a temporary directory will be created.
         database: str, defualt=None
             Databse connection Url.
-        workers: dict, default=None
-            Mapping of container image identifier to worker specifications that
-            are used to create an instance of a
-            :class:`flowserv.controller.worker.base.ContainerStep` worker.
         open_access: bool, default=None
             Use an open access policy if set to True.
         run_async: bool, default=False
             Run workflows in asynchronous mode.
-        s3bucket: string, default=None
-            Use the S3 bucket with the given identifier to store all workflow
-            files.
         clear: bool, default=False
             Remove all existing files and folders in the base directory if the
             clear flag is True.
@@ -84,10 +76,8 @@ class Flowserv(object):
             env=self.env,
             basedir=self.basedir,
             database=database,
-            workers=workers,
             open_access=open_access,
             run_async=run_async,
-            s3bucket=s3bucket,
             user_id=user_id
         )
 
@@ -145,8 +135,8 @@ class Flowserv(object):
         manifestfile: Optional[str] = None,
         engine_config: Optional[Dict] = None,
         ignore_postproc: Optional[bool] = False,
-        multi_user: Optional[bool] = False
-
+        multi_user: Optional[bool] = False,
+        verbose: Optional[bool] = False
     ) -> str:
         """Create a new workflow in the environment that is defined by the
         template referenced by the source parameter. Returns the identifier
@@ -183,6 +173,9 @@ class Flowserv(object):
         multi_user: bool, default=False
             If the multi user flag is False a group will be created for the
             workflow with the same identifier as the workflow.
+        verbose: bool, default=False
+            Print information about source and target volume and the files that
+            are being copied.
 
         Returns
         -------
@@ -198,7 +191,8 @@ class Flowserv(object):
                 specfile=specfile,
                 manifestfile=manifestfile,
                 engine_config=engine_config,
-                ignore_postproc=ignore_postproc
+                ignore_postproc=ignore_postproc,
+                verbose=verbose
             )
             workflow_id = doc[labels.WORKFLOW_ID]
             if not multi_user:
@@ -295,28 +289,3 @@ class Flowserv(object):
         """
         with self.service() as api:
             api.workflows().delete_workflow(workflow_id=identifier)
-
-
-# -- Helper Functions ---------------------------------------------------------
-
-def open_app(env: Optional[Dict] = None, identifier: Optional[str] = None) -> Workflow:
-    """Shortcut to open an instance for a workflow application from the
-    environment configuration settings.
-
-    Parameters
-    ----------
-    env: dict, default=None
-        Dictionary with configuration parameters to use instaed of the values
-        in the global environment.
-    identifier: string, default=None
-        Identifier of the workflow application.
-
-    Returns
-    -------
-    flowserv.client.app.workflow.Workflow
-    """
-    # Get the base configuration settings from the environment if not given.
-    env = env if env is not None else config.env()
-    # Return an instance of the specified application workflow. Get the
-    # application identifier from the app if not given.
-    return Flowserv(env=env).open(identifier=env.get(config.FLOWSERV_APP, identifier))

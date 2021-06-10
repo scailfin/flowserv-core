@@ -14,14 +14,14 @@ from flowserv.client.cli.base import cli_flowserv as cli
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))
-TEMPLATE_DIR = os.path.join(DIR, '../../.files/benchmark/helloworld')
-BENCHMARK_FILE = os.path.join(DIR, '../../.files/benchmark/postproc/benchmark-no-params.yaml')
+BENCHMARK_DIR = os.path.join(DIR, '..', '..', '.files', 'benchmark', 'helloworld')
+BENCHMARK_FILE = os.path.join(BENCHMARK_DIR, '..', 'postproc', 'benchmark-no-params.yaml')
 
 
 def test_run_lifecycle(flowserv_cli):
     """Test creating, running, listing, canceling, and deleting workflow runs."""
     # -- Setup ----------------------------------------------------------------
-    cmd = ['app', 'install', '-g', '-s', BENCHMARK_FILE, TEMPLATE_DIR]
+    cmd = ['app', 'install', '-g', '-s', BENCHMARK_FILE, BENCHMARK_DIR]
     result = flowserv_cli.invoke(cli, cmd)
     pos = result.output.find('export FLOWSERV_APP=') + 20
     workflow_id = result.output[pos:].strip()
@@ -29,7 +29,8 @@ def test_run_lifecycle(flowserv_cli):
     cmd = ['runs', 'start', '-g', workflow_id]
     result = flowserv_cli.invoke(cli, cmd)
     assert result.exit_code == 0
-    run_id = result.output.strip().split()[2]
+    pos = result.output.find('started run ') + 12
+    run_id = result.output[pos:].split()[0]
     # -- Cancel run (raises error since successful runs cannot be canceled) ---
     cmd = ['runs', 'cancel', run_id]
     result = flowserv_cli.invoke(cli, cmd)
@@ -55,7 +56,7 @@ def test_run_lifecycle(flowserv_cli):
 def test_run_result_files(flowserv_cli, tmpdir):
     """Test running the hello world workflow and downloading the result files."""
     # -- Setup ----------------------------------------------------------------
-    cmd = ['app', 'install', '-g', '-s', BENCHMARK_FILE, TEMPLATE_DIR]
+    cmd = ['app', 'install', '-g', '-s', BENCHMARK_FILE, BENCHMARK_DIR]
     result = flowserv_cli.invoke(cli, cmd)
     pos = result.output.find('export FLOWSERV_APP=') + 20
     workflow_id = result.output[pos:].strip()
@@ -63,7 +64,8 @@ def test_run_result_files(flowserv_cli, tmpdir):
     cmd = ['runs', 'start', '-g', workflow_id]
     result = flowserv_cli.invoke(cli, cmd)
     assert result.exit_code == 0
-    run_id = result.output.strip().split()[2]
+    pos = result.output.find('started run ') + 12
+    run_id = result.output[pos:].split()[0]
     # -- Show run -------------------------------------------------------------
     cmd = ['runs', 'show', run_id]
     result = flowserv_cli.invoke(cli, cmd)

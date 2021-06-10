@@ -10,8 +10,7 @@
 
 import pytest
 
-from flowserv.model.parameter.step import Actor, PARA_ACTOR
-from flowserv.model.workflow.step import CONTAINER_STEP
+from flowserv.model.parameter.actor import Actor, ActorValue, PARA_ACTOR
 
 import flowserv.error as err
 
@@ -28,7 +27,7 @@ def test_actor_parameter_from_dict():
                 'label': 'Step 1',
                 'index': 1,
                 'help': 'Your first step',
-                'defaultValue': (CONTAINER_STEP, {'image': 'test', 'commands': ['step1']}),
+                'defaultValue': {'image': 'test', 'commands': ['step1']},
                 'isRequired': True,
                 'group': 'workflow'
             })
@@ -40,7 +39,7 @@ def test_actor_parameter_from_dict():
     assert para.label == 'Step 1'
     assert para.index == 1
     assert para.help == 'Your first step'
-    assert para.default == (CONTAINER_STEP, {'image': 'test', 'commands': ['step1']})
+    assert para.default == {'image': 'test', 'commands': ['step1']}
     assert para.required
     assert para.group == 'workflow'
 
@@ -48,25 +47,12 @@ def test_actor_parameter_from_dict():
 def test_actor_step_factory():
     """Test getting workflow step instances for an actor parameter."""
     para = Actor('step')
-    step = para.cast((CONTAINER_STEP, {'image': 'test', 'commands': ['step1']}))
-    assert step.is_container_step()
-    assert step.image == 'test'
-    assert step.commands == ['step1']
-    step = para.cast(step)
-    assert step.is_container_step()
-    assert step.image == 'test'
-    assert step.commands == ['step1']
-    # From list with additional environment settings.
-    step = para.cast([CONTAINER_STEP, {'image': 'test', 'commands': ['step1'], 'env': {'a': 'x'}}])
-    assert step.is_container_step()
-    assert step.image == 'test'
-    assert step.commands == ['step1']
-    assert step.env == {'a': 'x'}
+    doc = {'image': 'test', 'commands': ['step1'], 'env': {'a': 'x'}}
+    step = para.cast(ActorValue(spec=doc))
+    assert step.spec == doc
     # Error cases.
     with pytest.raises(err.InvalidArgumentError):
-        para.cast((CONTAINER_STEP, {'image': 'test'}))
-    with pytest.raises(err.InvalidArgumentError):
-        para.cast(('unknown', {'image': 'test', 'commands': ['step1']}))
+        para.cast('unknown')
 
 
 def test_invalid_serialization():

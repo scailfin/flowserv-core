@@ -9,18 +9,17 @@
 """Unit tests for post-processing workflows."""
 
 import os
-import pytest
 import time
 
 from flowserv.config import Config
+from flowserv.model.files import io_file
 from flowserv.service.local import LocalAPIFactory
 from flowserv.service.run.argument import serialize_arg, serialize_fh
-from flowserv.tests.files import io_file
 from flowserv.tests.service import (
     create_group, create_user, create_workflow, start_run, upload_file
 )
+from flowserv.volume.manager import FStore
 
-import flowserv.config as config
 import flowserv.util as util
 import flowserv.model.workflow.state as st
 import flowserv.tests.serialize as serialize
@@ -28,10 +27,10 @@ import flowserv.tests.serialize as serialize
 
 # Template directory
 DIR = os.path.dirname(os.path.realpath(__file__))
-BENCHMARK_DIR = os.path.join(DIR, '../../../.files/benchmark')
-SPEC_FILE = os.path.join(BENCHMARK_DIR, 'postproc/benchmark.yaml')
-SPEC_FILE_ERR_1 = os.path.join(BENCHMARK_DIR, 'postproc/error1.yaml')
-SPEC_FILE_ERR_2 = os.path.join(BENCHMARK_DIR, 'postproc/error2.yaml')
+BENCHMARK_DIR = os.path.join(DIR, '..', '..', '..', '.files', 'benchmark')
+SPEC_FILE = os.path.join(BENCHMARK_DIR, 'postproc', 'benchmark.yaml')
+SPEC_FILE_ERR_1 = os.path.join(BENCHMARK_DIR, 'postproc', 'error-for-missing-file.yaml')
+SPEC_FILE_ERR_2 = os.path.join(BENCHMARK_DIR, 'postproc', 'error-for-invalid-spec.yaml')
 TEMPLATE_DIR = os.path.join(BENCHMARK_DIR, 'helloworld')
 
 
@@ -39,26 +38,21 @@ TEMPLATE_DIR = os.path.join(BENCHMARK_DIR, 'helloworld')
 NAMES = ['Alice', 'Bob', 'Gabriel', 'William']
 
 
-@pytest.mark.parametrize(
-    'fsconfig',
-    [{
-        config.FLOWSERV_FILESTORE_MODULE: 'flowserv.model.files.fs',
-        config.FLOWSERV_FILESTORE_CLASS: 'FileSystemStore'
-    }, {
-        config.FLOWSERV_FILESTORE_MODULE: 'flowserv.model.files.s3',
-        config.FLOWSERV_FILESTORE_CLASS: 'BucketStore'
-    }]
-)
-def test_postproc_workflow(fsconfig, tmpdir):
+def test_postproc_workflow(tmpdir):
     """Execute the modified helloworld example."""
     # -- Setup ----------------------------------------------------------------
     #
-    # It is important here that we do not use the SQLite in-memory database
+    # It is important here that we do NOT use the SQLite in-memory database
     # since this fails (for unknown reason; presumably due to different threads)
-    # when the post-processing run is updated.
+    # when the post-processing run is updated. This is achieved by setting the
+    # base directory which will trigger the installation of a fresh database
+    # file.
     # --
-    env = Config().basedir(tmpdir).run_async().auth()
-    env.update(fsconfig)
+    env = Config()\
+        .basedir(tmpdir)\
+        .volume(FStore(basedir=str(tmpdir)))\
+        .run_async()\
+        .auth()
     service = LocalAPIFactory(env=env)
     # Start a new run for the workflow template.
     with service() as api:
@@ -128,19 +122,43 @@ def test_postproc_workflow(fsconfig, tmpdir):
     assert fh.mime_type == 'application/gzip'
 
 
-def test_postproc_workflow_errors(tmpdir):
-    """Execute the modified helloworld example."""
+def test_postproc_workflow_missing_file_error(tmpdir):
+    """Simulate missing result file for post-processing workflow."""
     # -- Setup ----------------------------------------------------------------
     #
     # It is important here that we do not use the SQLite in-memory database
     # since this fails (for unknown reason; presumably due to different threads)
-    # when the post-processing run is updated.
+    # when the post-processing run is updated. This is achieved by setting the
+    # base directory which will trigger the installation of a fresh database
+    # file.
     # --
-    env = Config().basedir(tmpdir).run_async().auth()
+    env = Config()\
+        .basedir(tmpdir)\
+        .volume(FStore(basedir=str(tmpdir)))\
+        .run_async()\
+        .auth()
     service = LocalAPIFactory(env=env)
-    # Error during data preparation
     run_erroneous_workflow(service, SPEC_FILE_ERR_1)
-    # Erroneous specification
+
+
+def test_postproc_workflow_invalid_spec_errors(tmpdir):
+    """Execute the modified helloworld example with invalid post-processing
+    specification.
+    """
+    # -- Setup ----------------------------------------------------------------
+    #
+    # It is important here that we do not use the SQLite in-memory database
+    # since this fails (for unknown reason; presumably due to different threads)
+    # when the post-processing run is updated. This is achieved by setting the
+    # base directory which will trigger the installation of a fresh database
+    # file.
+    # --
+    env = Config()\
+        .basedir(tmpdir)\
+        .volume(FStore(basedir=str(tmpdir)))\
+        .run_async()\
+        .auth()
+    service = LocalAPIFactory(env=env)
     run_erroneous_workflow(service, SPEC_FILE_ERR_2)
 
 
@@ -188,6 +206,7 @@ def run_erroneous_workflow(service, specfile):
         wh = api.workflows().get_workflow(workflow_id=workflow_id)
     attmpts = 0
     while 'postproc' not in wh:
+        print('wait for pp')
         time.sleep(1)
         with service() as api:
             wh = api.workflows().get_workflow(workflow_id=workflow_id)
@@ -198,6 +217,7 @@ def run_erroneous_workflow(service, specfile):
     serialize.validate_workflow_handle(wh)
     attmpts = 0
     while wh['postproc']['state'] in st.ACTIVE_STATES:
+        print("still active")
         time.sleep(1)
         with service() as api:
             wh = api.workflows().get_workflow(workflow_id=workflow_id)

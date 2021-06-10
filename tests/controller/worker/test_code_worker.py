@@ -10,8 +10,9 @@
 
 import os
 
-from flowserv.controller.worker.code import exec_func
-from flowserv.model.workflow.step import FunctionStep
+from flowserv.controller.worker.code import CodeWorker, OutputStream
+from flowserv.model.workflow.step import CodeStep
+from flowserv.volume.fs import FileSystemStorage
 
 
 def write_and_add(a):
@@ -25,18 +26,29 @@ def write_and_add(a):
 
 def test_error_exec(tmpdir):
     """Test error when running a code step."""
-    step = FunctionStep(func=write_and_add, output='a')
-    r = exec_func(step=step, context={'a': -1}, rundir=tmpdir)
+    step = CodeStep(identifier='test', func=write_and_add, arg='a')
+    r = CodeWorker().exec(step=step, context={'a': -1}, store=FileSystemStorage(tmpdir))
     assert r.returncode == 1
     assert r.stdout == ['-1 written', '\n']
     assert r.stderr != []
     assert r.exception is not None
 
 
+def test_output_stream():
+    """Test all methods of the OutputStream helper class."""
+    result = list()
+    stream = OutputStream(stream=result)
+    stream.writelines(['A', 'B', 'C'])
+    stream.write('D')
+    stream.flush()
+    stream.close()
+    assert result == ['A', 'B', 'C', 'D']
+
+
 def test_successful_exec(tmpdir):
     """Test successfully running a code step."""
-    step = FunctionStep(func=write_and_add, output='a')
-    r = exec_func(step=step, context={'a': 1}, rundir=tmpdir)
+    step = CodeStep(identifier='test', func=write_and_add, arg='a')
+    r = CodeWorker().exec(step=step, context={'a': 1}, store=FileSystemStorage(tmpdir))
     assert r.returncode == 0
     assert r.stdout == ['1 written', '\n']
     assert r.stderr == []

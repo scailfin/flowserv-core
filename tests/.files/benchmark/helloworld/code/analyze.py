@@ -1,4 +1,4 @@
-"""Analytics code for the adopted hello workd Demo. Reads a text file (as
+"""Analytics code for the adopted hello world Demo. Reads a text file (as
 produced by the helloworld.py code) and outputs the average number of characters
 per line and the number of characters in the line with the most characters.
 """
@@ -11,8 +11,8 @@ import sys
 
 
 def main(inputfile, outputfile):
-    """Write greeting for every name in a given input file to the output file.
-    The optional waiting period delays the output between each input name.
+    """Compute some stats for a greetings file so that we can compare different
+    workflow runs.
     """
     # Count number of lines, characters, and keep track of the longest line
     max_line = ''

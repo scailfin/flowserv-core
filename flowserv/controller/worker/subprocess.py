@@ -18,16 +18,23 @@ import subprocess
 
 from flowserv.controller.serial.workflow.result import ExecResult
 from flowserv.model.workflow.step import ContainerStep
-from flowserv.controller.worker.base import ContainerEngine
+from flowserv.controller.worker.base import ContainerWorker
 
 import flowserv.util as util
 
 
-class SubprocessWorker(ContainerEngine):
+"""Unique type identifier for SubprocessWorker serializations."""
+SUBPROCESS_WORKER = 'subprocess'
+
+
+class SubprocessWorker(ContainerWorker):
     """Container step engine that uses the subprocess package to execute the
     commands in a workflow step.
     """
-    def __init__(self, variables: Optional[Dict] = None, env: Optional[Dict] = None):
+    def __init__(
+        self, variables: Optional[Dict] = None, env: Optional[Dict] = None,
+        identifier: Optional[str] = None, volume: Optional[str] = None
+    ):
         """Initialize the optional mapping with default values for placeholders
         in command template strings.
 
@@ -39,8 +46,20 @@ class SubprocessWorker(ContainerEngine):
         env: dict, default=None
             Default settings for environment variables when executing workflow
             steps. These settings can get overridden by step-specific settings.
+        identifier: string, default=None
+            Unique worker identifier. If the value is None a new unique identifier
+            will be generated.
+        volume: string, default=None
+            Identifier for the storage volume that the worker has access to.
+            By default, the worker is expected to have access to the default
+            volume store for a workflow run.
         """
-        super(SubprocessWorker, self).__init__(variables=variables, env=env)
+        super(SubprocessWorker, self).__init__(
+            variables=variables,
+            env=env,
+            identifier=identifier,
+            volume=volume
+        )
 
     def run(self, step: ContainerStep, env: Dict, rundir: str) -> ExecResult:
         """Execute a list of shell commands in a workflow step synchronously.
@@ -92,7 +111,7 @@ class SubprocessWorker(ContainerEngine):
                     result.returncode = proc.returncode
                     break
         except Exception as ex:
-            logging.error(ex)
+            logging.error(ex, exc_info=True)
             strace = '\n'.join(util.stacktrace(ex))
             logging.debug(strace)
             result.stderr.append(strace)

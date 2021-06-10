@@ -11,11 +11,11 @@
 from typing import Any, Dict, List, Optional, Tuple
 
 from flowserv.client.cli.table import ResultTable
-from flowserv.model.files.fs import FSFile
 from flowserv.model.parameter.base import Parameter, PARA_STRING
 from flowserv.model.parameter.files import InputFile
 from flowserv.scanner import Scanner
 from flowserv.service.run.argument import serialize_fh
+from flowserv.volume.fs import FSFile
 
 
 def read(
@@ -135,4 +135,4 @@ def read_file(
     if files is not None:
         return serialize_fh(file_id=filename, target=target_path)
     else:
-        return InputFile(FSFile(filename), target_path)
+        return InputFile(FSFile(filename, raise_error=False), target_path)

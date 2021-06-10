@@ -1,0 +1,57 @@
+workflow:
+    files:
+        inputs:
+        - notebooks/HelloWorld.ipynb
+        - code/analyze.py
+        - data/names.txt
+        outputs:
+        - results/greetings.txt
+        - results/analytics.json
+    parameters:
+        inputfile: data/names.txt
+        outputfile: results/greetings.txt
+        greeting: $[[greeting]]
+    steps:
+    - name: "say_hello"
+      files:
+          inputs:
+          - data/names.txt
+          - notebooks/HelloWorld.ipynb
+          outputs:
+          - results/greetings.txt
+      action:
+          notebook: 'notebooks/HelloWorld.ipynb'
+          params:
+          - inputfile
+          - outputfile
+          - greeting
+    - name: "analyze"
+      files:
+          inputs:
+          - results/greetings.txt
+          outputs:
+          - results/analytics.json
+      action:
+          environment: "python:3.7"
+          commands:
+          - ${python} code/analyze.py
+              --inputfile "${outputfile}"
+              --outputfile results/analytics.json
+parameters:
+    - name: greeting
+      label: 'Greeting'
+      dtype: string
+      defaultValue: 'Hello'
+results:
+    file: 'results/analytics.json'
+    schema:
+        - name: avg_count
+          label: 'Avg. Characters per Line'
+          dtype: float
+        - name: max_len
+          label: 'Max. Output Line Length'
+          dtype: float
+        - name: max_line
+          label: 'Longest Output Line'
+          dtype: string
+          required: False

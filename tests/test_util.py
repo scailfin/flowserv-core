@@ -60,6 +60,37 @@ def test_datetime():
         assert dt.second == 19
 
 
+@pytest.mark.parametrize(
+    'key,result',
+    [(None, None), ('a', ''), ('a/b/c', 'a/b')]
+)
+def test_dirname(key, result):
+    """Test the directory name extration function."""
+    assert util.dirname(key=key) == result
+
+
+@pytest.mark.parametrize(
+    'key,sep,result',
+    [(None, '#', None), ('a', '#', 'a'), ('a/b/c', '#', 'a#b#c')]
+)
+def test_filepath(key, sep, result):
+    """Test the file path transformation function."""
+    assert util.filepath(key=key, sep=sep) == result
+
+
+def test_import_object():
+    """Test importing a function dynamically."""
+    ctime = util.import_obj('time.ctime')
+    # Ensure that we can call the function and that the returned value is
+    # of type string.
+    assert isinstance(ctime(), str)
+
+
+def test_join():
+    """Ensure that empty and None strings are ignored by join."""
+    assert util.join(None, 'a', '', 'b') == 'a/b'
+
+
 def test_jquery():
     """Test the Json query function."""
     doc = {
@@ -139,6 +170,14 @@ def test_read_write_object(tmpdir):
         util.read_object(filename=txt_file, format='UNKNOWN')
     with pytest.raises(ValueError):
         util.write_object(filename=txt_file, obj=doc, format='UNKNOWN')
+
+
+def test_serialize_kvp():
+    """Test serializing and deserializing key-value pairs."""
+    doc = util.to_dict(args=[util.to_kvp(key='a', value=1), util.to_kvp(key='b', value='2')])
+    assert len(doc) == 2
+    assert doc['a'] == 1
+    assert doc['b'] == '2'
 
 
 def test_validate_doc():

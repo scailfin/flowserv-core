@@ -75,8 +75,8 @@ def test_update_workflow_local(local_service, hello_world):
         workflow = hello_world(api, name='W1')
         workflow_id = workflow.workflow_id
         r = api.workflows().get_workflow(workflow_id)
-        assert 'description' not in r
-        assert 'instructions' not in r
+        assert 'description' in r
+        assert 'instructions' in r
     # -- Update workflow ------------------------------------------------------
     with local_service() as api:
         r = api.workflows().update_workflow(

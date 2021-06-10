@@ -8,14 +8,12 @@
 
 """Unit test for creating workflow runs."""
 
-import os
 import pytest
 import tempfile
 
 from flowserv.service.run.argument import is_fh
-from flowserv.tests.service import (
-    create_group, create_user, start_hello_world, write_results
-)
+from flowserv.tests.service import create_group, create_user, start_hello_world, write_results
+from flowserv.volume.fs import FileSystemStorage
 
 import flowserv.error as err
 import flowserv.model.workflow.state as st
@@ -28,7 +26,7 @@ def test_create_run_local(local_service, hello_world):
     #
     # Start a new run for a group of the 'Hello World' workflow and set it into
     # success state.
-    tmpdir = tempfile.mkdtemp()
+    fs = FileSystemStorage(basedir=tempfile.mkdtemp())
     with local_service() as api:
         user_1 = create_user(api)
         user_2 = create_user(api)
@@ -38,9 +36,10 @@ def test_create_run_local(local_service, hello_world):
         run_id, file_id = start_hello_world(api, group_id)
         result = {'group': group_id, 'run': run_id}
         write_results(
-            rundir=tmpdir,
+            runstore=fs,
             files=[
                 (result, None, 'results/data.json'),
+                ({'avg_count': 3.5, 'max_len': 30}, None, 'results/analytics.json'),
                 ([group_id, run_id], 'txt/plain', 'values.txt')
             ]
         )
@@ -50,9 +49,8 @@ def test_create_run_local(local_service, hello_world):
                 run_id,
                 files=['results/data.json', 'values.txt']
             ),
-            rundir=tmpdir
+            runstore=fs
         )
-    assert not os.path.exists(tmpdir)
     # -- Validate run handle --------------------------------------------------
     with local_service(user_id=user_1) as api:
         r = api.runs().get_run(run_id=run_id)
@@ -62,6 +60,19 @@ def test_create_run_local(local_service, hello_world):
     with local_service(user_id=user_2) as api:
         with pytest.raises(err.UnauthorizedAccessError):
             api.runs().get_run(run_id=run_id)
+    # -- Error for run with invalid arguments ---------------------------------
+    with local_service(user_id=user_1) as api:
+        with pytest.raises(err.DuplicateArgumentError):
+            api.runs().start_run(
+                group_id=group_id,
+                arguments=[{
+                    'name': 'sleeptime',
+                    'value': 1
+                }, {
+                    'name': 'sleeptime',
+                    'value': 2
+                }]
+            )['id']
 
 
 def test_start_run_remote(remote_service, mock_response):

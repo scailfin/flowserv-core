@@ -10,21 +10,21 @@
 about workflow runs in an underlying database.
 """
 
-from typing import List, Optional, Tuple
+from sqlalchemy.orm.session import Session
+from typing import List, Optional
 
 import io
 import mimetypes
-import os
-import shutil
 import tarfile
 
 from flowserv.model.base import RunFile, RunObject, RunMessage, WorkflowRankingRun
-from flowserv.model.files.base import FileHandle, IOBuffer
-from flowserv.model.files.fs import walk
+from flowserv.model.files import FileHandle
 from flowserv.model.template.schema import ResultSchema
 from flowserv.model.workflow.state import WorkflowState
+from flowserv.volume.base import IOBuffer, StorageVolume
 
 import flowserv.error as err
+import flowserv.model.files as dirs
 import flowserv.model.workflow.state as st
 import flowserv.util as util
 
@@ -34,7 +34,7 @@ class RunManager(object):
     delete, and retrieve runs. the manager also provides the functionality to
     update the state of workflow runs.
     """
-    def __init__(self, session, fs):
+    def __init__(self, session: Session, fs: StorageVolume):
         """Initialize the connection to the underlying database and the file
         system helper to get path names for run folders.
 
@@ -42,7 +42,7 @@ class RunManager(object):
         ----------
         session: sqlalchemy.orm.session.Session
             Database session.
-        fs: flowserv.model.files.FileStore
+        fs: flowserv.volume.base.StorageVolume
             File store for run input and output files.
         """
         self.session = session
@@ -129,12 +129,12 @@ class RunManager(object):
         run = self.get_run(run_id)
         # Get base directory for run files
         workflow_id = run.workflow_id
-        rundir = self.fs.run_basedir(workflow_id, run_id)
+        rundir = dirs.run_basedir(workflow_id, run_id)
         # Delete run and the base directory containing run files. Commit
         # changes before deleting the directory.
         self.session.delete(run)
         self.session.commit()
-        self.fs.delete_folder(key=rundir)
+        self.fs.delete(key=rundir)
 
     def delete_obsolete_runs(
         self, date: str, state: Optional[str] = None
@@ -201,7 +201,7 @@ class RunManager(object):
 
         Returns
         -------
-        flowserv.model.files.base.FileHandle
+        flowserv.model.files.FileHandle
 
         Raises
         ------
@@ -216,9 +216,9 @@ class RunManager(object):
         tar_handle = tarfile.open(fileobj=io_buffer, mode='w:gz')
         # Get file objects for all run result files.
         workflow_id = run.workflow.workflow_id
-        rundir = self.fs.run_basedir(workflow_id=workflow_id, run_id=run_id)
+        rundir = dirs.run_basedir(workflow_id=workflow_id, run_id=run_id)
         for f in run.files:
-            file = self.fs.load_file(os.path.join(rundir, f.key)).open()
+            file = self.fs.load(util.join(rundir, f.key)).open()
             info = tarfile.TarInfo(name=f.key)
             info.size = file.getbuffer().nbytes
             tar_handle.addfile(tarinfo=info, fileobj=file)
@@ -249,7 +249,7 @@ class RunManager(object):
 
         Returns
         -------
-        flowserv.model.files.base.FileHandle
+        flowserv.model.files.FileHandle
 
         Raises
         ------
@@ -270,11 +270,11 @@ class RunManager(object):
             raise err.UnknownFileError(file_id)
         # Return file handle for resource file
         workflow_id = run.workflow.workflow_id
-        rundir = self.fs.run_basedir(workflow_id=workflow_id, run_id=run_id)
+        rundir = dirs.run_basedir(workflow_id=workflow_id, run_id=run_id)
         return FileHandle(
             name=fh.name,
             mime_type=fh.mime_type,
-            fileobj=self.fs.load_file(os.path.join(rundir, fh.key))
+            fileobj=self.fs.load(util.join(rundir, fh.key))
         )
 
     def list_runs(self, group_id, state=None):
@@ -337,14 +337,17 @@ class RunManager(object):
             query = query.filter(RunObject.state_type == state)
         return query.all()
 
-    def update_run(self, run_id: str, state: WorkflowState, rundir: Optional[str] = None):
+    def update_run(
+        self, run_id: str, state: WorkflowState,
+        runstore: Optional[StorageVolume] = None
+    ):
         """Update the state of the given run. This method does check if the
         state transition is valid. Transitions are valid for active workflows,
         if the transition is (a) from pending to running or (b) to an inactive
         state. Invalid state transitions will raise an error.
 
-        For inactive runs a reference to the local file system folder that
-        contains run (result) files should be present.
+        For successful runs a reference to the storage volume and the run
+        directory containing the result files has to be given.
 
         Parameters
         ----------
@@ -352,10 +355,9 @@ class RunManager(object):
             Unique identifier for the run
         state: flowserv.model.workflow.state.WorkflowState
             New workflow state
-        rundir: string, default=None
-            Path to folder with run (result) files on the local disk. This
-            parameter should be given for all sucessful runs and potentially
-            also for runs in an error state.
+        runstore: flowserv.volume.base.StorageVolume, default=None
+            Storage volume containing the run (result) files for a successful
+            workflow run.
 
         Returns
         -------
@@ -390,30 +392,35 @@ class RunManager(object):
             run.log = messages
             run.started_at = state.started_at
             run.ended_at = state.stopped_at
-            # Delete all run files.
-            if rundir is not None and os.path.exists(rundir):
-                delete_run_dir(rundir)
         # -- SUCCESS ----------------------------------------------------------
         elif state.is_success():
             validate_state_transition(current_state, state.type_id, st.ACTIVE_STATES)
-            assert rundir is not None
-            # Set run properties.
-            run.files, storefiles = get_run_files(run, state, rundir)
-            run.started_at = state.started_at
-            run.ended_at = state.finished_at
-            # Parse run result if the associated workflow has a result schema.
-            result_schema = run.workflow.result_schema
-            if result_schema is not None:
-                read_run_results(run, result_schema, rundir)
+            assert runstore is not None
             # Archive run files (and remove all other files from the run
             # directory).
-            storedir = self.fs.run_basedir(
+            storedir = dirs.run_basedir(
                 workflow_id=run.workflow.workflow_id,
                 run_id=run_id
             )
-            self.fs.store_files(files=storefiles, dst=storedir)
-            if os.path.exists(rundir):
-                delete_run_dir(rundir)
+            run.files = store_run_files(
+                run=run,
+                files=state.files,
+                source=runstore,
+                target=self.fs.get_store_for_folder(key=storedir)
+            )
+            run.started_at = state.started_at
+            run.ended_at = state.finished_at
+            # Parse run result if the associated workflow has a result schema.
+            # We only expect a result file for runs that are group submissions
+            # and not post-processing runs.
+            result_schema = run.workflow.result_schema
+            if result_schema is not None and run.group_id is not None:
+                # Make sure to catch any exceptions in case the run result
+                # file is not present or corrupted.
+                try:
+                    read_run_results(run=run, schema=result_schema, runstore=runstore)
+                except Exception:
+                    pass
         # -- PENDING ----------------------------------------------------------
         else:
             validate_state_transition(current_state, state.type_id, [st.STATE_PENDING])
@@ -425,24 +432,9 @@ class RunManager(object):
 
 # -- Helper Functions ---------------------------------------------------------
 
-def delete_run_dir(rundir: str):
-    """Delete the run directory for a workflow run. The directory does not have
-    to exist if the workflow does not access and files or create any files. If
-    the workflow is running in a docker container we may also not have the
-    permissions to delete the directory.
-
-    Parameters
-    ----------
-    rundir: string
-        Workflow run directory
-    """
-    try:
-        shutil.rmtree(rundir)
-    except PermissionError:
-        pass
-
-
-def get_run_files(run: RunObject, state: WorkflowState, rundir: str) -> Tuple[List[RunFile], List[str]]:
+def store_run_files(
+    run: RunObject, files: List[str], source: StorageVolume, target: StorageVolume
+) -> List[RunFile]:
     """Create list of output files for a successful run. The list of files
     depends on whether files are specified in the workflow specification or not.
     If files are specified only those files are included in the returned lists.
@@ -452,52 +444,42 @@ def get_run_files(run: RunObject, state: WorkflowState, rundir: str) -> Tuple[Li
     ----------
     run: flowserv.model.base.RunObject
         Handle for a workflow run.
-    state: flowserv.model.workflow.state.WorkflowState
-        SUCCESS state for the workflow run.
-    rundir: string
-        Directory containing run result files.
+    files: list of string
+        List of result files for a successful workflow run.
+    source: flowserv.volume.base.StorageVolume
+        Storage volume containing the run (result) files for a successful
+        workflow run.
+    target: flowserv.volume.base.StorageVolume
+        Storage volume for persiting run result files.
 
     Returns
     -------
     list of RunObject, list of string
     """
-    filekeys = None
     outputs = run.outputs()
     if outputs:
         # List only existing files for output specifications in the
         # workflow handle. Note that (i) the result of run.outputs() is
         # always a dictionary and (ii) that the keys in the returned
         # dictionary are not necessary equal to the file sources.
-        filekeys = [f.source for f in run.outputs().values()]
-    else:
-        # List all files that were generated by the workflow run as
-        # output.
-        filekeys = state.files
-    # For each run file ensure that it exist before adding a file
-    # handle to the run. We use the file system store's walk method to
-    # get a list of all files that need to be retained for a run.
-    walklist = list()
-    for filekey in filekeys:
-        filename = os.path.join(rundir, filekey)
-        if not os.path.exists(filename):
-            continue
-        walklist.append((filename, filekey))
-    # Get files that will be copied to the file store.
+        files = [f.source for f in run.outputs().values()]
+    # Copy files to the target volume.
     runfiles = list()
-    storefiles = walk(files=walklist)
-    for file, filekey in storefiles:
-        mime_type, _ = mimetypes.guess_type(url=file.filename)
-        rf = RunFile(
-            key=filekey,
-            name=filekey,
+    for key in files:
+        f = source.load(key)
+        target.store(file=f, dst=key)
+        mime_type, _ = mimetypes.guess_type(url=key)
+        runfile = RunFile(
+            key=key,
+            name=key,
             mime_type=mime_type,
-            size=file.size()
+            size=f.size()
         )
-        runfiles.append(rf)
-    return runfiles, storefiles
+        runfiles.append(runfile)
+    return runfiles
 
 
-def read_run_results(run: RunObject, schema: ResultSchema, rundir: str):
+def read_run_results(run: RunObject, schema: ResultSchema, runstore: StorageVolume):
     """Read the run results from the result file that is specified in the workflow
     result schema. If the file is not found we currently do not raise an error.
 
@@ -508,23 +490,23 @@ def read_run_results(run: RunObject, schema: ResultSchema, rundir: str):
     schema: flowserv.model.template.schema.ResultSchema
         Workflow result schema specification that contains the reference to the
         result file key.
-    rundir: string
-        Directory containing run result files.
+    runstore: flowserv.volume.base.StorageVolume
+        Storage volume containing the run (result) files for a successful
+        workflow run.
     """
-    filename = os.path.join(rundir, schema.result_file)
-    if os.path.exists(filename):
-        results = util.read_object(filename)
-        # Create a dictionary of result values.
-        values = dict()
-        for col in schema.columns:
-            val = util.jquery(doc=results, path=col.jpath())
-            col_id = col.column_id
-            if val is None and col.required:
-                msg = "missing value for '{}'".format(col_id)
-                raise err.ConstraintViolationError(msg)
-            elif val is not None:
-                values[col_id] = col.cast(val)
-        run.result = values
+    with runstore.load(schema.result_file).open() as f:
+        results = util.read_object(f)
+    # Create a dictionary of result values.
+    values = dict()
+    for col in schema.columns:
+        val = util.jquery(doc=results, path=col.jpath())
+        col_id = col.column_id
+        if val is None and col.required:
+            msg = "missing value for '{}'".format(col_id)
+            raise err.ConstraintViolationError(msg)
+        elif val is not None:
+            values[col_id] = col.cast(val)
+    run.result = values
 
 
 def validate_state_transition(current_state: str, target_state: str, valid_states: List[str]):

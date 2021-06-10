@@ -13,9 +13,8 @@ import os
 import pytest
 import time
 
-from flowserv.config import FLOWSERV_FILESTORE_CLASS, FLOWSERV_FILESTORE_MODULE
+from flowserv.model.files import io_file
 from flowserv.service.run.argument import serialize_arg, serialize_fh
-from flowserv.tests.files import io_file
 from flowserv.tests.service import (
     create_group, create_user, create_workflow, start_run, upload_file
 )
@@ -26,7 +25,7 @@ import flowserv.model.workflow.state as st
 
 # Template directory
 DIR = os.path.dirname(os.path.realpath(__file__))
-TEMPLATE_DIR = os.path.join(DIR, '../../../.files/benchmark/helloworld')
+BENCHMARK_DIR = os.path.join(DIR, '..', '..', '..', '.files', 'benchmark', 'helloworld')
 
 
 def test_cancel_run_helloworld(async_service):
@@ -35,7 +34,7 @@ def test_cancel_run_helloworld(async_service):
     #
     # Start a new run for the workflow template.
     with async_service() as api:
-        workflow_id = create_workflow(api, source=TEMPLATE_DIR)
+        workflow_id = create_workflow(api, source=BENCHMARK_DIR)
         user_id = create_user(api)
     with async_service(user_id=user_id) as api:
         group_id = create_group(api, workflow_id)
@@ -66,32 +65,14 @@ def test_cancel_run_helloworld(async_service):
         assert run['messages'][0] == 'done'
 
 
-@pytest.mark.parametrize(
-    'fsconfig,target',
-    [
-        (
-            {
-                FLOWSERV_FILESTORE_MODULE: 'flowserv.model.files.fs',
-                FLOWSERV_FILESTORE_CLASS: 'FileSystemStore'
-            },
-            None
-        ),
-        (
-            {
-                FLOWSERV_FILESTORE_MODULE: 'flowserv.model.files.s3',
-                FLOWSERV_FILESTORE_CLASS: 'BucketStore'
-            },
-            'somenames.txt'
-        )
-    ]
-)
-def test_run_helloworld_async(async_service, fsconfig, target):
+@pytest.mark.parametrize('target', [None, 'somenames.txt'])
+def test_run_helloworld_async(async_service, target):
     """Execute the helloworld example."""
     # -- Setup ----------------------------------------------------------------
     #
     # Start a new run for the workflow template.
     with async_service() as api:
-        workflow_id = create_workflow(api, source=TEMPLATE_DIR)
+        workflow_id = create_workflow(api, source=BENCHMARK_DIR)
         user_id = create_user(api)
     with async_service(user_id=user_id) as api:
         group_id = create_group(api, workflow_id)

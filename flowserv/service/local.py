@@ -25,8 +25,6 @@ from flowserv.controller.base import WorkflowController
 from flowserv.model.auth import DefaultAuthPolicy, OpenAccessAuth
 from flowserv.model.base import RunObject
 from flowserv.model.database import DB
-from flowserv.model.files.base import FileStore
-from flowserv.model.files.factory import FS
 from flowserv.model.group import WorkflowGroupManager
 from flowserv.model.ranking import RankingManager
 from flowserv.model.run import RunManager
@@ -40,6 +38,8 @@ from flowserv.service.group.local import LocalWorkflowGroupService
 from flowserv.service.run.local import LocalRunService
 from flowserv.service.user.local import LocalUserService
 from flowserv.service.workflow.local import LocalWorkflowService
+from flowserv.volume.base import StorageVolume
+from flowserv.volume.factory import Volume
 
 from flowserv.model.user import UserManager
 
@@ -94,7 +94,7 @@ class LocalAPIFactory(APIFactory):
         # Initialize the workflow engine.
         self._engine = engine if engine is not None else init_backend(self)
         # Initialize the file store.
-        self._fs = FS(self)
+        self._fs = Volume(doc=self.get(config.FLOWSERV_FILESTORE))
         # Ensure that the authentication policy identifier is set.
         self[AUTH] = self.get(AUTH, config.AUTH_OPEN)
         # Authenticated default user. The initial value depends on the given
@@ -146,8 +146,8 @@ class LocalAPIFactory(APIFactory):
 
     def exec_workflow(
         self, run: RunObject, template: WorkflowTemplate, arguments: Dict,
-        config: Optional[Dict] = None
-    ) -> Tuple[WorkflowState, str]:
+        staticfs: StorageVolume, config: Optional[Dict] = None
+    ) -> Tuple[WorkflowState, StorageVolume]:
         """Initiate the execution of a given workflow template for a set of
         argument values. Returns the state of the workflow and the path to
         the directory that contains run result files for successful runs.
@@ -166,18 +166,22 @@ class LocalAPIFactory(APIFactory):
             the parameter declarations.
         arguments: dict
             Dictionary of argument values for parameters in the template.
+        staticfs: flowserv.volume.base.StorageVolume
+            Storage volume that contains the static files from the workflow
+            template.
         config: dict, default=None
             Optional implementation-specific configuration settings that can be
-            used to overwrite settings that were intialized at object creation.
+            used to overwrite settings that were initialized at object creation.
 
         Returns
         -------
-        flowserv.model.workflow.state.WorkflowState, string
+        flowserv.model.workflow.state.WorkflowState, flowserv.volume.base.StorageVolume
         """
         return self._engine.exec_workflow(
             run=run,
             template=template,
             arguments=arguments,
+            staticfs=staticfs,
             config=config
         )
 
@@ -187,7 +191,7 @@ class SessionManager(object):
     session that is used by all the API components.
     """
     def __init__(
-        self, env: Dict, db: DB, engine: WorkflowController, fs: FileStore,
+        self, env: Dict, db: DB, engine: WorkflowController, fs: StorageVolume,
         user_id: str, access_token: str
     ):
         """Initialize the object.
@@ -200,7 +204,7 @@ class SessionManager(object):
             Database manager.
         engine: flowserv.controller.base.WorkflowController
             Workflow controller used by the API for workflow execution.
-        fs: flowserv.model.files.base.FileStore
+        fs: flowserv.volume.base.StorageVolume
             File store for accessing and maintaining files for workflows,
             groups and workflow runs.
         user_id: string
@@ -291,6 +295,7 @@ class SessionManager(object):
                 group_manager=group_manager,
                 ranking_manager=ranking_manager,
                 backend=engine,
+                fs=fs,
                 auth=auth,
                 user_id=user_id
             ),

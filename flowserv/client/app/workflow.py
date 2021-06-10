@@ -14,12 +14,12 @@ from typing import Dict, List, Optional
 import time
 
 from flowserv.client.app.run import Run
-from flowserv.model.files.base import FileHandle, IOHandle, IOBuffer
-from flowserv.model.files.fs import FSFile
-from flowserv.model.parameter.files import InputFile
+from flowserv.model.files import FileHandle
 from flowserv.model.template.parameter import ParameterIndex
 from flowserv.service.api import APIFactory
 from flowserv.service.run.argument import serialize_arg, serialize_fh
+from flowserv.volume.base import IOHandle, IOBuffer
+from flowserv.volume.fs import FSFile
 
 import flowserv.error as err
 import flowserv.view.files as filelbls
@@ -111,7 +111,7 @@ class Workflow(object):
 
         Returns
         -------
-        flowserv.model.files.base.FileHandle
+        flowserv.model.files.FileHandle
         """
         with self.service() as api:
             if file_id is not None:
@@ -202,7 +202,7 @@ class Workflow(object):
             Dictionary of user-provided arguments.
         config: dict, default=None
             Optional implementation-specific configuration settings that can be
-            used to overwrite settings that were intialized at object creation.
+            used to overwrite settings that were initialized at object creation.
         poll_interval: int, default=None
             Optional poll interval that is used to check the state of a run
             until it is no longer in active state.
@@ -211,6 +211,7 @@ class Workflow(object):
         -------
         flowserv.client.app.run.Run
         """
+        arguments = self._parameters.set_defaults(arguments=arguments)
         with self.service() as api:
             # Upload any argument values as files that are either of type
             # StringIO or BytesIO.
@@ -236,9 +237,6 @@ class Workflow(object):
                         upload_file = IOBuffer(val)
                     elif isinstance(val, IOHandle):
                         upload_file = val
-                    elif isinstance(val, InputFile):
-                        upload_file = val.source()
-                        target = val.target()
                     else:
                         msg = 'invalid argument {} for {}'.format(key, val)
                         raise err.InvalidArgumentError(msg)

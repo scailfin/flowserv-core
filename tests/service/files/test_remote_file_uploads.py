@@ -10,7 +10,7 @@
 
 from io import StringIO
 
-from flowserv.model.files.base import IOBuffer
+from flowserv.volume.base import IOBuffer
 
 
 def test_delete_file_remote(remote_service, mock_response):

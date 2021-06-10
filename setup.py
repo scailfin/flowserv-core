@@ -18,16 +18,19 @@ install_requires = [
     'future',
     'appdirs>=1.4.4',
     'gitpython',
+    'paramiko',
     'passlib',
     'python-dateutil',
     'jsonschema',
     'pyyaml>=5.1',
     'requests',
     'SQLAlchemy>=1.3.18',
+    'papermill',
     'Click'
 ]
 aws_requires = ['boto3']
 docker_requires = ['docker']
+gc_requires = ['google-cloud-storage']
 postgres_requires = ['psycopg2-binary']
 
 
@@ -36,6 +39,7 @@ tests_require = [
     'pytest',
     'pytest-cov'
 ] + docker_requires
+
 
 dev_require = ['flake8', 'python-language-server']
 
@@ -47,11 +51,12 @@ extras_require = {
         'sphinxcontrib-apidoc'
     ],
     'tests': tests_require,
-    'dev': dev_require + tests_require,
+    'dev': dev_require + aws_requires + docker_requires + gc_requires + tests_require,
     'aws': aws_requires,
     'docker': docker_requires,
+    'gc': gc_requires,
     'postgres': postgres_requires,
-    'full': aws_requires + docker_requires + postgres_requires
+    'full': aws_requires + docker_requires + gc_requires + postgres_requires
 }
 
 

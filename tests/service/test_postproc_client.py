@@ -13,11 +13,11 @@ processing workflow.
 
 import os
 
-from flowserv.service.postproc.base import RUNS_FILE
+from flowserv.service.postproc.base import RUNS_FILE, prepare_postproc_data
 from flowserv.service.postproc.client import Runs
 from flowserv.tests.service import create_ranking, create_user
+from flowserv.volume.fs import FileSystemStorage
 
-import flowserv.service.postproc.util as postproc
 import flowserv.util as util
 
 
@@ -29,7 +29,7 @@ def test_empty_run_set(tmpdir):
     assert runs.get_run('0000') is None
 
 
-def test_workflow_postproc_client(local_service, hello_world):
+def test_workflow_postproc_client(local_service, hello_world, tmpdir):
     """Test preparing and accessing post-processing results."""
     # -- Setup ----------------------------------------------------------------
     #
@@ -42,17 +42,17 @@ def test_workflow_postproc_client(local_service, hello_world):
         create_ranking(api, workflow_id, 4)
     # -- Get ranking in decreasing order of avg_count. ------------------------
     with local_service(user_id=user_1) as api:
-        ranking = api.workflows().ranking_manager.get_ranking(
-            workflow=api.workflows().workflow_repo.get_workflow(workflow_id)
-        )
+        workflow = api.workflows().workflow_repo.get_workflow(workflow_id)
+        ranking = api.workflows().ranking_manager.get_ranking(workflow)
         # Prepare data for the post-processing workflow.
-        rundir = postproc.prepare_postproc_data(
+        prepare_postproc_data(
             input_files=['results/analytics.json'],
             ranking=ranking,
-            run_manager=api.runs().run_manager
+            run_manager=api.runs().run_manager,
+            store=FileSystemStorage(basedir=os.path.join(tmpdir, 'postproc_run'))
         )
         # Test the post-processing client that accesses the prepared data.
-        runs = Runs(rundir)
+        runs = Runs(os.path.join(tmpdir, 'postproc_run'))
         assert len(runs) == 4
         assert [r.run_id for r in ranking] == [r.run_id for r in runs]
         for i in range(len(runs)):

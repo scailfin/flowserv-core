@@ -75,12 +75,6 @@ In the shown example workflow steps that use the Docker image `heikomueller/open
 Use the environment variable *FLOWSERV_SERIAL_WORKERS* to reference the configuration file for the engine workers. By default, all workflow steps will be executed as Python sub-processes if no configuration file is given.
 
 
-Temporary Run Files
--------------------
-
-The :class:SerialWorkflowEngine maintains run files in a temporary folder before they are moved to persistent storage (as defined by the file store parameters). The base folder for these temporary files can be configured using the environment variable *FLOWSERV_RUNSDIR*. If the variable is not set all workflow runs will use the sub-folder `runs` in the *FLOWSERV_API_DIR* as the default base directory.
-
-
 --------
 Database
 --------
@@ -133,35 +127,74 @@ If the environment variable *FLOWSERV_WEBAPP* is set to `True` scoped database s
 File Store
 ----------
 
-**flowServ** needs to store and access files for a variety of components and tasks. The files that are maintaind by the system include:
+**flowServ** needs to store and access files for a variety of components and tasks. The files that are maintained by the system include:
 
 - static files that are associated with a workflow template,
 - files that are uploaded by users as input to workflow runs, and
 - result files of successful workflow runs.
 
-By default, files are stored on the local file system in the directory that is specified by the *FLOWSERV_API_DIR* variable. Alternative storage backends can be configured using the environment variables *FLOWSERV_FILESTORE_CLASS* and *FLOWSERV_FILESTORE_MODULE*. These two variables are used to identify an existing implementation for the :class:FileStore interface. The package currently includes two implementations of the file store.
+By default, files are stored on the local file system in the directory that is specified by the *FLOWSERV_API_DIR* variable. Alternative storage backends can be configured using the environment variable *FLOWSERV_FILESTORE* that contains the configuration dictionary for the storage volume factory. The configuration object has to contain the mandatory element ``type`` that specifies the class of the storage volume that is used and the optional element ``name`` and ``args``. The ``name`` is used to identify the storage volume and the ``args`` element contains additional configuration parameters that are passed to the storage volume class constructor. **flowServ** currently supports four types of storage volumes.
 
 
 File System Store
 -----------------
 
-The default file store maintains all files in subfolders under the directory that is specified by the environment variable *FLOWSERV_API_DIR*. To configure this option set the environment variables as follows:
+The default file store maintains all files in subfolders under the directory that is specified by the environment variable *FLOWSERV_API_DIR*. To configure this option, used the following template:
+
+.. code-block:: yaml
+
+    "type": "fs"
+    "args":
+        "basedir": "path to the base directory on the file system"
+
+
+
+
+Google Cloud File Store
+-----------------------
+
+The **Google Cloud Bucket** allows storage of all files using `Google Cloud File Store <https://cloud.google.com/filestore/>`_. The type identifier for this volume is ``gc``. The storage volume class has one additional configuration parameter to identify the storage bucket.
+
+.. code-block:: yaml
+
+    "type": "gc"
+    "args":
+        "bucket": "identifier of the storage bucket"
+
+
+When using the Google Cloud Storage the Google Cloud credentials have to be configured. Set up authentication by creating a service account and setting the environment variable *GOOGLE_APPLICATION_CREDENTIALS*. See the `Cloud Storage Client Libraries documentation <https://cloud.google.com/storage/docs/reference/libraries#setting_up_authenticationcredentials>`_ for more details.
 
 .. code-block:: bash
 
-    export FLOWSERV_FILESTORE_MODULE=flowserv.model.files.fs
-    export FLOWSERV_FILESTORE_CLASS=FileSystemStore
+    export GOOGLE_APPLICATION_CREDENTIALS=[path-to-service-account-key-file]
+
 
 
 S3 Bucket Store
 ---------------
 
-The **S3 Bucket Store** allows storage of all files using `AWS Simple Cloud Storage (S3) <https://aws.amazon.com/s3/>`_. To configure this option set the environment variables as follows:
+The **S3 Bucket Store** allows storage of all files using `AWS Simple Cloud Storage (S3) <https://aws.amazon.com/s3/>`_. The type identifier for this volume is ``s3``. The storage volume class has one additional configuration parameter to identify the storage bucket.
+
+.. code-block:: yaml
+
+    "type": "s3"
+    "args":
+        "bucket": "identifier of the storage bucket"
 
 
-.. code-block:: bash
+When using the S3 storage volume the AWS credentials have to be configured. See the `AWS S3 CLI configuration documentation <https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html>`_ for more details.
 
-    export FLOWSERV_FILESTORE_MODULE=flowserv.model.files.s3
-    export FLOWSERV_FILESTORE_CLASS=BucketStore
 
-This file store defines the additional environment variable *FLOWSERV_S3BUCKET*. This variable is used to get the unique identifier of the S3 storage bucket. During development when running test cases, the value of this variable should not be set.
+SFTP File System Store
+----------------------
+
+**flowServ** also provides the option to store files on a remote file system and access them via ``sftp``. This storage volume is not recommended for storing workflow files. It's main purpose is to serve as a storage manager for copying files when executing workflow steps that run on remote maches (e.g., a HPC cluster). To configure the remote storage volume use the following configuration template.
+
+.. code-block:: yaml
+
+    "type": "sftp"
+    "args":
+        "hostname": "Name of the remote host"
+        "port": post-number
+        "sep": "path separator used by the remote file system [default: '/']"
+        "look_for_keys": Boolean flag to enable searching for private key files [default=False]

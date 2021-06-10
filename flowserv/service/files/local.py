@@ -13,10 +13,12 @@ delete, and upload files for workflow groups.
 from typing import Dict, IO, Optional
 
 from flowserv.model.auth import Auth
-from flowserv.model.files.base import FileHandle, IOHandle
+from flowserv.model.files import FileHandle
 from flowserv.model.group import WorkflowGroupManager
 from flowserv.service.files.base import UploadFileService
 from flowserv.view.files import UploadFileSerializer
+from flowserv.volume.base import IOHandle
+
 import flowserv.error as err
 
 
@@ -174,7 +176,7 @@ class LocalUploadFileService(UploadFileService):
         ----------
         group_id: string
             Unique workflow group identifier
-        file: fflowserv.model.files.base.IOHandle
+        file: flowserv.volume.base.IOHandle
             File object (e.g., uploaded via HTTP request)
         name: string
             Name of the file

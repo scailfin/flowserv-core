@@ -10,11 +10,12 @@
 
 from typing import Tuple, Union
 
-import os
 import tempfile
 
+from flowserv.model.files import io_file
 from flowserv.service.run.argument import serialize_fh
-from flowserv.tests.files import io_file
+from flowserv.volume.base import StorageVolume
+from flowserv.volume.fs import FileSystemStorage
 
 import flowserv.util as util
 
@@ -64,7 +65,7 @@ def create_ranking(api, workflow_id, count):
     -------
     list(string)
     """
-    tmpdir = tempfile.mkdtemp()
+    fs = FileSystemStorage(basedir=tempfile.mkdtemp())
     groups = list()
     for i in range(count):
         group_id = create_group(api, workflow_id=workflow_id)
@@ -72,8 +73,8 @@ def create_ranking(api, workflow_id, count):
         run_id, file_id = start_hello_world(api, group_id)
         data = {'avg_count': i, 'max_len': 100 - i, 'max_line': 'A' * i}
         write_results(
-            tmpdir,
-            [(data, None, 'results/analytics.json')]
+            runstore=fs,
+            files=[(data, None, 'results/analytics.json')]
         )
         api.runs().update_run(
             run_id=run_id,
@@ -81,7 +82,7 @@ def create_ranking(api, workflow_id, count):
                 run_id,
                 files=['results/analytics.json']
             ),
-            rundir=tmpdir
+            runstore=fs
         )
         groups.append(group_id)
     return groups
@@ -199,20 +200,16 @@ def upload_file(api, group_id, file):
     )['id']
 
 
-def write_results(rundir: str, files: Tuple[Union[dict, list], str, str]):
+def write_results(runstore: StorageVolume, files: Tuple[Union[dict, list], str, str]):
     """Create a result files for a workflow run.
 
 
     Parameters
     ----------
-    rundir: string
-        Path to the temporary run directory.
-    run_id: string
-        Unique run identifier.
+    runstore: flowserv.volume.base.StorageVolume
+        Storage volume for the run (result) files of a successful workflow run.
     files: list
         List of 3-tuples containing the file data, format, and relative path.
     """
     for data, format, rel_path in files:
-        filename = os.path.join(rundir, rel_path)
-        os.makedirs(os.path.dirname(filename), exist_ok=True)
-        io_file(data=data, format=format).store(filename)
+        runstore.store(file=io_file(data=data, format=format), dst=rel_path)
