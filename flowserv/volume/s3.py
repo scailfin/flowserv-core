@@ -18,8 +18,6 @@ from __future__ import annotations
 from io import BytesIO
 from typing import Dict, IO, Iterable, List, Optional, Tuple, TypeVar
 
-import botocore
-
 from flowserv.volume.base import IOHandle, StorageVolume
 
 import flowserv.error as err
@@ -62,6 +60,7 @@ class S3File(IOHandle):
         """
         # Load object into a new bytes buffer.
         data = BytesIO()
+        import botocore
         try:
             self.bucket.download_fileobj(self.key, data)
         except botocore.exceptions.ClientError:

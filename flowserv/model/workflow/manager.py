@@ -319,7 +319,6 @@ def clone(source, repository=None):
             repository = WorkflowRepository()
         repourl, manifestpath, kwargs = repository.get(source)
         sourcedir = tempfile.mkdtemp()
-        print('cloning into {}'.format(sourcedir))
         if manifestpath is not None:
             manifestpath = os.path.join(sourcedir, manifestpath)
         try:

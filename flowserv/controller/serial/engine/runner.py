@@ -39,7 +39,7 @@ def exec_workflow(
         Factory for :class:`flowserv.model.workflow.step.ContainerStep` steps.
     volumes: flowserv.volume.manager.VolumeManager
         Manager for storage volumes that are used by the different workers.
-    result: flowserv.controller.worker.result.RunResult
+    result: flowserv.controller.serial.workflow.result.RunResult
         Collector for results from executed workflow steps. Contains the context
         within which the workflow is executed.
 

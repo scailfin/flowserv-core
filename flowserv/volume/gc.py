@@ -19,8 +19,6 @@ from __future__ import annotations
 from io import BytesIO
 from typing import Dict, IO, Iterable, List, Optional, Tuple, TypeVar
 
-from google.cloud import exceptions
-
 from flowserv.volume.base import IOHandle, StorageVolume
 
 import flowserv.error as err
@@ -66,6 +64,7 @@ class GCFile(IOHandle):
         """
         blob = self.client.bucket(self.bucket_name).blob(self.key)
         # Load object into a new bytes buffer.
+        from google.cloud import exceptions
         try:
             data = BytesIO(blob.download_as_bytes())
         except exceptions.NotFound:
@@ -142,6 +141,7 @@ class GCVolume(StorageVolume):
         keys: iterable of string
             Unique identifier for objects that are being deleted.
         """
+        from google.cloud import exceptions
         try:
             self.client.bucket(self.bucket_name).delete_blobs(keys)
         except exceptions.NotFound:

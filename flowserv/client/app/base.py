@@ -137,7 +137,6 @@ class Flowserv(object):
         ignore_postproc: Optional[bool] = False,
         multi_user: Optional[bool] = False,
         verbose: Optional[bool] = False
-
     ) -> str:
         """Create a new workflow in the environment that is defined by the
         template referenced by the source parameter. Returns the identifier
@@ -290,28 +289,3 @@ class Flowserv(object):
         """
         with self.service() as api:
             api.workflows().delete_workflow(workflow_id=identifier)
-
-
-# -- Helper Functions ---------------------------------------------------------
-
-def open_app(env: Optional[Dict] = None, identifier: Optional[str] = None) -> Workflow:
-    """Shortcut to open an instance for a workflow application from the
-    environment configuration settings.
-
-    Parameters
-    ----------
-    env: dict, default=None
-        Dictionary with configuration parameters to use instaed of the values
-        in the global environment.
-    identifier: string, default=None
-        Identifier of the workflow application.
-
-    Returns
-    -------
-    flowserv.client.app.workflow.Workflow
-    """
-    # Get the base configuration settings from the environment if not given.
-    env = env if env is not None else config.env()
-    # Return an instance of the specified application workflow. Get the
-    # application identifier from the app if not given.
-    return Flowserv(env=env).open(identifier=env.get(config.FLOWSERV_APP, identifier))

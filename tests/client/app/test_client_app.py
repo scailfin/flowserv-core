@@ -10,7 +10,7 @@
 
 import os
 
-from flowserv.client.app.base import Flowserv, open_app
+from flowserv.client.app.base import Flowserv
 from flowserv.config import Config
 from flowserv.volume.manager import FStore
 
@@ -32,8 +32,8 @@ def test_install_app(tmpdir):
     app = client.open(app_id)
     assert app.name() == 'Hello World'
     assert app.workflow_id == app.group_id
-    # Use the open_app function to get a fresh instance of the workflow.
-    app = open_app(env=app.service, identifier=app_id)
+    # Use the open function to get a fresh instance of the workflow.
+    app = Flowserv(env=app.service).open(identifier=app_id)
     assert app.name() == 'Hello World'
     assert app.workflow_id == app.group_id
     # Uninstall the app.
