@@ -317,7 +317,7 @@ def walkdir(dirname: str, prefix: str, files: List[Tuple[str, IOHandle]]) -> Lis
         Path to folder of the local file system.
     prefix: string
         Relative destination path for all files in the folder.
-    files: list of (flowserv.model.files.fs.FSFile, string)
+    files: list of (string, flowserv.volume.base.IOHandle)
         Pairs of file objects and their relative target path for upload to a
         file store.
     """
