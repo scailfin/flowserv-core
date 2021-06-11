@@ -141,3 +141,4 @@
 * Add Google Cloud File Storage bucket implementation (\#80).
 * Support different storage volumes for different types of workers.
 * Add support for workflow steps that are implemented as Jupyter Notebooks (\#79).
+* Include flowapp to run workflow templates using streamlit GUI.
