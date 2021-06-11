@@ -29,8 +29,8 @@ from flowserv.client.app.base import Flowserv
 from flowserv.client.app.workflow import Workflow
 from flowserv.model.database import DB, SQLITE_DB
 from flowserv.volume.manager import FStore, DEFAULT_STORE
-from flowapp.forms import show_form
-from flowapp.widget import display_runfiles
+from flowserv.client.gui.forms import show_form
+from flowserv.client.gui.widget import display_runfiles
 
 import flowserv.config as config
 import flowserv.util as util
