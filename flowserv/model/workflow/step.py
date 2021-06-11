@@ -29,7 +29,6 @@ from __future__ import annotations
 from typing import Callable, Dict, List, Optional
 
 import inspect
-import papermill as pm
 import os
 
 """Unique identifier for workflow step types."""
@@ -347,6 +346,7 @@ class NotebookStep(WorkflowStep):
         rundir: string
             Directory for the workflow run that contains all the run files.
         """
+        import papermill as pm
         # Prepare parameters for running the notebook using papermill.
         kwargs = self._get_parameters(context=context)
         # Change working directory temporarily to the given rundir.

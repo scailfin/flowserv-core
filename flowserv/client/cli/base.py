@@ -19,6 +19,7 @@ from flowserv.client.cli.admin import configuration, init
 from flowserv.client.cli.app import cli_app
 from flowserv.client.cli.cleanup import cli_cleanup
 from flowserv.client.cli.group import cli_group
+from flowserv.client.cli.gui import run_template
 from flowserv.client.cli.repository import list_repository
 from flowserv.client.cli.run import cli_run
 from flowserv.client.cli.uploads import cli_uploads
@@ -170,6 +171,9 @@ cli_flowserv.add_command(cli_group, 'groups')
 
 # Group files
 cli_flowserv.add_command(cli_uploads, 'files')
+
+# Graphical User Interface
+cli_flowserv.add_command(run_template, name='gui')
 
 # Workflow repository listing
 cli_flowserv.add_command(list_repository, name='repo')
