@@ -32,6 +32,7 @@ aws_requires = ['boto3']
 docker_requires = ['docker']
 gc_requires = ['google-cloud-storage']
 postgres_requires = ['psycopg2-binary']
+streamlit_requires = ['streamlit']
 
 
 tests_require = [
@@ -56,7 +57,8 @@ extras_require = {
     'docker': docker_requires,
     'gc': gc_requires,
     'postgres': postgres_requires,
-    'full': aws_requires + docker_requires + gc_requires + postgres_requires
+    'streamlit': streamlit_requires,
+    'full': aws_requires + docker_requires + gc_requires + postgres_requires + streamlit_requires
 }
 
 
