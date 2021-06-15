@@ -80,6 +80,8 @@ def test_postproc_workflow(tmpdir):
             run_id = start_run(api, group_id, arguments=arguments)
         # Poll workflow state every second.
         run = poll_run(service, run_id, user_id)
+        import json
+        print(json.dumps(run, indent=4))
         assert run['state'] == st.STATE_SUCCESS
         with service() as api:
             wh = api.workflows().get_workflow(workflow_id=workflow_id)
@@ -101,7 +103,6 @@ def test_postproc_workflow(tmpdir):
             attmpts += 1
             if attmpts > 60:
                 break
-        import json
         print(json.dumps(wh, indent=4))
         serialize.validate_workflow_handle(wh)
         with service() as api:
