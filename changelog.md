@@ -135,7 +135,7 @@
 * Fix issue with subprocess worker on Windows.
 
 
-### 0.9.0 - TDB
+### 0.9.0 - 2021-06-15
 
 * Make `BucketStore` generic for storing workflow files in different types of cloud storage buckets (\#80).
 * Add Google Cloud File Storage bucket implementation (\#80).
