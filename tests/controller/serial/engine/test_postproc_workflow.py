@@ -103,7 +103,6 @@ def test_postproc_workflow(tmpdir):
             attmpts += 1
             if attmpts > 60:
                 break
-        print(json.dumps(wh, indent=4))
         serialize.validate_workflow_handle(wh)
         with service() as api:
             ranking = api.workflows().get_ranking(workflow_id=workflow_id)

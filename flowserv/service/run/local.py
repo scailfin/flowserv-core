@@ -436,7 +436,8 @@ class LocalRunService(RunService):
             runstore=runstore
         )
         if run is not None and state.is_success():
-            logging.info('run {} is a success'.format(run_id))
+            print(f'run {run_id} is a success')
+            logging.info(f'run {run_id} is a success')
             workflow = run.workflow
             if workflow.run_postproc:
                 # Get the latest ranking for the workflow and create a
@@ -444,6 +445,7 @@ class LocalRunService(RunService):
                 # current post-processing key for the workflow.
                 ranking = self.ranking_manager.get_ranking(workflow=workflow)
                 runs = sorted([r.run_id for r in ranking])
+                print(f'runs: {runs}')
                 # Run post-processing task synchronously if the current
                 # post-processing resources where generated for a different
                 # set of runs than those in the ranking.
@@ -451,8 +453,7 @@ class LocalRunService(RunService):
                     # Create temporary post-processing folder for static
                     # workflow files.
                     # postproc_store = self.fs.get_store_for_folder(key=run_tmpdir())
-                    msg = 'Run post-processing workflow for {}'
-                    logging.info(msg.format(workflow.workflow_id))
+                    logging.info(f'Run post-processing workflow for {workflow.workflow_id}')
                     run_postproc_workflow(
                         workflow=workflow,
                         ranking=ranking,

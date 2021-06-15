@@ -96,6 +96,4 @@ def prepare_postproc_data(
             LABEL_NAME: group_name,
             LABEL_FILES: input_files
         })
-    print([r.values for r in ranking])
-    print(runs)
     store.store(file=io_file(runs), dst=RUNS_FILE)
