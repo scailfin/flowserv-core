@@ -114,6 +114,9 @@ def test_postproc_workflow(tmpdir):
                 file_id=file_id
             )
         compare = util.read_object(fh.open())
+        print(compare)
+        import logging
+        logging.info(compare)
         assert len(compare) == (i + 1)
     # Access the post-processing result files.
     with service() as api:
