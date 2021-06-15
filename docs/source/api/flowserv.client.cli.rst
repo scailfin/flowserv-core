@@ -17,6 +17,7 @@ Submodules
    flowserv.client.cli.base
    flowserv.client.cli.cleanup
    flowserv.client.cli.group
+   flowserv.client.cli.gui
    flowserv.client.cli.parameter
    flowserv.client.cli.repository
    flowserv.client.cli.run

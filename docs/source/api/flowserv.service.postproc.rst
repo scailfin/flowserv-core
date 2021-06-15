@@ -14,4 +14,3 @@ Submodules
 
    flowserv.service.postproc.base
    flowserv.service.postproc.client
-   flowserv.service.postproc.util

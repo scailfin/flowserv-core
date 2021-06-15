@@ -14,7 +14,6 @@ Subpackages
 
    flowserv.controller.remote
    flowserv.controller.serial
-   flowserv.controller.volume
    flowserv.controller.worker
 
 Submodules

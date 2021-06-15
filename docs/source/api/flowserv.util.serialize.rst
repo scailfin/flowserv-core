@@ -1,7 +1,7 @@
-flowserv.model.files.s3 module
+flowserv.util.serialize module
 ==============================
 
-.. automodule:: flowserv.model.files.s3
+.. automodule:: flowserv.util.serialize
    :members:
    :undoc-members:
    :show-inheritance:

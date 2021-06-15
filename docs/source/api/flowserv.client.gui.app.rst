@@ -1,7 +1,7 @@
-flowserv.model.files.gc module
+flowserv.client.gui.app module
 ==============================
 
-.. automodule:: flowserv.model.files.gc
+.. automodule:: flowserv.client.gui.app
    :members:
    :undoc-members:
    :show-inheritance:

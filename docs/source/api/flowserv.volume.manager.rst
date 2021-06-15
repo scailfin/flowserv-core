@@ -1,7 +1,7 @@
-flowserv.model.files.fs module
+flowserv.volume.manager module
 ==============================
 
-.. automodule:: flowserv.model.files.fs
+.. automodule:: flowserv.volume.manager
    :members:
    :undoc-members:
    :show-inheritance:

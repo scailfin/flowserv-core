@@ -118,7 +118,8 @@ class RunResult(object):
         Will re-raise a cought exception (if set). Otherwise, raises a
         FlowservError.
         """
-        if self.returncode == 0:
+        status = self.returncode
+        if status is None or status == 0:
             # Do nothing if the returncode is 0.
             return
         if self.exception:

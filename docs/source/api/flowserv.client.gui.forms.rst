@@ -1,7 +1,7 @@
-flowserv.model.files module
+flowserv.client.gui.forms module
 ================================
 
-.. automodule:: flowserv.model.files
+.. automodule:: flowserv.client.gui.forms
    :members:
    :undoc-members:
    :show-inheritance:

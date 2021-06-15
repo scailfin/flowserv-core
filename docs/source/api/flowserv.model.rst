@@ -12,7 +12,6 @@ Subpackages
 .. toctree::
    :maxdepth: 3
 
-   flowserv.model.files
    flowserv.model.parameter
    flowserv.model.template
    flowserv.model.workflow
@@ -27,6 +26,7 @@ Submodules
    flowserv.model.base
    flowserv.model.constraint
    flowserv.model.database
+   flowserv.model.files
    flowserv.model.group
    flowserv.model.ranking
    flowserv.model.run

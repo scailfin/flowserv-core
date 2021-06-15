@@ -87,6 +87,10 @@ default_container_worker = SubprocessWorker(
 )
 
 
+"""Serialization label for worker identifier."""
+WORKER_ID = 'name'
+
+
 class WorkerPool(object):
     """Manager for a pool of worker instances. Workers are responsible for the
     initiation and control of the execution of steps in a serial workflow.
@@ -221,7 +225,7 @@ def create_worker(doc: Dict) -> Worker:
 
 
 def WorkerSpec(
-    worker_type: str, identifier: str, variables: Optional[Dict] = None,
+    worker_type: str, identifier: Optional[str] = None, variables: Optional[Dict] = None,
     env: Optional[Dict] = None, volume: Optional[str] = None
 ) -> Dict:
     """Get a serialization for a worker specification.
@@ -229,9 +233,10 @@ def WorkerSpec(
     Parameters
     ----------
     worker_type: string
-        Uniuqe worker type identifier.
-    identifier: string
-        Uniuqe worker identifier.
+        Unique worker type identifier.
+    identifier: string, default=None
+        Unique worker identifier. If no identifier is given, a new unique
+        identifier will be generated.
     variables: dict, default=None
         Mapping with default values for placeholders in command template
         strings.
@@ -249,7 +254,7 @@ def WorkerSpec(
     env = env if env is not None else dict()
     variables = variables if variables is not None else dict()
     doc = {
-        'name': identifier,
+        WORKER_ID: identifier if identifier is not None else util.get_unique_identifier(),
         'type': worker_type,
         'env': [util.to_kvp(key=k, value=v) for k, v in env.items()],
         'variables': [util.to_kvp(key=k, value=v) for k, v in variables.items()]
@@ -259,13 +264,14 @@ def WorkerSpec(
     return doc
 
 
-def Code(identifier: str, volume: Optional[str] = None) -> Dict:
+def Code(identifier: Optional[str] = None, volume: Optional[str] = None) -> Dict:
     """Get base configuration serialization for a code worker.
 
     Parameters
     ----------
-    identifier: string
-        Uniuqe worker identifier.
+    identifier: string, default=None
+        Unique worker identifier. If no identifier is given, a new unique
+        identifier will be generated.
     volume: string, default=None
         Identifier for the storage volume that the worker has access to.
 
@@ -281,16 +287,17 @@ def Code(identifier: str, volume: Optional[str] = None) -> Dict:
 
 
 def Docker(
-    identifier: str, variables: Optional[Dict] = None, env: Optional[Dict] = None,
-    volume: Optional[str] = None
+    identifier: Optional[str] = None, variables: Optional[Dict] = None,
+    env: Optional[Dict] = None, volume: Optional[str] = None
 ) -> Dict:
     """Get base configuration for a subprocess worker with the given optional
     arguments.
 
     Parameters
     ----------
-    identifier: string
-        Uniuqe worker identifier.
+    identifier: string, default=None
+        Unique worker identifier. If no identifier is given, a new unique
+        identifier will be generated.
     variables: dict, default=None
         Mapping with default values for placeholders in command template
         strings.
@@ -313,13 +320,14 @@ def Docker(
     )
 
 
-def Notebook(identifier: str, volume: Optional[str] = None) -> Dict:
+def Notebook(identifier: Optional[str] = None, volume: Optional[str] = None) -> Dict:
     """Get base configuration serialization for a notebook worker.
 
     Parameters
     ----------
-    identifier: string
-        Uniuqe worker identifier.
+    identifier: string, default=None
+        Unique worker identifier. If no identifier is given, a new unique
+        identifier will be generated.
     volume: string, default=None
         Identifier for the storage volume that the worker has access to.
 
@@ -335,16 +343,17 @@ def Notebook(identifier: str, volume: Optional[str] = None) -> Dict:
 
 
 def Subprocess(
-    identifier: str, variables: Optional[Dict] = None, env: Optional[Dict] = None,
-    volume: Optional[str] = None
+    identifier: Optional[str] = None, variables: Optional[Dict] = None,
+    env: Optional[Dict] = None, volume: Optional[str] = None
 ) -> Dict:
     """Get base configuration for a subprocess worker with the given optional
     arguments.
 
     Parameters
     ----------
-    identifier: string
-        Uniuqe worker identifier.
+    identifier: string, default=None
+        Unique worker identifier. If no identifier is given, a new unique
+        identifier will be generated.
     variables: dict, default=None
         Mapping with default values for placeholders in command template
         strings.
