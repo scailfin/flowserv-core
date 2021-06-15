@@ -101,6 +101,8 @@ def test_postproc_workflow(tmpdir):
             attmpts += 1
             if attmpts > 60:
                 break
+        import json
+        print(json.dumps(wh, indent=4))
         serialize.validate_workflow_handle(wh)
         with service() as api:
             ranking = api.workflows().get_ranking(workflow_id=workflow_id)
@@ -115,8 +117,6 @@ def test_postproc_workflow(tmpdir):
             )
         compare = util.read_object(fh.open())
         print(compare)
-        import logging
-        logging.info(compare)
         assert len(compare) == (i + 1)
     # Access the post-processing result files.
     with service() as api:
