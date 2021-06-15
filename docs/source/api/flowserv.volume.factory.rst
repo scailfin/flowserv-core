@@ -1,5 +1,5 @@
 flowserv.volume.factory module
-===================================
+==============================
 
 .. automodule:: flowserv.volume.factory
    :members:

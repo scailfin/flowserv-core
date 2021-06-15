@@ -14,7 +14,6 @@ Submodules
 
    flowserv.model.workflow.manager
    flowserv.model.workflow.manifest
-   flowserv.model.workflow.remote
    flowserv.model.workflow.repository
    flowserv.model.workflow.state
    flowserv.model.workflow.step

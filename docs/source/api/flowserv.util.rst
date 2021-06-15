@@ -15,4 +15,5 @@ Submodules
    flowserv.util.core
    flowserv.util.datetime
    flowserv.util.files
+   flowserv.util.serialize
    flowserv.util.ssh

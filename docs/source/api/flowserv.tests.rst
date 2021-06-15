@@ -13,8 +13,8 @@ Submodules
    :maxdepth: 3
 
    flowserv.tests.controller
-   flowserv.tests.files
    flowserv.tests.model
    flowserv.tests.remote
    flowserv.tests.serialize
    flowserv.tests.service
+   flowserv.tests.worker

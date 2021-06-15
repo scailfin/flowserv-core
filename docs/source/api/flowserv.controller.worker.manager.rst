@@ -1,7 +1,7 @@
-flowserv.controller.worker.factory module
+flowserv.controller.worker.manager module
 =========================================
 
-.. automodule:: flowserv.controller.worker.factory
+.. automodule:: flowserv.controller.worker.manager
    :members:
    :undoc-members:
    :show-inheritance:

@@ -1,7 +1,7 @@
-flowserv.tests.files module
+flowserv.volume.base module
 ===========================
 
-.. automodule:: flowserv.tests.files
+.. automodule:: flowserv.volume.base
    :members:
    :undoc-members:
    :show-inheritance:

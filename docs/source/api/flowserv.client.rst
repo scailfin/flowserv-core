@@ -14,6 +14,7 @@ Subpackages
 
    flowserv.client.app
    flowserv.client.cli
+   flowserv.client.gui
 
 Submodules
 ----------

@@ -16,5 +16,6 @@ Submodules
    flowserv.controller.worker.code
    flowserv.controller.worker.config
    flowserv.controller.worker.docker
-   flowserv.controller.worker.factory
+   flowserv.controller.worker.manager
+   flowserv.controller.worker.notebook
    flowserv.controller.worker.subprocess
