@@ -436,7 +436,6 @@ class LocalRunService(RunService):
             runstore=runstore
         )
         if run is not None and state.is_success():
-            print(f'run {run_id} is a success')
             logging.info(f'run {run_id} is a success')
             workflow = run.workflow
             if workflow.run_postproc:
@@ -445,7 +444,6 @@ class LocalRunService(RunService):
                 # current post-processing key for the workflow.
                 ranking = self.ranking_manager.get_ranking(workflow=workflow)
                 runs = sorted([r.run_id for r in ranking])
-                print(f'runs: {runs}')
                 # Run post-processing task synchronously if the current
                 # post-processing resources where generated for a different
                 # set of runs than those in the ranking.

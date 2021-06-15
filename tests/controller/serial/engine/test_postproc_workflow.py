@@ -80,8 +80,6 @@ def test_postproc_workflow(tmpdir):
             run_id = start_run(api, group_id, arguments=arguments)
         # Poll workflow state every second.
         run = poll_run(service, run_id, user_id)
-        import json
-        print(json.dumps(run, indent=4))
         assert run['state'] == st.STATE_SUCCESS
         with service() as api:
             wh = api.workflows().get_workflow(workflow_id=workflow_id)
@@ -116,7 +114,6 @@ def test_postproc_workflow(tmpdir):
                 file_id=file_id
             )
         compare = util.read_object(fh.open())
-        print(compare)
         assert len(compare) == (i + 1)
     # Access the post-processing result files.
     with service() as api:
@@ -209,7 +206,6 @@ def run_erroneous_workflow(service, specfile):
         wh = api.workflows().get_workflow(workflow_id=workflow_id)
     attmpts = 0
     while 'postproc' not in wh:
-        print('wait for pp')
         time.sleep(1)
         with service() as api:
             wh = api.workflows().get_workflow(workflow_id=workflow_id)
@@ -220,7 +216,6 @@ def run_erroneous_workflow(service, specfile):
     serialize.validate_workflow_handle(wh)
     attmpts = 0
     while wh['postproc']['state'] in st.ACTIVE_STATES:
-        print("still active")
         time.sleep(1)
         with service() as api:
             wh = api.workflows().get_workflow(workflow_id=workflow_id)

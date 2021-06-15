@@ -50,19 +50,7 @@ class NotebookEngine(Worker):
         -------
         flowserv.controller.serial.workflow.result.ExecResult
         """
-        # TODO: Remove these lines. They are only here for test purposes.
-        # Get handle for the notebook file. Use f.open() to get a bytes buffer
-        # containing the notebook (in case that papermill can accept that).
-        # Otherwise, we need to pass the filename f.filename to papermill as
-        # the notebook argument.
-        f = store.load(step.notebook)
-        import os
-        assert os.path.isfile(f.filename)
-        print(f'Notebook file: {f.filename}')
-        # The context dictionary should contain the following values:
-        # {'inputfile': 'data/names.txt', 'outputfile': 'results/greetings.txt', 'greeting': 'Hey there'}
-        print(f'Context: {context}')
-        # TODO: Call execute method of the NotebookEngine to run the notebook
+        # Call execute method of the NotebookEngine to run the notebook
         # with the argument values from the workflow context.
         step.exec(context=context, rundir=store.basedir)
         result = ExecResult(step=step)
