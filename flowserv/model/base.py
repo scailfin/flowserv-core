@@ -38,6 +38,8 @@ class JsonObject(TypeDecorator):
 
     impl = Unicode
 
+    cache_ok = True
+
     def process_literal_param(self, value, dialect):
         """Expects a JSON serializable object."""
         if value is not None:
@@ -57,6 +59,8 @@ class WorkflowParameters(TypeDecorator):
     """
 
     impl = Unicode
+
+    cache_ok = True
 
     def process_literal_param(self, value, dialect):
         """Expects a dictionary of parameter declarations."""
@@ -78,6 +82,8 @@ class WorkflowParameterGroups(TypeDecorator):
 
     impl = Unicode
 
+    cache_ok = True
+
     def process_literal_param(self, value, dialect):
         """Expects a list of workflow module objects."""
         if value is not None:
@@ -98,6 +104,8 @@ class WorkflowResultSchema(TypeDecorator):
 
     impl = Unicode
 
+    cache_ok = True
+
     def process_literal_param(self, value, dialect):
         """Expects a workflow result schema object."""
         if value is not None:
@@ -117,6 +125,8 @@ class WorkflowOutputs(TypeDecorator):
     """
 
     impl = Unicode
+
+    cache_ok = True
 
     def process_literal_param(self, value, dialect):
         """Expects a list of workflow output file objects."""
