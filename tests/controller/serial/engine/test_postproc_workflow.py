@@ -8,6 +8,8 @@
 
 """Unit tests for post-processing workflows."""
 
+from io import StringIO
+
 import os
 import time
 
@@ -89,7 +91,8 @@ def test_postproc_workflow(tmpdir):
             run_id=run_id,
             file_id=files['results/greetings.txt']
         )
-        greetings = fh.open().read().decode('utf-8').strip()
+        with StringIO(fh.open().read().decode('utf-8').strip()) as f:
+            greetings = '\n'.join([line.strip() for line in f])
         assert greetings == '\n'.join([f'Hi {n}!' for n in NAMES[:(i + 1)]])
         # -- Wait for the post-processing run to finish.
         with service() as api:
