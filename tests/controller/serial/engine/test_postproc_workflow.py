@@ -66,7 +66,7 @@ def test_postproc_workflow(tmpdir):
         )
         user_id = create_user(api)
     # Create four groups and run the workflow with a slightly different input
-    # file
+    # file.
     for i in range(4):
         with service(user_id=user_id) as api:
             group_id = create_group(api, workflow_id)
@@ -81,6 +81,17 @@ def test_postproc_workflow(tmpdir):
         # Poll workflow state every second.
         run = poll_run(service, run_id, user_id)
         assert run['state'] == st.STATE_SUCCESS
+
+        files = dict()
+        for f in run['files']:
+            files[f['name']] = f['id']
+        fh = api.runs().get_result_file(
+            run_id=run_id,
+            file_id=files['results/greetings.txt']
+        )
+        greetings = fh.open().read().decode('utf-8').strip()
+        print(greetings)
+
         with service() as api:
             wh = api.workflows().get_workflow(workflow_id=workflow_id)
         attmpts = 0
@@ -90,7 +101,7 @@ def test_postproc_workflow(tmpdir):
                 wh = api.workflows().get_workflow(workflow_id=workflow_id)
             attmpts += 1
             if attmpts > 60:
-                break
+                raise RuntimeError('max. attempts reached')
         assert 'postproc' in wh
         serialize.validate_workflow_handle(wh)
         attmpts = 0
@@ -100,7 +111,7 @@ def test_postproc_workflow(tmpdir):
                 wh = api.workflows().get_workflow(workflow_id=workflow_id)
             attmpts += 1
             if attmpts > 60:
-                break
+                raise RuntimeError('max. attempts reached')
         serialize.validate_workflow_handle(wh)
         with service() as api:
             ranking = api.workflows().get_ranking(workflow_id=workflow_id)
@@ -211,7 +222,7 @@ def run_erroneous_workflow(service, specfile):
             wh = api.workflows().get_workflow(workflow_id=workflow_id)
         attmpts += 1
         if attmpts > 60:
-            break
+            raise RuntimeError('max. attempts reached')
     assert 'postproc' in wh
     serialize.validate_workflow_handle(wh)
     attmpts = 0
@@ -221,7 +232,7 @@ def run_erroneous_workflow(service, specfile):
             wh = api.workflows().get_workflow(workflow_id=workflow_id)
         attmpts += 1
         if attmpts > 60:
-            break
+            raise RuntimeError('max. attempts reached')
     assert wh['postproc']['state'] not in st.ACTIVE_STATES
     serialize.validate_workflow_handle(wh)
     assert wh['postproc']['state'] == st.STATE_ERROR
