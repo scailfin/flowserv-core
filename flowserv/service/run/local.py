@@ -436,7 +436,6 @@ class LocalRunService(RunService):
             runstore=runstore
         )
         if run is not None and state.is_success():
-            print(f'run {run_id} is a success')
             logging.info(f'run {run_id} is a success')
             workflow = run.workflow
             if workflow.run_postproc:
@@ -494,8 +493,6 @@ def run_postproc_workflow(
     backend: flowserv.controller.base.WorkflowController
         Backend that is used to execute the post-processing workflow.
     """
-    print('Ranking is ...')
-    print([r.run_id for r in ranking])
     # Get workflow specification and the list of input files from the
     # post-processing statement.
     postproc_spec = workflow.postproc_spec

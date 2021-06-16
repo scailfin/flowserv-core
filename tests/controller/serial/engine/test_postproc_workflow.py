@@ -81,7 +81,7 @@ def test_postproc_workflow(tmpdir):
         # Poll workflow state every second.
         run = poll_run(service, run_id, user_id)
         assert run['state'] == st.STATE_SUCCESS
-
+        # -- Ensure that the greetings file is correct.
         files = dict()
         for f in run['files']:
             files[f['name']] = f['id']
@@ -90,8 +90,8 @@ def test_postproc_workflow(tmpdir):
             file_id=files['results/greetings.txt']
         )
         greetings = fh.open().read().decode('utf-8').strip()
-        print(greetings)
-
+        assert greetings == '\n'.join([f'Hi {n}!' for n in NAMES[:(i + 1)]])
+        # -- Wait for the post-processing run to finish.
         with service() as api:
             wh = api.workflows().get_workflow(workflow_id=workflow_id)
         attmpts = 0
