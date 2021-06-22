@@ -146,4 +146,5 @@
 
 ### 0.9.1 - 2021-06-22
 
-* Add option to resolve references to external files when reading Yaml files. 
+* Add option to resolve references to external files when reading Yaml files.
+* Support inclusion and import of files in instructions markdown text.

@@ -9,6 +9,7 @@
 """Helper functions to read workflow manifest files."""
 
 import os
+import re
 
 from typing import List, Tuple
 
@@ -35,6 +36,9 @@ for name in DEFAULT_SPECNAMES:
 
 # Flowserv manifest file names..
 MANIFEST_FILES = ['flowserv{}'.format(suffix) for suffix in DEFAULT_SUFFIXES]
+
+"""Regular expression for file includes in markdown."""
+REGEX_INCLUDE = r'\{\{(.*?)\}\}'
 
 
 class WorkflowManifest(object):
@@ -190,8 +194,7 @@ class WorkflowManifest(object):
                 manifest_value=doc.get('instructions'),
                 user_argument=instructions
             )
-            with open(filename, 'r') as f:
-                doc['instructions'] = f.read().strip()
+            doc['instructions'] = read_instructions(filename)
         # Get the workflow specification file.
         filename = getfile(
             basedir=basedir,
@@ -254,6 +257,46 @@ def getfile(basedir, manifest_value, user_argument):
         # directory.
         return os.path.join(basedir, user_argument)
     return os.path.join(basedir, manifest_value)
+
+
+def read_instructions(filename: str) -> str:
+    """Read instruction text from a given file. If the filename is None the
+    result will be None as well.
+
+    Returns
+    -------
+    string
+    """
+    # Read instructions from file if given.
+    instruction_text = None
+    if filename is not None:
+        with open(filename, 'r') as f:
+            instruction_text = f.read().strip()
+        parent = os.path.dirname(os.path.abspath(filename))
+
+        # Replace function for file imports.
+        def replace_include(match):
+            """Function to replace references to files in markdown text.
+
+            All file names should be relative to the path of the main document that
+            imports the file.
+
+            Parameters
+            ----------
+            match: re.MatchObject
+                Regular expression match object.
+
+            Returns
+            -------
+            string
+            """
+            ref = match.group()
+            # Strip expression of import reference syntax.
+            expr = ref[2:-2]
+            # Read file and return content.
+            return read_instructions(os.path.join(parent, expr))
+
+        return re.sub(REGEX_INCLUDE, replace_include, instruction_text)
 
 
 def unique_name(name, existing_names):
