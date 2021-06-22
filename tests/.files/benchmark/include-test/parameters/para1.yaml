@@ -1,0 +1,4 @@
+name: names
+label: 'Input file'
+dtype: file
+target: data/names.txt

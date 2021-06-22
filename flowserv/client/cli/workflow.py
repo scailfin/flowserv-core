@@ -15,6 +15,7 @@ import click
 from flowserv.client.api import service
 from flowserv.client.cli.table import ResultTable
 from flowserv.model.parameter.base import PARA_INT, PARA_STRING
+from flowserv.model.workflow.manifest import read_instructions
 
 import flowserv.view.files as flbls
 import flowserv.view.run as rlbls
@@ -319,21 +320,3 @@ cli_benchmark.add_command(cli_workflow_download)
 cli_benchmark.add_command(list_workflows, name='list')
 cli_benchmark.add_command(show_ranking, name='ranking')
 cli_benchmark.add_command(get_workflow, name='show')
-
-
-# -- Helper Methods -----------------------------------------------------------
-
-def read_instructions(filename):
-    """Read instruction text from a given file. If the filename is None the
-    result will be None as well.
-
-    Returns
-    -------
-    string
-    """
-    # Read instructions from file if given
-    instruction_text = None
-    if filename is not None:
-        with open(filename, 'r') as f:
-            instruction_text = f.read().strip()
-    return instruction_text

@@ -1,0 +1,4 @@
+name: sleeptime
+label: 'Sleep time (s)'
+dtype: int
+defaultValue: 10

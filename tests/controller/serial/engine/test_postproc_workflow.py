@@ -69,6 +69,7 @@ def test_postproc_workflow(tmpdir):
         user_id = create_user(api)
     # Create four groups and run the workflow with a slightly different input
     # file.
+    prev_postproc = None
     for i in range(4):
         with service(user_id=user_id) as api:
             group_id = create_group(api, workflow_id)
@@ -108,13 +109,14 @@ def test_postproc_workflow(tmpdir):
         assert 'postproc' in wh
         serialize.validate_workflow_handle(wh)
         attmpts = 0
-        while wh['postproc']['state'] in st.ACTIVE_STATES:
+        while wh['postproc']['state'] in st.ACTIVE_STATES or wh['postproc']['id'] == prev_postproc:
             time.sleep(1)
             with service() as api:
                 wh = api.workflows().get_workflow(workflow_id=workflow_id)
             attmpts += 1
             if attmpts > 60:
                 raise RuntimeError('max. attempts reached')
+        prev_postproc = wh['postproc']['id']
         serialize.validate_workflow_handle(wh)
         with service() as api:
             ranking = api.workflows().get_ranking(workflow_id=workflow_id)
