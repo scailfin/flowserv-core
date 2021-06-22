@@ -25,7 +25,8 @@ install_requires = [
     'pyyaml>=5.1',
     'requests',
     'SQLAlchemy>=1.3.18',
-    'Click'
+    'Click',
+    'pyyaml-include'
 ]
 aws_requires = ['boto3']
 docker_requires = ['docker']

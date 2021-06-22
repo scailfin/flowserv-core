@@ -10,6 +10,7 @@ requests
 SQLAlchemy>=1.3.18
 papermill
 Click
+pyyaml-include
 boto3
 google-cloud-storage
 docker

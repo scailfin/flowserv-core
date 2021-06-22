@@ -18,6 +18,7 @@ import os
 import shutil
 import yaml
 
+from yamlinclude import YamlIncludeConstructor
 from typing import Dict, IO, List, Optional, Union
 
 
@@ -151,6 +152,10 @@ def read_object(filename: str, format: Optional[str] = None) -> Dict:
         else:
             format = FORMAT_YAML
     if format.upper() == FORMAT_YAML:
+        YamlIncludeConstructor.add_to_loader_class(
+            loader_class=yaml.FullLoader,
+            base_dir=os.path.dirname(os.path.abspath(filename))
+        )
         with open(filename, 'r') as f:
             return yaml.load(f.read(), Loader=yaml.FullLoader)
     elif format.upper() == FORMAT_JSON:
