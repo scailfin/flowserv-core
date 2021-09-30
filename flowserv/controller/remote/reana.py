@@ -108,7 +108,7 @@ class REANAWorkflowController(RemoteWorkflowController):
             API factory for service callback during asynchronous workflow
             execution.
         """
-        super(self, REANAWorkflowController).__init__(
+        super(REANAWorkflowController, self).__init__(
             client=REANARemoteClient(),
             poll_interval=service.get('REANA_CLIENT_POLL_INTERVAL', 1.0),
             is_async=True,
