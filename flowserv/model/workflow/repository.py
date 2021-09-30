@@ -14,8 +14,7 @@ from typing import Dict, List, Tuple
 
 
 """Repository URL."""
-# URL = 'https://raw.githubusercontent.com/scailfin/flowserv-workflow-repository/master/templates.json'
-URL = 'https://raw.githubusercontent.com/scailfin/flowserv-workflow-repository/flowserv/0.9.0/templates.json'
+URL = 'https://raw.githubusercontent.com/scailfin/flowserv-workflow-repository/master/templates.json'
 
 
 class WorkflowRepository(object):

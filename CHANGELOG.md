@@ -148,3 +148,8 @@
 
 * Add option to resolve references to external files when reading Yaml files.
 * Support inclusion and import of files in instructions markdown text.
+
+
+### 0.9.2 - 2021-09-30
+
+* Reset hard-coded workflow repository URL to point to the master branch.
