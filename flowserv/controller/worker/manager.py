@@ -47,6 +47,7 @@ follow the following schema:
             enum:
             - code
             - docker
+            - reana
             - subprocess
             type: string
           vars:
@@ -71,6 +72,7 @@ from flowserv.controller.worker.config import java_jvm, python_interpreter
 from flowserv.controller.worker.docker import DockerWorker, DOCKER_WORKER
 from flowserv.controller.worker.docker import NotebookDockerWorker, NOTEBOOK_DOCKER_WORKER
 from flowserv.controller.worker.notebook import NotebookEngine, NOTEBOOK_WORKER
+from flowserv.controller.worker.reana import REANAWorker, REANA_WORKER
 from flowserv.controller.worker.subprocess import SubprocessWorker, SUBPROCESS_WORKER
 from flowserv.model.workflow.step import WorkflowStep
 
@@ -210,6 +212,13 @@ def create_worker(doc: Dict) -> Worker:
         )
     elif worker_type == DOCKER_WORKER:
         return DockerWorker(
+            variables=vars,
+            env=env,
+            identifier=identifier,
+            volume=volume
+        )
+    elif worker_type == REANA_WORKER:
+        return REANAWorker(
             variables=vars,
             env=env,
             identifier=identifier,

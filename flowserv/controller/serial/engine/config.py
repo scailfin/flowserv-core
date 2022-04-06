@@ -10,6 +10,8 @@
 
 from typing import Dict, Optional
 
+import os
+
 from flowserv.controller.serial.engine.validate import validator
 
 import flowserv.util as util
@@ -42,7 +44,10 @@ def ENGINECONFIG(env: Dict, validate: Optional[bool] = False) -> Dict:
     -------
     dict
     """
-    filename = env.get(FLOWSERV_SERIAL_ENGINECONFIG)
+    filename = env.get(
+        FLOWSERV_SERIAL_ENGINECONFIG,
+        os.environ.get(FLOWSERV_SERIAL_ENGINECONFIG)
+    )
     if not filename:
         return dict()
     doc = util.read_object(filename=filename)

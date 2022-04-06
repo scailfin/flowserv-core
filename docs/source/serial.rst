@@ -107,6 +107,7 @@ Workers are specified as part of the workflow engine configuration (``workers`` 
 Each worker has a unique identifier (``name``) and a workflow ``type`` that is used to get an instance of this worker from the worker factory. The ``type`` specifies the implementation of the worker interface (``flowserv.controller.worker.base.Worker``). The worker factory currently supports the following types:
 
 - **docker**: Container worker that uses the Docker engine to execute container steps (``flowserv.controller.worker.docker.DockerWorker``).
+- **reana**: Container worker that uses a REANA backend to execute container steps (``flowserv.controller.worker.reana.REANAWorker``).
 - **notebook**: Worker that uses ``papermill`` to execute workflow steps that are implemented as Jupyter Notebooks (``flowserv.controller.worker.notebook.NotebookEngine``).
 - **nb_docker**: Worker that runs ``papermill`` inside a Docker container to execute a Jupyer Notebook. This worker will create a new Docker image using the optional requirements that the user can specify as part of a notebook step.
 - **subprocess**: Container worker that executes container steps in the Python environment that runs thw **flowServ** application (``flowserv.controller.worker.subprocess.SubprocessWorker``).
@@ -148,7 +149,7 @@ The specification of volumes and workers form the configuration for the serial w
           worker: 'worker identifier'
 
 
-The configuration for the serial workflow engine is expected to be stored in a file that is accessible via the the storage volume that is associated with the workflow engine. This file is either a JSON or YAML file with the type being determined by the file key suffix (`.json`` for JSON files and ``.yml`` or ``.yaml`` for YAML files). The relative file key for the configuration file is specified via the environment variable *SERIAL_ENGINE_CONFIG*. If the variable is not set the default workers and storage volume are used for workflow execution.
+The configuration for the serial workflow engine is expected to be stored in a file that is accessible via the the storage volume that is associated with the workflow engine. This file is either a JSON or YAML file with the type being determined by the file key suffix (`.json`` for JSON files and ``.yml`` or ``.yaml`` for YAML files). The relative file key for the configuration file is specified via the environment variable *FLOWSERV_SERIAL_ENGINECONFIG*. If the variable is not set the default workers and storage volume are used for workflow execution.
 
 Workflow Configuration
 ----------------------

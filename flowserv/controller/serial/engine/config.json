@@ -62,7 +62,7 @@
                 "type": {
                     "type": "string",
                     "description": "Worker type identifier",
-                    "enum": ["code", "docker", "subprocess"]
+                    "enum": ["code", "docker", "reana", "subprocess"]
                 },
                 "env": {
                     "type": "array",
