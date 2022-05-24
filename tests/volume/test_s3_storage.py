@@ -48,10 +48,15 @@ def test_s3_mkdir(store):
 
 
 def test_s3_query_files(store, bucket_keys):
-    """Test querying a S3 bucket store."""
-    assert store.walk(src=None) == bucket_keys
-    assert store.walk(src='code') == set({'code/obj1.json', 'code/obj2.json'})
-    assert store.walk(src='code/') == set({'code/obj1.json', 'code/obj2.json'})
+    """Test querying a S3 bucket store using walk method."""
+
+    def result_keys(files):
+        return {key for key, _ in files}
+
+    assert result_keys(store.walk(src=None)) == bucket_keys
+    code_files = set({'code/obj1.json', 'code/obj2.json'})
+    assert result_keys(store.walk(src='code')) == code_files
+    assert result_keys(store.walk(src='code/')) == code_files
 
 
 def test_s3_open_file(store):
@@ -106,4 +111,4 @@ def test_s3_volume_subfolder(store, people):
     # Note that the file will not have been deleted in the original store. This
     # is because of how the unit tests are set up with each store having its
     # own full list of the files.
-    assert substore.walk(src=None) == set()
+    assert substore.walk(src=None) == []

@@ -153,3 +153,8 @@
 ### 0.9.2 - 2021-09-30
 
 * Reset hard-coded workflow repository URL to point to the master branch.
+
+
+### 0.9.3 - 2022-05-24
+
+* Fix issue with `S3Volume.walk` return value (\#95)
