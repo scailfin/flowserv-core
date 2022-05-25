@@ -7,4 +7,4 @@
 # terms of the MIT License; see LICENSE file for more details.
 
 """Information about the current version of the flowServ package."""
-__version__ = '0.9.3'
+__version__ = '0.9.4'

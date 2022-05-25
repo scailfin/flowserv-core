@@ -158,3 +158,8 @@
 ### 0.9.3 - 2022-05-24
 
 * Fix issue with `S3Volume.walk` return value (\#95)
+
+
+### 0.9.4 - 2022-05-25
+
+* Make `path` argument for `copy_files` less restrictive (\#96)
