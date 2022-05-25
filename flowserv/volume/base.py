@@ -314,7 +314,7 @@ def copy_files(
             # make sure to remove the 'path' from all keys.
             for key, file in source_files:
                 if path:
-                    prefix = path + '/'
+                    prefix = path + '/' if not path.endswith('/') else path
                     key = key[len(prefix):]
                 dstpath = util.join(dst, key) if dst else key
                 files.append(dstpath)
