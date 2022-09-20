@@ -15,6 +15,7 @@ import time
 
 from flowserv.client.app.run import Run
 from flowserv.model.files import FileHandle
+from flowserv.model.parameter.actor import ActorValue
 from flowserv.model.template.parameter import ParameterIndex
 from flowserv.service.api import APIFactory
 from flowserv.service.run.argument import serialize_arg, serialize_fh
@@ -218,9 +219,9 @@ class Workflow(object):
             arglist = list()
             for key, val in arguments.items():
                 # Convert arguments to the format that is expected by the run
-                # manager. We pay special attention to file parameters. Input
-                # files may be represented as strings, IO buffers or file
-                # objects.
+                # manager. We pay special attention to file parameters and
+                # actor parameters. Input files may be represented as strings,
+                # IO buffers or file objects.
                 para = self._parameters.get(key)
                 if para is None:
                     raise err.UnknownParameterError(key)
@@ -246,6 +247,12 @@ class Workflow(object):
                         name=key
                     )
                     val = serialize_fh(fh[filelbls.FILE_ID], target=target)
+                elif para.is_actor():
+                    # The (unchecked) assumption is that the value is a tuple
+                    # ('container', {...}) where the second value is the
+                    # actual actor specification.
+                    # TODO: This needs to be revised as part of \#99
+                    val = ActorValue(spec=val[1])
                 arglist.append(serialize_arg(key, val))
             # Execute the run and return the serialized run handle.
             run = api.runs().start_run(

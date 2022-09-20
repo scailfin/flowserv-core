@@ -76,12 +76,21 @@ def show_form(parameters: List[Parameter]) -> Tuple[bool, Dict]:
             # Render a checkbox for Boolean parameters.
             atype, aconfig = para.default if para.default else ('container', dict())
             if atype == 'container':
-                image = st.text_input(para.label + ' (Docker Image)', aconfig.get('image', ''))
+                environment = st.text_input(
+                    f"{para.label} (Docker Image)",
+                    aconfig.get('environment', '')
+                )
                 commands = st.text_area(
                     para.label + ' (Commands)',
                     '\n'.join(aconfig.get('commands', [])).strip()
                 )
-                val = ('container', {'image': image, 'commands': commands.split('\n')})
+                val = (
+                    'container',
+                    {
+                        'environment': environment,
+                        'commands': commands.split('\n')
+                    }
+                )
             else:
                 raise ValueError("invalid actor type '{}'".format(atype))
         elif para.is_bool():
