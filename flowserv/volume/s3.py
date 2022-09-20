@@ -273,7 +273,8 @@ class S3Volume(StorageVolume):
             prefix = ''
         else:
             prefix = src
-        return self.query(filter=util.join(self.prefix, prefix))
+        files = self.query(filter=util.join(self.prefix, prefix))
+        return [(key, S3File(bucket=self.bucket, key=key)) for key in files]
 
 
 # -- Helper functions --------------------------------------------------------
