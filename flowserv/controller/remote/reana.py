@@ -21,8 +21,15 @@ class REANARemoteClient(RemoteClient):
     """Implementation for the remote client that interacts with a REANA
     cluster.
     """
-    def __init__(self):
-        """TODO: initialize the client."""
+    def __init__(self, env: Dict):
+        """TODO: initialize the client.
+        
+        Parameters
+        ----------
+        env: dict
+            Dictionary with environment variables for configuration of
+            teh client.
+        """
         pass
 
     def create_workflow(

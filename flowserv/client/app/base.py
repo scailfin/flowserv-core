@@ -61,14 +61,12 @@ class Flowserv(object):
         """
         # Get the base configuration settings from the environment if not given.
         self.env = env if env is not None else config.env()
-        print(self.env)
         # Set the base directory and ensure that it exists. Create a temporary
         # directory if no base directory is specified. If a base directory was
         # specified by the user it will override the settings from the global
         # environment.
         basedir = basedir if basedir is not None else self.env.get(config.FLOWSERV_BASEDIR)
         self.basedir = basedir if basedir is not None else tempfile.mkdtemp()
-        print(f"basedir={self.basedir}")
         self.env[config.FLOWSERV_BASEDIR] = self.basedir
         # Remove all existing files and folders in the base directory if the
         # clear flag is True.

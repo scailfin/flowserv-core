@@ -31,7 +31,7 @@ install_requires = [
 aws_requires = ['boto3']
 docker_requires = ['docker']
 gc_requires = ['google-cloud-storage']
-gui_requires = ['streamlit']
+gui_requires = ['streamlit>=1.13.0']
 notebooks_requires = ['jupyter', 'papermill']
 postgres_requires = ['psycopg2-binary']
 

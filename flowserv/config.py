@@ -438,4 +438,7 @@ def env() -> Config:
             if cast is not None:
                 value = cast(value)
             config[var] = value
+    for var, value in os.environ.items():
+        if var not in config:
+            config[var] = value
     return config

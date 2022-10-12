@@ -37,7 +37,7 @@ import os
 @click.argument('template')
 def run_template(app_name, specfile, manifest, template):
     """Run workflow template in GUI."""
-    import streamlit.cli
+    import streamlit.web.cli
     dirname = os.path.dirname(__file__)
     filename = os.path.join(dirname, '..', 'gui', 'app.py')
     args = [f'--sourc={template}']
@@ -47,4 +47,4 @@ def run_template(app_name, specfile, manifest, template):
         args.append(f'--specfile={specfile}')
     if manifest:
         args.append(f'--manifest={manifest}')
-    streamlit.cli._main_run(filename, args)
+    streamlit.web.cli._main_run(filename, args)

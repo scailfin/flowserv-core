@@ -52,6 +52,18 @@ By default, a simple multi-process engine is used that executes every workflow i
     export FLOWSERV_BACKEND_MODULE=flowserv.controller.serial.engine.base
     export FLOWSERV_BACKEND_CLASS=SerialWorkflowEngine
 
+When using a remote workflow controller the remote workflow client needs to be specified using the environment variables *FLOWSERV_REMOTE_CLIENT_MODULE* and *FLOWSERV_REMOTE_CLIENT_CLASS*. For example:
+
+.. code-block:: console
+
+    # Use the Remote Workflow Controller
+    export FLOWSERV_BACKEND_MODULE=flowserv.controller.remote.engine
+    export FLOWSERV_BACKEND_CLASS=RemoteWorkflowController
+
+    # Use the Reana Remote Client
+    export FLOWSERV_REMOTE_CLIENT_MODULE=flowserv.controller.remote.reana
+    export FLOWSERV_REMOTE_CLIENT_CLASS=REANARemoteClient
+
 
 Serial Engine Workers
 ---------------------

@@ -13,9 +13,10 @@ stop, and monitpring using an (abstract) client class. For different types of
 workflow engines only the RemoteClient class needs to be implements.
 """
 
-from typing import Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 import logging
+import os
 
 from flowserv.controller.base import WorkflowController
 from flowserv.controller.remote.client import RemoteClient
@@ -25,7 +26,9 @@ from flowserv.model.workflow.state import WorkflowState
 from flowserv.service.api import APIFactory
 from flowserv.volume.base import StorageVolume
 
+import flowserv.controller.remote.config as config
 import flowserv.controller.remote.monitor as monitor
+import flowserv.error as err
 import flowserv.util as util
 
 
@@ -35,29 +38,41 @@ class RemoteWorkflowController(WorkflowController):
     a separate process that continuously polls the workflow state.
     """
     def __init__(
-        self, client: RemoteClient, poll_interval: float, is_async: bool,
-        service: Optional[APIFactory] = None
+        self, client: Optional[RemoteClient] = None, poll_interval: Optional[float] = None,
+        is_async: Optional[bool] = None, service: Optional[APIFactory] = None
     ):
         """Initialize the client that is used to interact with the remote
         workflow engine.
 
         Parameters
         ----------
-        client: flowserv.controller.remote.client.RemoteClient
+        client: flowserv.controller.remote.client.RemoteClient, defaulNone
             Engine-specific implementation of the remote client that is used by
-            the controller to interact with the workflow engine.
+            the controller to interact with the workflow engine. If no client is
+            given an instance is created based on the values in the environment
+            variables FLOWSERV_REMOTE_CLIENT_MODULE and FLOWSERV_REMOTE_CLIENT_CLASS
         poll_interval: int or float, default=None
             Frequency (in sec.) at which the remote workflow engine is polled.
-        is_async: bool, optional
+        is_async: bool, default=None
             Flag that determines whether workflows execution is synchronous or
             asynchronous by default.
         service: flowserv.service.api.APIFactory, default=None
             API factory for service callback during asynchronous workflow
             execution.
         """
-        self.client = client
-        self.poll_interval = poll_interval
-        self.is_async = is_async
+        self.client = client if client else get_client(env=service)
+        self.poll_interval = get_env(
+            env=service,
+            var=config.FLOWSERV_POLL_INTERVAL,
+            value=poll_interval,
+            default=config.DEFAULT_POLL_INTERVAL
+        )
+        self.is_async = get_env(
+            env=service,
+            var=config.FLOWSERV_ASYNC,
+            value=is_async,
+            default=config.DEFAULT_ASYNC
+        )
         self.service = service
         # Dictionary of all running tasks. Maintains tuples containing the
         # multi-process pool object and the remote workflow identifier for
@@ -168,3 +183,59 @@ class RemoteWorkflowController(WorkflowController):
             strace = util.stacktrace(ex)
             logging.debug('\n'.join(strace))
             return run.state().error(messages=strace), None
+
+
+def get_client(env: Dict) -> RemoteClient:
+    """Get an instance of the remote client.
+    
+    The value for the class that is being instantiated is read from the
+    environment variables FLOWSERV_REMOTE_CLIENT_MODULE and
+    FLOWSERV_REMOTE_CLIENT_CLASS.
+
+    Parameters
+    ----------
+    env: dict
+        Environment variable dictionary. May be None
+
+    Returns
+    -------
+    flowserv.controller.remote.client.RemoteClient
+    """
+    module_name = get_env(env=env, var=config.FLOWSERV_REMOTE_CLIENT_MODULE)
+    class_name = get_env(env=env, var=config.FLOWSERV_REMOTE_CLIENT_CLASS)
+    if module_name is not None and class_name is not None:
+        logging.info('Remote client {}.{}'.format(module_name, class_name))
+        from importlib import import_module
+        module = import_module(module_name)
+        return getattr(module, class_name)(env=env)
+    raise err.MissingConfigurationError('remote client')
+
+
+def get_env(env: Dict, var: str, value: Optional[Any] = None, default: Optional[Any] = None) -> Any:
+    """Get configuration value from environment.
+    
+    If the given environment dictionary is None then `os.environ` is
+    used.
+
+    Parameters
+    ----------
+    env: dict
+        Environment variable dictionary. May be None
+    var: str
+        Name of the environment variable
+    value: any
+        Optional value that was given to override the environment
+        variable. This value is returned if not None.
+    default: any
+        Default value that is returned if the environment variable
+        is not set.
+
+    Returns
+    -------
+    any
+    """
+    if value:
+        return value
+    if env is None:
+        env = os.environ
+    return env.get(var, default)
